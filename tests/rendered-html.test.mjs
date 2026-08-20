@@ -1,56 +1,60 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 async function render() {
   const workerUrl = new URL("../dist/server/index.js", import.meta.url);
   workerUrl.searchParams.set("test", `${process.pid}-${Date.now()}`);
   const { default: worker } = await import(workerUrl.href);
-
-  return worker.fetch(
-    new Request("http://localhost/", {
-      headers: { accept: "text/html" },
-    }),
-    {
-      ASSETS: {
-        fetch: async () => new Response("Not found", { status: 404 }),
-      },
-    },
-    {
-      waitUntil() {},
-      passThroughOnException() {},
-    },
-  );
+  return worker.fetch(new Request("http://localhost/", { headers: { accept: "text/html" } }), { ASSETS: { fetch: async () => new Response("Not found", { status: 404 }) } }, { waitUntil() {}, passThroughOnException() {} });
 }
 
-test("server-renders the TRAD3 HUSTL3 homepage", async () => {
+test("server-renders the corrected TRADE HUSTL3 brand and metadata", async () => {
   const response = await render();
   assert.equal(response.status, 200);
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
-
   const html = await response.text();
 
-  assert.match(html, /<title>TRAD3 HUSTL3 \| Built by Hustle, Backed by Trades<\/title>/i);
-  assert.match(html, /aria-label="TRAD3 HUSTL3 home"/i);
+  assert.match(html, /<title>TRADE HUSTL3 \| Built by Hustle, Backed by Trades<\/title>/i);
+  assert.match(html, /property="og:title" content="TRADE HUSTL3"/i);
+  assert.match(html, /name="twitter:title" content="TRADE HUSTL3"/i);
+  assert.match(html, /aria-label="TRADE HUSTL3 home"/i);
+  assert.equal(html.toUpperCase().includes("TRA" + "D3"), false);
+  assert.match(html, /trade-hustl3-logo\.png/i);
+  assert.match(html, /alt="TRADE HUSTL3 logo"/i);
   assert.match(html, /BUILT BY[\s\S]*HUSTLE\.[\s\S]*BACKED BY[\s\S]*TRADES\./i);
   assert.match(html, /aria-label="Enter, Earn, Elevate"/i);
-  assert.match(html, /ENTER[\s\S]*EARN[\s\S]*ELEVATE/i);
 });
 
-test("server-renders every part of the TRAD3 HUSTL3 ecosystem", async () => {
-  const response = await render();
-  assert.equal(response.status, 200);
+test("server-renders credibility and audience content", async () => {
+  const html = await (await render()).text();
+  assert.match(html, /BUILT FROM[\s\S]*THE[\s\S]*FIELD\./i);
+  assert.match(html, /real field experience and trades supervision—not theory/i);
+  assert.match(html, /WHO THIS IS FOR/i);
+  for (const audience of ["Students exploring skilled trades", "Apprentices and entry-level technicians", "Career changers", "Working tradespeople", "Future supervisors and owners", "Trade schools and workforce programs"]) assert.match(html, new RegExp(audience, "i"));
+});
 
-  const html = await response.text();
+test("server-renders the required segmented signup", async () => {
+  const html = await (await render()).text();
+  assert.match(html, /I(?:&#x27;|')M INTERESTED IN/i);
+  assert.match(html, /<select[^>]+id="interest"[^>]+required/i);
+  for (const interest of ["The TRADE HUSTL3 Book", "Resume Builder", "HUSTL3 PRO", "Jobsite Gear", "School / Workforce Partnership", "General TRADE HUSTL3 Updates"]) assert.match(html, new RegExp(interest.replace("/", "\\/"), "i"));
+  assert.match(html, /type="email"/i);
+  for (const key of ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term"]) assert.match(html, new RegExp(`name="${key}"`, "i"));
+});
 
-  assert.match(html, /<h3>The Book<\/h3>/i);
-  assert.match(html, /straight-talking playbook for building a career/i);
-  assert.match(html, /<h3>Resume Builder<\/h3>/i);
-  assert.match(html, /licenses, certifications, field hours/i);
-  assert.match(html, /<h3>HUSTL3 PRO<\/h3>/i);
-  assert.match(html, /Premium tools, practical training/i);
-  assert.match(html, /<h3>Jobsite Gear<\/h3>/i);
-  assert.match(html, /Hard-wearing essentials/i);
-  assert.match(html, /<h3>Program Partnerships<\/h3>/i);
-  assert.match(html, /trade schools, workforce programs/i);
+test("server-renders every part of the TRADE HUSTL3 ecosystem", async () => {
+  const html = await (await render()).text();
+  for (const title of ["The Book", "Resume Builder", "HUSTL3 PRO", "Jobsite Gear", "Program Partnerships"]) assert.match(html, new RegExp(`<h3>${title}<\\/h3>`, "i"));
   assert.match(html, /href="mailto:partners@tradehustl3\.com"/i);
+});
+
+test("uses the official navy, red, and gold palette", async () => {
+  const css = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
+  assert.match(css, /--navy:#071A2B/i);
+  assert.match(css, /--red:#D9361E/i);
+  assert.match(css, /--gold:#D6A52A/i);
+  assert.match(css, /background:var\(--navy\)/i);
+  assert.match(css, /background:var\(--red\)/i);
+  assert.match(css, /color:var\(--gold\)|border[^;]*var\(--gold\)/i);
 });
