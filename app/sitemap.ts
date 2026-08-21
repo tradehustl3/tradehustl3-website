@@ -9,5 +9,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "weekly",
       priority: 1,
     },
+    {
+      url: `${SITE_URL}/book`,
+      lastModified: new Date("2026-08-21T00:00:00.000Z"),
+      changeFrequency: "weekly",
+      priority: 0.9,
+    },
   ];
 }
