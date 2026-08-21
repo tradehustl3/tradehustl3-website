@@ -21,9 +21,14 @@ test("server-renders the corrected TRADE HUSTL3 brand and metadata", async () =>
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
   const html = await response.text();
 
-  assert.match(html, /<title>TRADE HUSTL3 \| Built by Hustle, Backed by Trades<\/title>/i);
-  assert.match(html, /property="og:title" content="TRADE HUSTL3"/i);
-  assert.match(html, /name="twitter:title" content="TRADE HUSTL3"/i);
+  assert.match(html, /<title>TRADE HUSTL3 \| Skilled Trades Career Guide &amp; Resources<\/title>/i);
+  assert.match(html, /property="og:title" content="TRADE HUSTL3 \| Skilled Trades Career Guide &amp; Resources"/i);
+  assert.match(html, /name="twitter:title" content="TRADE HUSTL3 \| Skilled Trades Career Guide &amp; Resources"/i);
+  assert.match(html, /<link rel="canonical" href="https:\/\/tradehustl3\.com\/?"/i);
+  assert.match(html, /property="og:url" content="https:\/\/tradehustl3\.com\/?"/i);
+  assert.match(html, /property="og:image" content="https:\/\/tradehustl3\.com\/og\.png"/i);
+  assert.equal(html.includes("localhost:3000"), false);
+  for (const schemaType of ["Organization", "Person", "WebSite", "Book"]) assert.match(html, new RegExp(`\"@type\":\"${schemaType}\"`, "i"));
   assert.match(html, /aria-label="TRADE HUSTL3 home"/i);
   assert.equal(html.toUpperCase().includes("TRA" + "D3"), false);
   assert.match(html, /trade-hustl3-logo\.png/i);
@@ -36,8 +41,40 @@ test("server-renders credibility and audience content", async () => {
   const html = await (await render()).text();
   assert.match(html, /BUILT FROM[\s\S]*THE[\s\S]*FIELD\./i);
   assert.match(html, /real field experience and trades supervision—not theory/i);
+  assert.match(html, /Zachary Cameron Ellis/i);
+  assert.match(html, /9798193043355/i);
   assert.match(html, /WHO THIS IS FOR/i);
   for (const audience of ["Students exploring skilled trades", "Apprentices and entry-level technicians", "Career changers", "Working tradespeople", "Future supervisors and owners", "Trade schools and workforce programs"]) assert.match(html, new RegExp(audience, "i"));
+});
+
+test("publishes a canonical XML sitemap and robots discovery hints", async () => {
+  const worker = await loadWorker();
+  const env = { ASSETS: { fetch: async () => new Response("Not found", { status: 404 }) } };
+  const ctx = { waitUntil() {}, passThroughOnException() {} };
+
+  const sitemapResponse = await worker.fetch(new Request("https://tradehustl3.com/sitemap.xml"), env, ctx);
+  assert.equal(sitemapResponse.status, 200);
+  assert.match(sitemapResponse.headers.get("content-type") ?? "", /xml/i);
+  assert.match(await sitemapResponse.text(), /<loc>https:\/\/tradehustl3\.com<\/loc>/i);
+
+  const robotsResponse = await worker.fetch(new Request("https://tradehustl3.com/robots.txt"), env, ctx);
+  assert.equal(robotsResponse.status, 200);
+  const robots = await robotsResponse.text();
+  assert.match(robots, /User-Agent:\s*\*/i);
+  assert.match(robots, /Allow:\s*\//i);
+  assert.match(robots, /Sitemap:\s*https:\/\/tradehustl3\.com\/sitemap\.xml/i);
+});
+
+test("redirects the duplicate www hostname to the canonical domain", async () => {
+  const worker = await loadWorker();
+  const response = await worker.fetch(
+    new Request("https://www.tradehustl3.com/resources?from=www"),
+    {},
+    { waitUntil() {}, passThroughOnException() {} },
+  );
+
+  assert.equal(response.status, 308);
+  assert.equal(response.headers.get("location"), "https://tradehustl3.com/resources?from=www");
 });
 
 test("server-renders the required segmented signup", async () => {

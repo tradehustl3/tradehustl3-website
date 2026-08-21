@@ -2,7 +2,7 @@ import Image from "next/image";
 import { SignupForm } from "./signup-form";
 
 const pillars = [
-  { number: "01", title: "The Book", description: "A straight-talking playbook for building a career, a reputation, and a life in the skilled trades.", action: "Get the playbook", href: "#join" },
+  { number: "01", title: "The Book", description: "The TRADE HUSTL3 career playbook by Zachary Cameron Ellis (ISBN 9798193043355), launching September 25, 2026.", action: "Get the playbook", href: "#join" },
   { number: "02", title: "Resume Builder", description: "Turn licenses, certifications, field hours, and real jobsite experience into a resume that gets understood.", action: "Build your edge", href: "#join" },
   { number: "03", title: "HUSTL3 PRO", description: "Premium tools, practical training, and a community built for tradespeople ready for the next level.", action: "Join the waitlist", href: "#join" },
   { number: "04", title: "Jobsite Gear", description: "Hard-wearing essentials that carry the mindset from the jobsite to everywhere else.", action: "Gear up", href: "#join" },
@@ -58,7 +58,7 @@ export default function Home() {
       </section>
 
       <section className="field-section" id="field">
-        <div className="field-story"><p className="section-label">/ WHY WE EXIST</p><h2>BUILT FROM<br />THE <span>FIELD.</span></h2><p>TRADE HUSTL3 was built from real field experience and trades supervision—not theory. The mission is to shorten the learning curve for people entering the skilled trades and give working tradespeople practical tools to earn more, move up, and build something bigger.</p></div>
+        <div className="field-story"><p className="section-label">/ WHY WE EXIST</p><h2>BUILT FROM<br />THE <span>FIELD.</span></h2><p>Founded by HVAC and facilities maintenance professional Zachary Cameron Ellis, TRADE HUSTL3 was built from real field experience and trades supervision—not theory. The mission is to shorten the learning curve for people entering the skilled trades and give working tradespeople practical tools to earn more, move up, and build something bigger.</p></div>
         <div className="audience-block"><p className="section-label">/ WHO THIS IS FOR</p><h3>WHO THIS IS FOR</h3><ul>{audiences.map((audience, index) => <li key={audience}><span>0{index + 1}</span>{audience}</li>)}</ul></div>
       </section>
 
