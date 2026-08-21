@@ -43,7 +43,7 @@ test("server-renders credibility and audience content", async () => {
   const html = await (await render()).text();
   assert.match(html, /BUILT FROM[\s\S]*THE[\s\S]*FIELD\./i);
   assert.match(html, /real field experience and trades supervision—not theory/i);
-  assert.match(html, /Zachary Cameron Ellis/i);
+  assert.match(html, /Zachary Ellis/i);
   assert.match(html, /9798193043355/i);
   assert.match(html, /WHO THIS IS FOR/i);
   for (const audience of ["Students exploring skilled trades", "Apprentices and entry-level technicians", "Career changers", "Working tradespeople", "Future supervisors and owners", "Trade schools and workforce programs"]) assert.match(html, new RegExp(audience, "i"));
@@ -74,10 +74,12 @@ test("server-renders the official book page, cover, portrait, and current editio
   assert.equal(response.status, 200);
   const html = await response.text();
 
-  assert.match(html, /<title>TRADE HUSTL3 Book \| Zachary Cameron Ellis<\/title>/i);
+  assert.match(html, /<title>TRADE HUSTL3 Book \| Zachary Ellis<\/title>/i);
   assert.match(html, /<link rel="canonical" href="https:\/\/tradehustl3\.com\/book"/i);
   assert.match(html, /trade-hustl3-book-cover\.jpg/i);
-  assert.match(html, /zachary-cameron-ellis-author\.jpg/i);
+  assert.match(html, /zachary-ellis-author\.jpg/i);
+  assert.match(html, /DA[\s\S]*MAINTENANCE[\s\S]*MANE\./i);
+  assert.equal(html.includes("Zachary Cameron Ellis"), false);
   assert.match(html, /September 15, 2026/i);
   assert.match(html, /Current KDP ISBN/i);
   assert.match(html, /9798193043355/i);

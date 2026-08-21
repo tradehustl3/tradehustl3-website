@@ -4,14 +4,14 @@ import { SITE_NAME, SITE_URL } from "../site";
 
 const BOOK_TITLE = "TRADE HUSTL3: Built by Hustle, Backed by Trades";
 const BOOK_DESCRIPTION =
-  "A practical skilled-trades career guide by Zachary Cameron Ellis covering more than 200 trades, entry paths, certifications, earning power, ownership, and a 90-Day Action Plan.";
+  "A practical skilled-trades career guide by Zachary Ellis covering more than 200 trades, entry paths, certifications, earning power, ownership, and a 90-Day Action Plan.";
 
 export const metadata: Metadata = {
-  title: "TRADE HUSTL3 Book | Zachary Cameron Ellis",
+  title: "TRADE HUSTL3 Book | Zachary Ellis",
   description: BOOK_DESCRIPTION,
   alternates: { canonical: "/book" },
   openGraph: {
-    title: "TRADE HUSTL3 Book | Zachary Cameron Ellis",
+    title: "TRADE HUSTL3 Book | Zachary Ellis",
     description: BOOK_DESCRIPTION,
     url: "/book",
     siteName: SITE_NAME,
@@ -27,7 +27,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "TRADE HUSTL3 Book | Zachary Cameron Ellis",
+    title: "TRADE HUSTL3 Book | Zachary Ellis",
     description: BOOK_DESCRIPTION,
     images: ["/trade-hustl3-book-cover.jpg"],
   },
@@ -48,8 +48,8 @@ const bookStructuredData = {
   image: `${SITE_URL}/trade-hustl3-book-cover.jpg`,
   author: {
     "@type": "Person",
-    "@id": `${SITE_URL}/#zachary-cameron-ellis`,
-    name: "Zachary Cameron Ellis",
+    "@id": `${SITE_URL}/#zachary-ellis`,
+    name: "Zachary Ellis",
   },
   publisher: {
     "@type": "Organization",
@@ -118,7 +118,7 @@ export default function BookPage() {
           <p className="book-release-badge">Amazon release · September 15, 2026</p>
           <h1>TRADE<br />HUSTL<span>3</span></h1>
           <p className="book-subtitle">Built by Hustle, Backed by Trades.</p>
-          <p className="book-byline">By Zachary Cameron Ellis</p>
+          <p className="book-byline">By Zachary Ellis</p>
           <p className="book-lead">
             The blueprint, the game plan, and the movement for people ready to build a future through skilled trades. Go from exploring your options to choosing a path, developing real ability, increasing your value, and creating something that belongs to you.
           </p>
@@ -183,8 +183,8 @@ export default function BookPage() {
         <div className="author-portrait-frame">
           <Image
             className="author-portrait"
-            src="/zachary-cameron-ellis-author.jpg"
-            alt="Zachary Cameron Ellis, author of TRADE HUSTL3"
+            src="/zachary-ellis-author.jpg"
+            alt="Zachary Ellis, author of TRADE HUSTL3"
             width={1086}
             height={1448}
           />
@@ -192,9 +192,9 @@ export default function BookPage() {
         </div>
         <div className="author-copy">
           <p className="section-label">/ ABOUT THE AUTHOR</p>
-          <h2>ZACHARY<br />CAMERON <span>ELLIS.</span></h2>
+          <h2>DA<br />MAINTENANCE <span>MANE.</span></h2>
           <p>
-            Zachary Cameron Ellis is an HVAC and facilities maintenance professional with more than nine years of hands-on experience solving real problems in the field. His background includes residential and commercial systems, preventive maintenance, facilities operations, team leadership, vendor coordination, and large-scale equipment.
+            Zachary Ellis is an HVAC and facilities maintenance professional with more than nine years of hands-on experience solving real problems in the field. His background includes residential and commercial systems, preventive maintenance, facilities operations, team leadership, vendor coordination, and large-scale equipment.
           </p>
           <p>
             TRADE HUSTL3 was born from real work, real lessons, and a clear purpose: help the next generation enter skilled trades, earn through useful ability, and elevate into leadership, ownership, and long-term opportunity.
