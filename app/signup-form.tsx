@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import type { FormEvent } from "react";
 
 const interests = [
   "The TRADE HUSTL3 Book",
@@ -15,6 +16,8 @@ const utmKeys = ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm
 
 export function SignupForm() {
   const formRef = useRef<HTMLFormElement>(null);
+  const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
+  const [message, setMessage] = useState("");
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -27,21 +30,58 @@ export function SignupForm() {
     }
   }, []);
 
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const formElement = event.currentTarget;
+    setStatus("submitting");
+    setMessage("");
+
+    const form = new FormData(formElement);
+
+    try {
+      const response = await fetch("/api/subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: form.get("email"),
+          interest: form.get("interest"),
+        }),
+      });
+      const result = await response.json() as { message?: string };
+
+      if (!response.ok) throw new Error(result.message || "Signup failed.");
+
+      setStatus("success");
+      setMessage(result.message || "You're on the TRADE HUSTL3 list.");
+      formElement.reset();
+    } catch (error) {
+      setStatus("error");
+      setMessage(error instanceof Error ? error.message : "We couldn't save your signup. Please try again.");
+    }
+  }
+
   return (
-    <form ref={formRef} className="signup" action="mailto:hello@tradehustl3.com" method="post" encType="text/plain">
-      <div className="field-group interest-group">
-        <label htmlFor="interest">I&apos;M INTERESTED IN</label>
-        <select id="interest" name="interest" required defaultValue="">
-          <option value="" disabled>SELECT AN INTEREST</option>
-          {interests.map((interest) => <option key={interest} value={interest}>{interest}</option>)}
-        </select>
-      </div>
-      <div className="field-group email-group">
-        <label htmlFor="email">EMAIL ADDRESS</label>
-        <input id="email" name="email" type="email" autoComplete="email" placeholder="YOU@EXAMPLE.COM" required />
-      </div>
-      {utmKeys.map((key) => <input key={key} type="hidden" name={key} defaultValue="" />)}
-      <button type="submit">KEEP ME POSTED <span>↗</span></button>
-    </form>
+    <>
+      <form ref={formRef} className="signup" onSubmit={handleSubmit}>
+        <div className="field-group interest-group">
+          <label htmlFor="interest">I&apos;M INTERESTED IN</label>
+          <select id="interest" name="interest" required defaultValue="" disabled={status === "submitting"}>
+            <option value="" disabled>SELECT AN INTEREST</option>
+            {interests.map((interest) => <option key={interest} value={interest}>{interest}</option>)}
+          </select>
+        </div>
+        <div className="field-group email-group">
+          <label htmlFor="email">EMAIL ADDRESS</label>
+          <input id="email" name="email" type="email" autoComplete="email" placeholder="YOU@EXAMPLE.COM" required disabled={status === "submitting"} />
+        </div>
+        {utmKeys.map((key) => <input key={key} type="hidden" name={key} defaultValue="" />)}
+        <button type="submit" disabled={status === "submitting"}>
+          {status === "submitting" ? "SAVING..." : "KEEP ME POSTED"} <span>↗</span>
+        </button>
+      </form>
+      <p className={`signup-status ${status}`} role={status === "error" ? "alert" : "status"} aria-live="polite">
+        {message}
+      </p>
+    </>
   );
 }
