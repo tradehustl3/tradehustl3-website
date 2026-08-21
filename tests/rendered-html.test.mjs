@@ -2,11 +2,13 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
+async function renderPath(pathname = "/") {
+  const worker = await loadWorker();
+  return worker.fetch(new Request(`http://localhost${pathname}`, { headers: { accept: "text/html" } }), { ASSETS: { fetch: async () => new Response("Not found", { status: 404 }) } }, { waitUntil() {}, passThroughOnException() {} });
+}
+
 async function render() {
-  const workerUrl = new URL("../dist/server/index.js", import.meta.url);
-  workerUrl.searchParams.set("test", `${process.pid}-${Date.now()}`);
-  const { default: worker } = await import(workerUrl.href);
-  return worker.fetch(new Request("http://localhost/", { headers: { accept: "text/html" } }), { ASSETS: { fetch: async () => new Response("Not found", { status: 404 }) } }, { waitUntil() {}, passThroughOnException() {} });
+  return renderPath("/");
 }
 
 async function loadWorker() {
@@ -55,7 +57,9 @@ test("publishes a canonical XML sitemap and robots discovery hints", async () =>
   const sitemapResponse = await worker.fetch(new Request("https://tradehustl3.com/sitemap.xml"), env, ctx);
   assert.equal(sitemapResponse.status, 200);
   assert.match(sitemapResponse.headers.get("content-type") ?? "", /xml/i);
-  assert.match(await sitemapResponse.text(), /<loc>https:\/\/tradehustl3\.com<\/loc>/i);
+  const sitemap = await sitemapResponse.text();
+  assert.match(sitemap, /<loc>https:\/\/tradehustl3\.com<\/loc>/i);
+  assert.match(sitemap, /<loc>https:\/\/tradehustl3\.com\/book<\/loc>/i);
 
   const robotsResponse = await worker.fetch(new Request("https://tradehustl3.com/robots.txt"), env, ctx);
   assert.equal(robotsResponse.status, 200);
@@ -63,6 +67,24 @@ test("publishes a canonical XML sitemap and robots discovery hints", async () =>
   assert.match(robots, /User-Agent:\s*\*/i);
   assert.match(robots, /Allow:\s*\//i);
   assert.match(robots, /Sitemap:\s*https:\/\/tradehustl3\.com\/sitemap\.xml/i);
+});
+
+test("server-renders the official book page, cover, portrait, and current edition details", async () => {
+  const response = await renderPath("/book");
+  assert.equal(response.status, 200);
+  const html = await response.text();
+
+  assert.match(html, /<title>TRADE HUSTL3 Book \| Zachary Cameron Ellis<\/title>/i);
+  assert.match(html, /<link rel="canonical" href="https:\/\/tradehustl3\.com\/book"/i);
+  assert.match(html, /trade-hustl3-book-cover\.jpg/i);
+  assert.match(html, /zachary-cameron-ellis-author\.jpg/i);
+  assert.match(html, /September 15, 2026/i);
+  assert.match(html, /Current KDP ISBN/i);
+  assert.match(html, /9798193043355/i);
+  assert.match(html, /586 pages/i);
+  assert.match(html, /90-Day Action Plan/i);
+  assert.match(html, /more than 200 skilled trades/i);
+  assert.match(html, /"datePublished":"2026-09-15"/i);
 });
 
 test("redirects the duplicate www hostname to the canonical domain", async () => {
