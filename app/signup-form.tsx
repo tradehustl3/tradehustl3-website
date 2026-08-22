@@ -45,6 +45,9 @@ export function SignupForm() {
         body: JSON.stringify({
           email: form.get("email"),
           interest: form.get("interest"),
+          utm_source: form.get("utm_source"),
+          utm_medium: form.get("utm_medium"),
+          utm_campaign: form.get("utm_campaign"),
         }),
       });
       const result = await response.json() as { message?: string };
