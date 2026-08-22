@@ -30,7 +30,7 @@ test("server-renders the corrected TRADE HUSTL3 brand and metadata", async () =>
   assert.match(html, /property="og:url" content="https:\/\/tradehustl3\.com\/?"/i);
   assert.match(html, /property="og:image" content="https:\/\/tradehustl3\.com\/og\.png"/i);
   assert.equal(html.includes("localhost:3000"), false);
-  for (const schemaType of ["Organization", "Person", "WebSite", "Book"]) assert.match(html, new RegExp(`\"@type\":\"${schemaType}\"`, "i"));
+  for (const schemaType of ["Organization", "Person", "WebSite", "Book"]) assert.match(html, new RegExp(`"@type":"${schemaType}"`, "i"));
   assert.match(html, /aria-label="TRADE HUSTL3 home"/i);
   assert.equal(html.toUpperCase().includes("TRA" + "D3"), false);
   assert.match(html, /trade-hustl3-logo\.png/i);
@@ -88,7 +88,9 @@ test("server-renders the official book page, cover, portrait, and current editio
   assert.match(html, /more than 200 skilled trades/i);
   assert.match(html, /"datePublished":"2026-09-15"/i);
   assert.match(html, /Read a Free Sample/i);
-  assert.match(html, /trade-hustl3-free-sample\.pdf/i);
+  assert.match(html, /UNLOCK THE FREE SAMPLE/i);
+  assert.match(html, /EMAIL TO RECEIVE THE SAMPLE/i);
+  assert.doesNotMatch(html, /href="\/trade-hustl3-free-sample\.pdf/i);
   assert.match(html, /FIRST 7 PAGES/i);
   assert.match(html, /21 CHAPTERS[\s\S]*FOUR PARTS[\s\S]*ONE PLAN/i);
   assert.match(html, /What a Skilled Trade Really Is/i);
@@ -203,10 +205,91 @@ test("subscriber endpoint rejects invalid submissions", async () => {
   assert.equal(prepared, false);
 });
 
+test("book signup unlocks and emails the gated seven-page sample", async () => {
+  const worker = await loadWorker();
+  const brevoCalls = [];
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (input, init) => {
+    brevoCalls.push({ input: String(input), body: JSON.parse(String(init.body)) });
+    return new Response(null, { status: 201 });
+  };
+  const DB = {
+    prepare() {
+      return {
+        bind() {
+          return { async run() { return { success: true }; } };
+        },
+      };
+    },
+  };
+
+  let signupResponse;
+  try {
+    signupResponse = await worker.fetch(
+      new Request("https://tradehustl3.com/api/subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: "reader@example.com", interest: "The TRADE HUSTL3 Book" }),
+      }),
+      { DB, BREVO_API_KEY: "test-brevo-key", BREVO_LIST_ID: "3" },
+      { waitUntil() {}, passThroughOnException() {} },
+    );
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+
+  assert.equal(signupResponse.status, 200);
+  const result = await signupResponse.json();
+  assert.equal(result.ok, true);
+  assert.equal(result.sampleUrl, "/api/free-sample");
+  assert.match(signupResponse.headers.get("set-cookie") ?? "", /tradehustl3_sample_access=granted/i);
+  assert.deepEqual(brevoCalls.map((call) => call.input), [
+    "https://api.brevo.com/v3/contacts",
+    "https://api.brevo.com/v3/smtp/email",
+  ]);
+  assert.match(brevoCalls[1].body.htmlContent, /https:\/\/tradehustl3\.com\/api\/free-sample\?token=/i);
+
+  const cookie = (signupResponse.headers.get("set-cookie") ?? "").split(";")[0];
+  const sampleResponse = await worker.fetch(
+    new Request("https://tradehustl3.com/api/free-sample", { headers: { Cookie: cookie } }),
+    {
+      BREVO_API_KEY: "test-brevo-key",
+      ASSETS: { fetch: async () => new Response("%PDF-test", { headers: { "Content-Type": "application/pdf" } }) },
+    },
+    { waitUntil() {}, passThroughOnException() {} },
+  );
+  assert.equal(sampleResponse.status, 200);
+  assert.match(sampleResponse.headers.get("content-type") ?? "", /application\/pdf/i);
+  assert.equal(await sampleResponse.text(), "%PDF-test");
+});
+
+test("direct sample access is sent back to the signup gate", async () => {
+  const worker = await loadWorker();
+  const response = await worker.fetch(
+    new Request("https://tradehustl3.com/trade-hustl3-free-sample.pdf"),
+    {},
+    { waitUntil() {}, passThroughOnException() {} },
+  );
+  assert.equal(response.status, 302);
+  assert.equal(response.headers.get("location"), "https://tradehustl3.com/book#sample");
+});
+
 test("server-renders every part of the TRADE HUSTL3 ecosystem", async () => {
   const html = await (await render()).text();
   for (const title of ["The Book", "Resume Builder", "HUSTL3 PRO", "Jobsite Gear", "Program Partnerships"]) assert.match(html, new RegExp(`<h3>${title}<\\/h3>`, "i"));
+  assert.match(html, /href="\/resume"/i);
   assert.match(html, /href="mailto:partners@tradehustl3\.com"/i);
+});
+
+test("routes the branded resume link to the Resume Builder", async () => {
+  const worker = await loadWorker();
+  const response = await worker.fetch(
+    new Request("https://tradehustl3.com/resume"),
+    {},
+    { waitUntil() {}, passThroughOnException() {} },
+  );
+  assert.equal(response.status, 302);
+  assert.equal(response.headers.get("location"), "https://trad3-hustl3-resume.maintenanceman.chatgpt.site/");
 });
 
 test("uses the official navy, red, and gold palette", async () => {

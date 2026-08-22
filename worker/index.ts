@@ -7,6 +7,7 @@ interface Env {
   DB: D1Database;
   BREVO_API_KEY?: string;
   BREVO_LIST_ID?: string;
+  BREVO_SAMPLE_SENDER_EMAIL?: string;
   IMAGES: {
     input(stream: ReadableStream): {
       transform(options: Record<string, unknown>): {
@@ -30,6 +31,12 @@ const allowedInterests = new Set([
   "General TRADE HUSTL3 Updates",
 ]);
 
+const FREE_SAMPLE_ASSET = "/trade-hustl3-free-sample.pdf";
+const FREE_SAMPLE_ROUTE = "/api/free-sample";
+const SAMPLE_COOKIE = "tradehustl3_sample_access=granted";
+const SITE_URL = "https://tradehustl3.com";
+const encoder = new TextEncoder();
+
 function jsonResponse(body: Record<string, unknown>, status = 200): Response {
   return Response.json(body, {
     status,
@@ -43,6 +50,55 @@ function isValidEmail(email: string): boolean {
 
 function trackingValue(value: unknown): string {
   return typeof value === "string" ? value.trim().slice(0, 160) : "";
+}
+
+function toBase64Url(value: ArrayBuffer): string {
+  const bytes = new Uint8Array(value);
+  let binary = "";
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+}
+
+function fromBase64Url(value: string): Uint8Array {
+  const padded = value.replace(/-/g, "+").replace(/_/g, "/") + "=".repeat((4 - value.length % 4) % 4);
+  const binary = atob(padded);
+  return Uint8Array.from(binary, (character) => character.charCodeAt(0));
+}
+
+async function sampleSigningKey(secret: string): Promise<CryptoKey> {
+  return crypto.subtle.importKey(
+    "raw",
+    encoder.encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign", "verify"],
+  );
+}
+
+async function createSampleToken(email: string, secret: string): Promise<string> {
+  const emailDigest = new Uint8Array(await crypto.subtle.digest("SHA-256", encoder.encode(email)));
+  const fingerprint = Array.from(emailDigest.slice(0, 12), (byte) => byte.toString(16).padStart(2, "0")).join("");
+  const expires = Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7;
+  const payload = `${expires}.${fingerprint}`;
+  const signature = await crypto.subtle.sign("HMAC", await sampleSigningKey(secret), encoder.encode(payload));
+  return `${payload}.${toBase64Url(signature)}`;
+}
+
+async function isValidSampleToken(token: string, secret: string): Promise<boolean> {
+  const [expiresValue, fingerprint, signatureValue, ...rest] = token.split(".");
+  const expires = Number(expiresValue);
+  if (rest.length || !Number.isSafeInteger(expires) || expires < Math.floor(Date.now() / 1000) || !/^[a-f0-9]{24}$/.test(fingerprint) || !signatureValue) return false;
+
+  try {
+    return crypto.subtle.verify(
+      "HMAC",
+      await sampleSigningKey(secret),
+      fromBase64Url(signatureValue),
+      encoder.encode(`${expiresValue}.${fingerprint}`),
+    );
+  } catch {
+    return false;
+  }
 }
 
 async function syncBrevoContact(
@@ -92,6 +148,40 @@ async function syncBrevoContact(
   }
 }
 
+async function sendSampleDeliveryEmail(env: Env, email: string, sampleUrl: string): Promise<void> {
+  const apiKey = env.BREVO_API_KEY?.trim();
+  if (!apiKey) throw new Error("Brevo sample delivery is not configured.");
+
+  const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+      "api-key": apiKey,
+    },
+    body: JSON.stringify({
+      sender: {
+        name: "TRADE HUSTL3",
+        email: env.BREVO_SAMPLE_SENDER_EMAIL?.trim() || "updates@tradehustl3.com",
+      },
+      to: [{ email }],
+      subject: "Your TRADE HUSTL3 free sample is ready",
+      htmlContent: `
+        <div style="background:#071a2b;padding:32px;font-family:Arial,sans-serif;color:#f4f0e7">
+          <div style="max-width:620px;margin:auto">
+            <p style="color:#d6a52a;font-weight:700;letter-spacing:2px">ENTER. EARN. ELEVATE.</p>
+            <h1 style="margin:16px 0;color:#ffffff">Your seven-page sample is ready.</h1>
+            <p style="font-size:16px;line-height:1.6;color:#c5ced5">Get an early look at TRADE HUSTL3 and start building a future through useful skill.</p>
+            <p style="margin:28px 0"><a href="${sampleUrl}" style="display:inline-block;background:#d9361e;color:#ffffff;padding:16px 22px;text-decoration:none;font-weight:700">READ THE FREE SAMPLE</a></p>
+            <p style="color:#d6a52a;font-weight:700">BUILT BY HUSTL3. BACKED BY TRADES.</p>
+          </div>
+        </div>`,
+    }),
+  });
+
+  if (!response.ok) throw new Error(`Brevo sample delivery failed with status ${response.status}.`);
+}
+
 async function subscribe(request: Request, env: Env): Promise<Response> {
   if (request.method !== "POST") {
     return new Response("Method Not Allowed", {
@@ -136,11 +226,56 @@ async function subscribe(request: Request, env: Env): Promise<Response> {
       utmCampaign: trackingValue(body.utm_campaign),
     });
 
+    if (interest === "The TRADE HUSTL3 Book") {
+      const apiKey = env.BREVO_API_KEY?.trim();
+      if (!apiKey) throw new Error("Sample delivery is not configured.");
+      const token = await createSampleToken(email, apiKey);
+      const emailedSampleUrl = `${SITE_URL}${FREE_SAMPLE_ROUTE}?token=${encodeURIComponent(token)}`;
+      try {
+        await sendSampleDeliveryEmail(env, email, emailedSampleUrl);
+      } catch (error) {
+        console.error("Free sample delivery email failed", error);
+      }
+
+      return Response.json(
+        { ok: true, message: "You're in. Your seven-page sample is ready, and a copy is on its way to your inbox.", sampleUrl: FREE_SAMPLE_ROUTE },
+        {
+          headers: {
+            "Cache-Control": "no-store",
+            "Set-Cookie": `${SAMPLE_COOKIE}; Max-Age=604800; Path=/; HttpOnly; Secure; SameSite=Lax`,
+          },
+        },
+      );
+    }
+
     return jsonResponse({ ok: true, message: "You're on the TRADE HUSTL3 list." });
   } catch (error) {
     console.error("Subscriber signup failed", error);
     return jsonResponse({ ok: false, message: "We couldn't save your signup. Please try again." }, 500);
   }
+}
+
+async function serveFreeSample(request: Request, env: Env): Promise<Response> {
+  const url = new URL(request.url);
+  const cookieGranted = request.headers.get("Cookie")?.split(";").some((cookie) => cookie.trim() === SAMPLE_COOKIE) ?? false;
+  const token = url.searchParams.get("token") || "";
+  const secret = env.BREVO_API_KEY?.trim() || "";
+  const tokenGranted = Boolean(token && secret && await isValidSampleToken(token, secret));
+
+  if (!cookieGranted && !tokenGranted) {
+    return Response.redirect(`${SITE_URL}/book#sample`, 302);
+  }
+
+  const assetUrl = new URL(FREE_SAMPLE_ASSET, request.url);
+  const asset = await env.ASSETS.fetch(new Request(assetUrl));
+  if (!asset.ok || !asset.body) return new Response("Free sample unavailable.", { status: 404 });
+
+  const headers = new Headers(asset.headers);
+  headers.set("Content-Type", "application/pdf");
+  headers.set("Content-Disposition", 'inline; filename="TRADE-HUSTL3-Free-Sample.pdf"');
+  headers.set("Cache-Control", "private, no-store");
+  if (tokenGranted) headers.set("Set-Cookie", `${SAMPLE_COOKIE}; Max-Age=604800; Path=/; HttpOnly; Secure; SameSite=Lax`);
+  return new Response(asset.body, { status: 200, headers });
 }
 
 // Image security config. SVG sources with .svg extension auto-skip the
@@ -158,8 +293,20 @@ const worker = {
       return Response.redirect(url.toString(), 308);
     }
 
+    if (url.pathname === "/resume") {
+      return Response.redirect("https://trad3-hustl3-resume.maintenanceman.chatgpt.site", 302);
+    }
+
     if (url.pathname === "/api/subscribe") {
       return subscribe(request, env);
+    }
+
+    if (url.pathname === FREE_SAMPLE_ROUTE) {
+      return serveFreeSample(request, env);
+    }
+
+    if (url.pathname === FREE_SAMPLE_ASSET) {
+      return Response.redirect(`${SITE_URL}/book#sample`, 302);
     }
 
     if (url.pathname === "/_vinext/image") {

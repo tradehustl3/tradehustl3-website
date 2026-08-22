@@ -14,10 +14,12 @@ const interests = [
 
 const utmKeys = ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term"] as const;
 
-export function SignupForm() {
+export function SignupForm({ mode = "general" }: { mode?: "general" | "sample" }) {
   const formRef = useRef<HTMLFormElement>(null);
   const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
   const [message, setMessage] = useState("");
+  const [sampleUrl, setSampleUrl] = useState("");
+  const isSample = mode === "sample";
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -35,6 +37,7 @@ export function SignupForm() {
     const formElement = event.currentTarget;
     setStatus("submitting");
     setMessage("");
+    setSampleUrl("");
 
     const form = new FormData(formElement);
 
@@ -50,12 +53,13 @@ export function SignupForm() {
           utm_campaign: form.get("utm_campaign"),
         }),
       });
-      const result = await response.json() as { message?: string };
+      const result = await response.json() as { message?: string; sampleUrl?: string };
 
       if (!response.ok) throw new Error(result.message || "Signup failed.");
 
       setStatus("success");
       setMessage(result.message || "You're on the TRADE HUSTL3 list.");
+      setSampleUrl(result.sampleUrl || "");
       formElement.reset();
     } catch (error) {
       setStatus("error");
@@ -65,26 +69,35 @@ export function SignupForm() {
 
   return (
     <>
-      <form ref={formRef} className="signup" onSubmit={handleSubmit}>
-        <div className="field-group interest-group">
-          <label htmlFor="interest">I&apos;M INTERESTED IN</label>
-          <select id="interest" name="interest" required defaultValue="" disabled={status === "submitting"}>
-            <option value="" disabled>SELECT AN INTEREST</option>
-            {interests.map((interest) => <option key={interest} value={interest}>{interest}</option>)}
-          </select>
-        </div>
+      <form ref={formRef} className={isSample ? "signup sample-signup" : "signup"} onSubmit={handleSubmit}>
+        {isSample ? (
+          <input type="hidden" name="interest" value="The TRADE HUSTL3 Book" />
+        ) : (
+          <div className="field-group interest-group">
+            <label htmlFor="interest">I&apos;M INTERESTED IN</label>
+            <select id="interest" name="interest" required defaultValue="" disabled={status === "submitting"}>
+              <option value="" disabled>SELECT AN INTEREST</option>
+              {interests.map((interest) => <option key={interest} value={interest}>{interest}</option>)}
+            </select>
+          </div>
+        )}
         <div className="field-group email-group">
-          <label htmlFor="email">EMAIL ADDRESS</label>
-          <input id="email" name="email" type="email" autoComplete="email" placeholder="YOU@EXAMPLE.COM" required disabled={status === "submitting"} />
+          <label htmlFor={isSample ? "sample-email" : "email"}>{isSample ? "EMAIL TO RECEIVE THE SAMPLE" : "EMAIL ADDRESS"}</label>
+          <input id={isSample ? "sample-email" : "email"} name="email" type="email" autoComplete="email" placeholder="YOU@EXAMPLE.COM" required disabled={status === "submitting"} />
         </div>
         {utmKeys.map((key) => <input key={key} type="hidden" name={key} defaultValue="" />)}
         <button type="submit" disabled={status === "submitting"}>
-          {status === "submitting" ? "SAVING..." : "KEEP ME POSTED"} <span>↗</span>
+          {status === "submitting" ? "UNLOCKING..." : isSample ? "UNLOCK THE FREE SAMPLE" : "KEEP ME POSTED"} <span>↗</span>
         </button>
       </form>
       <p className={`signup-status ${status}`} role={status === "error" ? "alert" : "status"} aria-live="polite">
         {message}
       </p>
+      {isSample && status === "success" && sampleUrl && (
+        <a className="sample-unlock-link" href={sampleUrl} target="_blank" rel="noreferrer">
+          OPEN YOUR 7-PAGE SAMPLE <span>↗</span>
+        </a>
+      )}
     </>
   );
 }

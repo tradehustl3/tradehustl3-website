@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Image from "next/image";
+import Link from "next/link";
 import { SITE_NAME, SITE_URL } from "../site";
+import { SignupForm } from "../signup-form";
 import ReleaseCountdown from "./release-countdown";
 
 const BOOK_TITLE = "TRADE HUSTL3: Built by Hustle, Backed by Trades";
@@ -137,16 +139,16 @@ export default function BookPage() {
       />
 
       <header className="site-header book-site-header">
-        <a className="brand-link" href="/" aria-label="TRADE HUSTL3 home">
+        <Link className="brand-link" href="/" aria-label="TRADE HUSTL3 home">
           <Image className="header-logo" src="/trade-hustl3-logo.png" alt="TRADE HUSTL3 logo" width={68} height={68} priority />
           <span className="wordmark">TRADE HUSTL<span>3</span></span>
-        </a>
+        </Link>
         <nav aria-label="Book page navigation">
-          <a href="/">Home</a>
+          <Link href="/">Home</Link>
           <a href="#sample">Free sample</a>
           <a href="#chapters">Chapters</a>
           <a href="#author">Author</a>
-          <a className="nav-cta" href="/trade-hustl3-free-sample.pdf" target="_blank" rel="noopener">Read a Free Sample</a>
+          <a className="nav-cta" href="#sample">Read a Free Sample</a>
         </nav>
       </header>
 
@@ -177,8 +179,8 @@ export default function BookPage() {
             The blueprint, the game plan, and the movement for people ready to build a future through skilled trades. Go from exploring your options to choosing a path, developing real ability, increasing your value, and creating something that belongs to you.
           </p>
           <div className="hero-actions">
-            <a className="button button-primary" href="/trade-hustl3-free-sample.pdf" target="_blank" rel="noopener">Read a Free Sample <span>↗</span></a>
-            <a className="button button-secondary" href="/#join">Get launch updates</a>
+            <a className="button button-primary" href="#sample">Read a Free Sample <span>↗</span></a>
+            <Link className="button button-secondary" href="/#join">Get launch updates</Link>
           </div>
           <div className="countdown-wrap">
             <p>Launch countdown · September 15, 2026</p>
@@ -199,11 +201,10 @@ export default function BookPage() {
           <p className="section-label">/ READ BEFORE RELEASE</p>
           <h2>START WITH THE<br /><span>FIRST 7 PAGES.</span></h2>
           <p>
-            This official sample includes the title page, the complete table of contents, and the opening pages of Chapter 1—pulled directly from the final book interior.
+            Enter your email to unlock the official seven-page sample. It includes the title page, the complete table of contents, and the opening pages of Chapter 1—pulled directly from the final book interior.
           </p>
-          <a className="button button-primary" href="/trade-hustl3-free-sample.pdf" target="_blank" rel="noopener">
-            Read a Free Sample <span>↗</span>
-          </a>
+          <SignupForm mode="sample" />
+          <small className="sample-consent">By unlocking the sample, you agree to receive TRADE HUSTL3 book and career updates. Unsubscribe anytime.</small>
         </div>
         <figure className="sample-quote">
           <blockquote>
@@ -320,12 +321,12 @@ export default function BookPage() {
           <article><span>KINDLE eBOOK</span><strong>$9.99</strong><small>Scheduled for September 15, 2026</small></article>
           <article><span>MORE RETAILERS</span><strong>COMING NEXT</strong><small>Links will be added when confirmed</small></article>
         </div>
-        <a className="button button-primary" href="/#join">Join the book list <span>↗</span></a>
+        <Link className="button button-primary" href="/#join">Join the book list <span>↗</span></Link>
       </section>
 
       <footer>
         <div className="footer-brand"><div className="wordmark">TRADE HUSTL<span>3</span></div><p>Built by Hustle, Backed by Trades.</p></div>
-        <div className="footer-links"><a href="/">Home</a><a href="#sample">Free sample</a><a href="#chapters">Chapters</a><a href="#author">Author</a><a href="mailto:partners@tradehustl3.com">Partnerships</a></div>
+        <div className="footer-links"><Link href="/">Home</Link><a href="#sample">Free sample</a><a href="#chapters">Chapters</a><a href="#author">Author</a><a href="mailto:partners@tradehustl3.com">Partnerships</a></div>
         <p className="copyright">© 2026 TRADE HUSTL3. ALL GRIT RESERVED.</p>
       </footer>
     </main>
