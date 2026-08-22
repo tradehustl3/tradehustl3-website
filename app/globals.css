@@ -88,8 +88,8 @@ h1 em { color:var(--red); font-style:normal; } h1 strong { color:var(--cream); f
 .sample-intro h2 { margin:23px 0 30px; font-size:clamp(57px,7vw,105px); line-height:.87; }
 .sample-intro>p:not(.section-label) { max-width:660px; margin:0 0 33px; color:#bac6ce; font-size:17px; line-height:1.7; }
 .sample-quote { margin:0; padding:clamp(32px,5vw,68px); border:1px solid #d6a52a77; background:linear-gradient(135deg,#0b2b42,#071a2b); box-shadow:18px 18px 0 #d9361e22; }
-.sample-quote blockquote { font-size:clamp(38px,4.8vw,69px); line-height:1.03; text-transform:none; }
-.sample-quote blockquote span { color:var(--red); }
+.sample-quote blockquote { font-size:clamp(34px,4vw,58px); line-height:1.07; text-transform:none; }
+.sample-quote blockquote span { display:block; margin-top:20px; color:var(--red); }
 .sample-quote figcaption { margin-top:30px; color:var(--gold); font-size:10px; font-weight:900; letter-spacing:.15em; line-height:1.5; text-transform:uppercase; }
 .book-discover { background:var(--cream); color:var(--navy); }
 .book-section-heading { display:flex; justify-content:space-between; align-items:flex-end; gap:40px; margin-bottom:58px; }

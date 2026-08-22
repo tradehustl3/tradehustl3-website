@@ -42,7 +42,6 @@ const bookStructuredData = {
   description: BOOK_DESCRIPTION,
   isbn: "9798193043355",
   datePublished: "2026-09-15",
-  numberOfPages: 586,
   bookFormat: "https://schema.org/Paperback",
   inLanguage: "en-US",
   url: `${SITE_URL}/book`,
@@ -171,7 +170,7 @@ export default function BookPage() {
           <p className="book-byline">By Zachary Ellis</p>
           <div className="book-hero-proof" aria-label="Book highlights">
             <span><strong>200+</strong><small>Skilled trades</small></span>
-            <span><strong>586</strong><small>Pages</small></span>
+            <span><strong>21</strong><small>Chapters</small></span>
             <span><strong>90</strong><small>Day action plan</small></span>
           </div>
           <p className="book-lead">
@@ -191,16 +190,16 @@ export default function BookPage() {
       <section className="book-facts" aria-label="Book details">
         <div><span>Release</span><strong>September 15, 2026</strong></div>
         <div><span>Formats</span><strong>Paperback + eBook</strong></div>
-        <div><span>Length</span><strong>586 pages</strong></div>
+        <div><span>Starting point</span><strong>No experience required</strong></div>
         <div><span>Current KDP ISBN</span><strong>9798193043355</strong></div>
       </section>
 
       <section className="book-sample" id="sample">
         <div className="sample-intro">
           <p className="section-label">/ READ BEFORE RELEASE</p>
-          <h2>START WITH THE<br /><span>FIRST 10 PAGES.</span></h2>
+          <h2>START WITH THE<br /><span>FIRST 7 PAGES.</span></h2>
           <p>
-            This official sample includes the title page, the complete table of contents, and the opening of Chapter 1—pulled directly from the final 586-page interior.
+            This official sample includes the title page, the complete table of contents, and the opening pages of Chapter 1—pulled directly from the final book interior.
           </p>
           <a className="button button-primary" href="/trade-hustl3-free-sample.pdf" target="_blank" rel="noopener">
             Read a Free Sample <span>↗</span>
@@ -208,9 +207,9 @@ export default function BookPage() {
         </div>
         <figure className="sample-quote">
           <blockquote>
-            “On my first day working in HVAC, I fell through an attic. Not once. Not twice. <span>Three times.</span>”
+            “You don’t have to wait for somebody to hand you a future. Learn a skill. Build your value. Earn your own. Create something nobody can take from you. <span>BUILT BY HUSTL3. BACKED BY TRADES.</span>”
           </blockquote>
-          <figcaption>From Chapter 1 · What a Skilled Trade Really Is</figcaption>
+          <figcaption>The TRADE HUSTL3 mindset</figcaption>
         </figure>
       </section>
 
