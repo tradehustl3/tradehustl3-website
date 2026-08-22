@@ -14,6 +14,11 @@ const isCodexSeatbeltSandbox = process.env.CODEX_SANDBOX === "seatbelt";
 const localBindingConfig = {
   main: "./worker/index.ts",
   compatibility_flags: ["nodejs_compat"],
+  keep_vars: true,
+  vars: {
+    BREVO_LIST_ID: "3",
+    BREVO_SAMPLE_SENDER_EMAIL: "updates@tradehustl3.com",
+  },
   d1_databases: d1
     ? [
         {
