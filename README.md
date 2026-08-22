@@ -28,6 +28,22 @@ The `/api/subscribe` endpoint stores normalized signups in D1 and creates or upd
 
 Brevo must contain the text attributes `INTEREST`, `SIGNUP_SOURCE`, `UTM_SOURCE`, `UTM_MEDIUM`, and `UTM_CAMPAIGN`.
 
+## Secure eBook fulfillment
+
+The direct eBook button unlocks at midnight Eastern Time on September 15, 2026. Stripe fulfillment is handled by the Cloudflare Worker and never exposes the full book through public site assets.
+
+Production setup:
+
+- Create the private R2 bucket `tradehustl3-books` and bind it to the Worker as `BOOKS`.
+- Upload the customer PDF with the exact object key `trade-hustl3-complete-ebook.pdf`.
+- Apply `drizzle/0000_curious_ravenous.sql` to the production D1 database.
+- Add `STRIPE_WEBHOOK_SECRET` as an encrypted runtime secret.
+- Add `STRIPE_EBOOK_PAYMENT_LINK_ID` as a regular runtime variable.
+- Create a Stripe webhook for `checkout.session.completed` at `https://tradehustl3.com/api/stripe/webhook`.
+- Set the Payment Link post-payment redirect to `https://tradehustl3.com/book/order-confirmed?session_id={CHECKOUT_SESSION_ID}`.
+
+The webhook accepts only paid USD sessions for the configured Payment Link at exactly $9.99. Successful buyers are recorded in D1 and receive a private download link through Brevo. The PDF is streamed from R2 only when a valid paid-order token is presented.
+
 ## Production build
 
 ```bash

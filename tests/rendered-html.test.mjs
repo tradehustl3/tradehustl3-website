@@ -17,6 +17,24 @@ async function loadWorker() {
   return (await import(workerUrl.href)).default;
 }
 
+async function createStripeSignature(payload, secret) {
+  const timestamp = Math.floor(Date.now() / 1000);
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const signature = await crypto.subtle.sign(
+    "HMAC",
+    key,
+    new TextEncoder().encode(`${timestamp}.${payload}`),
+  );
+  const hex = Array.from(new Uint8Array(signature), (byte) => byte.toString(16).padStart(2, "0")).join("");
+  return `t=${timestamp},v1=${hex}`;
+}
+
 test("server-renders the corrected TRADE HUSTL3 brand and metadata", async () => {
   const response = await render();
   assert.equal(response.status, 200);
@@ -271,6 +289,134 @@ test("direct sample access is sent back to the signup gate", async () => {
   );
   assert.equal(response.status, 302);
   assert.equal(response.headers.get("location"), "https://tradehustl3.com/book#sample");
+});
+
+test("keeps the direct eBook gated until the September 15 launch", async () => {
+  const html = await (await renderPath("/book")).text();
+  assert.match(html, /DIRECT eBOOK/i);
+  assert.match(html, /\$9\.99/i);
+  assert.match(html, /Available September 15/i);
+  assert.match(html, /Secure PDF delivered by email after payment/i);
+  assert.doesNotMatch(html, /href="https:\/\/buy\.stripe\.com\/4gM5kwaQ96EscGf2uKbfO02"/i);
+});
+
+test("renders a private order-confirmation page", async () => {
+  const response = await renderPath("/book/order-confirmed");
+  assert.equal(response.status, 200);
+  const html = await response.text();
+  assert.match(html, /PAYMENT CONFIRMED/i);
+  assert.match(html, /private download link/i);
+  assert.match(html, /name="robots" content="noindex, nofollow"/i);
+});
+
+test("verifies paid Stripe eBook orders, emails a private link, and serves the R2 file", async () => {
+  const worker = await loadWorker();
+  const webhookSecret = "whsec_test_trade_hustl3";
+  const paymentLinkId = "plink_trade_hustl3_ebook";
+  const sessionId = "cs_live_trade_hustl3";
+  const event = JSON.stringify({
+    type: "checkout.session.completed",
+    data: {
+      object: {
+        id: sessionId,
+        payment_link: paymentLinkId,
+        payment_status: "paid",
+        amount_total: 999,
+        currency: "usd",
+        customer_details: { email: "BUYER@example.com" },
+      },
+    },
+  });
+  const signature = await createStripeSignature(event, webhookSecret);
+  let order;
+  const DB = {
+    prepare(sql) {
+      return {
+        bind(...values) {
+          return {
+            async run() {
+              if (/INSERT OR IGNORE INTO ebook_orders/i.test(sql) && !order) {
+                order = {
+                  stripe_session_id: values[0],
+                  email: values[1],
+                  payment_link_id: values[2],
+                  amount_total: values[3],
+                  currency: values[4],
+                  status: "paid",
+                  download_token: values[5],
+                  emailed_at: null,
+                };
+              }
+              if (/UPDATE ebook_orders SET emailed_at/i.test(sql) && order) order.emailed_at = "2026-09-15 04:00:00";
+              return { success: true };
+            },
+            async first() {
+              if (/WHERE stripe_session_id/i.test(sql) && order?.stripe_session_id === values[0]) {
+                return { download_token: order.download_token, emailed_at: order.emailed_at };
+              }
+              if (/WHERE download_token/i.test(sql) && order?.download_token === values[0]) {
+                return { stripe_session_id: order.stripe_session_id };
+              }
+              return null;
+            },
+          };
+        },
+      };
+    },
+  };
+  const BOOKS = {
+    async get(key) {
+      assert.equal(key, "trade-hustl3-complete-ebook.pdf");
+      return { body: "%PDF-complete-ebook", httpEtag: '"ebook-etag"' };
+    },
+  };
+  const brevoCalls = [];
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (input, init) => {
+    brevoCalls.push({ input: String(input), body: JSON.parse(String(init.body)) });
+    return new Response(null, { status: 201 });
+  };
+
+  let webhookResponse;
+  try {
+    webhookResponse = await worker.fetch(
+      new Request("https://tradehustl3.com/api/stripe/webhook", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Stripe-Signature": signature },
+        body: event,
+      }),
+      {
+        DB,
+        BOOKS,
+        BREVO_API_KEY: "brevo-test-key",
+        BREVO_SAMPLE_SENDER_EMAIL: "updates@tradehustl3.com",
+        STRIPE_WEBHOOK_SECRET: webhookSecret,
+        STRIPE_EBOOK_PAYMENT_LINK_ID: paymentLinkId,
+      },
+      { waitUntil() {}, passThroughOnException() {} },
+    );
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+
+  assert.equal(webhookResponse.status, 200);
+  assert.deepEqual(await webhookResponse.json(), { received: true });
+  assert.equal(order.email, "buyer@example.com");
+  assert.equal(brevoCalls.length, 1);
+  assert.equal(brevoCalls[0].input, "https://api.brevo.com/v3/smtp/email");
+  assert.match(brevoCalls[0].body.subject, /eBook is ready/i);
+  const downloadUrl = brevoCalls[0].body.htmlContent.match(/href="([^"]+\/api\/ebook-download\?token=[^"]+)"/i)?.[1];
+  assert.ok(downloadUrl);
+
+  const ebookResponse = await worker.fetch(
+    new Request(downloadUrl),
+    { DB, BOOKS },
+    { waitUntil() {}, passThroughOnException() {} },
+  );
+  assert.equal(ebookResponse.status, 200);
+  assert.match(ebookResponse.headers.get("content-type") ?? "", /application\/pdf/i);
+  assert.match(ebookResponse.headers.get("content-disposition") ?? "", /TRADE-HUSTL3-Complete-eBook\.pdf/i);
+  assert.equal(await ebookResponse.text(), "%PDF-complete-ebook");
 });
 
 test("server-renders every part of the TRADE HUSTL3 ecosystem", async () => {

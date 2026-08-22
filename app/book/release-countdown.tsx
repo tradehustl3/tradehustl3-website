@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-const RELEASE_TIME = new Date("2026-09-15T00:00:00Z").getTime();
+const RELEASE_TIME = new Date("2026-09-15T00:00:00-04:00").getTime();
 
 type RemainingTime = {
   days: number;
@@ -25,7 +25,7 @@ function getRemainingTime(): RemainingTime | null {
 }
 
 export default function ReleaseCountdown() {
-  const [remaining, setRemaining] = useState<RemainingTime | undefined>();
+  const [remaining, setRemaining] = useState<RemainingTime | null | undefined>();
 
   useEffect(() => {
     const updateCountdown = () => setRemaining(getRemainingTime());
