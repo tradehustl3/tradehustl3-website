@@ -83,17 +83,20 @@ test("server-renders the official book page, cover, portrait, and current editio
   assert.match(html, /September 15, 2026/i);
   assert.match(html, /Current KDP ISBN/i);
   assert.match(html, /9798193043355/i);
-  assert.match(html, /586 pages/i);
+  assert.match(html, /No experience required/i);
   assert.match(html, /90-Day Action Plan/i);
   assert.match(html, /more than 200 skilled trades/i);
   assert.match(html, /"datePublished":"2026-09-15"/i);
   assert.match(html, /Read a Free Sample/i);
   assert.match(html, /trade-hustl3-free-sample\.pdf/i);
-  assert.match(html, /FIRST 10 PAGES/i);
+  assert.match(html, /FIRST 7 PAGES/i);
   assert.match(html, /21 CHAPTERS[\s\S]*FOUR PARTS[\s\S]*ONE PLAN/i);
   assert.match(html, /What a Skilled Trade Really Is/i);
   assert.match(html, /Final Word: Build Something That Belongs to You/i);
   assert.match(html, /Launch countdown/i);
+  assert.match(html, /Earn your own/i);
+  assert.match(html, /BUILT BY HUSTL3[\s\S]*BACKED BY TRADES/i);
+  assert.equal(html.includes("fell through an attic"), false);
 });
 
 test("redirects the duplicate www hostname to the canonical domain", async () => {
