@@ -40,7 +40,7 @@ const FREE_SAMPLE_ROUTE = "/api/free-sample";
 const SAMPLE_COOKIE = "tradehustl3_sample_access=granted";
 const STRIPE_WEBHOOK_ROUTE = "/api/stripe/webhook";
 const EBOOK_DOWNLOAD_ROUTE = "/api/ebook-download";
-const EBOOK_OBJECT_KEY = "trade-hustl3-complete-ebook.pdf";
+const EBOOK_OBJECT_KEY = "TRADE-HUSTL3-COMPLETE-EBOOK.pdf";
 const SITE_URL = "https://tradehustl3.com";
 const encoder = new TextEncoder();
 

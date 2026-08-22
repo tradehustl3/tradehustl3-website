@@ -366,7 +366,7 @@ test("verifies paid Stripe eBook orders, emails a private link, and serves the R
   };
   const BOOKS = {
     async get(key) {
-      assert.equal(key, "trade-hustl3-complete-ebook.pdf");
+      assert.equal(key, "TRADE-HUSTL3-COMPLETE-EBOOK.pdf");
       return { body: "%PDF-complete-ebook", httpEtag: '"ebook-etag"' };
     },
   };
