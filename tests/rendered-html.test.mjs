@@ -87,6 +87,13 @@ test("server-renders the official book page, cover, portrait, and current editio
   assert.match(html, /90-Day Action Plan/i);
   assert.match(html, /more than 200 skilled trades/i);
   assert.match(html, /"datePublished":"2026-09-15"/i);
+  assert.match(html, /Read a Free Sample/i);
+  assert.match(html, /trade-hustl3-free-sample\.pdf/i);
+  assert.match(html, /FIRST 10 PAGES/i);
+  assert.match(html, /21 CHAPTERS[\s\S]*FOUR PARTS[\s\S]*ONE PLAN/i);
+  assert.match(html, /What a Skilled Trade Really Is/i);
+  assert.match(html, /Final Word: Build Something That Belongs to You/i);
+  assert.match(html, /Launch countdown/i);
 });
 
 test("redirects the duplicate www hostname to the canonical domain", async () => {

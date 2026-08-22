@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import { SITE_NAME, SITE_URL } from "../site";
+import ReleaseCountdown from "./release-countdown";
 
 const BOOK_TITLE = "TRADE HUSTL3: Built by Hustle, Backed by Trades";
 const BOOK_DESCRIPTION =
@@ -80,6 +81,54 @@ const parts = [
   ["PART IV", "Build Control", "Move from employee thinking toward leadership, ownership, and a focused 90-Day Action Plan."],
 ];
 
+const chapterParts = [
+  {
+    label: "PART I",
+    title: "Build the Foundation",
+    chapters: [
+      "What a Skilled Trade Really Is",
+      "Why Skilled Trades Are in High Demand",
+      "College vs. Trades: The Real Math",
+      "The No-Experience Path",
+      "Learning on the Job",
+      "Trade Myths That Keep People Broke",
+    ],
+  },
+  {
+    label: "PART II",
+    title: "Know the Landscape",
+    chapters: [
+      "The Different Types of Skilled Trades",
+      "Construction Trades",
+      "Mechanical Trades: HVAC, Plumbing, Pipefitting, and Refrigeration",
+      "Electrical and Power Trades",
+      "Industrial, Energy, and Infrastructure Trades",
+      "Fabrication and Precision Trades",
+      "Service, Maintenance, and Facilities Trades",
+      "Personal Skilled Trades and Solo Ownership Paths",
+    ],
+  },
+  {
+    label: "PART III",
+    title: "Turn Skill Into Money and Leverage",
+    chapters: [
+      "Certifications That Actually Matter",
+      "How Pay Really Increases in the Trades",
+      "Side Work, Overtime, and Specialization",
+    ],
+  },
+  {
+    label: "PART IV",
+    title: "Turn Leverage Into Control",
+    chapters: [
+      "From Employee to Owner",
+      "Choosing the Right Trade for You",
+      "The Trade Hustle 90-Day Action Plan",
+      "Final Word: Build Something That Belongs to You",
+    ],
+  },
+];
+
 export default function BookPage() {
   return (
     <main className="book-page">
@@ -95,9 +144,10 @@ export default function BookPage() {
         </a>
         <nav aria-label="Book page navigation">
           <a href="/">Home</a>
-          <a href="#inside">Inside the book</a>
+          <a href="#sample">Free sample</a>
+          <a href="#chapters">Chapters</a>
           <a href="#author">Author</a>
-          <a className="nav-cta" href="/#join">Get release updates</a>
+          <a className="nav-cta" href="/trade-hustl3-free-sample.pdf" target="_blank" rel="noopener">Read a Free Sample</a>
         </nav>
       </header>
 
@@ -119,12 +169,21 @@ export default function BookPage() {
           <h1>TRADE<br />HUSTL<span>3</span></h1>
           <p className="book-subtitle">Built by Hustle, Backed by Trades.</p>
           <p className="book-byline">By Zachary Ellis</p>
+          <div className="book-hero-proof" aria-label="Book highlights">
+            <span><strong>200+</strong><small>Skilled trades</small></span>
+            <span><strong>586</strong><small>Pages</small></span>
+            <span><strong>90</strong><small>Day action plan</small></span>
+          </div>
           <p className="book-lead">
             The blueprint, the game plan, and the movement for people ready to build a future through skilled trades. Go from exploring your options to choosing a path, developing real ability, increasing your value, and creating something that belongs to you.
           </p>
           <div className="hero-actions">
-            <a className="button button-primary" href="/#join">Get launch updates <span>↗</span></a>
-            <a className="button button-secondary" href="#inside">Explore the book</a>
+            <a className="button button-primary" href="/trade-hustl3-free-sample.pdf" target="_blank" rel="noopener">Read a Free Sample <span>↗</span></a>
+            <a className="button button-secondary" href="/#join">Get launch updates</a>
+          </div>
+          <div className="countdown-wrap">
+            <p>Launch countdown · September 15, 2026</p>
+            <ReleaseCountdown />
           </div>
         </div>
       </section>
@@ -134,6 +193,25 @@ export default function BookPage() {
         <div><span>Formats</span><strong>Paperback + eBook</strong></div>
         <div><span>Length</span><strong>586 pages</strong></div>
         <div><span>Current KDP ISBN</span><strong>9798193043355</strong></div>
+      </section>
+
+      <section className="book-sample" id="sample">
+        <div className="sample-intro">
+          <p className="section-label">/ READ BEFORE RELEASE</p>
+          <h2>START WITH THE<br /><span>FIRST 10 PAGES.</span></h2>
+          <p>
+            This official sample includes the title page, the complete table of contents, and the opening of Chapter 1—pulled directly from the final 586-page interior.
+          </p>
+          <a className="button button-primary" href="/trade-hustl3-free-sample.pdf" target="_blank" rel="noopener">
+            Read a Free Sample <span>↗</span>
+          </a>
+        </div>
+        <figure className="sample-quote">
+          <blockquote>
+            “On my first day working in HVAC, I fell through an attic. Not once. Not twice. <span>Three times.</span>”
+          </blockquote>
+          <figcaption>From Chapter 1 · What a Skilled Trade Really Is</figcaption>
+        </figure>
       </section>
 
       <section className="book-discover" id="inside">
@@ -167,6 +245,36 @@ export default function BookPage() {
             </article>
           ))}
         </div>
+      </section>
+
+      <section className="book-toc" id="chapters">
+        <div className="book-section-heading">
+          <p className="section-label">/ TABLE OF CONTENTS</p>
+          <h2>21 CHAPTERS. FOUR PARTS.<br /><span>ONE PLAN.</span></h2>
+        </div>
+        <div className="toc-grid">
+          {chapterParts.map((part, partIndex) => {
+            const chapterOffset = chapterParts
+              .slice(0, partIndex)
+              .reduce((total, item) => total + item.chapters.length, 0);
+
+            return (
+              <details className="toc-part" key={part.label} open={partIndex === 0}>
+                <summary>
+                  <span>{part.label}</span>
+                  <strong>{part.title}</strong>
+                  <small>{part.chapters.length} chapters</small>
+                </summary>
+                <ol start={chapterOffset + 1}>
+                  {part.chapters.map((chapter) => <li key={chapter}>{chapter}</li>)}
+                </ol>
+              </details>
+            );
+          })}
+        </div>
+        <p className="toc-appendices">
+          Also included: Appendix A—200 Skilled Trades · Appendix B—Training, Certification &amp; Supply-House Resource Directory · Appendix C—Official Source Notes
+        </p>
       </section>
 
       <section className="book-audience">
@@ -218,7 +326,7 @@ export default function BookPage() {
 
       <footer>
         <div className="footer-brand"><div className="wordmark">TRADE HUSTL<span>3</span></div><p>Built by Hustle, Backed by Trades.</p></div>
-        <div className="footer-links"><a href="/">Home</a><a href="#inside">Inside the book</a><a href="#author">Author</a><a href="mailto:partners@tradehustl3.com">Partnerships</a></div>
+        <div className="footer-links"><a href="/">Home</a><a href="#sample">Free sample</a><a href="#chapters">Chapters</a><a href="#author">Author</a><a href="mailto:partners@tradehustl3.com">Partnerships</a></div>
         <p className="copyright">© 2026 TRADE HUSTL3. ALL GRIT RESERVED.</p>
       </footer>
     </main>
