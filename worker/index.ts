@@ -1,6 +1,7 @@
 /** Cloudflare Worker entry point for the TRADE HUSTL3 website. */
 import { handleImageOptimization, DEFAULT_DEVICE_SIZES, DEFAULT_IMAGE_SIZES } from "vinext/server/image-optimization";
 import handler from "vinext/server/app-router-entry";
+import freeSampleDataUrl from "./assets/trade-hustl3-free-sample.pdf?inline";
 
 interface Env {
   ASSETS: Fetcher;
@@ -31,7 +32,7 @@ const allowedInterests = new Set([
   "General TRADE HUSTL3 Updates",
 ]);
 
-const FREE_SAMPLE_ASSET = "/trade-hustl3-free-sample.pdf";
+const FREE_SAMPLE_PUBLIC_PATH = "/trade-hustl3-free-sample.pdf";
 const FREE_SAMPLE_ROUTE = "/api/free-sample";
 const SAMPLE_COOKIE = "tradehustl3_sample_access=granted";
 const SITE_URL = "https://tradehustl3.com";
@@ -266,16 +267,15 @@ async function serveFreeSample(request: Request, env: Env): Promise<Response> {
     return Response.redirect(`${SITE_URL}/book#sample`, 302);
   }
 
-  const assetUrl = new URL(FREE_SAMPLE_ASSET, request.url);
-  const asset = await env.ASSETS.fetch(new Request(assetUrl));
-  if (!asset.ok || !asset.body) return new Response("Free sample unavailable.", { status: 404 });
-
-  const headers = new Headers(asset.headers);
+  const encoded = freeSampleDataUrl.slice(freeSampleDataUrl.indexOf(",") + 1);
+  const sample = Uint8Array.from(atob(encoded), (character) => character.charCodeAt(0));
+  const headers = new Headers();
   headers.set("Content-Type", "application/pdf");
   headers.set("Content-Disposition", 'inline; filename="TRADE-HUSTL3-Free-Sample.pdf"');
   headers.set("Cache-Control", "private, no-store");
+  headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
   if (tokenGranted) headers.set("Set-Cookie", `${SAMPLE_COOKIE}; Max-Age=604800; Path=/; HttpOnly; Secure; SameSite=Lax`);
-  return new Response(asset.body, { status: 200, headers });
+  return new Response(sample, { status: 200, headers });
 }
 
 // Image security config. SVG sources with .svg extension auto-skip the
@@ -305,7 +305,7 @@ const worker = {
       return serveFreeSample(request, env);
     }
 
-    if (url.pathname === FREE_SAMPLE_ASSET) {
+    if (url.pathname === FREE_SAMPLE_PUBLIC_PATH) {
       return Response.redirect(`${SITE_URL}/book#sample`, 302);
     }
 

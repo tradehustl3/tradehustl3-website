@@ -254,13 +254,12 @@ test("book signup unlocks and emails the gated seven-page sample", async () => {
     new Request("https://tradehustl3.com/api/free-sample", { headers: { Cookie: cookie } }),
     {
       BREVO_API_KEY: "test-brevo-key",
-      ASSETS: { fetch: async () => new Response("%PDF-test", { headers: { "Content-Type": "application/pdf" } }) },
     },
     { waitUntil() {}, passThroughOnException() {} },
   );
   assert.equal(sampleResponse.status, 200);
   assert.match(sampleResponse.headers.get("content-type") ?? "", /application\/pdf/i);
-  assert.equal(await sampleResponse.text(), "%PDF-test");
+  assert.match(await sampleResponse.text(), /^%PDF-/);
 });
 
 test("direct sample access is sent back to the signup gate", async () => {
