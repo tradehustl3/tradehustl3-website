@@ -123,6 +123,12 @@ test("server-renders the required segmented signup", async () => {
 test("subscriber endpoint validates and stores normalized signups", async () => {
   const worker = await loadWorker();
   const calls = [];
+  const brevoCalls = [];
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (input, init) => {
+    brevoCalls.push({ input: String(input), init });
+    return new Response(null, { status: 201 });
+  };
   const DB = {
     prepare(sql) {
       return {
@@ -137,21 +143,47 @@ test("subscriber endpoint validates and stores normalized signups", async () => 
       };
     },
   };
-  const response = await worker.fetch(
-    new Request("http://localhost/api/subscribe", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: "  MEMBER@Example.com ", interest: "HUSTL3 PRO" }),
-    }),
-    { DB },
-    { waitUntil() {}, passThroughOnException() {} },
-  );
+  let response;
+  try {
+    response = await worker.fetch(
+      new Request("http://localhost/api/subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: "  MEMBER@Example.com ",
+          interest: "HUSTL3 PRO",
+          utm_source: "google",
+          utm_medium: "organic",
+          utm_campaign: "book-launch",
+        }),
+      }),
+      { DB, BREVO_API_KEY: "test-brevo-key", BREVO_LIST_ID: "3" },
+      { waitUntil() {}, passThroughOnException() {} },
+    );
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
 
   assert.equal(response.status, 200);
   assert.deepEqual(await response.json(), { ok: true, message: "You're on the TRADE HUSTL3 list." });
   assert.equal(calls.length, 1);
   assert.deepEqual(calls[0].values, ["member@example.com", "HUSTL3 PRO"]);
   assert.match(calls[0].sql, /ON CONFLICT\(email\) DO UPDATE/i);
+  assert.equal(brevoCalls.length, 1);
+  assert.equal(brevoCalls[0].input, "https://api.brevo.com/v3/contacts");
+  assert.equal(brevoCalls[0].init.headers["api-key"], "test-brevo-key");
+  assert.deepEqual(JSON.parse(brevoCalls[0].init.body), {
+    email: "member@example.com",
+    attributes: {
+      INTEREST: "HUSTL3 PRO",
+      SIGNUP_SOURCE: "website",
+      UTM_SOURCE: "google",
+      UTM_MEDIUM: "organic",
+      UTM_CAMPAIGN: "book-launch",
+    },
+    listIds: [3],
+    updateEnabled: true,
+  });
 });
 
 test("subscriber endpoint rejects invalid submissions", async () => {

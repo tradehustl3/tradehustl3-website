@@ -73,7 +73,7 @@ export default function Home() {
       <section className="join" id="join">
         <p className="section-label">/ GET IN EARLY</p><h2>CHOOSE YOUR<br />NEXT <span>MOVE.</span></h2>
         <p>Tell us what you want updates about. We&apos;ll keep what lands in your inbox focused on the tools, releases, and opportunities that matter to you.</p>
-        <SignupForm /><small>No spam. Just moves worth making.</small>
+        <SignupForm /><small>By joining, you agree to receive TRADE HUSTL3 emails. Unsubscribe anytime. No spam—just moves worth making.</small>
       </section>
 
       <footer>

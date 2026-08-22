@@ -5,6 +5,8 @@ import handler from "vinext/server/app-router-entry";
 interface Env {
   ASSETS: Fetcher;
   DB: D1Database;
+  BREVO_API_KEY?: string;
+  BREVO_LIST_ID?: string;
   IMAGES: {
     input(stream: ReadableStream): {
       transform(options: Record<string, unknown>): {
@@ -39,6 +41,57 @@ function isValidEmail(email: string): boolean {
   return email.length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
+function trackingValue(value: unknown): string {
+  return typeof value === "string" ? value.trim().slice(0, 160) : "";
+}
+
+async function syncBrevoContact(
+  env: Env,
+  contact: {
+    email: string;
+    interest: string;
+    utmSource: string;
+    utmMedium: string;
+    utmCampaign: string;
+  },
+): Promise<void> {
+  const apiKey = env.BREVO_API_KEY?.trim();
+  const listId = Number.parseInt(env.BREVO_LIST_ID ?? "", 10);
+
+  if (!apiKey || !Number.isSafeInteger(listId) || listId <= 0) {
+    throw new Error("Brevo signup integration is not configured.");
+  }
+
+  const attributes: Record<string, string> = {
+    INTEREST: contact.interest,
+    SIGNUP_SOURCE: "website",
+  };
+  if (contact.utmSource) attributes.UTM_SOURCE = contact.utmSource;
+  if (contact.utmMedium) attributes.UTM_MEDIUM = contact.utmMedium;
+  if (contact.utmCampaign) attributes.UTM_CAMPAIGN = contact.utmCampaign;
+
+  const response = await fetch("https://api.brevo.com/v3/contacts", {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+      "api-key": apiKey,
+    },
+    body: JSON.stringify({
+      email: contact.email,
+      attributes,
+      listIds: [listId],
+      updateEnabled: true,
+    }),
+  });
+
+  if (!response.ok) {
+    const detail = (await response.text()).slice(0, 500);
+    console.error("Brevo contact sync failed", response.status, detail);
+    throw new Error("Brevo contact sync failed.");
+  }
+}
+
 async function subscribe(request: Request, env: Env): Promise<Response> {
   if (request.method !== "POST") {
     return new Response("Method Not Allowed", {
@@ -52,7 +105,13 @@ async function subscribe(request: Request, env: Env): Promise<Response> {
   }
 
   try {
-    const body = await request.json() as { email?: unknown; interest?: unknown };
+    const body = await request.json() as {
+      email?: unknown;
+      interest?: unknown;
+      utm_source?: unknown;
+      utm_medium?: unknown;
+      utm_campaign?: unknown;
+    };
     const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
     const interest = typeof body.interest === "string" ? body.interest.trim() : "";
 
@@ -68,6 +127,14 @@ async function subscribe(request: Request, env: Env): Promise<Response> {
          source = excluded.source,
          status = 'active'`,
     ).bind(email, interest).run();
+
+    await syncBrevoContact(env, {
+      email,
+      interest,
+      utmSource: trackingValue(body.utm_source),
+      utmMedium: trackingValue(body.utm_medium),
+      utmCampaign: trackingValue(body.utm_campaign),
+    });
 
     return jsonResponse({ ok: true, message: "You're on the TRADE HUSTL3 list." });
   } catch (error) {
