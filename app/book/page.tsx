@@ -186,7 +186,7 @@ export default function BookPage() {
             src="/zachary-ellis-author.jpg"
             alt="Zachary Ellis, author of TRADE HUSTL3"
             width={1086}
-            height={1448}
+            height={1449}
           />
           <p>Official back-cover portrait</p>
         </div>
