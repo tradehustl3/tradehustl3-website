@@ -5,7 +5,7 @@ import hostingConfig from "./.openai/hosting.json";
 
 const D1_DATABASE_NAME = "tradehustl3-db";
 const D1_DATABASE_ID = "a8f61038-9a87-49b2-b708-b14400422d1b";
-const R2_BUCKET_NAME = "tradehustl3-books";
+const R2_BUCKET_NAME = "tradehustl3books";
 
 const { d1, r2 } = hostingConfig;
 
