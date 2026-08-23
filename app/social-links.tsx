@@ -2,6 +2,7 @@ const FACEBOOK_URL = "https://www.facebook.com/profile.php?id=61593457675674";
 const INSTAGRAM_URL = "https://www.instagram.com/tradehustl3/";
 const YOUTUBE_URL = "https://www.youtube.com/@tradehustl3";
 const X_URL = "https://x.com/maintenancmt1k";
+const LINKEDIN_URL = "https://www.linkedin.com/in/zachary-ellis-a797193ab";
 
 export function SocialLinks() {
   return (
@@ -53,6 +54,18 @@ export function SocialLinks() {
           <path d="M18.9 2h3.68l-8.04 9.19L24 22h-7.41l-5.8-7.59L4.15 22H.46l8.62-9.85L0 2h7.59l5.24 6.93L18.9 2Zm-1.29 18.1h2.04L6.48 3.8H4.29L17.61 20.1Z" />
         </svg>
         <span className="sr-only">X</span>
+      </a>
+      <a
+        href={LINKEDIN_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="Connect with Zachary Ellis on LinkedIn"
+        title="LinkedIn"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M20.45 20.45h-3.56v-5.57c0-1.33-.03-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.34V8.98h3.42v1.57h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.29ZM5.32 7.41a2.07 2.07 0 1 1 0-4.13 2.07 2.07 0 0 1 0 4.13ZM7.1 20.45H3.54V8.98H7.1v11.47ZM22.23 0H1.77C.79 0 0 .77 0 1.72v20.56C0 23.23.79 24 1.77 24h20.46c.98 0 1.77-.77 1.77-1.72V1.72C24 .77 23.21 0 22.23 0Z" />
+        </svg>
+        <span className="sr-only">LinkedIn</span>
       </a>
     </nav>
   );
