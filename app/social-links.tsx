@@ -1,6 +1,7 @@
 const FACEBOOK_URL = "https://www.facebook.com/profile.php?id=61593457675674";
 const INSTAGRAM_URL = "https://www.instagram.com/tradehustl3/";
 const YOUTUBE_URL = "https://www.youtube.com/@tradehustl3";
+const X_URL = "https://x.com/maintenancmt1k";
 
 export function SocialLinks() {
   return (
@@ -40,6 +41,18 @@ export function SocialLinks() {
           <path d="M23.5 6.2a3 3 0 0 0-2.1-2.12C19.55 3.58 12 3.58 12 3.58s-7.55 0-9.4.5A3 3 0 0 0 .5 6.2 31.4 31.4 0 0 0 0 12a31.4 31.4 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.12c1.85.5 9.4.5 9.4.5s7.55 0 9.4-.5a3 3 0 0 0 2.1-2.12A31.4 31.4 0 0 0 24 12a31.4 31.4 0 0 0-.5-5.8ZM9.55 15.56V8.44L15.82 12l-6.27 3.56Z" />
         </svg>
         <span className="sr-only">YouTube</span>
+      </a>
+      <a
+        href={X_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="Follow TRADE HUSTL3 on X"
+        title="X"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M18.9 2h3.68l-8.04 9.19L24 22h-7.41l-5.8-7.59L4.15 22H.46l8.62-9.85L0 2h7.59l5.24 6.93L18.9 2Zm-1.29 18.1h2.04L6.48 3.8H4.29L17.61 20.1Z" />
+        </svg>
+        <span className="sr-only">X</span>
       </a>
     </nav>
   );

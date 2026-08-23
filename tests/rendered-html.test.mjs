@@ -430,6 +430,8 @@ test("server-renders every part of the TRADE HUSTL3 ecosystem", async () => {
   assert.match(html, /aria-label="Follow TRADE HUSTL3 on Instagram"/i);
   assert.match(html, /href="https:\/\/www\.youtube\.com\/@tradehustl3"/i);
   assert.match(html, /aria-label="Subscribe to TRADE HUSTL3 on YouTube"/i);
+  assert.match(html, /href="https:\/\/x\.com\/maintenancmt1k"/i);
+  assert.match(html, /aria-label="Follow TRADE HUSTL3 on X"/i);
 });
 
 test("routes the branded resume link to the Resume Builder", async () => {
