@@ -14,12 +14,22 @@ const interests = [
 
 const utmKeys = ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term"] as const;
 
+type AnalyticsWindow = Window & {
+  gtag?: (command: "event", eventName: string, parameters?: Record<string, string>) => void;
+};
+
+function trackEvent(eventName: string, parameters: Record<string, string>) {
+  (window as AnalyticsWindow).gtag?.("event", eventName, parameters);
+}
+
 export function SignupForm({ mode = "general" }: { mode?: "general" | "sample" }) {
   const formRef = useRef<HTMLFormElement>(null);
+  const hasTrackedFormStart = useRef(false);
   const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
   const [message, setMessage] = useState("");
   const [sampleUrl, setSampleUrl] = useState("");
   const isSample = mode === "sample";
+  const formName = isSample ? "free_7_page_sample" : "general_interest";
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -31,6 +41,12 @@ export function SignupForm({ mode = "general" }: { mode?: "general" | "sample" }
       if (preserved && input instanceof HTMLInputElement) input.value = preserved;
     }
   }, []);
+
+  function handleFormStart() {
+    if (hasTrackedFormStart.current) return;
+    hasTrackedFormStart.current = true;
+    trackEvent("form_start", { form_name: formName });
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -51,6 +67,8 @@ export function SignupForm({ mode = "general" }: { mode?: "general" | "sample" }
           utm_source: form.get("utm_source"),
           utm_medium: form.get("utm_medium"),
           utm_campaign: form.get("utm_campaign"),
+          utm_content: form.get("utm_content"),
+          utm_term: form.get("utm_term"),
         }),
       });
       const result = await response.json() as { message?: string; sampleUrl?: string };
@@ -60,6 +78,11 @@ export function SignupForm({ mode = "general" }: { mode?: "general" | "sample" }
       setStatus("success");
       setMessage(result.message || "You're on the TRADE HUSTL3 list.");
       setSampleUrl(result.sampleUrl || "");
+      trackEvent(isSample ? "generate_lead" : "sign_up", {
+        form_name: formName,
+        lead_source: String(form.get("utm_source") || "direct"),
+        campaign: String(form.get("utm_campaign") || "none"),
+      });
       formElement.reset();
     } catch (error) {
       setStatus("error");
@@ -69,7 +92,12 @@ export function SignupForm({ mode = "general" }: { mode?: "general" | "sample" }
 
   return (
     <>
-      <form ref={formRef} className={isSample ? "signup sample-signup" : "signup"} onSubmit={handleSubmit}>
+      <form
+        ref={formRef}
+        className={isSample ? "signup sample-signup" : "signup"}
+        onFocusCapture={handleFormStart}
+        onSubmit={handleSubmit}
+      >
         {isSample ? (
           <input type="hidden" name="interest" value="The TRADE HUSTL3 Book" />
         ) : (
