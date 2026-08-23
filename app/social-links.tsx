@@ -3,6 +3,7 @@ const INSTAGRAM_URL = "https://www.instagram.com/tradehustl3/";
 const YOUTUBE_URL = "https://www.youtube.com/@tradehustl3";
 const X_URL = "https://x.com/maintenancmt1k";
 const LINKEDIN_URL = "https://www.linkedin.com/in/zachary-ellis-a797193ab";
+const TIKTOK_URL = "https://www.tiktok.com/@da.maintenance.ma5";
 
 export function SocialLinks() {
   return (
@@ -66,6 +67,18 @@ export function SocialLinks() {
           <path d="M20.45 20.45h-3.56v-5.57c0-1.33-.03-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.34V8.98h3.42v1.57h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.29ZM5.32 7.41a2.07 2.07 0 1 1 0-4.13 2.07 2.07 0 0 1 0 4.13ZM7.1 20.45H3.54V8.98H7.1v11.47ZM22.23 0H1.77C.79 0 0 .77 0 1.72v20.56C0 23.23.79 24 1.77 24h20.46c.98 0 1.77-.77 1.77-1.72V1.72C24 .77 23.21 0 22.23 0Z" />
         </svg>
         <span className="sr-only">LinkedIn</span>
+      </a>
+      <a
+        href={TIKTOK_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="Follow Da Maintenance Mane on TikTok"
+        title="TikTok"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 1 1-2-2.75V9.4a6.34 6.34 0 1 0 5.45 6.27V8.73a8.2 8.2 0 0 0 4.77 1.52V6.81c-.34 0-.67-.04-1-.12Z" />
+        </svg>
+        <span className="sr-only">TikTok</span>
       </a>
     </nav>
   );
