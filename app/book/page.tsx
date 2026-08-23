@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { SITE_NAME, SITE_URL } from "../site";
 import { SignupForm } from "../signup-form";
+import LaunchPurchaseButton from "./launch-purchase-button";
 import ReleaseCountdown from "./release-countdown";
 
 const BOOK_TITLE = "TRADE HUSTL3: Built by Hustle, Backed by Trades";
@@ -314,14 +315,14 @@ export default function BookPage() {
         <p className="section-label">/ AVAILABILITY</p>
         <h2>THE FIRST RELEASE.<br /><span>MORE PATHS COMING.</span></h2>
         <p>
-          The first edition is scheduled to launch on Amazon on September 15, 2026. The current ISBN shown here is specific to the KDP paperback edition. An independently owned ISBN and additional retailer links will be added as distribution expands.
+          The first edition launches September 15, 2026. Purchase the secure direct eBook from TRADE HUSTL3 or choose the Amazon paperback and Kindle editions when their listings go live.
         </p>
         <div className="availability-grid">
           <article><span>AMAZON PAPERBACK</span><strong>$24.99</strong><small>Scheduled for September 15, 2026</small></article>
-          <article><span>KINDLE eBOOK</span><strong>$9.99</strong><small>Scheduled for September 15, 2026</small></article>
-          <article><span>MORE RETAILERS</span><strong>COMING NEXT</strong><small>Links will be added when confirmed</small></article>
+          <article><span>DIRECT eBOOK</span><strong>$9.99</strong><small>Secure PDF delivered by email after payment</small></article>
+          <article><span>KINDLE eBOOK</span><strong>$9.99</strong><small>Amazon link will be added when the listing is live</small></article>
         </div>
-        <Link className="button button-primary" href="/#join">Join the book list <span>↗</span></Link>
+        <LaunchPurchaseButton />
       </section>
 
       <footer>
