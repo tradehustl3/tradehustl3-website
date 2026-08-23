@@ -34,7 +34,7 @@ The direct eBook button unlocks at midnight Eastern Time on September 15, 2026. 
 
 Production setup:
 
-- Create the private R2 bucket `tradehustl3-books` and bind it to the Worker as `BOOKS`.
+- Create the private R2 bucket `tradehustl3books` and bind it to the Worker as `BOOKS`.
 - Upload the customer PDF with the exact object key `TRADE-HUSTL3-COMPLETE-EBOOK.pdf`.
 - Apply `drizzle/0000_curious_ravenous.sql` to the production D1 database.
 - Add `STRIPE_WEBHOOK_SECRET` as an encrypted runtime secret.
