@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import { SocialLinks } from "../social-links";
 import { SITE_NAME, SITE_URL } from "../site";
 import { SignupForm } from "../signup-form";
 import LaunchPurchaseButton from "./launch-purchase-button";
@@ -326,7 +327,7 @@ export default function BookPage() {
       </section>
 
       <footer>
-        <div className="footer-brand"><div className="wordmark">TRADE HUSTL<span>3</span></div><p>Built by Hustle, Backed by Trades.</p></div>
+        <div className="footer-brand"><div className="wordmark">TRADE HUSTL<span>3</span></div><p>Built by Hustle, Backed by Trades.</p><SocialLinks /></div>
         <div className="footer-links"><Link href="/">Home</Link><a href="#sample">Free sample</a><a href="#chapters">Chapters</a><a href="#author">Author</a><a href="mailto:partners@tradehustl3.com">Partnerships</a></div>
         <p className="copyright">© 2026 TRADE HUSTL3. ALL GRIT RESERVED.</p>
       </footer>

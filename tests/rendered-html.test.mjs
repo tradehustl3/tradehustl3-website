@@ -424,6 +424,12 @@ test("server-renders every part of the TRADE HUSTL3 ecosystem", async () => {
   for (const title of ["The Book", "Resume Builder", "HUSTL3 PRO", "Jobsite Gear", "Program Partnerships"]) assert.match(html, new RegExp(`<h3>${title}<\\/h3>`, "i"));
   assert.match(html, /href="\/resume"/i);
   assert.match(html, /href="mailto:partners@tradehustl3\.com"/i);
+  assert.match(html, /href="https:\/\/www\.facebook\.com\/profile\.php\?id=61593457675674"/i);
+  assert.match(html, /aria-label="Follow TRADE HUSTL3 on Facebook"/i);
+  assert.match(html, /href="https:\/\/www\.instagram\.com\/tradehustl3\/"/i);
+  assert.match(html, /aria-label="Follow TRADE HUSTL3 on Instagram"/i);
+  assert.match(html, /href="https:\/\/www\.youtube\.com\/@tradehustl3"/i);
+  assert.match(html, /aria-label="Subscribe to TRADE HUSTL3 on YouTube"/i);
 });
 
 test("routes the branded resume link to the Resume Builder", async () => {
