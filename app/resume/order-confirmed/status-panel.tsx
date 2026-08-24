@@ -9,7 +9,6 @@ type OrderStatus = {
   paid?: boolean;
   status?: string;
   plan?: "single" | "bundle";
-  accessToken?: string;
 };
 
 export default function ResumeOrderStatusPanel({ sessionId }: { sessionId: string }) {
@@ -26,6 +25,7 @@ export default function ResumeOrderStatusPanel({ sessionId }: { sessionId: strin
       try {
         const response = await fetch(`/api/resume/order-status?session_id=${encodeURIComponent(sessionId)}`, {
           cache: "no-store",
+          credentials: "same-origin",
         });
         const data = await response.json() as OrderStatus;
         if (cancelled) return;
@@ -47,13 +47,13 @@ export default function ResumeOrderStatusPanel({ sessionId }: { sessionId: strin
     return <p className={styles.pending}>Missing Stripe session. Return to the Resume Builder and try again.</p>;
   }
 
-  if (status.paid && status.accessToken) {
+  if (status.paid) {
     return (
       <>
         <p className={styles.success}>Payment verified. Your Resume Builder order is unlocked.</p>
         <p>Your paid plan: <strong>{status.plan === "bundle" ? "Resume Bundle" : "Single Resume"}</strong>.</p>
-        <p>The next build phase will use the private access token issued by the backend to authorize resume generation and protected exports.</p>
-        <Link className={styles.primaryButton} href={`/resume-builder?access=${encodeURIComponent(status.accessToken)}`}>
+        <p>Your paid access is stored in a secure HttpOnly cookie rather than exposed in the page URL.</p>
+        <Link className={styles.primaryButton} href="/resume-builder/create">
           Continue to Resume Builder
         </Link>
       </>
