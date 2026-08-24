@@ -6,6 +6,7 @@ import {
   type ResumePaymentsEnv,
 } from "./resume-payments";
 
+const RESUME_LEGACY_ROUTE = "/resume";
 const RESUME_CHECKOUT_ROUTE = "/api/resume/checkout";
 const RESUME_ORDER_STATUS_ROUTE = "/api/resume/order-status";
 const STRIPE_WEBHOOK_ROUTE = "/api/stripe/webhook";
@@ -64,6 +65,11 @@ async function verifyStripeSignature(payload: string, header: string, secret: st
 const worker = {
   async fetch(request: Request, env: Env, ctx: BaseCtx): Promise<Response> {
     const url = new URL(request.url);
+
+    if (url.pathname === RESUME_LEGACY_ROUTE) {
+      url.pathname = "/resume-builder";
+      return Response.redirect(url.toString(), 302);
+    }
 
     if (url.pathname === RESUME_CHECKOUT_ROUTE) {
       return handleResumeCheckout(request, env);
