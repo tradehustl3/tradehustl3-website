@@ -1,6 +1,7 @@
 import baseWorker from "./index";
 import {
   fulfillResumeStripeSession,
+  handleResumeAccess,
   handleResumeCheckout,
   handleResumeOrderStatus,
   type ResumePaymentsEnv,
@@ -9,6 +10,7 @@ import {
 const RESUME_LEGACY_ROUTE = "/resume";
 const RESUME_CHECKOUT_ROUTE = "/api/resume/checkout";
 const RESUME_ORDER_STATUS_ROUTE = "/api/resume/order-status";
+const RESUME_ACCESS_ROUTE = "/api/resume/access";
 const STRIPE_WEBHOOK_ROUTE = "/api/stripe/webhook";
 const encoder = new TextEncoder();
 
@@ -77,6 +79,10 @@ const worker = {
 
     if (url.pathname === RESUME_ORDER_STATUS_ROUTE) {
       return handleResumeOrderStatus(request, env);
+    }
+
+    if (url.pathname === RESUME_ACCESS_ROUTE) {
+      return handleResumeAccess(request, env);
     }
 
     if (url.pathname === STRIPE_WEBHOOK_ROUTE && request.method === "POST") {
