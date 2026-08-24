@@ -14,14 +14,15 @@ type OrderStatus = {
 
 export default function ResumeOrderStatusPanel({ sessionId }: { sessionId: string }) {
   const [status, setStatus] = useState<OrderStatus>({ status: "pending" });
-  const [attempts, setAttempts] = useState(0);
 
   useEffect(() => {
     if (!sessionId) return;
     let cancelled = false;
     let timer: ReturnType<typeof setTimeout> | undefined;
+    let attempts = 0;
 
     async function check() {
+      attempts += 1;
       try {
         const response = await fetch(`/api/resume/order-status?session_id=${encodeURIComponent(sessionId)}`, {
           cache: "no-store",
@@ -29,10 +30,9 @@ export default function ResumeOrderStatusPanel({ sessionId }: { sessionId: strin
         const data = await response.json() as OrderStatus;
         if (cancelled) return;
         setStatus(data);
-        setAttempts((value) => value + 1);
-        if (!data.paid && attempts < 9) timer = setTimeout(check, 1500);
+        if (!data.paid && attempts < 10) timer = setTimeout(check, 1500);
       } catch {
-        if (!cancelled && attempts < 9) timer = setTimeout(check, 1500);
+        if (!cancelled && attempts < 10) timer = setTimeout(check, 1500);
       }
     }
 
@@ -41,7 +41,7 @@ export default function ResumeOrderStatusPanel({ sessionId }: { sessionId: strin
       cancelled = true;
       if (timer) clearTimeout(timer);
     };
-  }, [sessionId, attempts]);
+  }, [sessionId]);
 
   if (!sessionId) {
     return <p className={styles.pending}>Missing Stripe session. Return to the Resume Builder and try again.</p>;
