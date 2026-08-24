@@ -5,6 +5,7 @@ export interface ResumePaymentsEnv {
 
 const SITE_URL = "https://tradehustl3.com";
 const RESUME_PRODUCT = "resume_builder";
+const RESUME_ACCESS_COOKIE = "tradehustl3_resume_access";
 const SINGLE_PRICE = 900;
 const BUNDLE_PRICE = 1500;
 
@@ -53,6 +54,15 @@ function randomAccessToken(): string {
   return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
 }
 
+function cookieValue(request: Request, name: string): string {
+  const cookies = request.headers.get("Cookie")?.split(";") ?? [];
+  for (const cookie of cookies) {
+    const [key, ...value] = cookie.trim().split("=");
+    if (key === name) return decodeURIComponent(value.join("="));
+  }
+  return "";
+}
+
 async function createStripeCheckoutSession(
   secretKey: string,
   order: { orderId: string; email: string; plan: ResumePlan; amount: number },
@@ -62,7 +72,7 @@ async function createStripeCheckoutSession(
   body.set("customer_email", order.email);
   body.set("client_reference_id", order.orderId);
   body.set("success_url", `${SITE_URL}/resume/order-confirmed?session_id={CHECKOUT_SESSION_ID}`);
-  body.set("cancel_url", `${SITE_URL}/resume?checkout=cancelled`);
+  body.set("cancel_url", `${SITE_URL}/resume-builder?checkout=cancelled`);
   body.set("line_items[0][quantity]", "1");
   body.set("line_items[0][price_data][currency]", "usd");
   body.set("line_items[0][price_data][unit_amount]", String(order.amount));
@@ -163,13 +173,35 @@ export async function handleResumeOrderStatus(request: Request, env: ResumePayme
     return jsonResponse({ ok: true, paid: false, status: order.status });
   }
 
-  return jsonResponse({
-    ok: true,
-    paid: true,
-    status: "paid",
-    plan: order.plan,
-    accessToken: order.access_token,
-  });
+  return Response.json(
+    { ok: true, paid: true, status: "paid", plan: order.plan },
+    {
+      headers: {
+        "Cache-Control": "no-store",
+        "Set-Cookie": `${RESUME_ACCESS_COOKIE}=${encodeURIComponent(order.access_token)}; Max-Age=604800; Path=/; HttpOnly; Secure; SameSite=Lax`,
+      },
+    },
+  );
+}
+
+export async function handleResumeAccess(request: Request, env: ResumePaymentsEnv): Promise<Response> {
+  if (request.method !== "GET") {
+    return new Response("Method Not Allowed", { status: 405, headers: { Allow: "GET" } });
+  }
+  if (!env.DB) return jsonResponse({ ok: false, paid: false }, 503);
+
+  const token = cookieValue(request, RESUME_ACCESS_COOKIE);
+  if (!/^[A-Za-z0-9_-]{43}$/.test(token)) {
+    return jsonResponse({ ok: true, paid: false }, 200);
+  }
+
+  const order = await env.DB.prepare(
+    `SELECT plan, status FROM resume_orders
+     WHERE access_token = ? AND status = 'paid'`,
+  ).bind(token).first<{ plan: ResumePlan; status: string }>();
+
+  if (!order) return jsonResponse({ ok: true, paid: false }, 200);
+  return jsonResponse({ ok: true, paid: true, plan: order.plan });
 }
 
 export async function fulfillResumeStripeSession(
