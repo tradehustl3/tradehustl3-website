@@ -44,6 +44,36 @@ Production setup:
 
 The webhook accepts only paid USD sessions for the configured Payment Link at exactly $9.99. Successful buyers are recorded in D1 and receive a private download link through Brevo. The PDF is streamed from R2 only when a valid paid-order token is presented.
 
+## Resume Builder one-time payments
+
+The integrated Resume Builder payment layer uses the existing Cloudflare Worker, D1 database, and Stripe webhook. It does not require Vercel or a second backend.
+
+Current checkout options:
+
+- `single` — $9.00 one-time payment.
+- `bundle` — $15.00 one-time payment.
+
+Flow:
+
+1. `/resume` redirects to the integrated `/resume-builder` page.
+2. The browser posts the customer email and selected plan to `/api/resume/checkout`.
+3. The Worker creates a Stripe Checkout Session with `mode=payment`; the Stripe secret key never reaches browser code.
+4. A pending order is stored in D1 before checkout begins.
+5. Stripe sends `checkout.session.completed` to the existing `/api/stripe/webhook` endpoint.
+6. The Worker validates the Stripe signature, product metadata, expected amount, currency, email, session ID, and matching D1 order before marking the order paid.
+7. `/api/resume/order-status` issues a seven-day HttpOnly paid-access cookie only after the webhook has marked the order paid.
+8. `/api/resume/access` is the server-side gate future resume-generation and export endpoints must check before doing paid work.
+
+Production setup before merging/deploying:
+
+- Apply `drizzle/0001_resume_orders.sql` to the production D1 database.
+- Add `STRIPE_SECRET_KEY` as an encrypted Cloudflare runtime secret. Never commit the real value to GitHub or expose it in frontend code.
+- Keep `STRIPE_WEBHOOK_SECRET` configured for the existing Stripe webhook endpoint.
+- Confirm the Stripe webhook is subscribed to `checkout.session.completed`.
+- Test both the $9 and $15 flows in Stripe test mode before using live keys.
+
+The payment layer intentionally does not trust the Stripe success redirect. Paid access comes only from the signed webhook and the corresponding paid D1 record.
+
 ## Production build
 
 ```bash
