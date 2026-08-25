@@ -639,6 +639,96 @@ type ResumeCheckoutSession = {
   metadata?: Record<string, unknown> | null;
 };
 
+type ResumeRefundedCharge = {
+  id?: unknown;
+  amount?: unknown;
+  amount_refunded?: unknown;
+  currency?: unknown;
+  payment_intent?: unknown;
+  metadata?: Record<string, unknown> | null;
+};
+
+type ResumeStripeEvent = {
+  id?: unknown;
+  type?: unknown;
+  data?: { object?: unknown };
+};
+
+function stripeEventStatement(env: ResumeBuilderEnv, eventId: string, eventType: string) {
+  return env.DB.prepare("INSERT OR IGNORE INTO stripe_events (event_id, type) VALUES (?, ?)")
+    .bind(eventId, eventType);
+}
+
+async function handleResumeRefund(
+  env: ResumeBuilderEnv,
+  eventId: string,
+  eventType: string,
+  object: unknown,
+): Promise<Response> {
+  const charge = (object && typeof object === "object" && !Array.isArray(object)
+    ? object
+    : {}) as ResumeRefundedCharge;
+  const amount = typeof charge.amount === "number" ? charge.amount : -1;
+  const amountRefunded = typeof charge.amount_refunded === "number" ? charge.amount_refunded : -1;
+  const currency = typeof charge.currency === "string" ? charge.currency.toLowerCase() : "";
+  const paymentIntent = typeof charge.payment_intent === "string" ? charge.payment_intent : "";
+  const metadata = charge.metadata ?? {};
+  const metadataOrderId = typeof metadata.order_id === "string" ? metadata.order_id : "";
+  const metadataProduct = typeof metadata.product === "string" ? metadata.product : "";
+
+  if (
+    !paymentIntent || amount !== RESUME_PRICE_CENTS || amountRefunded < 0 || currency !== "usd"
+    || (metadataProduct && metadataProduct !== "resume_builder_mvp")
+  ) {
+    await stripeEventStatement(env, eventId, eventType).run();
+    console.error("Resume Builder refund event did not match the MVP product.");
+    return json({ received: true });
+  }
+
+  const order = await env.DB.prepare(
+    `SELECT order_id, amount_total, currency, status, stripe_payment_intent_id
+     FROM resume_orders
+     WHERE stripe_payment_intent_id = ?
+        OR (order_id = ? AND stripe_payment_intent_id IS NULL)
+     LIMIT 1`,
+  ).bind(paymentIntent, metadataOrderId).first<{
+    order_id: string;
+    amount_total: number;
+    currency: string;
+    status: string;
+    stripe_payment_intent_id: string | null;
+  }>();
+  if (
+    !order || order.amount_total !== RESUME_PRICE_CENTS || order.currency !== "usd"
+    || (order.stripe_payment_intent_id && order.stripe_payment_intent_id !== paymentIntent)
+    || (metadataOrderId && metadataOrderId !== order.order_id)
+  ) {
+    await stripeEventStatement(env, eventId, eventType).run();
+    console.error("Resume Builder refund event did not match a server-created order.");
+    return json({ received: true });
+  }
+
+  // charge.amount_refunded is cumulative across sequential partial refunds.
+  // Keep access active until the entire original charge has been refunded.
+  if (amountRefunded < amount) {
+    await stripeEventStatement(env, eventId, eventType).run();
+    return json({ received: true });
+  }
+
+  await env.DB.batch([
+    stripeEventStatement(env, eventId, eventType),
+    env.DB.prepare(
+      `UPDATE resume_orders SET status = 'refunded', stripe_payment_intent_id = ?
+       WHERE order_id = ?`,
+    ).bind(paymentIntent, order.order_id),
+    env.DB.prepare(
+      `UPDATE entitlements SET status = 'revoked', updated_at = CURRENT_TIMESTAMP
+       WHERE source_order_id = ? AND status = 'active'`,
+    ).bind(order.order_id),
+  ]);
+  return json({ received: true });
+}
+
 async function handleResumeStripeWebhook(request: Request, env: ResumeBuilderEnv): Promise<Response> {
   if (request.method !== "POST") return methodNotAllowed("POST");
   const secret = env.STRIPE_RESUME_WEBHOOK_SECRET?.trim();
@@ -647,15 +737,26 @@ async function handleResumeStripeWebhook(request: Request, env: ResumeBuilderEnv
   const signature = request.headers.get("Stripe-Signature") || "";
   if (!await verifyStripeSignature(payload, signature, secret)) return json({ received: false }, 400);
 
-  let event: { id?: unknown; type?: unknown; data?: { object?: ResumeCheckoutSession } };
+  let event: ResumeStripeEvent;
   try {
-    event = JSON.parse(payload) as typeof event;
+    event = JSON.parse(payload) as ResumeStripeEvent;
   } catch {
     return json({ received: false }, 400);
   }
-  if (event.type !== "checkout.session.completed") return json({ received: true });
-  const session = event.data?.object;
   const eventId = typeof event.id === "string" ? event.id : "";
+  const eventType = typeof event.type === "string" ? event.type : "";
+  if (!eventId || !eventType) return json({ received: false }, 400);
+  if (eventType === "charge.refunded") {
+    return handleResumeRefund(env, eventId, eventType, event.data?.object);
+  }
+  if (eventType !== "checkout.session.completed") {
+    await stripeEventStatement(env, eventId, eventType).run();
+    return json({ received: true });
+  }
+
+  const session = (event.data?.object && typeof event.data.object === "object" && !Array.isArray(event.data.object)
+    ? event.data.object
+    : {}) as ResumeCheckoutSession;
   const sessionId = typeof session?.id === "string" ? session.id : "";
   const orderId = typeof session?.client_reference_id === "string" ? session.client_reference_id : "";
   const metadata = session?.metadata ?? {};
@@ -701,20 +802,32 @@ async function handleResumeStripeWebhook(request: Request, env: ResumeBuilderEnv
 
   const entitlementId = crypto.randomUUID();
   await env.DB.batch([
-    env.DB.prepare("INSERT OR IGNORE INTO stripe_events (event_id, type) VALUES (?, ?)")
-      .bind(eventId, String(event.type)),
+    stripeEventStatement(env, eventId, eventType),
     env.DB.prepare(
       `UPDATE resume_orders SET
-         status = 'paid', stripe_session_id = ?, stripe_payment_intent_id = ?, paid_at = CURRENT_TIMESTAMP
+         status = CASE WHEN status = 'refunded' THEN 'refunded' ELSE 'paid' END,
+         stripe_session_id = ?, stripe_payment_intent_id = ?, paid_at = CURRENT_TIMESTAMP
        WHERE order_id = ?`,
     ).bind(sessionId, paymentIntent, orderId),
     env.DB.prepare(
       `INSERT INTO entitlements
        (entitlement_id, user_id, resume_id, kind, plan, status, credits_total, credits_used,
         source_order_id, stripe_customer_id)
-       VALUES (?, ?, ?, 'one_time', ?, 'active', ?, 0, ?, ?)
+       SELECT ?, ?, ?, 'one_time', ?, 'active', ?, 0, ?, ?
+       WHERE EXISTS (
+         SELECT 1 FROM resume_orders WHERE order_id = ? AND status = 'paid'
+       )
        ON CONFLICT(source_order_id) DO NOTHING`,
-    ).bind(entitlementId, userId, resumeId, RESUME_PLAN, RESUME_TOTAL_AI_RUNS, orderId, stripeCustomer),
+    ).bind(
+      entitlementId,
+      userId,
+      resumeId,
+      RESUME_PLAN,
+      RESUME_TOTAL_AI_RUNS,
+      orderId,
+      stripeCustomer,
+      orderId,
+    ),
   ]);
   return json({ received: true });
 }

@@ -313,6 +313,302 @@ test("a verified $9.99 Stripe event grants exactly four AI runs", async () => {
   assert.equal(entitlement.values.includes("resume_mvp_999"), true);
 });
 
+type RefundHarnessOptions = {
+  orderStatus?: string;
+  paymentIntent?: string | null;
+  entitlementStatus?: string | null;
+};
+
+function refundHarness(options: RefundHarnessOptions = {}) {
+  const state = {
+    orderStatus: options.orderStatus ?? "paid",
+    paymentIntent: options.paymentIntent === undefined ? "pi_resume_builder_paid" : options.paymentIntent,
+    entitlementStatus: options.entitlementStatus === undefined ? "active" : options.entitlementStatus,
+    events: new Set<string>(),
+  };
+  const batches: Array<Array<{ sql: string; values: unknown[] }>> = [];
+  const runs: Array<{ sql: string; values: unknown[] }> = [];
+
+  function apply(statement: { sql: string; values: unknown[] }) {
+    if (/INSERT OR IGNORE INTO stripe_events/i.test(statement.sql)) {
+      state.events.add(String(statement.values[0]));
+    }
+    if (/UPDATE resume_orders SET status = 'refunded'/i.test(statement.sql)) {
+      state.orderStatus = "refunded";
+      state.paymentIntent = String(statement.values[0]);
+    }
+    if (/status = CASE WHEN status = 'refunded'/i.test(statement.sql)) {
+      if (state.orderStatus !== "refunded") state.orderStatus = "paid";
+      state.paymentIntent = String(statement.values[1]);
+    }
+    if (/INSERT INTO entitlements/i.test(statement.sql) && state.orderStatus === "paid") {
+      state.entitlementStatus = "active";
+    }
+    if (/UPDATE entitlements SET status = 'revoked'/i.test(statement.sql) && state.entitlementStatus === "active") {
+      state.entitlementStatus = "revoked";
+    }
+  }
+
+  const DB = {
+    prepare(sql: string) {
+      return {
+        bind(...values: unknown[]) {
+          const statement = {
+            sql,
+            values,
+            async first() {
+              if (/FROM sessions s/i.test(sql)) {
+                return { user_id: "user-1", email: "member@example.com", full_name: "Member" };
+              }
+              if (/FROM resumes WHERE/i.test(sql)) {
+                return {
+                  resume_id: "resume-1",
+                  user_id: "user-1",
+                  trade: "HVAC & Refrigeration",
+                  title: "HVAC Resume",
+                  intake_json: JSON.stringify({ fullName: "Marcus Reed" }),
+                  generated_json: JSON.stringify(sampleResume),
+                  target_job_posting: null,
+                  status: "ready",
+                };
+              }
+              if (/FROM entitlements/i.test(sql)) {
+                return state.entitlementStatus === "active"
+                  ? { entitlement_id: "entitlement-1", credits_total: 4, credits_used: 1, status: "active" }
+                  : null;
+              }
+              if (/FROM resume_orders[\s\S]*stripe_payment_intent_id = \?/i.test(sql)) {
+                const paymentIntent = String(values[0]);
+                const metadataOrderId = String(values[1]);
+                const matches = state.paymentIntent === paymentIntent
+                  || (state.paymentIntent === null && metadataOrderId === "order-1");
+                return matches ? {
+                  order_id: "order-1",
+                  amount_total: 999,
+                  currency: "usd",
+                  status: state.orderStatus,
+                  stripe_payment_intent_id: state.paymentIntent,
+                } : null;
+              }
+              if (/FROM resume_orders WHERE order_id/i.test(sql)) {
+                return {
+                  order_id: "order-1",
+                  user_id: "user-1",
+                  resume_id: "resume-1",
+                  email: "member@example.com",
+                  amount_total: 999,
+                  currency: "usd",
+                  status: state.orderStatus,
+                };
+              }
+              return null;
+            },
+            async run() {
+              runs.push({ sql, values });
+              apply({ sql, values });
+              return { meta: { changes: 1 } };
+            },
+          };
+          return statement;
+        },
+      };
+    },
+    async batch(statements: Array<{ sql: string; values: unknown[] }>) {
+      batches.push(statements);
+      for (const statement of statements) apply(statement);
+      return [];
+    },
+  };
+  return { state, batches, runs, DB };
+}
+
+async function sendRefundEvent(
+  DB: ReturnType<typeof refundHarness>["DB"],
+  options: {
+    eventId: string;
+    amountRefunded: number;
+    latestRefundAmount?: number;
+    paymentIntent?: string;
+    signature?: string;
+  },
+) {
+  const webhookSecret = "whsec_resume_builder_test";
+  const payload = JSON.stringify({
+    id: options.eventId,
+    type: "charge.refunded",
+    data: {
+      object: {
+        id: "ch_resume_builder_paid",
+        amount: 999,
+        amount_refunded: options.amountRefunded,
+        currency: "usd",
+        payment_intent: options.paymentIntent ?? "pi_resume_builder_paid",
+        metadata: { product: "resume_builder_mvp", order_id: "order-1" },
+        refunds: { data: [{ amount: options.latestRefundAmount ?? options.amountRefunded }] },
+      },
+    },
+  });
+  const signature = options.signature ?? await stripeSignature(payload, webhookSecret);
+  return handleResumeBuilderRoute(
+    new Request("https://tradehustl3.com/api/resume-builder/stripe/webhook", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Stripe-Signature": signature },
+      body: payload,
+    }),
+    { DB: DB as unknown as D1Database, STRIPE_RESUME_WEBHOOK_SECRET: webhookSecret },
+  );
+}
+
+test("a partial refund keeps generation and download entitlement active", async () => {
+  const harness = refundHarness();
+  const response = await sendRefundEvent(harness.DB, {
+    eventId: "evt_refund_partial",
+    amountRefunded: 500,
+  });
+  assert.equal(response?.status, 200);
+  assert.equal(harness.state.orderStatus, "paid");
+  assert.equal(harness.state.entitlementStatus, "active");
+  assert.deepEqual([...harness.state.events], ["evt_refund_partial"]);
+  assert.equal(harness.batches.length, 0, "partial refunds must not revoke access");
+});
+
+test("sequential partial refunds revoke only when the cumulative charge total reaches $9.99", async () => {
+  const harness = refundHarness();
+  await sendRefundEvent(harness.DB, {
+    eventId: "evt_refund_first_500",
+    amountRefunded: 500,
+    latestRefundAmount: 500,
+  });
+  assert.equal(harness.state.orderStatus, "paid");
+  assert.equal(harness.state.entitlementStatus, "active");
+
+  const response = await sendRefundEvent(harness.DB, {
+    eventId: "evt_refund_remaining_499",
+    amountRefunded: 999,
+    latestRefundAmount: 499,
+  });
+  assert.equal(response?.status, 200);
+  assert.equal(harness.state.orderStatus, "refunded");
+  assert.equal(harness.state.entitlementStatus, "revoked");
+  assert.equal(harness.state.events.size, 2);
+  assert.equal(harness.batches.length, 1);
+  assert.ok(harness.batches[0].some((statement) => /UPDATE resume_orders SET status = 'refunded'/i.test(statement.sql)));
+  assert.ok(harness.batches[0].some((statement) => /UPDATE entitlements SET status = 'revoked'/i.test(statement.sql)));
+});
+
+test("a fully refunded order cannot generate or download resume files", async () => {
+  const harness = refundHarness();
+  await sendRefundEvent(harness.DB, {
+    eventId: "evt_full_refund_access_check",
+    amountRefunded: 999,
+  });
+
+  const statusResponse = await handleResumeBuilderRoute(
+    new Request("https://tradehustl3.com/api/resume-builder/resumes/resume-1", {
+      headers: { Cookie: sessionCookie },
+    }),
+    { DB: harness.DB as unknown as D1Database },
+  );
+  const status = await statusResponse?.json() as { resume?: { paid?: boolean } };
+  assert.equal(statusResponse?.status, 200);
+  assert.equal(status.resume?.paid, false);
+
+  const generationResponse = await handleResumeBuilderRoute(
+    new Request("https://tradehustl3.com/api/resume-builder/resumes/resume-1/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Cookie: sessionCookie },
+      body: "{}",
+    }),
+    { DB: harness.DB as unknown as D1Database },
+  );
+  assert.equal(generationResponse?.status, 402);
+
+  const downloadResponse = await handleResumeBuilderRoute(
+    new Request("https://tradehustl3.com/api/resume-builder/resumes/resume-1/files/pdf", {
+      headers: { Cookie: sessionCookie },
+    }),
+    { DB: harness.DB as unknown as D1Database },
+  );
+  assert.equal(downloadResponse?.status, 404);
+});
+
+test("a forged refund cannot record an event or revoke access", async () => {
+  const harness = refundHarness();
+  const response = await sendRefundEvent(harness.DB, {
+    eventId: "evt_forged_refund",
+    amountRefunded: 999,
+    signature: "t=1,v1=not-a-valid-signature",
+  });
+  assert.equal(response?.status, 400);
+  assert.equal(harness.state.events.size, 0);
+  assert.equal(harness.state.orderStatus, "paid");
+  assert.equal(harness.state.entitlementStatus, "active");
+  assert.equal(harness.runs.length, 0);
+  assert.equal(harness.batches.length, 0);
+});
+
+test("a refund for an unrelated Stripe payment cannot revoke a Resume Builder order", async () => {
+  const harness = refundHarness();
+  const response = await sendRefundEvent(harness.DB, {
+    eventId: "evt_unrelated_refund",
+    amountRefunded: 999,
+    paymentIntent: "pi_unrelated_payment",
+  });
+  assert.equal(response?.status, 200);
+  assert.equal(harness.state.orderStatus, "paid");
+  assert.equal(harness.state.entitlementStatus, "active");
+  assert.deepEqual([...harness.state.events], ["evt_unrelated_refund"]);
+});
+
+test("a full refund arriving before checkout completion cannot be overwritten by a late payment event", async () => {
+  const harness = refundHarness({ orderStatus: "pending", paymentIntent: null, entitlementStatus: null });
+  await sendRefundEvent(harness.DB, {
+    eventId: "evt_refund_before_checkout",
+    amountRefunded: 999,
+  });
+  assert.equal(harness.state.orderStatus, "refunded");
+
+  const checkoutPayload = JSON.stringify({
+    id: "evt_checkout_after_refund",
+    type: "checkout.session.completed",
+    data: {
+      object: {
+        id: "cs_resume_builder_paid",
+        client_reference_id: "order-1",
+        payment_status: "paid",
+        amount_total: 999,
+        currency: "usd",
+        payment_intent: "pi_resume_builder_paid",
+        customer: "cus_resume_builder",
+        customer_details: { email: "member@example.com" },
+        metadata: {
+          product: "resume_builder_mvp",
+          order_id: "order-1",
+          resume_id: "resume-1",
+          user_id: "user-1",
+        },
+      },
+    },
+  });
+  const webhookSecret = "whsec_resume_builder_test";
+  const response = await handleResumeBuilderRoute(
+    new Request("https://tradehustl3.com/api/resume-builder/stripe/webhook", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Stripe-Signature": await stripeSignature(checkoutPayload, webhookSecret),
+      },
+      body: checkoutPayload,
+    }),
+    { DB: harness.DB as unknown as D1Database, STRIPE_RESUME_WEBHOOK_SECRET: webhookSecret },
+  );
+  assert.equal(response?.status, 200);
+  assert.equal(harness.state.orderStatus, "refunded");
+  assert.equal(harness.state.entitlementStatus, null);
+  const entitlementInsert = harness.batches.at(-1)?.find((statement) => /INSERT INTO entitlements/i.test(statement.sql));
+  assert.match(entitlementInsert?.sql ?? "", /WHERE EXISTS[\s\S]*status = 'paid'/i);
+});
+
 test("clean DOCX and clean/watermarked PDF generators produce valid files", async () => {
   const [docx, pdf, preview] = await Promise.all([
     createResumeDocx(sampleResume),
