@@ -124,8 +124,10 @@ test("magic-link confirmation cannot be consumed by an email scanner GET", async
 
 test("magic-link email opens a confirmation page instead of consuming the token", async () => {
   const batches: unknown[][] = [];
+  const preparedSql: string[] = [];
   const DB = {
     prepare(sql: string) {
+      preparedSql.push(sql);
       return {
         bind(...values: unknown[]) {
           return {
@@ -171,6 +173,10 @@ test("magic-link email opens a confirmation page instead of consuming the token"
   assert.equal(emailCalls[0].url, "https://api.brevo.com/v3/smtp/email");
   assert.match(emailCalls[0].body.htmlContent, /\/resume-builder\/confirm\?token=/i);
   assert.doesNotMatch(emailCalls[0].body.htmlContent, /\/api\/resume-builder\/auth\/confirm\?token=/i);
+  const userInsert = preparedSql.find((sql) => /INSERT INTO users/i.test(sql));
+  assert.ok(userInsert);
+  assert.match(userInsert, /ON CONFLICT\(email\) DO NOTHING/i);
+  assert.doesNotMatch(userInsert, /DO UPDATE SET full_name/i);
 });
 
 test("resume intake stays behind an authenticated account", async () => {

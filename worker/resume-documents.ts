@@ -24,7 +24,7 @@ export type ResumeCertification = {
 
 export type ResumeExperience = {
   jobTitle: string;
-  employer: string;
+  employer?: string;
   location?: string;
   startDate?: string;
   endDate?: string;
@@ -129,6 +129,7 @@ export async function createResumeDocx(resume: GeneratedResume): Promise<Uint8Ar
     children.push(sectionHeading("WORK EXPERIENCE"));
     for (const job of resume.experience) {
       const dates = [clean(job.startDate), clean(job.endDate)].filter(Boolean).join(" – ");
+      const organizationLine = [clean(job.employer), clean(job.location)].filter(Boolean).join(" — ");
       children.push(new Paragraph({
         keepNext: true,
         spacing: { before: 80, after: 20 },
@@ -137,16 +138,18 @@ export async function createResumeDocx(resume: GeneratedResume): Promise<Uint8Ar
           ...(dates ? [new TextRun({ text: `  |  ${dates}`, size: 21, font: "Arial" })] : []),
         ],
       }));
-      children.push(new Paragraph({
-        keepNext: true,
-        spacing: { after: 30 },
-        children: [new TextRun({
-          text: [clean(job.employer), clean(job.location)].filter(Boolean).join(" — "),
-          italics: true,
-          size: 21,
-          font: "Arial",
-        })],
-      }));
+      if (organizationLine) {
+        children.push(new Paragraph({
+          keepNext: true,
+          spacing: { after: 30 },
+          children: [new TextRun({
+            text: organizationLine,
+            italics: true,
+            size: 21,
+            font: "Arial",
+          })],
+        }));
+      }
       for (const item of job.bullets) children.push(bullet(item));
     }
   }
@@ -336,8 +339,11 @@ export async function createResumePdf(resume: GeneratedResume, watermarked = fal
     writeSection(writer, "WORK EXPERIENCE");
     for (const job of resume.experience) {
       const dates = [job.startDate, job.endDate].map(clean).filter(Boolean).join(" – ");
+      const organizationLine = [job.employer, job.location].map(clean).filter(Boolean).join(" — ");
       writeLines(writer, [job.jobTitle, dates].filter(Boolean).join("  |  "), { font: writer.bold, size: 10.7, after: 0 });
-      writeLines(writer, [job.employer, job.location].map(clean).filter(Boolean).join(" — "), { font: writer.italic, size: 10.2, after: 1 });
+      if (organizationLine) {
+        writeLines(writer, organizationLine, { font: writer.italic, size: 10.2, after: 1 });
+      }
       for (const item of job.bullets) writeBullet(writer, item);
       writer.y -= 2;
     }

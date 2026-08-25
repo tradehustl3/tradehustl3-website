@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
 
 export function ConfirmMagicLink() {
@@ -43,7 +42,7 @@ export function ConfirmMagicLink() {
       <button className="rb-button rb-button-primary rb-button-full" type="button" onClick={confirm} disabled={submitting}>
         {submitting ? "Confirming…" : "Confirm & continue"} <span>→</span>
       </button>
-      <Link className="rb-text-link" href="/resume-builder">Request a new confirmation link</Link>
+      <a className="rb-text-link" href="/resume-builder">Request a new confirmation link</a>
       <small>Email safety scanners cannot activate this link because confirmation only happens when you choose the button.</small>
     </div>
   );

@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { FormEvent, useCallback, useEffect, useState } from "react";
 
 type Resume = {
@@ -16,6 +15,17 @@ type Resume = {
   downloads: { pdf: string; docx: string } | null;
 };
 
+type GenerationFailure = {
+  code?: string;
+  retryable?: boolean;
+  action?: "return_to_intake" | "retry_generation";
+  paymentSafe?: boolean;
+  runConsumed?: boolean;
+  missing?: string[];
+  intakeUrl?: string | null;
+  message?: string;
+};
+
 export function ResumeReview() {
   const [resumeId] = useState(() => typeof window === "undefined"
     ? ""
@@ -24,6 +34,7 @@ export function ResumeReview() {
   const [loading, setLoading] = useState(true);
   const [working, setWorking] = useState(false);
   const [message, setMessage] = useState("");
+  const [intakeNotice, setIntakeNotice] = useState<GenerationFailure | null>(null);
 
   const load = useCallback(async (id: string) => {
     try {
@@ -57,6 +68,7 @@ export function ResumeReview() {
     if (!resumeId) return;
     setWorking(true);
     setMessage("");
+    setIntakeNotice(null);
     try {
       const response = await fetch(`/api/resume-builder/resumes/${encodeURIComponent(resumeId)}/generate`, {
         method: "POST",
@@ -64,8 +76,14 @@ export function ResumeReview() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(correctionRequest ? { correctionRequest } : {}),
       });
-      const result = await response.json() as { message?: string };
-      if (!response.ok) throw new Error(result.message || "We could not complete this AI run.");
+      const result = await response.json() as GenerationFailure;
+      if (!response.ok) {
+        if (result.action === "return_to_intake" && result.intakeUrl) {
+          setIntakeNotice(result);
+          return;
+        }
+        throw new Error(result.message || "We could not complete this AI run.");
+      }
       await load(resumeId);
       setMessage(correctionRequest ? "Correction applied. Review the updated watermarked copy." : "Your first resume is ready for review.");
     } catch (error) {
@@ -94,7 +112,7 @@ export function ResumeReview() {
         <p className="rb-kicker">/ WORKSPACE UNAVAILABLE</p>
         <h1>LET’S GET YOU <span>BACK ON TRACK.</span></h1>
         <p>{message}</p>
-        <Link className="rb-button rb-button-primary" href="/resume-builder/intake">Return to your intake <span>→</span></Link>
+        <a className="rb-button rb-button-primary" href="/resume-builder/intake">Return to your intake <span>→</span></a>
       </div>
     );
   }
@@ -112,11 +130,27 @@ export function ResumeReview() {
         </div>
       </section>
 
+      {intakeNotice ? (
+        <section className="rb-intake-notice" role="alert">
+          <p className="rb-kicker">/ INTAKE UPDATE NEEDED</p>
+          <h2>WE NEED A LITTLE MORE FROM YOU.</h2>
+          <p>{intakeNotice.message}</p>
+          {intakeNotice.missing?.length ? (
+            <div className="rb-intake-missing">
+              <strong>Review these intake sections:</strong>
+              <ul>{intakeNotice.missing.map((item) => <li key={item}>{item}</li>)}</ul>
+            </div>
+          ) : null}
+          <p className="rb-intake-reassurance">Your $9.99 payment is safe, this failed attempt used no AI run, and any previous resume files are unchanged.</p>
+          <a className="rb-button rb-button-primary" href={intakeNotice.intakeUrl ?? "/resume-builder/intake"}>Return to intake <span>→</span></a>
+        </section>
+      ) : null}
+
       {!resume.paid ? (
         <section className="rb-unpaid-card">
           <p className="rb-kicker">/ PAYMENT REQUIRED</p><h2>GENERATION IS STILL LOCKED.</h2>
           <p>Your intake is saved. Complete the one-time $9.99 payment before the first AI run.</p>
-          <Link className="rb-button rb-button-primary" href={`/resume-builder/intake?resume_id=${encodeURIComponent(resume.resumeId)}`}>Continue to payment <span>→</span></Link>
+          <a className="rb-button rb-button-primary" href={`/resume-builder/intake?resume_id=${encodeURIComponent(resume.resumeId)}`}>Continue to payment <span>→</span></a>
         </section>
       ) : !hasDraft ? (
         <section className="rb-first-build">

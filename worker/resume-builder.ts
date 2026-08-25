@@ -13,6 +13,12 @@ export interface ResumeBuilderEnv {
   CLAUDE_MODEL?: string;
 }
 
+export interface ResumeBuilderDependencies {
+  anthropicFetch?: typeof fetch;
+  createDocx?: typeof createResumeDocx;
+  createPdf?: typeof createResumePdf;
+}
+
 type AuthenticatedUser = {
   userId: string;
   email: string;
@@ -50,7 +56,88 @@ const RESUME_PRICE_CENTS = 999;
 const RESUME_PLAN = "resume_mvp_999";
 const RESUME_TOTAL_AI_RUNS = 4;
 const DEFAULT_CLAUDE_MODEL = "claude-sonnet-5";
+const INTAKE_PATH = "/resume-builder/intake";
 const encoder = new TextEncoder();
+
+export type ResumeFailureCode =
+  | "INTAKE_INFORMATION_REQUIRED"
+  | "UNSUPPORTED_NUMERIC_CLAIM"
+  | "MODEL_OUTPUT_ERROR"
+  | "DOCUMENT_RENDER_ERROR"
+  | "FILE_STORAGE_ERROR"
+  | "GENERATION_ERROR";
+
+export type ResumeFailureAction = "return_to_intake" | "retry_generation";
+
+type NumericGuardSection =
+  | "contact information"
+  | "career summary"
+  | "skills and tools"
+  | "certifications and training"
+  | "work history"
+  | "work dates"
+  | "education"
+  | "additional information";
+
+export type UnsupportedNumericClaim = {
+  section: NumericGuardSection;
+  token: string;
+};
+
+const NON_RETRYABLE_FAILURES: ReadonlySet<ResumeFailureCode> = new Set([
+  "INTAKE_INFORMATION_REQUIRED",
+  "UNSUPPORTED_NUMERIC_CLAIM",
+]);
+
+const INTAKE_CORRECTION_MESSAGE =
+  "We need a little more information to build your resume safely. Return to your intake "
+  + "and add or correct the highlighted details. Your payment is safe and no AI run was used.";
+
+const RETRY_MESSAGE =
+  "Your payment is safe. No AI run was used. Please try generating the resume again.";
+
+export const INTAKE_SECTION = {
+  contact: "contact information",
+  targetTitle: "target job title",
+  summary: "career summary",
+  substance: "work history, training, certifications, or skills",
+  numbers: "measurable results, dates, and quantities",
+} as const;
+
+export class ResumeGenerationError extends Error {
+  readonly code: ResumeFailureCode;
+  readonly missing: string[];
+  readonly guardTelemetry: Record<string, unknown> | null;
+
+  constructor(
+    code: ResumeFailureCode,
+    message: string,
+    missing: string[] = [],
+    guardTelemetry: Record<string, unknown> | null = null,
+  ) {
+    super(message);
+    this.name = "ResumeGenerationError";
+    this.code = code;
+    this.missing = missing;
+    this.guardTelemetry = guardTelemetry;
+  }
+}
+
+function isRetryableFailure(code: ResumeFailureCode): boolean {
+  return !NON_RETRYABLE_FAILURES.has(code);
+}
+
+function failureAction(code: ResumeFailureCode): ResumeFailureAction {
+  return NON_RETRYABLE_FAILURES.has(code) ? "return_to_intake" : "retry_generation";
+}
+
+function failureMessage(code: ResumeFailureCode): string {
+  return NON_RETRYABLE_FAILURES.has(code) ? INTAKE_CORRECTION_MESSAGE : RETRY_MESSAGE;
+}
+
+function failureStatus(code: ResumeFailureCode): number {
+  return NON_RETRYABLE_FAILURES.has(code) ? 422 : 502;
+}
 
 const ALLOWED_TRADES = new Set([
   "HVAC & Refrigeration",
@@ -238,8 +325,7 @@ async function requestMagicLink(request: Request, env: ResumeBuilderEnv): Promis
   await env.DB.prepare(
     `INSERT INTO users (user_id, email, full_name)
      VALUES (?, ?, ?)
-     ON CONFLICT(email) DO UPDATE SET
-       full_name = COALESCE(excluded.full_name, users.full_name)`,
+     ON CONFLICT(email) DO NOTHING`,
   ).bind(proposedUserId, email, fullName).run();
   const resolvedUser = await env.DB.prepare("SELECT user_id FROM users WHERE email = ?")
     .bind(email).first<{ user_id: string }>();
@@ -327,21 +413,41 @@ async function logout(request: Request, env: ResumeBuilderEnv): Promise<Response
   });
 }
 
-async function createResume(request: Request, env: ResumeBuilderEnv): Promise<Response> {
-  if (request.method !== "POST") return methodNotAllowed("POST");
-  if (!hasTrustedOrigin(request)) return json({ ok: false, message: "Request origin rejected." }, 403);
-  const user = await requireUser(request, env);
-  if (!user) return json({ ok: false, message: "Sign in to continue." }, 401);
-  const body = await parseJsonBody(request);
+type ValidatedResumeInput = {
+  trade: string;
+  title: string;
+  targetJobPosting: string | null;
+  intakeJson: string;
+};
+
+function validateResumeInput(body: Record<string, unknown> | null):
+  | { ok: true; value: ValidatedResumeInput }
+  | { ok: false; response: Response } {
   const trade = cleanText(body?.trade, 80);
   const title = cleanText(body?.title, 120) || `${trade} Resume`;
   const targetJobPosting = cleanText(body?.targetJobPosting, 12_000) || null;
   const intake = body?.intake;
   if (!ALLOWED_TRADES.has(trade) || !intake || typeof intake !== "object" || Array.isArray(intake)) {
-    return json({ ok: false, message: "Choose a supported trade and complete the intake." }, 400);
+    return {
+      ok: false,
+      response: json({ ok: false, message: "Choose a supported trade and complete the intake." }, 400),
+    };
   }
   const intakeJson = JSON.stringify(intake);
-  if (intakeJson.length > 40_000) return json({ ok: false, message: "The intake is too large." }, 413);
+  if (intakeJson.length > 40_000) {
+    return { ok: false, response: json({ ok: false, message: "The intake is too large." }, 413) };
+  }
+  return { ok: true, value: { trade, title, targetJobPosting, intakeJson } };
+}
+
+async function createResume(request: Request, env: ResumeBuilderEnv): Promise<Response> {
+  if (request.method !== "POST") return methodNotAllowed("POST");
+  if (!hasTrustedOrigin(request)) return json({ ok: false, message: "Request origin rejected." }, 403);
+  const user = await requireUser(request, env);
+  if (!user) return json({ ok: false, message: "Sign in to continue." }, 401);
+  const parsed = validateResumeInput(await parseJsonBody(request));
+  if (!parsed.ok) return parsed.response;
+  const { trade, title, targetJobPosting, intakeJson } = parsed.value;
   const resumeId = crypto.randomUUID();
   await env.DB.prepare(
     `INSERT INTO resumes (resume_id, user_id, trade, title, intake_json, target_job_posting, status)
@@ -375,12 +481,20 @@ async function getResumeStatus(request: Request, env: ResumeBuilderEnv, resumeId
   if (!resume) return json({ ok: false, message: "Resume not found." }, 404);
   const entitlement = await findEntitlement(env, resumeId, user.userId);
   const generated = Boolean(resume.generated_json);
+  let intake: unknown = {};
+  try {
+    intake = JSON.parse(resume.intake_json) as unknown;
+  } catch {
+    return json({ ok: false, message: "The saved intake could not be loaded." }, 500);
+  }
   return json({
     ok: true,
     resume: {
       resumeId,
       trade: resume.trade,
       title: resume.title,
+      intake,
+      targetJobPosting: resume.target_job_posting,
       status: resume.status,
       paid: Boolean(entitlement),
       runsUsed: entitlement?.credits_used ?? 0,
@@ -395,6 +509,25 @@ async function getResumeStatus(request: Request, env: ResumeBuilderEnv, resumeId
       } : null,
     },
   });
+}
+
+async function updateResume(request: Request, env: ResumeBuilderEnv, resumeId: string): Promise<Response> {
+  if (request.method !== "PUT" && request.method !== "PATCH") return methodNotAllowed("GET, PUT, PATCH");
+  if (!hasTrustedOrigin(request)) return json({ ok: false, message: "Request origin rejected." }, 403);
+  const user = await requireUser(request, env);
+  if (!user) return json({ ok: false, message: "Sign in to continue." }, 401);
+  const resume = await findOwnedResume(env, resumeId, user.userId);
+  if (!resume) return json({ ok: false, message: "Resume not found." }, 404);
+  const parsed = validateResumeInput(await parseJsonBody(request));
+  if (!parsed.ok) return parsed.response;
+  const { trade, title, targetJobPosting, intakeJson } = parsed.value;
+  await env.DB.prepare(
+    `UPDATE resumes SET trade = ?, title = ?, intake_json = ?, target_job_posting = ?,
+       updated_at = CURRENT_TIMESTAMP
+     WHERE resume_id = ? AND user_id = ? AND deleted_at IS NULL`,
+  ).bind(trade, title, intakeJson, targetJobPosting, resumeId, user.userId).run();
+  const entitlement = await findEntitlement(env, resumeId, user.userId);
+  return json({ ok: true, resumeId, status: resume.status, paid: Boolean(entitlement) });
 }
 
 async function createCheckout(request: Request, env: ResumeBuilderEnv, resumeId: string): Promise<Response> {
@@ -431,7 +564,7 @@ async function createCheckout(request: Request, env: ResumeBuilderEnv, resumeId:
   form.set("customer_email", user.email);
   form.set("client_reference_id", orderId);
   form.set("success_url", `${SITE_URL}/resume-builder/payment-confirmed?resume_id=${encodeURIComponent(resumeId)}&session_id={CHECKOUT_SESSION_ID}`);
-  form.set("cancel_url", `${SITE_URL}/resume-builder/intake?resume_id=${encodeURIComponent(resumeId)}`);
+  form.set("cancel_url", `${SITE_URL}${INTAKE_PATH}?resume_id=${encodeURIComponent(resumeId)}`);
   form.set("metadata[product]", "resume_builder_mvp");
   form.set("metadata[order_id]", orderId);
   form.set("metadata[resume_id]", resumeId);
@@ -591,17 +724,39 @@ function stringArray(value: unknown, maxItems: number, maxLength: number): strin
   return value.slice(0, maxItems).map((item) => cleanText(item, maxLength)).filter(Boolean);
 }
 
-function validateGeneratedResume(value: unknown): GeneratedResume | null {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+export type ResumeValidation =
+  | { ok: true; resume: GeneratedResume }
+  | { ok: false; missing: string[] };
+
+function substantiveSectionCount(sections: {
+  skills: unknown[];
+  certifications: unknown[];
+  experience: unknown[];
+  education: unknown[];
+  additionalInformation: unknown[];
+}): number {
+  return [
+    sections.experience.length,
+    sections.education.length,
+    sections.certifications.length,
+    sections.skills.length,
+    sections.additionalInformation.length,
+  ].filter((count) => count > 0).length;
+}
+
+export function validateGeneratedResume(value: unknown): ResumeValidation {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return { ok: false, missing: [INTAKE_SECTION.substance] };
+  }
   const root = value as Record<string, unknown>;
   const basicsValue = root.basics;
-  if (!basicsValue || typeof basicsValue !== "object" || Array.isArray(basicsValue)) return null;
-  const basics = basicsValue as Record<string, unknown>;
+  const basics = (basicsValue && typeof basicsValue === "object" && !Array.isArray(basicsValue)
+    ? basicsValue
+    : {}) as Record<string, unknown>;
   const fullName = cleanText(basics.fullName, 120);
   const targetTitle = cleanText(basics.targetTitle, 120);
   const summary = cleanText(root.summary, 1_800);
   const skills = stringArray(root.skills, 24, 100);
-  if (!fullName || !targetTitle || !summary || !skills.length) return null;
 
   const certifications = Array.isArray(root.certifications)
     ? root.certifications.slice(0, 16).flatMap((item) => {
@@ -622,9 +777,9 @@ function validateGeneratedResume(value: unknown): GeneratedResume | null {
       const jobTitle = cleanText(record.jobTitle, 160);
       const employer = cleanText(record.employer, 160);
       const bullets = stringArray(record.bullets, 10, 500);
-      return jobTitle && employer && bullets.length ? [{
+      return jobTitle && bullets.length ? [{
         jobTitle,
-        employer,
+        employer: employer || undefined,
         location: cleanText(record.location, 120) || undefined,
         startDate: cleanText(record.startDate, 50) || undefined,
         endDate: cleanText(record.endDate, 50) || undefined,
@@ -646,28 +801,203 @@ function validateGeneratedResume(value: unknown): GeneratedResume | null {
       }] : [];
     })
     : [];
-  if (!experience.length) return null;
+  const additionalInformation = stringArray(root.additionalInformation, 12, 300);
+  const missing: string[] = [];
+  if (!fullName) missing.push(INTAKE_SECTION.contact);
+  if (!targetTitle) missing.push(INTAKE_SECTION.targetTitle);
+  if (!summary) missing.push(INTAKE_SECTION.summary);
+  if (substantiveSectionCount({ skills, certifications, experience, education, additionalInformation }) < 2) {
+    missing.push(INTAKE_SECTION.substance);
+  }
+  if (missing.length) return { ok: false, missing };
+
   return {
-    basics: {
-      fullName,
-      targetTitle,
-      location: cleanText(basics.location, 160) || undefined,
-      phone: cleanText(basics.phone, 80) || undefined,
-      email: normalizeEmail(basics.email) || undefined,
+    ok: true,
+    resume: {
+      basics: {
+        fullName,
+        targetTitle,
+        location: cleanText(basics.location, 160) || undefined,
+        phone: cleanText(basics.phone, 80) || undefined,
+        email: normalizeEmail(basics.email) || undefined,
+      },
+      summary,
+      skills,
+      certifications,
+      experience,
+      education,
+      additionalInformation,
     },
-    summary,
-    skills,
-    certifications,
-    experience,
-    education,
-    additionalInformation: stringArray(root.additionalInformation, 12, 300),
   };
 }
 
-function unsupportedNumbers(generated: GeneratedResume, source: string): string[] {
-  const sourceNumbers = new Set(source.match(/\d+(?:\.\d+)?/g) ?? []);
-  return Array.from(new Set(JSON.stringify(generated).match(/\d+(?:\.\d+)?/g) ?? []))
-    .filter((number) => !sourceNumbers.has(number));
+function recordValue(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : {};
+}
+
+function sourceText(...values: unknown[]): string {
+  return values.map((value) => {
+    if (typeof value === "string") return value;
+    if (value === null || value === undefined) return "";
+    return JSON.stringify(value);
+  }).join(" ");
+}
+
+const MONTH_NUMBERS: Record<string, number> = {
+  january: 1, jan: 1, february: 2, feb: 2, march: 3, mar: 3, april: 4, apr: 4,
+  may: 5, june: 6, jun: 6, july: 7, jul: 7, august: 8, aug: 8,
+  september: 9, sep: 9, sept: 9, october: 10, oct: 10, november: 11, nov: 11,
+  december: 12, dec: 12,
+};
+
+const NUMBER_WORDS: Record<string, number> = {
+  zero: 0, oh: 0, one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7,
+  eight: 8, nine: 9, ten: 10, eleven: 11, twelve: 12, thirteen: 13, fourteen: 14,
+  fifteen: 15, sixteen: 16, seventeen: 17, eighteen: 18, nineteen: 19, twenty: 20,
+  thirty: 30, forty: 40, fifty: 50, sixty: 60, seventy: 70, eighty: 80, ninety: 90,
+};
+
+function addNumericToken(tokens: Set<string>, value: string | number): void {
+  const normalized = String(value).replace(/,/g, "").replace(/^0+(?=\d)/, "");
+  if (!/^\d+(?:\.\d+)?$/.test(normalized)) return;
+  tokens.add(normalized);
+  const integer = Number(normalized);
+  if (Number.isInteger(integer) && integer >= 1900 && integer <= 2099) {
+    tokens.add(String(integer).slice(-2).replace(/^0/, ""));
+  }
+}
+
+function parseNumberWords(words: string[]): number | null {
+  if (!words.length) return null;
+  if (words.length > 1 && words.every((word) => NUMBER_WORDS[word] >= 0 && NUMBER_WORDS[word] <= 9)) {
+    return Number(words.map((word) => NUMBER_WORDS[word]).join(""));
+  }
+  let total = 0;
+  let current = 0;
+  for (const word of words) {
+    if (word === "hundred") current = Math.max(1, current) * 100;
+    else if (word === "thousand") {
+      total += Math.max(1, current) * 1_000;
+      current = 0;
+    } else if (NUMBER_WORDS[word] !== undefined) current += NUMBER_WORDS[word];
+    else return null;
+  }
+  return total + current;
+}
+
+function numericTokens(text: string): Set<string> {
+  const tokens = new Set<string>();
+  for (const match of text.matchAll(/\b\d[\d,]*(?:\.\d+)?\b/g)) addNumericToken(tokens, match[0]);
+  for (const match of text.matchAll(/'(\d{2})\b/g)) {
+    addNumericToken(tokens, match[1]);
+    addNumericToken(tokens, `20${match[1]}`);
+  }
+  for (const match of text.matchAll(/\b(\d{1,2})[/-](\d{2}|\d{4})\b/g)) {
+    addNumericToken(tokens, match[1]);
+    addNumericToken(tokens, match[2]);
+    if (match[2].length === 2) addNumericToken(tokens, `20${match[2]}`);
+  }
+  const lower = text.toLowerCase();
+  for (const [month, number] of Object.entries(MONTH_NUMBERS)) {
+    if (new RegExp(`\\b${month}\\b`).test(lower)) addNumericToken(tokens, number);
+  }
+  const words = lower.match(/[a-z]+/g) ?? [];
+  for (let index = 0; index < words.length;) {
+    if (NUMBER_WORDS[words[index]] === undefined && words[index] !== "hundred" && words[index] !== "thousand") {
+      index += 1;
+      continue;
+    }
+    const sequence: string[] = [];
+    while (
+      index < words.length
+      && (NUMBER_WORDS[words[index]] !== undefined || words[index] === "hundred" || words[index] === "thousand")
+    ) {
+      sequence.push(words[index]);
+      index += 1;
+    }
+    const parsed = parseNumberWords(sequence);
+    if (parsed !== null) addNumericToken(tokens, parsed);
+  }
+  return tokens;
+}
+
+function generatedNumericSections(generated: GeneratedResume): Record<NumericGuardSection, string> {
+  return {
+    "contact information": sourceText(generated.basics),
+    "career summary": generated.summary,
+    "skills and tools": sourceText(generated.skills),
+    "certifications and training": sourceText(generated.certifications),
+    "work history": sourceText(generated.experience.map((entry) => ({
+      jobTitle: entry.jobTitle,
+      employer: entry.employer,
+      location: entry.location,
+      bullets: entry.bullets,
+    }))),
+    "work dates": sourceText(generated.experience.map(({ startDate, endDate }) => ({ startDate, endDate }))),
+    education: sourceText(generated.education),
+    "additional information": sourceText(generated.additionalInformation),
+  };
+}
+
+function intakeNumericSections(
+  intake: unknown,
+  title: string,
+  correctionRequest: string | null,
+): Record<NumericGuardSection, string> {
+  const root = recordValue(intake);
+  const contact = recordValue(root.contact);
+  const career = recordValue(root.career);
+  const experience = Array.isArray(root.experience) ? root.experience : [];
+  const workClaims = experience.map((item) => {
+    const record = recordValue(item);
+    return {
+      employer: record.employer,
+      jobTitle: record.jobTitle,
+      location: record.location,
+      responsibilitiesAndWins: record.responsibilitiesAndWins,
+    };
+  });
+  const workDetails = experience.map((item) => recordValue(item).responsibilitiesAndWins);
+  const correction = correctionRequest ?? "";
+  return {
+    "contact information": sourceText(contact, title, correction),
+    "career summary": sourceText(career.yearsExperience, career.summaryNotes, workDetails, correction),
+    "skills and tools": sourceText(
+      career.skillsAndTools,
+      career.licensesAndCertifications,
+      career.safetyTraining,
+      correction,
+    ),
+    "certifications and training": sourceText(
+      career.licensesAndCertifications,
+      career.safetyTraining,
+      correction,
+    ),
+    "work history": sourceText(workClaims, career.skillsAndTools, correction),
+    "work dates": sourceText(experience.map((item) => recordValue(item).dates), correction),
+    education: sourceText(root.education, correction),
+    "additional information": sourceText(root.additionalDetails, career.safetyTraining, correction),
+  };
+}
+
+export function unsupportedNumbers(
+  generated: GeneratedResume,
+  intake: unknown,
+  title = "",
+  correctionRequest: string | null = null,
+): UnsupportedNumericClaim[] {
+  const output = generatedNumericSections(generated);
+  const sources = intakeNumericSections(intake, title, correctionRequest);
+  const unsupported: UnsupportedNumericClaim[] = [];
+  for (const section of Object.keys(output) as NumericGuardSection[]) {
+    const allowed = numericTokens(sources[section]);
+    for (const token of numericTokens(output[section])) {
+      if (!allowed.has(token)) unsupported.push({ section, token });
+    }
+  }
+  return unsupported;
 }
 
 function resumeSystemPrompt(): string {
@@ -692,7 +1022,13 @@ async function callClaude(
   env: ResumeBuilderEnv,
   resume: ResumeRecord,
   correctionRequest: string | null,
-): Promise<{ resume: GeneratedResume; inputTokens: number; outputTokens: number; guardFlags: string[] }> {
+  dependencies: ResumeBuilderDependencies,
+): Promise<{
+  resume: GeneratedResume;
+  inputTokens: number;
+  outputTokens: number;
+  guardFlags: UnsupportedNumericClaim[];
+}> {
   const apiKey = env.ANTHROPIC_API_KEY?.trim();
   if (!apiKey) throw new Error("Claude is not configured.");
   const model = env.CLAUDE_MODEL?.trim() || DEFAULT_CLAUDE_MODEL;
@@ -702,7 +1038,8 @@ async function callClaude(
     ? `Revise the current resume using only the requested correction and the original intake. Preserve all accurate content not affected by the correction.\n\nORIGINAL INTAKE:\n${JSON.stringify(intake)}\n\nTARGET JOB POSTING:\n${resume.target_job_posting ?? ""}\n\nCURRENT RESUME:\n${JSON.stringify(prior)}\n\nCUSTOMER CORRECTION:\n${correctionRequest}`
     : `Create the paid resume from this intake.\n\nTRADE TRACK:\n${resume.trade}\n\nORIGINAL INTAKE:\n${JSON.stringify(intake)}\n\nTARGET JOB POSTING:\n${resume.target_job_posting ?? ""}`;
 
-  const response = await fetch("https://api.anthropic.com/v1/messages", {
+  const anthropicFetch = dependencies.anthropicFetch ?? fetch;
+  const response = await anthropicFetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -737,11 +1074,25 @@ async function callClaude(
   } catch {
     throw new Error("Claude returned invalid JSON.");
   }
-  const generated = validateGeneratedResume(parsed);
-  if (!generated) throw new Error("Claude returned an incomplete resume.");
-  const source = resume.intake_json;
-  const guardFlags = unsupportedNumbers(generated, source);
-  if (guardFlags.length) throw new Error("Claude introduced unsupported numeric claims.");
+  const validation = validateGeneratedResume(parsed);
+  if (!validation.ok) {
+    throw new ResumeGenerationError(
+      "INTAKE_INFORMATION_REQUIRED",
+      "The generated resume did not contain enough supported information.",
+      validation.missing,
+    );
+  }
+  const generated = validation.resume;
+  const guardFlags = unsupportedNumbers(generated, intake, resume.title, correctionRequest);
+  if (guardFlags.length) {
+    const sections = Array.from(new Set(guardFlags.map((flag) => flag.section)));
+    throw new ResumeGenerationError(
+      "UNSUPPORTED_NUMERIC_CLAIM",
+      "The generated resume contained numeric claims the intake does not support.",
+      [INTAKE_SECTION.numbers],
+      { code: "unsupported_numeric_claim", count: guardFlags.length, sections },
+    );
+  }
   return {
     resume: generated,
     inputTokens: typeof payload.usage?.input_tokens === "number" ? payload.usage.input_tokens : 0,
@@ -754,12 +1105,13 @@ async function storeResumeFile(
   env: ResumeBuilderEnv,
   userId: string,
   resumeId: string,
+  generationId: string,
   format: "pdf" | "docx" | "preview",
   bytes: Uint8Array,
 ): Promise<D1PreparedStatement> {
   if (!env.BOOKS) throw new Error("Resume file storage is unavailable.");
   const extension = format === "docx" ? "docx" : "pdf";
-  const objectKey = `resume-builder/${userId}/${resumeId}/${format}.${extension}`;
+  const objectKey = `resume-builder/${userId}/${resumeId}/generations/${generationId}/${format}.${extension}`;
   const contentType = format === "docx"
     ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
     : "application/pdf";
@@ -777,7 +1129,28 @@ async function storeResumeFile(
   ).bind(`${resumeId}:${format}`, resumeId, userId, format, objectKey, bytes.byteLength, digest);
 }
 
-async function generateResume(request: Request, env: ResumeBuilderEnv, resumeId: string): Promise<Response> {
+function generationObjectKeys(userId: string, resumeId: string, generationId: string): string[] {
+  return ["docx.docx", "pdf.pdf", "preview.pdf"].map(
+    (file) => `resume-builder/${userId}/${resumeId}/generations/${generationId}/${file}`,
+  );
+}
+
+async function cleanupGenerationFiles(env: ResumeBuilderEnv, objectKeys: string[]): Promise<void> {
+  if (!env.BOOKS) return;
+  await Promise.allSettled(objectKeys.map((objectKey) => env.BOOKS!.delete(objectKey)));
+}
+
+function classifyGenerationError(error: unknown): ResumeGenerationError {
+  if (error instanceof ResumeGenerationError) return error;
+  return new ResumeGenerationError("GENERATION_ERROR", "Generation error.");
+}
+
+async function generateResume(
+  request: Request,
+  env: ResumeBuilderEnv,
+  resumeId: string,
+  dependencies: ResumeBuilderDependencies,
+): Promise<Response> {
   if (request.method !== "POST") return methodNotAllowed("POST");
   if (!hasTrustedOrigin(request)) return json({ ok: false, message: "Request origin rejected." }, 403);
   const user = await requireUser(request, env);
@@ -797,28 +1170,68 @@ async function generateResume(request: Request, env: ResumeBuilderEnv, resumeId:
     return json({ ok: false, message: "Create the initial resume before requesting corrections." }, 400);
   }
 
+  const locked = await env.DB.prepare(
+    `UPDATE resumes SET status = 'generating', updated_at = CURRENT_TIMESTAMP
+     WHERE resume_id = ? AND user_id = ? AND deleted_at IS NULL
+       AND (status <> 'generating' OR updated_at < datetime('now', '-15 minutes'))`,
+  ).bind(resumeId, user.userId).run() as D1MutationResult;
+  if ((locked.meta?.changes ?? 0) !== 1) {
+    return json({ ok: false, message: "A resume generation is already in progress." }, 409);
+  }
+
   const reserved = await env.DB.prepare(
     `UPDATE entitlements SET credits_used = credits_used + 1, updated_at = CURRENT_TIMESTAMP
      WHERE entitlement_id = ? AND status = 'active' AND credits_used < credits_total`,
   ).bind(entitlement.entitlement_id).run() as D1MutationResult;
   if ((reserved.meta?.changes ?? 0) !== 1) {
+    await env.DB.prepare(
+      "UPDATE resumes SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE resume_id = ? AND user_id = ? AND status = 'generating'",
+    ).bind(resume.status, resumeId, user.userId).run();
     return json({ ok: false, message: "All permitted AI runs have been used." }, 409);
   }
 
   const generationId = crypto.randomUUID();
+  const newObjectKeys = generationObjectKeys(user.userId, resumeId, generationId);
   const model = env.CLAUDE_MODEL?.trim() || DEFAULT_CLAUDE_MODEL;
   try {
-    const generated = await callClaude(env, resume, correctionRequest);
-    const [docx, pdf, preview] = await Promise.all([
-      createResumeDocx(generated.resume),
-      createResumePdf(generated.resume, false),
-      createResumePdf(generated.resume, true),
+    let generated: Awaited<ReturnType<typeof callClaude>>;
+    try {
+      generated = await callClaude(env, resume, correctionRequest, dependencies);
+    } catch (error) {
+      if (error instanceof ResumeGenerationError) throw error;
+      throw new ResumeGenerationError("MODEL_OUTPUT_ERROR", "Model output error.");
+    }
+
+    let docx: Uint8Array;
+    let pdf: Uint8Array;
+    let preview: Uint8Array;
+    try {
+      [docx, pdf, preview] = await Promise.all([
+        (dependencies.createDocx ?? createResumeDocx)(generated.resume),
+        (dependencies.createPdf ?? createResumePdf)(generated.resume, false),
+        (dependencies.createPdf ?? createResumePdf)(generated.resume, true),
+      ]);
+    } catch {
+      throw new ResumeGenerationError("DOCUMENT_RENDER_ERROR", "Document render error.");
+    }
+
+    const previousObjectKeys = (await Promise.all(
+      (["docx", "pdf", "preview"] as const).map((format) => env.DB.prepare(
+        "SELECT object_key FROM resume_files WHERE resume_id = ? AND user_id = ? AND format = ? LIMIT 1",
+      ).bind(resumeId, user.userId, format).first<{ object_key: string }>()),
+    )).flatMap((row) => row?.object_key ? [row.object_key] : []);
+
+    const uploadResults = await Promise.allSettled([
+      storeResumeFile(env, user.userId, resumeId, generationId, "docx", docx),
+      storeResumeFile(env, user.userId, resumeId, generationId, "pdf", pdf),
+      storeResumeFile(env, user.userId, resumeId, generationId, "preview", preview),
     ]);
-    const fileStatements = await Promise.all([
-      storeResumeFile(env, user.userId, resumeId, "docx", docx),
-      storeResumeFile(env, user.userId, resumeId, "pdf", pdf),
-      storeResumeFile(env, user.userId, resumeId, "preview", preview),
-    ]);
+    if (uploadResults.some((result) => result.status === "rejected")) {
+      throw new ResumeGenerationError("FILE_STORAGE_ERROR", "File storage error.");
+    }
+    const fileStatements = uploadResults.map(
+      (result) => (result as PromiseFulfilledResult<D1PreparedStatement>).value,
+    );
     await env.DB.batch([
       env.DB.prepare(
         `UPDATE resumes SET generated_json = ?, status = 'ready', generated_at = CURRENT_TIMESTAMP,
@@ -840,6 +1253,10 @@ async function generateResume(request: Request, env: ResumeBuilderEnv, resumeId:
       ),
       ...fileStatements,
     ]);
+    await cleanupGenerationFiles(
+      env,
+      previousObjectKeys.filter((objectKey) => !newObjectKeys.includes(objectKey)),
+    );
     const runsUsed = entitlement.credits_used + 1;
     return json({
       ok: true,
@@ -855,12 +1272,19 @@ async function generateResume(request: Request, env: ResumeBuilderEnv, resumeId:
       },
     });
   } catch (error) {
-    console.error("Resume generation pipeline failed", error);
+    await cleanupGenerationFiles(env, newObjectKeys);
+    const failure = classifyGenerationError(error);
+    const retryable = isRetryableFailure(failure.code);
+    console.error("Resume generation pipeline failed", failure.code, failure.guardTelemetry ?? undefined);
     await env.DB.batch([
       env.DB.prepare(
         `UPDATE entitlements SET credits_used = CASE WHEN credits_used > 0 THEN credits_used - 1 ELSE 0 END,
          updated_at = CURRENT_TIMESTAMP WHERE entitlement_id = ?`,
       ).bind(entitlement.entitlement_id),
+      env.DB.prepare(
+        `UPDATE resumes SET status = ?, updated_at = CURRENT_TIMESTAMP
+         WHERE resume_id = ? AND user_id = ? AND status = 'generating'`,
+      ).bind(resume.status, resumeId, user.userId),
       env.DB.prepare(
         `INSERT INTO resume_generations
          (generation_id, resume_id, user_id, mode, model, guard_flags, outcome)
@@ -871,10 +1295,20 @@ async function generateResume(request: Request, env: ResumeBuilderEnv, resumeId:
         user.userId,
         isCorrection ? "correction" : "generate",
         model,
-        JSON.stringify([error instanceof Error ? error.message : "unknown_error"]),
+        JSON.stringify(failure.guardTelemetry ?? { code: failure.code.toLowerCase() }),
       ),
     ]);
-    return json({ ok: false, message: "We could not generate the resume. Your AI run was restored." }, 502);
+    return json({
+      ok: false,
+      code: failure.code,
+      retryable,
+      action: failureAction(failure.code),
+      paymentSafe: true,
+      runConsumed: false,
+      missing: failure.missing,
+      intakeUrl: retryable ? null : `${INTAKE_PATH}?resume_id=${encodeURIComponent(resumeId)}`,
+      message: failureMessage(failure.code),
+    }, failureStatus(failure.code));
   }
 }
 
@@ -918,6 +1352,7 @@ async function serveResumeFile(
 export async function handleResumeBuilderRoute(
   request: Request,
   env: ResumeBuilderEnv,
+  dependencies: ResumeBuilderDependencies = {},
 ): Promise<Response | null> {
   const pathname = new URL(request.url).pathname;
   if (!pathname.startsWith("/api/resume-builder/")) return null;
@@ -934,11 +1369,15 @@ export async function handleResumeBuilderRoute(
     const checkoutMatch = pathname.match(/^\/api\/resume-builder\/resumes\/([^/]+)\/checkout$/);
     if (checkoutMatch) return createCheckout(request, env, checkoutMatch[1]);
     const generationMatch = pathname.match(/^\/api\/resume-builder\/resumes\/([^/]+)\/generate$/);
-    if (generationMatch) return generateResume(request, env, generationMatch[1]);
+    if (generationMatch) return generateResume(request, env, generationMatch[1], dependencies);
     const fileMatch = pathname.match(/^\/api\/resume-builder\/resumes\/([^/]+)\/files\/(pdf|docx|preview)$/);
     if (fileMatch) return serveResumeFile(request, env, fileMatch[1], fileMatch[2]);
     const resumeMatch = pathname.match(/^\/api\/resume-builder\/resumes\/([^/]+)$/);
-    if (resumeMatch) return getResumeStatus(request, env, resumeMatch[1]);
+    if (resumeMatch) {
+      return request.method === "GET"
+        ? getResumeStatus(request, env, resumeMatch[1])
+        : updateResume(request, env, resumeMatch[1]);
+    }
     return json({ ok: false, message: "Route not found." }, 404);
   } catch (error) {
     console.error("Resume Builder request failed", error);
