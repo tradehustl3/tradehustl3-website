@@ -79,6 +79,9 @@ test("publishes a canonical XML sitemap and robots discovery hints", async () =>
   assert.match(sitemap, /<loc>https:\/\/tradehustl3\.com<\/loc>/i);
   assert.match(sitemap, /<loc>https:\/\/tradehustl3\.com\/book<\/loc>/i);
   assert.match(sitemap, /<loc>https:\/\/tradehustl3\.com\/resume-builder<\/loc>/i);
+  for (const path of ["privacy", "terms", "contact", "data-deletion", "resume-builder/refund-policy", "book/refund-policy", "resume-builder/ai-disclosure"]) {
+    assert.match(sitemap, new RegExp(`<loc>https:\\/\\/tradehustl3\\.com\\/${path.replaceAll("/", "\\/")}<\\/loc>`, "i"));
+  }
 
   const robotsResponse = await worker.fetch(new Request("https://tradehustl3.com/robots.txt"), env, ctx);
   assert.equal(robotsResponse.status, 200);
@@ -86,6 +89,36 @@ test("publishes a canonical XML sitemap and robots discovery hints", async () =>
   assert.match(robots, /User-Agent:\s*\*/i);
   assert.match(robots, /Allow:\s*\//i);
   assert.match(robots, /Sitemap:\s*https:\/\/tradehustl3\.com\/sitemap\.xml/i);
+});
+
+test("publishes the customer protection pages with TRADE HUSTL3 LLC contact details", async () => {
+  const pages = [
+    ["/privacy", /Privacy Policy/i],
+    ["/terms", /Terms of Service/i],
+    ["/resume-builder/refund-policy", /Resume Builder[\s\S]*Refund Policy/i],
+    ["/book/refund-policy", /Delivery[\s\S]*Refunds/i],
+    ["/contact", /Contact Support/i],
+    ["/data-deletion", /Account[\s\S]*Data Requests/i],
+    ["/resume-builder/ai-disclosure", /AI Disclosure/i],
+  ];
+
+  for (const [pathname, expected] of pages) {
+    const response = await renderPath(pathname);
+    assert.equal(response.status, 200, pathname);
+    const html = await response.text();
+    assert.match(html, expected, pathname);
+    assert.match(html, /TRADE HUSTL3 LLC/i, pathname);
+    assert.match(html, /support@tradehustl3\.com/i, pathname);
+    assert.match(html, /Atlanta, Georgia/i, pathname);
+  }
+});
+
+test("requires policy and AI acknowledgement before a new Resume Builder checkout", async () => {
+  const intakeSource = await readFile(new URL("../app/resume-builder/intake/intake-form.tsx", import.meta.url), "utf8");
+  assert.match(intakeSource, /name="legalConsent" required/i);
+  for (const path of ["/terms", "/privacy", "/resume-builder/refund-policy", "/resume-builder/ai-disclosure"]) {
+    assert.match(intakeSource, new RegExp(`href="${path.replaceAll("/", "\\/")}"`, "i"));
+  }
 });
 
 test("server-renders the official book page, cover, portrait, and current edition details", async () => {

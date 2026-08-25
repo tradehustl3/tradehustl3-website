@@ -76,6 +76,7 @@ export default function ResumeBuilderPage() {
       <footer className="rb-footer">
         <strong>TRADE HUSTL<span>3</span></strong>
         <p>Built by Hustle. Backed by Trades.</p>
+        <div className="rb-footer-links"><a href="/privacy">Privacy</a><a href="/terms">Terms</a><a href="/resume-builder/refund-policy">Refunds</a><a href="/resume-builder/ai-disclosure">AI disclosure</a><a href="/data-deletion">Data requests</a><a href="/contact">Support</a></div>
         <small>© 2026 TRADE HUSTL3. All grit reserved.</small>
       </footer>
     </main>

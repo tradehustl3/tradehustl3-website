@@ -80,6 +80,7 @@ export default function Home() {
       <footer>
         <div className="footer-brand"><div className="wordmark">TRADE HUSTL<span>3</span></div><p>Built by Hustle, Backed by Trades.</p><SocialLinks /></div>
         <div className="footer-links"><a href="/book">The Book</a><a href="/resume-builder">Resume Builder</a><a href="#ecosystem">Ecosystem</a><a href="#mission">Mission</a><a href="#field">From the field</a><a href="mailto:partners@tradehustl3.com">Partnerships</a></div>
+        <div className="footer-legal"><a href="/privacy">Privacy</a><a href="/terms">Terms</a><a href="/resume-builder/refund-policy">Resume refunds</a><a href="/book/refund-policy">eBook policy</a><a href="/data-deletion">Data requests</a><a href="/contact">Support</a></div>
         <p className="copyright">© 2026 TRADE HUSTL3. ALL GRIT RESERVED.</p>
       </footer>
     </main>

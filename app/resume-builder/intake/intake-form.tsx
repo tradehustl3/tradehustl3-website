@@ -297,6 +297,13 @@ export function IntakeForm() {
         </div>
       </section>
 
+      {!editingPaid ? (
+        <label className="rb-legal-consent">
+          <input type="checkbox" name="legalConsent" required />
+          <span>I am at least 18 years old and agree to the <a href="/terms" target="_blank" rel="noreferrer">Terms of Service</a>, <a href="/privacy" target="_blank" rel="noreferrer">Privacy Policy</a>, <a href="/resume-builder/refund-policy" target="_blank" rel="noreferrer">Refund Policy</a>, and <a href="/resume-builder/ai-disclosure" target="_blank" rel="noreferrer">AI Disclosure</a>.</span>
+        </label>
+      ) : null}
+
       <div className="rb-checkout-bar">
         <div><span>{editingPaid ? "Already paid" : "Total today"}</span><strong>{editingPaid ? "$0" : "$9.99"}</strong><small>{editingPaid ? "No extra charge · available runs unchanged" : "One completed resume · no subscription"}</small></div>
         <button className="rb-button rb-button-primary" type="submit" disabled={submitting}>{submitting ? "Saving your intake…" : primaryAction} <span>→</span></button>
