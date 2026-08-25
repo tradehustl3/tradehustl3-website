@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 type Stage = "checking" | "waiting" | "ready" | "error";
@@ -63,7 +62,7 @@ export function PaymentStatus() {
       <p role="status">{message}</p>
       <div className="rb-order-summary"><span>Resume Builder</span><strong>$9.99 paid once</strong><small>Initial build + up to 3 corrections</small></div>
       {stage === "waiting" || stage === "error" ? <button className="rb-button rb-button-primary" type="button" onClick={() => { attempts.current = 0; void check(); }}>Check payment status <span>↻</span></button> : null}
-      {stage === "error" ? <Link className="rb-text-link" href="/resume-builder/intake">Return to your intake</Link> : null}
+      {stage === "error" ? <a className="rb-text-link" href="/resume-builder/intake">Return to your intake</a> : null}
       <small>Do not close this page while confirmation is in progress.</small>
     </div>
   );

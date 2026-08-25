@@ -160,6 +160,15 @@
 .rb-form-banner p, .rb-form-banner strong { margin: 0; }
 .rb-form-banner p { color: #17775d; font-size: 9px; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; }
 .rb-form-banner small { color: #66747c; }
+.rb-intake-notice { margin: 18px 0; padding: 22px 24px; border: 1px solid #c99723; border-left: 5px solid var(--rb-gold); background: #fff8df; color: var(--rb-navy); }
+.rb-intake-notice h2 { margin: 5px 0 10px; font-size: clamp(34px, 4vw, 52px); }
+.rb-intake-notice > p { max-width: 820px; margin: 7px 0; color: #58636a; line-height: 1.55; }
+.rb-intake-missing { margin: 16px 0; padding: 14px 17px; background: #d6a52a1c; }
+.rb-intake-missing strong { font-size: 10px; letter-spacing: .1em; text-transform: uppercase; }
+.rb-intake-missing ul { margin: 8px 0 0; padding-left: 20px; }
+.rb-intake-missing li { margin: 4px 0; }
+.rb-intake-notice .rb-intake-reassurance { color: #28705d; font-size: 12px; font-weight: 800; }
+.rb-intake-notice .rb-button { margin-top: 12px; }
 .rb-form-section { display: grid; grid-template-columns: 270px 1fr; gap: 42px; margin-top: 16px; padding: 38px; border-top: 4px solid #071a2b; background: #f8f6f0; box-shadow: 8px 8px 0 #071a2b0b; }
 .rb-form-section-heading { display: flex; gap: 16px; }
 .rb-form-section-heading > span { color: var(--rb-red); font-family: var(--font-display); font-size: 28px; }
@@ -169,6 +178,8 @@
 .rb-field-grid-3 { grid-template-columns: repeat(3, 1fr); }
 .rb-field-grid .rb-field + .rb-field { margin-top: 0; }
 .rb-field-wide { grid-column: 1 / -1; }
+.rb-job-note, .rb-job-list { grid-column: 2; }
+.rb-job-note { align-self: end; margin: 0; padding: 13px 16px; border-left: 3px solid var(--rb-gold); background: #d6a52a12; color: #56636b; font-size: 13px; line-height: 1.55; }
 .rb-job { margin: 0 0 26px; padding: 24px; border: 1px solid #b8b6ae; }
 .rb-job:last-child { margin-bottom: 0; }
 .rb-job legend { padding: 0 10px; color: var(--rb-red); font-size: 10px; font-weight: 900; letter-spacing: .13em; text-transform: uppercase; }
@@ -247,6 +258,7 @@
   .rb-entry-panel { border-top: 1px solid var(--rb-line); border-left: 0; }
   .rb-package, .rb-tracks, .rb-flow-intro { grid-template-columns: 1fr; gap: 40px; }
   .rb-form-section { grid-template-columns: 1fr; }
+  .rb-job-note, .rb-job-list { grid-column: 1; }
   .rb-review-grid { grid-template-columns: 1fr; }
   .rb-preview-panel { min-height: 650px; }.rb-preview-panel iframe { height: 584px; }
 }

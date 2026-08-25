@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 
 type User = { email: string; fullName: string | null };
@@ -67,7 +66,7 @@ export function AccountStart() {
           <strong>{user.fullName || user.email}</strong>
           <small>{user.email}</small>
         </div>
-        <Link className="rb-button rb-button-primary" href="/resume-builder/intake">Continue to experience <span>→</span></Link>
+        <a className="rb-button rb-button-primary" href="/resume-builder/intake">Continue to experience <span>→</span></a>
       </div>
     );
   }
