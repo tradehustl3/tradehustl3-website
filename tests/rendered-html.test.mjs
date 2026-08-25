@@ -78,6 +78,7 @@ test("publishes a canonical XML sitemap and robots discovery hints", async () =>
   const sitemap = await sitemapResponse.text();
   assert.match(sitemap, /<loc>https:\/\/tradehustl3\.com<\/loc>/i);
   assert.match(sitemap, /<loc>https:\/\/tradehustl3\.com\/book<\/loc>/i);
+  assert.match(sitemap, /<loc>https:\/\/tradehustl3\.com\/resume-builder<\/loc>/i);
 
   const robotsResponse = await worker.fetch(new Request("https://tradehustl3.com/robots.txt"), env, ctx);
   assert.equal(robotsResponse.status, 200);
@@ -422,7 +423,7 @@ test("verifies paid Stripe eBook orders, emails a private link, and serves the R
 test("server-renders every part of the TRADE HUSTL3 ecosystem", async () => {
   const html = await (await render()).text();
   for (const title of ["The Book", "Resume Builder", "HUSTL3 PRO", "Jobsite Gear", "Program Partnerships"]) assert.match(html, new RegExp(`<h3>${title}<\\/h3>`, "i"));
-  assert.match(html, /href="\/resume"/i);
+  assert.match(html, /href="\/resume-builder"/i);
   assert.match(html, /href="mailto:partners@tradehustl3\.com"/i);
   assert.match(html, /href="https:\/\/www\.facebook\.com\/profile\.php\?id=61593457675674"/i);
   assert.match(html, /aria-label="Follow TRADE HUSTL3 on Facebook"/i);
@@ -445,8 +446,59 @@ test("routes the branded resume link to the Resume Builder", async () => {
     {},
     { waitUntil() {}, passThroughOnException() {} },
   );
-  assert.equal(response.status, 302);
-  assert.equal(response.headers.get("location"), "https://trad3-hustl3-resume.maintenanceman.chatgpt.site/");
+  assert.equal(response.status, 308);
+  assert.equal(response.headers.get("location"), "https://tradehustl3.com/resume-builder");
+});
+
+test("server-renders the paid Resume Builder account entry and locked product rules", async () => {
+  const response = await renderPath("/resume-builder");
+  assert.equal(response.status, 200);
+  const html = await response.text();
+
+  assert.match(html, /Skilled Trades Resume Builder \| TRADE HUSTL3/i);
+  assert.match(html, /START YOUR RESUME/i);
+  assert.match(html, /Create account &amp; continue/i);
+  assert.match(html, /\$9\.99/i);
+  assert.match(html, /One completed resume/i);
+  assert.match(html, /Initial tailored resume build/i);
+  assert.match(html, /Up to 3 AI corrections within 7 days/i);
+  assert.match(html, /Clean PDF \+ editable DOCX downloads/i);
+  assert.doesNotMatch(html, /\$89\.99|free AI/i);
+  for (const track of ["HVAC &amp; Refrigeration", "Electrical", "Plumbing", "Construction &amp; Carpentry", "Facilities Maintenance", "Welding &amp; Fabrication", "General Labor / Trade Helper"]) {
+    assert.match(html, new RegExp(track, "i"));
+  }
+  assert.equal(html.toUpperCase().includes("TRA" + "D3"), false);
+});
+
+test("server-renders scanner-safe confirmation, intake, payment return, and review routes", async () => {
+  const routes = [
+    ["/resume-builder/confirm?token=test", /CONFIRM THIS[\s\S]*SIGN-IN/i],
+    ["/resume-builder/intake", /GIVE US THE FACTS[\s\S]*WE(?:’|&#x27;|')LL SHAPE THE STORY/i],
+    ["/resume-builder/payment-confirmed?resume_id=test", /LOCKING IN YOUR[\s\S]*BUILD/i],
+    ["/resume-builder/review?resume_id=test", /Loading your secure workspace/i],
+  ];
+
+  for (const [route, expectation] of routes) {
+    const response = await renderPath(route);
+    assert.equal(response.status, 200, route);
+    const html = await response.text();
+    assert.match(html, expectation);
+    assert.match(html, /Resume Builder progress/i);
+    assert.match(html, /name="robots" content="noindex, nofollow"/i);
+  }
+
+  const confirmation = await (await renderPath("/resume-builder/confirm?token=test")).text();
+  assert.match(confirmation, /opening the email did not sign you in/i);
+  assert.match(confirmation, /Confirm &amp; continue/i);
+  assert.doesNotMatch(confirmation, /\/api\/resume-builder\/auth\/confirm/);
+
+  const intake = await (await renderPath("/resume-builder/intake")).text();
+  assert.match(intake, /Nothing is generated until after payment/i);
+  assert.match(intake, /Total today[\s\S]*\$9\.99/i);
+  assert.match(intake, /no subscription/i);
+
+  const payment = await (await renderPath("/resume-builder/payment-confirmed?resume_id=test")).text();
+  assert.match(payment, /Initial build \+ up to 3 corrections/i);
 });
 
 test("uses the official navy, red, and gold palette", async () => {

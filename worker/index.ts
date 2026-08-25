@@ -2,8 +2,9 @@
 import { handleImageOptimization, DEFAULT_DEVICE_SIZES, DEFAULT_IMAGE_SIZES } from "vinext/server/image-optimization";
 import handler from "vinext/server/app-router-entry";
 import freeSampleDataUrl from "./assets/trade-hustl3-free-sample.pdf?inline";
+import { handleResumeBuilderRoute, ResumeBuilderEnv } from "./resume-builder";
 
-interface Env {
+interface Env extends ResumeBuilderEnv {
   ASSETS: Fetcher;
   DB: D1Database;
   BOOKS?: R2Bucket;
@@ -490,8 +491,11 @@ const worker = {
     }
 
     if (url.pathname === "/resume") {
-      return Response.redirect("https://trad3-hustl3-resume.maintenanceman.chatgpt.site", 302);
+      return Response.redirect(new URL("/resume-builder", request.url).toString(), 308);
     }
+
+    const resumeBuilderResponse = await handleResumeBuilderRoute(request, env);
+    if (resumeBuilderResponse) return resumeBuilderResponse;
 
     if (url.pathname === "/api/subscribe") {
       return subscribe(request, env);

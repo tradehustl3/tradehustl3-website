@@ -15,5 +15,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "weekly",
       priority: 0.9,
     },
+    {
+      url: `${SITE_URL}/resume-builder`,
+      lastModified: new Date("2026-08-24T00:00:00.000Z"),
+      changeFrequency: "monthly",
+      priority: 0.9,
+    },
   ];
 }

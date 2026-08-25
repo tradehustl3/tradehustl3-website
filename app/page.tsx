@@ -4,7 +4,7 @@ import { SocialLinks } from "./social-links";
 
 const pillars = [
   { number: "01", title: "The Book", description: "The TRADE HUSTL3 career playbook by Zachary Ellis (KDP ISBN 9798193043355), launching September 15, 2026.", action: "Explore the book", href: "/book" },
-  { number: "02", title: "Resume Builder", description: "Turn licenses, certifications, field hours, and real jobsite experience into a resume that gets understood.", action: "Build your edge", href: "/resume" },
+  { number: "02", title: "Resume Builder", description: "Turn licenses, certifications, field hours, and real jobsite experience into a resume that gets understood.", action: "Build your edge", href: "/resume-builder" },
   { number: "03", title: "HUSTL3 PRO", description: "Premium tools, practical training, and a community built for tradespeople ready for the next level.", action: "Join the waitlist", href: "#join" },
   { number: "04", title: "Jobsite Gear", description: "Hard-wearing essentials that carry the mindset from the jobsite to everywhere else.", action: "Gear up", href: "#join" },
   { number: "05", title: "Program Partnerships", description: "Resources and collaboration for trade schools, workforce programs, and the people building tomorrow's talent.", action: "Partner with us", href: "mailto:partners@tradehustl3.com" },
@@ -34,7 +34,7 @@ export default function Home() {
           <span className="wordmark">TRADE HUSTL<span>3</span></span>
         </a>
         <nav aria-label="Primary navigation">
-          <a href="/book">The Book</a><a href="/resume">Resume Builder</a><a href="#ecosystem">Ecosystem</a><a href="#mission">Mission</a><a href="#field">From the field</a><a className="nav-cta" href="#join">Get in early</a>
+          <a href="/book">The Book</a><a href="/resume-builder">Resume Builder</a><a href="#ecosystem">Ecosystem</a><a href="#mission">Mission</a><a href="#field">From the field</a><a className="nav-cta" href="#join">Get in early</a>
         </nav>
       </header>
 
@@ -79,7 +79,7 @@ export default function Home() {
 
       <footer>
         <div className="footer-brand"><div className="wordmark">TRADE HUSTL<span>3</span></div><p>Built by Hustle, Backed by Trades.</p><SocialLinks /></div>
-        <div className="footer-links"><a href="/book">The Book</a><a href="/resume">Resume Builder</a><a href="#ecosystem">Ecosystem</a><a href="#mission">Mission</a><a href="#field">From the field</a><a href="mailto:partners@tradehustl3.com">Partnerships</a></div>
+        <div className="footer-links"><a href="/book">The Book</a><a href="/resume-builder">Resume Builder</a><a href="#ecosystem">Ecosystem</a><a href="#mission">Mission</a><a href="#field">From the field</a><a href="mailto:partners@tradehustl3.com">Partnerships</a></div>
         <p className="copyright">© 2026 TRADE HUSTL3. ALL GRIT RESERVED.</p>
       </footer>
     </main>
