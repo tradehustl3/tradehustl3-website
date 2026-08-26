@@ -339,7 +339,7 @@ async function runEbookLaunchDelivery(env: Env): Promise<void> {
 
     if (claim.meta?.changes !== 1) continue;
 
-    const downloadUrl = `\${SITE_URL}\${EBOOK_DOWNLOAD_ROUTE}?token=\${encodeURIComponent(order.download_token)}`;
+    const downloadUrl = `${SITE_URL}${EBOOK_DOWNLOAD_ROUTE}?token=${encodeURIComponent(order.download_token)}`;
     try {
       await sendEbookDeliveryEmail(env, order.email, downloadUrl);
       await env.DB.prepare(
