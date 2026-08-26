@@ -475,7 +475,7 @@ test("launch sweep delivers a pending preorder once after release", async () => 
             },
             async run() {
               calls.push({ sql, values });
-              if (/SET launch_email_lease_until = \\?/i.test(sql)) return { meta: { changes: 1 } };
+              if (/SET launch_email_lease_until = \?/i.test(sql)) return { meta: { changes: 1 } };
               return { success: true };
             },
           };
@@ -502,7 +502,7 @@ test("launch sweep delivers a pending preorder once after release", async () => 
   assert.equal(sent.length, 1);
   assert.equal(sent[0].input, "https://api.brevo.com/v3/smtp/email");
   assert.match(sent[0].body.subject, /eBook is ready/i);
-  assert.match(sent[0].body.htmlContent, /api\\/ebook-download\\?token=/i);
+  assert.match(sent[0].body.htmlContent, /api\/ebook-download\?token=/i);
   assert.equal(calls.filter((call) => /SET launch_emailed_at = CURRENT_TIMESTAMP/i.test(call.sql)).length, 1);
 });
 
