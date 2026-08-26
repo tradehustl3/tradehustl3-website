@@ -43,6 +43,9 @@ const STRIPE_WEBHOOK_ROUTE = "/api/stripe/webhook";
 const EBOOK_DOWNLOAD_ROUTE = "/api/ebook-download";
 const EBOOK_OBJECT_KEY = "TRADE-HUSTL3-COMPLETE-EBOOK.pdf";
 const SITE_URL = "https://tradehustl3.com";
+const EBOOK_RELEASE_AT = Date.parse("2026-09-15T04:00:00Z");
+const EBOOK_LAUNCH_BATCH_SIZE = 25;
+const EBOOK_LAUNCH_LEASE_SECONDS = 10 * 60;
 const encoder = new TextEncoder();
 
 function jsonResponse(body: Record<string, unknown>, status = 200): Response {
@@ -266,6 +269,93 @@ async function sendEbookDeliveryEmail(env: Env, email: string, downloadUrl: stri
   }
 }
 
+
+async function sendEbookPreorderConfirmationEmail(env: Env, email: string): Promise<void> {
+  const apiKey = env.BREVO_API_KEY?.trim();
+  if (!apiKey) throw new Error("Brevo eBook preorder delivery is not configured.");
+
+  const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+      "api-key": apiKey,
+    },
+    body: JSON.stringify({
+      sender: {
+        name: "TRADE HUSTL3",
+        email: env.BREVO_SAMPLE_SENDER_EMAIL?.trim() || "updates@tradehustl3.com",
+      },
+      to: [{ email }],
+      subject: "Your TRADE HUSTL3 eBook preorder is confirmed",
+      htmlContent: \`
+        <div style="background:#071a2b;padding:32px;font-family:Arial,sans-serif;color:#f4f0e7">
+          <div style="max-width:620px;margin:auto">
+            <p style="color:#d6a52a;font-weight:700;letter-spacing:2px">ENTER. EARN. ELEVATE.</p>
+            <h1 style="margin:16px 0;color:#ffffff">Your eBook preorder is confirmed.</h1>
+            <p style="font-size:16px;line-height:1.6;color:#c5ced5">Thank you for investing in your skilled-trades future. Your complete TRADE HUSTL3 eBook will be delivered to this email address on September 15, 2026.</p>
+            <p style="font-size:16px;line-height:1.6;color:#c5ced5">No download is available before launch. You will receive a second email with your private download link when the book is released.</p>
+            <p style="color:#d6a52a;font-weight:700">BUILT BY HUSTL3. BACKED BY TRADES.</p>
+          </div>
+        </div>\`,
+    }),
+  });
+
+  if (!response.ok) {
+    const detail = (await response.text()).slice(0, 500);
+    console.error("Brevo eBook preorder confirmation failed", response.status, detail);
+    throw new Error("Brevo eBook preorder confirmation failed.");
+  }
+}
+
+async function runEbookLaunchDelivery(env: Env): Promise<void> {
+  if (!env.DB || !env.BOOKS || Date.now() < EBOOK_RELEASE_AT) return;
+
+  const now = Math.floor(Date.now() / 1000);
+  const leaseUntil = now + EBOOK_LAUNCH_LEASE_SECONDS;
+  const pending = await env.DB.prepare(
+    \`SELECT stripe_session_id, email, download_token
+     FROM ebook_orders
+     WHERE status = 'paid'
+       AND launch_emailed_at IS NULL
+       AND (launch_email_lease_until IS NULL OR launch_email_lease_until < ?)
+     ORDER BY created_at
+     LIMIT ?\`,
+  ).bind(now, EBOOK_LAUNCH_BATCH_SIZE).all<{
+    stripe_session_id: string;
+    email: string;
+    download_token: string;
+  }>();
+
+  for (const order of pending.results ?? []) {
+    const claim = await env.DB.prepare(
+      \`UPDATE ebook_orders
+       SET launch_email_lease_until = ?
+       WHERE stripe_session_id = ?
+         AND status = 'paid'
+         AND launch_emailed_at IS NULL
+         AND (launch_email_lease_until IS NULL OR launch_email_lease_until < ?)\`,
+    ).bind(leaseUntil, order.stripe_session_id, now).run();
+
+    if (claim.meta?.changes !== 1) continue;
+
+    const downloadUrl = \`\${SITE_URL}\${EBOOK_DOWNLOAD_ROUTE}?token=\${encodeURIComponent(order.download_token)}\`;
+    try {
+      await sendEbookDeliveryEmail(env, order.email, downloadUrl);
+      await env.DB.prepare(
+        \`UPDATE ebook_orders
+         SET launch_emailed_at = CURRENT_TIMESTAMP, launch_email_lease_until = NULL, emailed_at = COALESCE(emailed_at, CURRENT_TIMESTAMP)
+         WHERE stripe_session_id = ?\`,
+      ).bind(order.stripe_session_id).run();
+    } catch (error) {
+      await env.DB.prepare(
+        "UPDATE ebook_orders SET launch_email_lease_until = NULL WHERE stripe_session_id = ? AND launch_emailed_at IS NULL",
+      ).bind(order.stripe_session_id).run();
+      console.error("eBook launch delivery failed", order.stripe_session_id, error);
+    }
+  }
+}
+
 type StripeCheckoutSession = {
   id?: unknown;
   payment_link?: unknown;
@@ -329,16 +419,28 @@ async function handleStripeWebhook(request: Request, env: Env): Promise<Response
     ).bind(sessionId, email, paymentLinkId, amountTotal, currency, downloadToken).run();
 
     const order = await env.DB.prepare(
-      "SELECT download_token, emailed_at FROM ebook_orders WHERE stripe_session_id = ? AND status = 'paid'",
-    ).bind(sessionId).first<{ download_token: string; emailed_at: string | null }>();
+      "SELECT email, download_token, emailed_at, launch_emailed_at FROM ebook_orders WHERE stripe_session_id = ? AND status = 'paid'",
+    ).bind(sessionId).first<{
+      email: string;
+      download_token: string;
+      emailed_at: string | null;
+      launch_emailed_at: string | null;
+    }>();
 
     if (!order?.download_token) throw new Error("The paid eBook order could not be stored.");
 
-    if (!order.emailed_at) {
+    if (Date.now() < EBOOK_RELEASE_AT) {
+      if (!order.emailed_at) {
+        await sendEbookPreorderConfirmationEmail(env, order.email || email);
+        await env.DB.prepare(
+          "UPDATE ebook_orders SET emailed_at = CURRENT_TIMESTAMP WHERE stripe_session_id = ?",
+        ).bind(sessionId).run();
+      }
+    } else if (!order.launch_emailed_at) {
       const downloadUrl = `${SITE_URL}${EBOOK_DOWNLOAD_ROUTE}?token=${encodeURIComponent(order.download_token)}`;
-      await sendEbookDeliveryEmail(env, email, downloadUrl);
+      await sendEbookDeliveryEmail(env, order.email || email, downloadUrl);
       await env.DB.prepare(
-        "UPDATE ebook_orders SET emailed_at = CURRENT_TIMESTAMP WHERE stripe_session_id = ?",
+        "UPDATE ebook_orders SET emailed_at = COALESCE(emailed_at, CURRENT_TIMESTAMP), launch_emailed_at = CURRENT_TIMESTAMP, launch_email_lease_until = NULL WHERE stripe_session_id = ?",
       ).bind(sessionId).run();
     }
 
@@ -354,6 +456,12 @@ async function servePurchasedEbook(request: Request, env: Env): Promise<Response
     return new Response("Method Not Allowed", { status: 405, headers: { Allow: "GET" } });
   }
   if (!env.DB || !env.BOOKS) return new Response("eBook delivery is temporarily unavailable.", { status: 503 });
+  if (Date.now() < EBOOK_RELEASE_AT) {
+    return new Response("Your eBook download unlocks on September 15, 2026.", {
+      status: 403,
+      headers: { "Cache-Control": "no-store" },
+    });
+  }
 
   const token = new URL(request.url).searchParams.get("token") || "";
   if (!/^[A-Za-z0-9_-]{43}$/.test(token)) return Response.redirect(`${SITE_URL}/book`, 302);
@@ -482,6 +590,11 @@ async function serveFreeSample(request: Request, env: Env): Promise<Response> {
 // const imageConfig: ImageConfig = { dangerouslyAllowSVG: true };
 
 const worker = {
+  async scheduled(_controller: ScheduledController, env: Env, ctx: ExecutionContext): Promise<void> {
+    console.log("eBook launch sweep invoked", new Date().toISOString());
+    if (Date.now() >= EBOOK_RELEASE_AT) ctx.waitUntil(runEbookLaunchDelivery(env));
+  },
+
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
 
