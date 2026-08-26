@@ -29,7 +29,7 @@ export function SignupForm({ mode = "general" }: { mode?: "general" | "sample" }
   const [message, setMessage] = useState("");
   const [sampleUrl, setSampleUrl] = useState("");
   const isSample = mode === "sample";
-  const formName = isSample ? "free_7_page_sample" : "general_interest";
+  const formName = isSample ? "free_2026_2027_trade_guide_preview" : "general_interest";
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -110,12 +110,12 @@ export function SignupForm({ mode = "general" }: { mode?: "general" | "sample" }
           </div>
         )}
         <div className="field-group email-group">
-          <label htmlFor={isSample ? "sample-email" : "email"}>{isSample ? "EMAIL TO RECEIVE THE SAMPLE" : "EMAIL ADDRESS"}</label>
+          <label htmlFor={isSample ? "sample-email" : "email"}>{isSample ? "EMAIL TO RECEIVE THE FREE GUIDE" : "EMAIL ADDRESS"}</label>
           <input id={isSample ? "sample-email" : "email"} name="email" type="email" autoComplete="email" placeholder="YOU@EXAMPLE.COM" required disabled={status === "submitting"} />
         </div>
         {utmKeys.map((key) => <input key={key} type="hidden" name={key} defaultValue="" />)}
         <button type="submit" disabled={status === "submitting"}>
-          {status === "submitting" ? "UNLOCKING..." : isSample ? "UNLOCK THE FREE SAMPLE" : "KEEP ME POSTED"} <span>↗</span>
+          {status === "submitting" ? "UNLOCKING..." : isSample ? "UNLOCK THE FREE GUIDE" : "KEEP ME POSTED"} <span>↗</span>
         </button>
       </form>
       <p className={`signup-status ${status}`} role={status === "error" ? "alert" : "status"} aria-live="polite">
@@ -123,7 +123,7 @@ export function SignupForm({ mode = "general" }: { mode?: "general" | "sample" }
       </p>
       {isSample && status === "success" && sampleUrl && (
         <a className="sample-unlock-link" href={sampleUrl} target="_blank" rel="noreferrer">
-          OPEN YOUR 7-PAGE SAMPLE <span>↗</span>
+          OPEN YOUR FREE GUIDE <span>↗</span>
         </a>
       )}
     </>

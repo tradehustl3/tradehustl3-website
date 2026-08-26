@@ -28,6 +28,8 @@ The `/api/subscribe` endpoint stores normalized signups in D1 and creates or upd
 
 Brevo must contain the text attributes `INTEREST`, `SIGNUP_SOURCE`, `UTM_SOURCE`, `UTM_MEDIUM`, and `UTM_CAMPAIGN`.
 
+Book-interest signups receive the gated six-page preview of *TRADE HUSTL3: 10 High-Opportunity Trades — 2026-2027 Edition*. The Worker serves the PDF from `worker/assets/trade-hustl3-free-sample.pdf` through `/api/free-sample`; direct public asset requests continue to redirect to the email gate.
+
 ## Secure eBook fulfillment
 
 The direct eBook button unlocks at midnight Eastern Time on September 15, 2026. Stripe fulfillment is handled by the Cloudflare Worker and never exposes the full book through public site assets.

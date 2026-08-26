@@ -139,11 +139,12 @@ test("server-renders the official book page, cover, portrait, and current editio
   assert.match(html, /90-Day Action Plan/i);
   assert.match(html, /more than 200 skilled trades/i);
   assert.match(html, /"datePublished":"2026-09-15"/i);
-  assert.match(html, /Read a Free Sample/i);
-  assert.match(html, /UNLOCK THE FREE SAMPLE/i);
-  assert.match(html, /EMAIL TO RECEIVE THE SAMPLE/i);
+  assert.match(html, /Get the Free Guide/i);
+  assert.match(html, /UNLOCK THE FREE GUIDE/i);
+  assert.match(html, /EMAIL TO RECEIVE THE FREE GUIDE/i);
   assert.doesNotMatch(html, /href="\/trade-hustl3-free-sample\.pdf/i);
-  assert.match(html, /FIRST 7 PAGES/i);
+  assert.match(html, /GUIDE PREVIEW/i);
+  assert.match(html, /verified power-line and HVAC profiles/i);
   assert.match(html, /21 CHAPTERS[\s\S]*FOUR PARTS[\s\S]*ONE PLAN/i);
   assert.match(html, /What a Skilled Trade Really Is/i);
   assert.match(html, /Final Word: Build Something That Belongs to You/i);
@@ -257,7 +258,7 @@ test("subscriber endpoint rejects invalid submissions", async () => {
   assert.equal(prepared, false);
 });
 
-test("book signup unlocks and emails the gated seven-page sample", async () => {
+test("book signup unlocks and emails the gated 2026-2027 guide preview", async () => {
   const worker = await loadWorker();
   const brevoCalls = [];
   const originalFetch = globalThis.fetch;
@@ -294,12 +295,14 @@ test("book signup unlocks and emails the gated seven-page sample", async () => {
   const result = await signupResponse.json();
   assert.equal(result.ok, true);
   assert.equal(result.sampleUrl, "/api/free-sample");
+  assert.match(result.message, /free 2026-2027 trade guide preview/i);
   assert.match(signupResponse.headers.get("set-cookie") ?? "", /tradehustl3_sample_access=granted/i);
   assert.deepEqual(brevoCalls.map((call) => call.input), [
     "https://api.brevo.com/v3/contacts",
     "https://api.brevo.com/v3/smtp/email",
   ]);
   assert.match(brevoCalls[1].body.htmlContent, /https:\/\/tradehustl3\.com\/api\/free-sample\?token=/i);
+  assert.match(brevoCalls[1].body.htmlContent, /OPEN THE FREE GUIDE/i);
 
   const cookie = (signupResponse.headers.get("set-cookie") ?? "").split(";")[0];
   const sampleResponse = await worker.fetch(
@@ -311,6 +314,7 @@ test("book signup unlocks and emails the gated seven-page sample", async () => {
   );
   assert.equal(sampleResponse.status, 200);
   assert.match(sampleResponse.headers.get("content-type") ?? "", /application\/pdf/i);
+  assert.match(sampleResponse.headers.get("content-disposition") ?? "", /TRADE-HUSTL3-2026-2027-Guide-Preview\.pdf/i);
   assert.match(await sampleResponse.text(), /^%PDF-/);
 });
 

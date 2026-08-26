@@ -210,14 +210,14 @@ async function sendSampleDeliveryEmail(env: Env, email: string, sampleUrl: strin
         email: env.BREVO_SAMPLE_SENDER_EMAIL?.trim() || "updates@tradehustl3.com",
       },
       to: [{ email }],
-      subject: "Your TRADE HUSTL3 free sample is ready",
+      subject: "Your TRADE HUSTL3 2026-2027 guide preview is ready",
       htmlContent: `
         <div style="background:#071a2b;padding:32px;font-family:Arial,sans-serif;color:#f4f0e7">
           <div style="max-width:620px;margin:auto">
             <p style="color:#d6a52a;font-weight:700;letter-spacing:2px">ENTER. EARN. ELEVATE.</p>
-            <h1 style="margin:16px 0;color:#ffffff">Your seven-page sample is ready.</h1>
-            <p style="font-size:16px;line-height:1.6;color:#c5ced5">Get an early look at TRADE HUSTL3 and start building a future through useful skill.</p>
-            <p style="margin:28px 0"><a href="${sampleUrl}" style="display:inline-block;background:#d9361e;color:#ffffff;padding:16px 22px;text-decoration:none;font-weight:700">READ THE FREE SAMPLE</a></p>
+            <h1 style="margin:16px 0;color:#ffffff">Your free trade guide preview is ready.</h1>
+            <p style="font-size:16px;line-height:1.6;color:#c5ced5">Open the six-page 2026-2027 preview for verified trade profiles, national pay context, the guide's source standard, and practical next steps.</p>
+            <p style="margin:28px 0"><a href="${sampleUrl}" style="display:inline-block;background:#d9361e;color:#ffffff;padding:16px 22px;text-decoration:none;font-weight:700">OPEN THE FREE GUIDE</a></p>
             <p style="color:#d6a52a;font-weight:700">BUILT BY HUSTL3. BACKED BY TRADES.</p>
           </div>
         </div>`,
@@ -432,11 +432,11 @@ async function subscribe(request: Request, env: Env): Promise<Response> {
       try {
         await sendSampleDeliveryEmail(env, email, emailedSampleUrl);
       } catch (error) {
-        console.error("Free sample delivery email failed", error);
+        console.error("Free guide delivery email failed", error);
       }
 
       return Response.json(
-        { ok: true, message: "You're in. Your seven-page sample is ready, and a copy is on its way to your inbox.", sampleUrl: FREE_SAMPLE_ROUTE },
+        { ok: true, message: "You're in. Your free 2026-2027 trade guide preview is ready, and a copy is on its way to your inbox.", sampleUrl: FREE_SAMPLE_ROUTE },
         {
           headers: {
             "Cache-Control": "no-store",
@@ -468,7 +468,7 @@ async function serveFreeSample(request: Request, env: Env): Promise<Response> {
   const sample = Uint8Array.from(atob(encoded), (character) => character.charCodeAt(0));
   const headers = new Headers();
   headers.set("Content-Type", "application/pdf");
-  headers.set("Content-Disposition", 'inline; filename="TRADE-HUSTL3-Free-Sample.pdf"');
+  headers.set("Content-Disposition", 'inline; filename="TRADE-HUSTL3-2026-2027-Guide-Preview.pdf"');
   headers.set("Cache-Control", "private, no-store");
   headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
   if (tokenGranted) headers.set("Set-Cookie", `${SAMPLE_COOKIE}; Max-Age=604800; Path=/; HttpOnly; Secure; SameSite=Lax`);
