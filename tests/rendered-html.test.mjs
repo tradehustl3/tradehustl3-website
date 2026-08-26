@@ -347,7 +347,7 @@ test("renders a private order-confirmation page", async () => {
   assert.match(html, /name="robots" content="noindex, nofollow"/i);
 });
 
-test("verifies paid Stripe eBook orders, emails a private link, and serves the R2 file", async () => {
+test("records a preorder confirmation without releasing the eBook before launch", async () => {
   const worker = await loadWorker();
   const webhookSecret = "whsec_test_trade_hustl3";
   const paymentLinkId = "plink_trade_hustl3_ebook";
@@ -383,6 +383,7 @@ test("verifies paid Stripe eBook orders, emails a private link, and serves the R
                   status: "paid",
                   download_token: values[5],
                   emailed_at: null,
+                  launch_emailed_at: null,
                 };
               }
               if (/UPDATE ebook_orders SET emailed_at/i.test(sql) && order) order.emailed_at = "2026-09-15 04:00:00";
@@ -390,7 +391,7 @@ test("verifies paid Stripe eBook orders, emails a private link, and serves the R
             },
             async first() {
               if (/WHERE stripe_session_id/i.test(sql) && order?.stripe_session_id === values[0]) {
-                return { download_token: order.download_token, emailed_at: order.emailed_at };
+                return { email: order.email, download_token: order.download_token, emailed_at: order.emailed_at, launch_emailed_at: order.launch_emailed_at };
               }
               if (/WHERE download_token/i.test(sql) && order?.download_token === values[0]) {
                 return { stripe_session_id: order.stripe_session_id };
@@ -442,19 +443,16 @@ test("verifies paid Stripe eBook orders, emails a private link, and serves the R
   assert.equal(order.email, "buyer@example.com");
   assert.equal(brevoCalls.length, 1);
   assert.equal(brevoCalls[0].input, "https://api.brevo.com/v3/smtp/email");
-  assert.match(brevoCalls[0].body.subject, /eBook is ready/i);
-  const downloadUrl = brevoCalls[0].body.htmlContent.match(/href="([^"]+\/api\/ebook-download\?token=[^"]+)"/i)?.[1];
-  assert.ok(downloadUrl);
+  assert.match(brevoCalls[0].body.subject, /preorder is confirmed/i);
+  assert.doesNotMatch(brevoCalls[0].body.htmlContent, /api\/ebook-download/i);
 
   const ebookResponse = await worker.fetch(
-    new Request(downloadUrl),
+    new Request("https://tradehustl3.com/api/ebook-download?token=" + order.download_token),
     { DB, BOOKS },
     { waitUntil() {}, passThroughOnException() {} },
   );
-  assert.equal(ebookResponse.status, 200);
-  assert.match(ebookResponse.headers.get("content-type") ?? "", /application\/pdf/i);
-  assert.match(ebookResponse.headers.get("content-disposition") ?? "", /TRADE-HUSTL3-Complete-eBook\.pdf/i);
-  assert.equal(await ebookResponse.text(), "%PDF-complete-ebook");
+  assert.equal(ebookResponse.status, 403);
+  assert.match(await ebookResponse.text(), /unlock.*September 15, 2026/i);
 });
 
 test("server-renders every part of the TRADE HUSTL3 ecosystem", async () => {
