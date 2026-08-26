@@ -14,11 +14,11 @@ export default function OrderConfirmedPage() {
         <p className="section-label">/ PAYMENT CONFIRMED</p>
         <h1>YOU’RE IN.<br /><span>LET’S BUILD.</span></h1>
         <p>
-          Your TRADE HUSTL3 eBook purchase is complete. Your private download link is being sent to the email address used at checkout.
+          Your TRADE HUSTL3 eBook purchase is complete. Preorders receive their private download link by email on September 15, 2026. Purchases made after launch receive the link after payment.
         </p>
         <div className="order-confirmed-note">
           <strong>Check your inbox and spam folder.</strong>
-          <span>The delivery email will come from TRADE HUSTL3. Keep it for future downloads.</span>
+          <span>Your confirmation and delivery emails come from TRADE HUSTL3. Keep the delivery email for future downloads.</span>
         </div>
         <Link className="button button-secondary" href="/book">Return to the book page</Link>
       </section>

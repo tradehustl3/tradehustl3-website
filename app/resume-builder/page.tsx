@@ -5,7 +5,14 @@ import { ResumeBuilderHeader } from "./resume-builder-header";
 
 export const metadata: Metadata = {
   title: "Skilled Trades Resume Builder",
+  description: "Build an ATS-friendly HVAC, electrical, plumbing, construction, facilities, welding, or trade-helper resume for one $9.99 payment—no subscription.",
   alternates: { canonical: "/resume-builder" },
+  openGraph: {
+    title: "Skilled Trades Resume Builder | TRADE HUSTL3",
+    description: "Turn real skilled-trades experience into an ATS-friendly resume with a watermarked review, three corrections, and clean PDF and DOCX downloads.",
+    url: "/resume-builder",
+    type: "website",
+  },
 };
 
 const tradeTracks = [
@@ -76,7 +83,7 @@ export default function ResumeBuilderPage() {
       <footer className="rb-footer">
         <strong>TRADE HUSTL<span>3</span></strong>
         <p>Built by Hustle. Backed by Trades.</p>
-        <div className="rb-footer-links"><a href="/privacy">Privacy</a><a href="/terms">Terms</a><a href="/resume-builder/refund-policy">Refunds</a><a href="/resume-builder/ai-disclosure">AI disclosure</a><a href="/data-deletion">Data requests</a><a href="/contact">Support</a></div>
+        <div className="rb-footer-links"><a href="/guides/top-10-trades-2026-2027">Free Top Ten Trades Guide</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a><a href="/resume-builder/refund-policy">Refunds</a><a href="/resume-builder/ai-disclosure">AI disclosure</a><a href="/data-deletion">Data requests</a><a href="/contact">Support</a></div>
         <small>© 2026 TRADE HUSTL3. All grit reserved.</small>
       </footer>
     </main>

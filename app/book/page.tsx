@@ -46,6 +46,7 @@ const bookStructuredData = {
   description: BOOK_DESCRIPTION,
   isbn: "9798193043355",
   datePublished: "2026-09-15",
+  numberOfPages: 586,
   bookFormat: "https://schema.org/Paperback",
   inLanguage: "en-US",
   url: `${SITE_URL}/book`,
@@ -147,10 +148,11 @@ export default function BookPage() {
         </Link>
         <nav aria-label="Book page navigation">
           <Link href="/">Home</Link>
-          <a href="#sample">Free guide</a>
+          <a href="#sample">7-page sample</a>
+          <Link href="/guides/top-10-trades-2026-2027">Top Ten Trades</Link>
           <a href="#chapters">Chapters</a>
           <a href="#author">Author</a>
-          <a className="nav-cta" href="#sample">Get the Free Guide</a>
+          <a className="nav-cta" href="#sample">Read 7 Free Pages</a>
         </nav>
       </header>
 
@@ -181,7 +183,7 @@ export default function BookPage() {
             The blueprint, the game plan, and the movement for people ready to build a future through skilled trades. Go from exploring your options to choosing a path, developing real ability, increasing your value, and creating something that belongs to you.
           </p>
           <div className="hero-actions">
-            <a className="button button-primary" href="#sample">Get the Free Guide <span>↗</span></a>
+            <a className="button button-primary" href="#sample">Read 7 Free Pages <span>↗</span></a>
             <Link className="button button-secondary" href="/#join">Get launch updates</Link>
           </div>
           <div className="countdown-wrap">
@@ -200,13 +202,13 @@ export default function BookPage() {
 
       <section className="book-sample" id="sample">
         <div className="sample-intro">
-          <p className="section-label">/ FREE 2026-2027 GUIDE</p>
-          <h2>GET THE FREE<br /><span>GUIDE PREVIEW.</span></h2>
+          <p className="section-label">/ FREE SEVEN-PAGE BOOK SAMPLE</p>
+          <h2>START READING<br /><span>THE BOOK.</span></h2>
           <p>
-            Enter your email to unlock the six-page preview of <em>TRADE HUSTL3: 10 High-Opportunity Trades — 2026-2027 Edition</em>. It includes the guide&apos;s source standard, verified power-line and HVAC profiles, national pay context, and practical next steps.
+            Enter your email to unlock the official seven-page sample of <em>TRADE HUSTL3: Built by Hustle, Backed by Trades</em>. You&apos;ll get the title page, full table of contents, and the opening pages of Chapter 1.
           </p>
-          <SignupForm mode="sample" />
-          <small className="sample-consent">By unlocking the free guide, you agree to receive TRADE HUSTL3 book and career updates. Unsubscribe anytime.</small>
+          <SignupForm mode="bookSample" />
+          <small className="sample-consent">By unlocking the book sample, you agree to receive TRADE HUSTL3 book and career updates. Unsubscribe anytime.</small>
         </div>
         <figure className="sample-quote">
           <blockquote>
@@ -214,6 +216,17 @@ export default function BookPage() {
           </blockquote>
           <figcaption>The TRADE HUSTL3 mindset</figcaption>
         </figure>
+      </section>
+
+      <section className="book-audience" id="top-trades-guide">
+        <div>
+          <p className="section-label">/ SEPARATE FREE CAREER GUIDE</p>
+          <h2>TOP TEN TRADES<br /><span>2026–2027.</span></h2>
+        </div>
+        <div>
+          <p>Explore a separate, source-backed preview covering high-opportunity skilled trades, national pay context, entry paths, and practical next steps.</p>
+          <Link className="button button-primary" href="/guides/top-10-trades-2026-2027">Get the Top Ten Trades Guide <span>↗</span></Link>
+        </div>
       </section>
 
       <section className="book-discover" id="inside">
@@ -320,7 +333,7 @@ export default function BookPage() {
         </p>
         <div className="availability-grid">
           <article><span>AMAZON PAPERBACK</span><strong>$24.99</strong><small>Scheduled for September 15, 2026</small></article>
-          <article><span>DIRECT eBOOK</span><strong>$9.00</strong><small>Secure PDF delivered by email after payment</small></article>
+          <article><span>DIRECT eBOOK</span><strong>$9.00</strong><small>Preorder now — private download emailed September 15, 2026</small></article>
           <article><span>KINDLE eBOOK</span><strong>$9.99</strong><small>Amazon link will be added when the listing is live</small></article>
         </div>
         <LaunchPurchaseButton />
@@ -329,7 +342,7 @@ export default function BookPage() {
 
       <footer>
         <div className="footer-brand"><div className="wordmark">TRADE HUSTL<span>3</span></div><p>Built by Hustle, Backed by Trades.</p><SocialLinks /></div>
-        <div className="footer-links"><Link href="/">Home</Link><a href="#sample">Free guide</a><a href="#chapters">Chapters</a><a href="#author">Author</a><a href="mailto:partners@tradehustl3.com">Partnerships</a></div>
+        <div className="footer-links"><Link href="/">Home</Link><a href="#sample">7-page sample</a><Link href="/guides/top-10-trades-2026-2027">Top Ten Trades</Link><a href="#chapters">Chapters</a><a href="#author">Author</a><a href="mailto:partners@tradehustl3.com">Partnerships</a></div>
         <div className="footer-legal"><Link href="/privacy">Privacy</Link><Link href="/terms">Terms</Link><Link href="/book/refund-policy">eBook policy</Link><Link href="/data-deletion">Data requests</Link><Link href="/contact">Support</Link></div>
         <p className="copyright">© 2026 TRADE HUSTL3. ALL GRIT RESERVED.</p>
       </footer>

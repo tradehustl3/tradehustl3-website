@@ -34,7 +34,7 @@ export default function Home() {
           <span className="wordmark">TRADE HUSTL<span>3</span></span>
         </a>
         <nav aria-label="Primary navigation">
-          <a href="/book">The Book</a><a href="/resume-builder">Resume Builder</a><a href="#ecosystem">Ecosystem</a><a href="#mission">Mission</a><a href="#field">From the field</a><a className="nav-cta" href="#join">Get in early</a>
+          <a href="/book">The Book</a><a href="/guides/top-10-trades-2026-2027">Free Guide</a><a href="/resume-builder">Resume Builder</a><a href="#ecosystem">Ecosystem</a><a href="#mission">Mission</a><a href="#field">From the field</a><a className="nav-cta" href="#join">Get in early</a>
         </nav>
       </header>
 
@@ -79,7 +79,7 @@ export default function Home() {
 
       <footer>
         <div className="footer-brand"><div className="wordmark">TRADE HUSTL<span>3</span></div><p>Built by Hustle, Backed by Trades.</p><SocialLinks /></div>
-        <div className="footer-links"><a href="/book">The Book</a><a href="/resume-builder">Resume Builder</a><a href="#ecosystem">Ecosystem</a><a href="#mission">Mission</a><a href="#field">From the field</a><a href="mailto:partners@tradehustl3.com">Partnerships</a></div>
+        <div className="footer-links"><a href="/book">The Book</a><a href="/guides/top-10-trades-2026-2027">Top Ten Trades Guide</a><a href="/resume-builder">Resume Builder</a><a href="#ecosystem">Ecosystem</a><a href="#mission">Mission</a><a href="#field">From the field</a><a href="mailto:partners@tradehustl3.com">Partnerships</a></div>
         <div className="footer-legal"><a href="/privacy">Privacy</a><a href="/terms">Terms</a><a href="/resume-builder/refund-policy">Resume refunds</a><a href="/book/refund-policy">eBook policy</a><a href="/data-deletion">Data requests</a><a href="/contact">Support</a></div>
         <p className="copyright">© 2026 TRADE HUSTL3. ALL GRIT RESERVED.</p>
       </footer>
