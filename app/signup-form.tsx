@@ -22,14 +22,35 @@ function trackEvent(eventName: string, parameters: Record<string, string>) {
   (window as AnalyticsWindow).gtag?.("event", eventName, parameters);
 }
 
-export function SignupForm({ mode = "general" }: { mode?: "general" | "sample" }) {
+type SignupMode = "general" | "bookSample" | "topTrades";
+
+const resourceModes = {
+  bookSample: {
+    interest: "TRADE HUSTL3 Seven-Page Book Sample",
+    formName: "seven_page_book_sample",
+    label: "EMAIL TO RECEIVE THE SEVEN-PAGE SAMPLE",
+    submit: "UNLOCK THE BOOK SAMPLE",
+    submitting: "UNLOCKING SAMPLE...",
+    open: "OPEN YOUR BOOK SAMPLE",
+  },
+  topTrades: {
+    interest: "Top Ten Trades 2026-2027 Guide",
+    formName: "top_ten_trades_2026_2027_guide",
+    label: "EMAIL TO RECEIVE THE TOP TEN TRADES GUIDE",
+    submit: "UNLOCK THE FREE GUIDE",
+    submitting: "UNLOCKING GUIDE...",
+    open: "OPEN YOUR TOP TEN TRADES GUIDE",
+  },
+} as const;
+
+export function SignupForm({ mode = "general" }: { mode?: SignupMode }) {
   const formRef = useRef<HTMLFormElement>(null);
   const hasTrackedFormStart = useRef(false);
   const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
   const [message, setMessage] = useState("");
-  const [sampleUrl, setSampleUrl] = useState("");
-  const isSample = mode === "sample";
-  const formName = isSample ? "free_2026_2027_trade_guide_preview" : "general_interest";
+  const [resourceUrl, setResourceUrl] = useState("");
+  const resource = mode === "general" ? null : resourceModes[mode];
+  const formName = resource?.formName ?? "general_interest";
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -53,7 +74,7 @@ export function SignupForm({ mode = "general" }: { mode?: "general" | "sample" }
     const formElement = event.currentTarget;
     setStatus("submitting");
     setMessage("");
-    setSampleUrl("");
+    setResourceUrl("");
 
     const form = new FormData(formElement);
 
@@ -71,14 +92,19 @@ export function SignupForm({ mode = "general" }: { mode?: "general" | "sample" }
           utm_term: form.get("utm_term"),
         }),
       });
-      const result = await response.json() as { message?: string; sampleUrl?: string };
+      const result = await response.json() as { message?: string; resourceUrl?: string; sampleUrl?: string };
 
       if (!response.ok) throw new Error(result.message || "Signup failed.");
 
       setStatus("success");
       setMessage(result.message || "You're on the TRADE HUSTL3 list.");
-      setSampleUrl(result.sampleUrl || "");
-      trackEvent(isSample ? "generate_lead" : "sign_up", {
+      setResourceUrl(result.resourceUrl || result.sampleUrl || "");
+      const conversionEvent = mode === "bookSample"
+        ? "book_sample_download"
+        : mode === "topTrades"
+          ? "top_trades_guide_download"
+          : "sign_up";
+      trackEvent(conversionEvent, {
         form_name: formName,
         lead_source: String(form.get("utm_source") || "direct"),
         campaign: String(form.get("utm_campaign") || "none"),
@@ -94,12 +120,12 @@ export function SignupForm({ mode = "general" }: { mode?: "general" | "sample" }
     <>
       <form
         ref={formRef}
-        className={isSample ? "signup sample-signup" : "signup"}
+        className={resource ? "signup sample-signup" : "signup"}
         onFocusCapture={handleFormStart}
         onSubmit={handleSubmit}
       >
-        {isSample ? (
-          <input type="hidden" name="interest" value="The TRADE HUSTL3 Book" />
+        {resource ? (
+          <input type="hidden" name="interest" value={resource.interest} />
         ) : (
           <div className="field-group interest-group">
             <label htmlFor="interest">I&apos;M INTERESTED IN</label>
@@ -110,20 +136,20 @@ export function SignupForm({ mode = "general" }: { mode?: "general" | "sample" }
           </div>
         )}
         <div className="field-group email-group">
-          <label htmlFor={isSample ? "sample-email" : "email"}>{isSample ? "EMAIL TO RECEIVE THE FREE GUIDE" : "EMAIL ADDRESS"}</label>
-          <input id={isSample ? "sample-email" : "email"} name="email" type="email" autoComplete="email" placeholder="YOU@EXAMPLE.COM" required disabled={status === "submitting"} />
+          <label htmlFor={resource ? `${mode}-email` : "email"}>{resource?.label ?? "EMAIL ADDRESS"}</label>
+          <input id={resource ? `${mode}-email` : "email"} name="email" type="email" autoComplete="email" placeholder="YOU@EXAMPLE.COM" required disabled={status === "submitting"} />
         </div>
         {utmKeys.map((key) => <input key={key} type="hidden" name={key} defaultValue="" />)}
         <button type="submit" disabled={status === "submitting"}>
-          {status === "submitting" ? "UNLOCKING..." : isSample ? "UNLOCK THE FREE GUIDE" : "KEEP ME POSTED"} <span>↗</span>
+          {status === "submitting" ? resource?.submitting ?? "SAVING..." : resource?.submit ?? "KEEP ME POSTED"} <span>↗</span>
         </button>
       </form>
       <p className={`signup-status ${status}`} role={status === "error" ? "alert" : "status"} aria-live="polite">
         {message}
       </p>
-      {isSample && status === "success" && sampleUrl && (
-        <a className="sample-unlock-link" href={sampleUrl} target="_blank" rel="noreferrer">
-          OPEN YOUR FREE GUIDE <span>↗</span>
+      {resource && status === "success" && resourceUrl && (
+        <a className="sample-unlock-link" href={resourceUrl} target="_blank" rel="noreferrer">
+          {resource.open} <span>↗</span>
         </a>
       )}
     </>

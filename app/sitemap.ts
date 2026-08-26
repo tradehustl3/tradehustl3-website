@@ -21,6 +21,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "monthly",
       priority: 0.9,
     },
+    {
+      url: `${SITE_URL}/guides/top-10-trades-2026-2027`,
+      lastModified: new Date("2026-08-26T00:00:00.000Z"),
+      changeFrequency: "monthly",
+      priority: 0.8,
+    },
   ];
   const policyPages = [
     "/privacy",

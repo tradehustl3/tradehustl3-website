@@ -1,7 +1,8 @@
 /** Cloudflare Worker entry point for the TRADE HUSTL3 website. */
 import { handleImageOptimization, DEFAULT_DEVICE_SIZES, DEFAULT_IMAGE_SIZES } from "vinext/server/image-optimization";
 import handler from "vinext/server/app-router-entry";
-import freeSampleDataUrl from "./assets/trade-hustl3-free-sample.pdf?inline";
+import bookSampleDataUrl from "./assets/trade-hustl3-seven-page-book-sample.pdf?inline";
+import topTradesGuideDataUrl from "./assets/trade-hustl3-top-ten-trades-2026-2027.pdf?inline";
 import { handleResumeBuilderRoute, ResumeBuilderEnv } from "./resume-builder";
 
 interface Env extends ResumeBuilderEnv {
@@ -11,6 +12,7 @@ interface Env extends ResumeBuilderEnv {
   BREVO_API_KEY?: string;
   BREVO_LIST_ID?: string;
   BREVO_SAMPLE_SENDER_EMAIL?: string;
+  SAMPLE_SIGNING_SECRET?: string;
   STRIPE_WEBHOOK_SECRET?: string;
   STRIPE_EBOOK_PAYMENT_LINK_ID?: string;
   IMAGES: {
@@ -29,6 +31,8 @@ interface ExecutionContext {
 
 const allowedInterests = new Set([
   "The TRADE HUSTL3 Book",
+  "TRADE HUSTL3 Seven-Page Book Sample",
+  "Top Ten Trades 2026-2027 Guide",
   "Resume Builder",
   "HUSTL3 PRO",
   "Jobsite Gear",
@@ -36,9 +40,39 @@ const allowedInterests = new Set([
   "General TRADE HUSTL3 Updates",
 ]);
 
-const FREE_SAMPLE_PUBLIC_PATH = "/trade-hustl3-free-sample.pdf";
-const FREE_SAMPLE_ROUTE = "/api/free-sample";
-const SAMPLE_COOKIE = "tradehustl3_sample_access=granted";
+type FreeResourceKey = "book-sample" | "top-trades-guide";
+
+const FREE_RESOURCES = {
+  "book-sample": {
+    interest: "TRADE HUSTL3 Seven-Page Book Sample",
+    route: "/api/book-sample",
+    cookie: "tradehustl3_book_sample_access=granted",
+    landing: "/book#sample",
+    filename: "TRADE-HUSTL3-Seven-Page-Book-Sample.pdf",
+    dataUrl: bookSampleDataUrl,
+    subject: "Your TRADE HUSTL3 seven-page book sample is ready",
+    heading: "Your seven-page book sample is ready.",
+    copy: "Start reading TRADE HUSTL3 with the title page, full table of contents, and the opening pages of Chapter 1.",
+    button: "OPEN THE BOOK SAMPLE",
+    message: "You're in. Your seven-page TRADE HUSTL3 book sample is ready, and a copy is on its way to your inbox.",
+  },
+  "top-trades-guide": {
+    interest: "Top Ten Trades 2026-2027 Guide",
+    route: "/api/top-trades-guide",
+    cookie: "tradehustl3_top_trades_access=granted",
+    landing: "/guides/top-10-trades-2026-2027#get-guide",
+    filename: "TRADE-HUSTL3-Top-Ten-Trades-2026-2027-Guide-Preview.pdf",
+    dataUrl: topTradesGuideDataUrl,
+    subject: "Your TRADE HUSTL3 Top Ten Trades 2026-2027 guide is ready",
+    heading: "Your Top Ten Trades guide is ready.",
+    copy: "Open the 2026-2027 preview for source-backed trade profiles, national pay context, entry paths, and practical next steps.",
+    button: "OPEN THE TOP TEN TRADES GUIDE",
+    message: "You're in. Your Top Ten Trades 2026-2027 guide is ready, and a copy is on its way to your inbox.",
+  },
+} as const;
+
+const LEGACY_FREE_SAMPLE_ROUTE = "/api/free-sample";
+const LEGACY_FREE_SAMPLE_PUBLIC_PATH = "/trade-hustl3-free-sample.pdf";
 const STRIPE_WEBHOOK_ROUTE = "/api/stripe/webhook";
 const EBOOK_DOWNLOAD_ROUTE = "/api/ebook-download";
 const EBOOK_OBJECT_KEY = "TRADE-HUSTL3-COMPLETE-EBOOK.pdf";
@@ -48,11 +82,37 @@ const EBOOK_LAUNCH_BATCH_SIZE = 25;
 const EBOOK_LAUNCH_LEASE_SECONDS = 10 * 60;
 const encoder = new TextEncoder();
 
+function freeResourceForInterest(interest: string): FreeResourceKey | null {
+  for (const [key, resource] of Object.entries(FREE_RESOURCES)) {
+    if (resource.interest === interest) return key as FreeResourceKey;
+  }
+  return null;
+}
+
+function freeResourceSigningSecret(env: Env): string {
+  const dedicatedSecret = env.SAMPLE_SIGNING_SECRET?.trim();
+  if (dedicatedSecret) return dedicatedSecret;
+
+  // Transitional fallback keeps existing production signups working until the
+  // dedicated secret is added in Cloudflare.
+  return env.BREVO_API_KEY?.trim() || "";
+}
+
 function jsonResponse(body: Record<string, unknown>, status = 200): Response {
   return Response.json(body, {
     status,
     headers: { "Cache-Control": "no-store" },
   });
+}
+
+function withSiteSecurityHeaders(response: Response): Response {
+  const headers = new Headers(response.headers);
+  headers.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload");
+  headers.set("X-Content-Type-Options", "nosniff");
+  headers.set("X-Frame-Options", "DENY");
+  headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+  headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=(self)");
+  return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
 }
 
 function isValidEmail(email: string): boolean {
@@ -123,26 +183,26 @@ async function sampleSigningKey(secret: string): Promise<CryptoKey> {
   );
 }
 
-async function createSampleToken(email: string, secret: string): Promise<string> {
+async function createSampleToken(email: string, resource: FreeResourceKey, secret: string): Promise<string> {
   const emailDigest = new Uint8Array(await crypto.subtle.digest("SHA-256", encoder.encode(email)));
   const fingerprint = Array.from(emailDigest.slice(0, 12), (byte) => byte.toString(16).padStart(2, "0")).join("");
   const expires = Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7;
-  const payload = `${expires}.${fingerprint}`;
+  const payload = `${expires}.${resource}.${fingerprint}`;
   const signature = await crypto.subtle.sign("HMAC", await sampleSigningKey(secret), encoder.encode(payload));
   return `${payload}.${toBase64Url(signature)}`;
 }
 
-async function isValidSampleToken(token: string, secret: string): Promise<boolean> {
-  const [expiresValue, fingerprint, signatureValue, ...rest] = token.split(".");
+async function isValidSampleToken(token: string, resource: FreeResourceKey, secret: string): Promise<boolean> {
+  const [expiresValue, tokenResource, fingerprint, signatureValue, ...rest] = token.split(".");
   const expires = Number(expiresValue);
-  if (rest.length || !Number.isSafeInteger(expires) || expires < Math.floor(Date.now() / 1000) || !/^[a-f0-9]{24}$/.test(fingerprint) || !signatureValue) return false;
+  if (rest.length || tokenResource !== resource || !Number.isSafeInteger(expires) || expires < Math.floor(Date.now() / 1000) || !/^[a-f0-9]{24}$/.test(fingerprint) || !signatureValue) return false;
 
   try {
     return crypto.subtle.verify(
       "HMAC",
       await sampleSigningKey(secret),
       new Uint8Array(fromBase64Url(signatureValue)).buffer,
-      encoder.encode(`${expiresValue}.${fingerprint}`),
+      encoder.encode(`${expiresValue}.${tokenResource}.${fingerprint}`),
     );
   } catch {
     return false;
@@ -196,9 +256,10 @@ async function syncBrevoContact(
   }
 }
 
-async function sendSampleDeliveryEmail(env: Env, email: string, sampleUrl: string): Promise<void> {
+async function sendSampleDeliveryEmail(env: Env, email: string, resourceKey: FreeResourceKey, resourceUrl: string): Promise<void> {
   const apiKey = env.BREVO_API_KEY?.trim();
   if (!apiKey) throw new Error("Brevo sample delivery is not configured.");
+  const resource = FREE_RESOURCES[resourceKey];
 
   const response = await fetch("https://api.brevo.com/v3/smtp/email", {
     method: "POST",
@@ -213,14 +274,14 @@ async function sendSampleDeliveryEmail(env: Env, email: string, sampleUrl: strin
         email: env.BREVO_SAMPLE_SENDER_EMAIL?.trim() || "updates@tradehustl3.com",
       },
       to: [{ email }],
-      subject: "Your TRADE HUSTL3 2026-2027 guide preview is ready",
+      subject: resource.subject,
       htmlContent: `
         <div style="background:#071a2b;padding:32px;font-family:Arial,sans-serif;color:#f4f0e7">
           <div style="max-width:620px;margin:auto">
             <p style="color:#d6a52a;font-weight:700;letter-spacing:2px">ENTER. EARN. ELEVATE.</p>
-            <h1 style="margin:16px 0;color:#ffffff">Your free trade guide preview is ready.</h1>
-            <p style="font-size:16px;line-height:1.6;color:#c5ced5">Open the six-page 2026-2027 preview for verified trade profiles, national pay context, the guide's source standard, and practical next steps.</p>
-            <p style="margin:28px 0"><a href="${sampleUrl}" style="display:inline-block;background:#d9361e;color:#ffffff;padding:16px 22px;text-decoration:none;font-weight:700">OPEN THE FREE GUIDE</a></p>
+            <h1 style="margin:16px 0;color:#ffffff">${resource.heading}</h1>
+            <p style="font-size:16px;line-height:1.6;color:#c5ced5">${resource.copy}</p>
+            <p style="margin:28px 0"><a href="${resourceUrl}" style="display:inline-block;background:#d9361e;color:#ffffff;padding:16px 22px;text-decoration:none;font-weight:700">${resource.button}</a></p>
             <p style="color:#d6a52a;font-weight:700">BUILT BY HUSTL3. BACKED BY TRADES.</p>
           </div>
         </div>`,
@@ -404,7 +465,7 @@ async function handleStripeWebhook(request: Request, env: Env): Promise<Response
 
   if (
     !sessionId || paymentLinkId !== expectedPaymentLink || session?.payment_status !== "paid" ||
-    (amountTotal !== 900 && amountTotal !== 999) || currency !== "usd" || !isValidEmail(email)
+    amountTotal !== 900 || currency !== "usd" || !isValidEmail(email)
   ) {
     console.error("Stripe eBook checkout did not match the configured product.");
     return jsonResponse({ received: true });
@@ -532,23 +593,25 @@ async function subscribe(request: Request, env: Env): Promise<Response> {
       utmCampaign: trackingValue(body.utm_campaign),
     });
 
-    if (interest === "The TRADE HUSTL3 Book") {
-      const apiKey = env.BREVO_API_KEY?.trim();
-      if (!apiKey) throw new Error("Sample delivery is not configured.");
-      const token = await createSampleToken(email, apiKey);
-      const emailedSampleUrl = `${SITE_URL}${FREE_SAMPLE_ROUTE}?token=${encodeURIComponent(token)}`;
+    const resourceKey = freeResourceForInterest(interest);
+    if (resourceKey) {
+      const signingSecret = freeResourceSigningSecret(env);
+      if (!signingSecret) throw new Error("Free-resource delivery is not configured.");
+      const resource = FREE_RESOURCES[resourceKey];
+      const token = await createSampleToken(email, resourceKey, signingSecret);
+      const emailedResourceUrl = `${SITE_URL}${resource.route}?token=${encodeURIComponent(token)}`;
       try {
-        await sendSampleDeliveryEmail(env, email, emailedSampleUrl);
+        await sendSampleDeliveryEmail(env, email, resourceKey, emailedResourceUrl);
       } catch (error) {
-        console.error("Free guide delivery email failed", error);
+        console.error("Free-resource delivery email failed", resourceKey, error);
       }
 
       return Response.json(
-        { ok: true, message: "You're in. Your free 2026-2027 trade guide preview is ready, and a copy is on its way to your inbox.", sampleUrl: FREE_SAMPLE_ROUTE },
+        { ok: true, message: resource.message, resourceUrl: resource.route },
         {
           headers: {
             "Cache-Control": "no-store",
-            "Set-Cookie": `${SAMPLE_COOKIE}; Max-Age=604800; Path=/; HttpOnly; Secure; SameSite=Lax`,
+            "Set-Cookie": `${resource.cookie}; Max-Age=604800; Path=/; HttpOnly; Secure; SameSite=Lax`,
           },
         },
       );
@@ -561,26 +624,29 @@ async function subscribe(request: Request, env: Env): Promise<Response> {
   }
 }
 
-async function serveFreeSample(request: Request, env: Env): Promise<Response> {
+async function serveFreeResource(request: Request, env: Env, resourceKey: FreeResourceKey): Promise<Response> {
   const url = new URL(request.url);
-  const cookieGranted = request.headers.get("Cookie")?.split(";").some((cookie) => cookie.trim() === SAMPLE_COOKIE) ?? false;
+  const resource = FREE_RESOURCES[resourceKey];
+  const cookieGranted = request.headers.get("Cookie")?.split(";").some((cookie) => cookie.trim() === resource.cookie) ?? false;
   const token = url.searchParams.get("token") || "";
-  const secret = env.BREVO_API_KEY?.trim() || "";
-  const tokenGranted = Boolean(token && secret && await isValidSampleToken(token, secret));
+  const secret = freeResourceSigningSecret(env);
+  const tokenGranted = Boolean(token && secret && await isValidSampleToken(token, resourceKey, secret));
 
   if (!cookieGranted && !tokenGranted) {
-    return Response.redirect(`${SITE_URL}/book#sample`, 302);
+    return Response.redirect(`${SITE_URL}${resource.landing}`, 302);
   }
 
-  const encoded = freeSampleDataUrl.slice(freeSampleDataUrl.indexOf(",") + 1);
-  const sample = Uint8Array.from(atob(encoded), (character) => character.charCodeAt(0));
+  const encoded = resource.dataUrl.slice(resource.dataUrl.indexOf(",") + 1);
+  const document = Uint8Array.from(atob(encoded), (character) => character.charCodeAt(0));
   const headers = new Headers();
   headers.set("Content-Type", "application/pdf");
-  headers.set("Content-Disposition", 'inline; filename="TRADE-HUSTL3-2026-2027-Guide-Preview.pdf"');
+  headers.set("Content-Disposition", `inline; filename="${resource.filename}"`);
   headers.set("Cache-Control", "private, no-store");
+  headers.set("Referrer-Policy", "no-referrer");
+  headers.set("X-Content-Type-Options", "nosniff");
   headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
-  if (tokenGranted) headers.set("Set-Cookie", `${SAMPLE_COOKIE}; Max-Age=604800; Path=/; HttpOnly; Secure; SameSite=Lax`);
-  return new Response(sample, { status: 200, headers });
+  if (tokenGranted) headers.set("Set-Cookie", `${resource.cookie}; Max-Age=604800; Path=/; HttpOnly; Secure; SameSite=Lax`);
+  return new Response(document, { status: 200, headers });
 }
 
 // Image security config. SVG sources with .svg extension auto-skip the
@@ -608,7 +674,7 @@ const worker = {
     }
 
     const resumeBuilderResponse = await handleResumeBuilderRoute(request, env);
-    if (resumeBuilderResponse) return resumeBuilderResponse;
+    if (resumeBuilderResponse) return withSiteSecurityHeaders(resumeBuilderResponse);
 
     if (url.pathname === "/api/subscribe") {
       return subscribe(request, env);
@@ -622,12 +688,16 @@ const worker = {
       return servePurchasedEbook(request, env);
     }
 
-    if (url.pathname === FREE_SAMPLE_ROUTE) {
-      return serveFreeSample(request, env);
+    if (url.pathname === FREE_RESOURCES["book-sample"].route) {
+      return serveFreeResource(request, env, "book-sample");
     }
 
-    if (url.pathname === FREE_SAMPLE_PUBLIC_PATH) {
-      return Response.redirect(`${SITE_URL}/book#sample`, 302);
+    if (url.pathname === FREE_RESOURCES["top-trades-guide"].route) {
+      return serveFreeResource(request, env, "top-trades-guide");
+    }
+
+    if (url.pathname === LEGACY_FREE_SAMPLE_ROUTE || url.pathname === LEGACY_FREE_SAMPLE_PUBLIC_PATH) {
+      return Response.redirect(`${SITE_URL}${FREE_RESOURCES["top-trades-guide"].landing}`, 302);
     }
 
     if (url.pathname === "/_vinext/image") {
@@ -641,7 +711,7 @@ const worker = {
       }, allowedWidths);
     }
 
-    return handler.fetch(request, env, ctx);
+    return withSiteSecurityHeaders(await handler.fetch(request, env, ctx));
   },
 };
 

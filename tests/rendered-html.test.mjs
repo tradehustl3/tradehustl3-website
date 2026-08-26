@@ -39,6 +39,11 @@ test("server-renders the corrected TRADE HUSTL3 brand and metadata", async () =>
   const response = await render();
   assert.equal(response.status, 200);
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
+  assert.match(response.headers.get("strict-transport-security") ?? "", /max-age=31536000/i);
+  assert.equal(response.headers.get("x-frame-options"), "DENY");
+  assert.equal(response.headers.get("x-content-type-options"), "nosniff");
+  assert.equal(response.headers.get("referrer-policy"), "strict-origin-when-cross-origin");
+  assert.match(response.headers.get("permissions-policy") ?? "", /camera=\(\)/i);
   const html = await response.text();
 
   assert.match(html, /<title>TRADE HUSTL3 \| Skilled Trades Career Guide &amp; Resources<\/title>/i);
@@ -48,7 +53,8 @@ test("server-renders the corrected TRADE HUSTL3 brand and metadata", async () =>
   assert.match(html, /property="og:url" content="https:\/\/tradehustl3\.com\/?"/i);
   assert.match(html, /property="og:image" content="https:\/\/tradehustl3\.com\/og\.png"/i);
   assert.equal(html.includes("localhost:3000"), false);
-  for (const schemaType of ["Organization", "Person", "WebSite", "Book"]) assert.match(html, new RegExp(`"@type":"${schemaType}"`, "i"));
+  for (const schemaType of ["Organization", "Person", "WebSite"]) assert.match(html, new RegExp(`"@type":"${schemaType}"`, "i"));
+  assert.doesNotMatch(html, /"@type":"Book"/i);
   assert.match(html, /aria-label="TRADE HUSTL3 home"/i);
   assert.equal(html.toUpperCase().includes("TRA" + "D3"), false);
   assert.match(html, /trade-hustl3-logo\.png/i);
@@ -79,6 +85,7 @@ test("publishes a canonical XML sitemap and robots discovery hints", async () =>
   assert.match(sitemap, /<loc>https:\/\/tradehustl3\.com<\/loc>/i);
   assert.match(sitemap, /<loc>https:\/\/tradehustl3\.com\/book<\/loc>/i);
   assert.match(sitemap, /<loc>https:\/\/tradehustl3\.com\/resume-builder<\/loc>/i);
+  assert.match(sitemap, /<loc>https:\/\/tradehustl3\.com\/guides\/top-10-trades-2026-2027<\/loc>/i);
   for (const path of ["privacy", "terms", "contact", "data-deletion", "resume-builder/refund-policy", "book/refund-policy", "resume-builder/ai-disclosure"]) {
     assert.match(sitemap, new RegExp(`<loc>https:\\/\\/tradehustl3\\.com\\/${path.replaceAll("/", "\\/")}<\\/loc>`, "i"));
   }
@@ -139,12 +146,14 @@ test("server-renders the official book page, cover, portrait, and current editio
   assert.match(html, /90-Day Action Plan/i);
   assert.match(html, /more than 200 skilled trades/i);
   assert.match(html, /"datePublished":"2026-09-15"/i);
-  assert.match(html, /Get the Free Guide/i);
-  assert.match(html, /UNLOCK THE FREE GUIDE/i);
-  assert.match(html, /EMAIL TO RECEIVE THE FREE GUIDE/i);
+  assert.match(html, /"numberOfPages":586/i);
+  assert.match(html, /Read 7 Free Pages/i);
+  assert.match(html, /UNLOCK THE BOOK SAMPLE/i);
+  assert.match(html, /EMAIL TO RECEIVE THE SEVEN-PAGE SAMPLE/i);
   assert.doesNotMatch(html, /href="\/trade-hustl3-free-sample\.pdf/i);
-  assert.match(html, /GUIDE PREVIEW/i);
-  assert.match(html, /verified power-line and HVAC profiles/i);
+  assert.match(html, /SEVEN-PAGE BOOK SAMPLE/i);
+  assert.match(html, /opening pages of Chapter 1/i);
+  assert.match(html, /href="\/guides\/top-10-trades-2026-2027"/i);
   assert.match(html, /21 CHAPTERS[\s\S]*FOUR PARTS[\s\S]*ONE PLAN/i);
   assert.match(html, /What a Skilled Trade Really Is/i);
   assert.match(html, /Final Word: Build Something That Belongs to You/i);
@@ -258,67 +267,107 @@ test("subscriber endpoint rejects invalid submissions", async () => {
   assert.equal(prepared, false);
 });
 
-test("book signup unlocks and emails the gated 2026-2027 guide preview", async () => {
-  const worker = await loadWorker();
-  const brevoCalls = [];
-  const originalFetch = globalThis.fetch;
-  globalThis.fetch = async (input, init) => {
-    brevoCalls.push({ input: String(input), body: JSON.parse(String(init.body)) });
-    return new Response(null, { status: 201 });
-  };
-  const DB = {
-    prepare() {
-      return {
-        bind() {
-          return { async run() { return { success: true }; } };
-        },
-      };
-    },
-  };
+for (const resource of [
+  {
+    name: "seven-page book sample",
+    interest: "TRADE HUSTL3 Seven-Page Book Sample",
+    route: "/api/book-sample",
+    cookie: /tradehustl3_book_sample_access=granted/i,
+    filename: /TRADE-HUSTL3-Seven-Page-Book-Sample\.pdf/i,
+    subject: /seven-page book sample is ready/i,
+    button: /OPEN THE BOOK SAMPLE/i,
+  },
+  {
+    name: "Top Ten Trades 2026-2027 guide",
+    interest: "Top Ten Trades 2026-2027 Guide",
+    route: "/api/top-trades-guide",
+    cookie: /tradehustl3_top_trades_access=granted/i,
+    filename: /TRADE-HUSTL3-Top-Ten-Trades-2026-2027-Guide-Preview\.pdf/i,
+    subject: /Top Ten Trades 2026-2027 guide is ready/i,
+    button: /OPEN THE TOP TEN TRADES GUIDE/i,
+  },
+]) {
+  test(`signup unlocks and emails the gated ${resource.name}`, async () => {
+    const worker = await loadWorker();
+    const brevoCalls = [];
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = async (input, init) => {
+      brevoCalls.push({ input: String(input), body: JSON.parse(String(init.body)) });
+      return new Response(null, { status: 201 });
+    };
+    const DB = {
+      prepare() {
+        return {
+          bind() {
+            return { async run() { return { success: true }; } };
+          },
+        };
+      },
+    };
 
-  let signupResponse;
-  try {
-    signupResponse = await worker.fetch(
-      new Request("https://tradehustl3.com/api/subscribe", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: "reader@example.com", interest: "The TRADE HUSTL3 Book" }),
-      }),
-      { DB, BREVO_API_KEY: "test-brevo-key", BREVO_LIST_ID: "3" },
+    let signupResponse;
+    try {
+      signupResponse = await worker.fetch(
+        new Request("https://tradehustl3.com/api/subscribe", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: "reader@example.com", interest: resource.interest }),
+        }),
+        { DB, BREVO_API_KEY: "test-brevo-key", BREVO_LIST_ID: "3", SAMPLE_SIGNING_SECRET: "sample-signing-secret" },
+        { waitUntil() {}, passThroughOnException() {} },
+      );
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+
+    assert.equal(signupResponse.status, 200);
+    const result = await signupResponse.json();
+    assert.equal(result.ok, true);
+    assert.equal(result.resourceUrl, resource.route);
+    assert.match(signupResponse.headers.get("set-cookie") ?? "", resource.cookie);
+    assert.deepEqual(brevoCalls.map((call) => call.input), [
+      "https://api.brevo.com/v3/contacts",
+      "https://api.brevo.com/v3/smtp/email",
+    ]);
+    assert.match(brevoCalls[1].body.subject, resource.subject);
+    assert.match(brevoCalls[1].body.htmlContent, new RegExp(`https:\\/\\/tradehustl3\\.com${resource.route.replaceAll("/", "\\/")}\\?token=`, "i"));
+    assert.match(brevoCalls[1].body.htmlContent, resource.button);
+
+    const cookie = (signupResponse.headers.get("set-cookie") ?? "").split(";")[0];
+    const documentResponse = await worker.fetch(
+      new Request(`https://tradehustl3.com${resource.route}`, { headers: { Cookie: cookie } }),
+      { SAMPLE_SIGNING_SECRET: "sample-signing-secret" },
       { waitUntil() {}, passThroughOnException() {} },
     );
-  } finally {
-    globalThis.fetch = originalFetch;
-  }
+    assert.equal(documentResponse.status, 200);
+    assert.match(documentResponse.headers.get("content-type") ?? "", /application\/pdf/i);
+    assert.match(documentResponse.headers.get("content-disposition") ?? "", resource.filename);
+    assert.match(await documentResponse.text(), /^%PDF-/);
+  });
+}
 
-  assert.equal(signupResponse.status, 200);
-  const result = await signupResponse.json();
-  assert.equal(result.ok, true);
-  assert.equal(result.sampleUrl, "/api/free-sample");
-  assert.match(result.message, /free 2026-2027 trade guide preview/i);
-  assert.match(signupResponse.headers.get("set-cookie") ?? "", /tradehustl3_sample_access=granted/i);
-  assert.deepEqual(brevoCalls.map((call) => call.input), [
-    "https://api.brevo.com/v3/contacts",
-    "https://api.brevo.com/v3/smtp/email",
-  ]);
-  assert.match(brevoCalls[1].body.htmlContent, /https:\/\/tradehustl3\.com\/api\/free-sample\?token=/i);
-  assert.match(brevoCalls[1].body.htmlContent, /OPEN THE FREE GUIDE/i);
-
-  const cookie = (signupResponse.headers.get("set-cookie") ?? "").split(";")[0];
-  const sampleResponse = await worker.fetch(
-    new Request("https://tradehustl3.com/api/free-sample", { headers: { Cookie: cookie } }),
-    {
-      BREVO_API_KEY: "test-brevo-key",
-    },
-    { waitUntil() {}, passThroughOnException() {} },
-  );
-  assert.equal(sampleResponse.status, 200);
-  assert.match(sampleResponse.headers.get("content-type") ?? "", /application\/pdf/i);
-  assert.match(sampleResponse.headers.get("content-disposition") ?? "", /TRADE-HUSTL3-2026-2027-Guide-Preview\.pdf/i);
-  assert.match(await sampleResponse.text(), /^%PDF-/);
+test("renders a dedicated Top Ten Trades landing page", async () => {
+  const response = await renderPath("/guides/top-10-trades-2026-2027");
+  assert.equal(response.status, 200);
+  const html = await response.text();
+  assert.match(html, /Top Ten Skilled Trades 2026-2027/i);
+  assert.match(html, /value="Top Ten Trades 2026-2027 Guide"/i);
+  assert.match(html, /EMAIL TO RECEIVE THE TOP TEN TRADES GUIDE/i);
+  assert.match(html, /not a guarantee of earnings/i);
 });
 
-test("direct sample access is sent back to the signup gate", async () => {
+test("tracks the two free resources as separate conversions", async () => {
+  const signupSource = await readFile(new URL("../app/signup-form.tsx", import.meta.url), "utf8");
+  assert.match(signupSource, /book_sample_download/);
+  assert.match(signupSource, /top_trades_guide_download/);
+});
+
+test("bundles a true seven-page excerpt from the 586-page KDP interior", async () => {
+  const sample = await readFile(new URL("../worker/assets/trade-hustl3-seven-page-book-sample.pdf", import.meta.url));
+  assert.match(sample.toString("latin1"), /\/Type\s*\/Pages\b[\s\S]*?\/Count\s+7\b/i);
+});
+
+test("legacy sample links redirect to the dedicated Top Ten Trades guide", async () => {
   const worker = await loadWorker();
   const response = await worker.fetch(
     new Request("https://tradehustl3.com/trade-hustl3-free-sample.pdf"),
@@ -326,15 +375,16 @@ test("direct sample access is sent back to the signup gate", async () => {
     { waitUntil() {}, passThroughOnException() {} },
   );
   assert.equal(response.status, 302);
-  assert.equal(response.headers.get("location"), "https://tradehustl3.com/book#sample");
+  assert.equal(response.headers.get("location"), "https://tradehustl3.com/guides/top-10-trades-2026-2027#get-guide");
 });
 
-test("keeps the direct eBook gated until the September 15 launch", async () => {
+test("offers a $9.00 direct eBook preorder until the September 15 launch", async () => {
   const html = await (await renderPath("/book")).text();
   assert.match(html, /DIRECT eBOOK/i);
   assert.match(html, /\$9\.00/i);
-  assert.match(html, /Available September 15/i);
-  assert.match(html, /Secure PDF delivered by email after payment/i);
+  assert.match(html, /Preorder the eBook — \$9\.00/i);
+  assert.match(html, /private download link will be emailed September 15, 2026/i);
+  assert.match(html, /href="https:\/\/buy\.stripe\.com\/4gM6oAbUd2oc5dNfhwbfO00"/i);
   assert.doesNotMatch(html, /href="https:\/\/buy\.stripe\.com\/4gM5kwaQ96EscGf2uKbfO02"/i);
 });
 
@@ -359,7 +409,7 @@ test("records a preorder confirmation without releasing the eBook before launch"
         id: sessionId,
         payment_link: paymentLinkId,
         payment_status: "paid",
-        amount_total: 999,
+        amount_total: 900,
         currency: "usd",
         customer_details: { email: "BUYER@example.com" },
       },
@@ -542,6 +592,7 @@ test("server-renders the paid Resume Builder account entry and locked product ru
   const html = await response.text();
 
   assert.match(html, /Skilled Trades Resume Builder \| TRADE HUSTL3/i);
+  assert.match(html, /name="description" content="Build an ATS-friendly HVAC/i);
   assert.match(html, /START YOUR RESUME/i);
   assert.match(html, /Create account &amp; continue/i);
   assert.match(html, /\$9\.99/i);
