@@ -1,0 +1,50 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "tradehustl3-website",
+  "main": "./worker/index.ts",
+  "compatibility_date": "2026-08-26",
+  "compatibility_flags": ["nodejs_compat"],
+  "keep_vars": true,
+  "workers_dev": false,
+  "preview_urls": true,
+  "assets": {
+    "binding": "ASSETS",
+    "run_worker_first": true
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "tradehustl3-db",
+      "database_id": "a8f61038-9a87-49b2-b708-b14400422d1b"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "BOOKS",
+      "bucket_name": "tradehustl3books"
+    }
+  ],
+  "images": {
+    "binding": "IMAGES"
+  },
+  "vars": {
+    "BREVO_LIST_ID": "3",
+    "BREVO_SAMPLE_SENDER_EMAIL": "updates@tradehustl3.com",
+    "BREVO_AUTH_SENDER_EMAIL": "updates@tradehustl3.com",
+    "CLAUDE_MODEL": "claude-sonnet-5"
+  },
+  "secrets": {
+    "required": [
+      "BREVO_API_KEY",
+      "STRIPE_WEBHOOK_SECRET",
+      "STRIPE_EBOOK_PAYMENT_LINK_ID",
+      "STRIPE_SECRET_KEY",
+      "STRIPE_RESUME_PRICE_ID",
+      "STRIPE_RESUME_WEBHOOK_SECRET",
+      "ANTHROPIC_API_KEY"
+    ]
+  },
+  "triggers": {
+    "crons": ["*/5 * * * *"]
+  }
+}
