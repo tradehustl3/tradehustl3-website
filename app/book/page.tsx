@@ -147,10 +147,10 @@ export default function BookPage() {
         </Link>
         <nav aria-label="Book page navigation">
           <Link href="/">Home</Link>
-          <a href="#sample">Free sample</a>
+          <a href="#sample">Free guide</a>
           <a href="#chapters">Chapters</a>
           <a href="#author">Author</a>
-          <a className="nav-cta" href="#sample">Read a Free Sample</a>
+          <a className="nav-cta" href="#sample">Get the Free Guide</a>
         </nav>
       </header>
 
@@ -181,7 +181,7 @@ export default function BookPage() {
             The blueprint, the game plan, and the movement for people ready to build a future through skilled trades. Go from exploring your options to choosing a path, developing real ability, increasing your value, and creating something that belongs to you.
           </p>
           <div className="hero-actions">
-            <a className="button button-primary" href="#sample">Read a Free Sample <span>↗</span></a>
+            <a className="button button-primary" href="#sample">Get the Free Guide <span>↗</span></a>
             <Link className="button button-secondary" href="/#join">Get launch updates</Link>
           </div>
           <div className="countdown-wrap">
@@ -200,13 +200,13 @@ export default function BookPage() {
 
       <section className="book-sample" id="sample">
         <div className="sample-intro">
-          <p className="section-label">/ READ BEFORE RELEASE</p>
-          <h2>START WITH THE<br /><span>FIRST 7 PAGES.</span></h2>
+          <p className="section-label">/ FREE 2026-2027 GUIDE</p>
+          <h2>GET THE FREE<br /><span>GUIDE PREVIEW.</span></h2>
           <p>
-            Enter your email to unlock the official seven-page sample. It includes the title page, the complete table of contents, and the opening pages of Chapter 1—pulled directly from the final book interior.
+            Enter your email to unlock the six-page preview of <em>TRADE HUSTL3: 10 High-Opportunity Trades — 2026-2027 Edition</em>. It includes the guide&apos;s source standard, verified power-line and HVAC profiles, national pay context, and practical next steps.
           </p>
           <SignupForm mode="sample" />
-          <small className="sample-consent">By unlocking the sample, you agree to receive TRADE HUSTL3 book and career updates. Unsubscribe anytime.</small>
+          <small className="sample-consent">By unlocking the free guide, you agree to receive TRADE HUSTL3 book and career updates. Unsubscribe anytime.</small>
         </div>
         <figure className="sample-quote">
           <blockquote>
@@ -329,7 +329,7 @@ export default function BookPage() {
 
       <footer>
         <div className="footer-brand"><div className="wordmark">TRADE HUSTL<span>3</span></div><p>Built by Hustle, Backed by Trades.</p><SocialLinks /></div>
-        <div className="footer-links"><Link href="/">Home</Link><a href="#sample">Free sample</a><a href="#chapters">Chapters</a><a href="#author">Author</a><a href="mailto:partners@tradehustl3.com">Partnerships</a></div>
+        <div className="footer-links"><Link href="/">Home</Link><a href="#sample">Free guide</a><a href="#chapters">Chapters</a><a href="#author">Author</a><a href="mailto:partners@tradehustl3.com">Partnerships</a></div>
         <div className="footer-legal"><Link href="/privacy">Privacy</Link><Link href="/terms">Terms</Link><Link href="/book/refund-policy">eBook policy</Link><Link href="/data-deletion">Data requests</Link><Link href="/contact">Support</Link></div>
         <p className="copyright">© 2026 TRADE HUSTL3. ALL GRIT RESERVED.</p>
       </footer>
