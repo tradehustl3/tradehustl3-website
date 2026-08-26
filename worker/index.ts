@@ -288,7 +288,7 @@ async function sendEbookPreorderConfirmationEmail(env: Env, email: string): Prom
       },
       to: [{ email }],
       subject: "Your TRADE HUSTL3 eBook preorder is confirmed",
-      htmlContent: \`
+      htmlContent: `
         <div style="background:#071a2b;padding:32px;font-family:Arial,sans-serif;color:#f4f0e7">
           <div style="max-width:620px;margin:auto">
             <p style="color:#d6a52a;font-weight:700;letter-spacing:2px">ENTER. EARN. ELEVATE.</p>
@@ -297,7 +297,7 @@ async function sendEbookPreorderConfirmationEmail(env: Env, email: string): Prom
             <p style="font-size:16px;line-height:1.6;color:#c5ced5">No download is available before launch. You will receive a second email with your private download link when the book is released.</p>
             <p style="color:#d6a52a;font-weight:700">BUILT BY HUSTL3. BACKED BY TRADES.</p>
           </div>
-        </div>\`,
+        </div>`,
     }),
   });
 
@@ -314,13 +314,13 @@ async function runEbookLaunchDelivery(env: Env): Promise<void> {
   const now = Math.floor(Date.now() / 1000);
   const leaseUntil = now + EBOOK_LAUNCH_LEASE_SECONDS;
   const pending = await env.DB.prepare(
-    \`SELECT stripe_session_id, email, download_token
+    `SELECT stripe_session_id, email, download_token
      FROM ebook_orders
      WHERE status = 'paid'
        AND launch_emailed_at IS NULL
        AND (launch_email_lease_until IS NULL OR launch_email_lease_until < ?)
      ORDER BY created_at
-     LIMIT ?\`,
+     LIMIT ?`,
   ).bind(now, EBOOK_LAUNCH_BATCH_SIZE).all<{
     stripe_session_id: string;
     email: string;
@@ -329,23 +329,23 @@ async function runEbookLaunchDelivery(env: Env): Promise<void> {
 
   for (const order of pending.results ?? []) {
     const claim = await env.DB.prepare(
-      \`UPDATE ebook_orders
+      `UPDATE ebook_orders
        SET launch_email_lease_until = ?
        WHERE stripe_session_id = ?
          AND status = 'paid'
          AND launch_emailed_at IS NULL
-         AND (launch_email_lease_until IS NULL OR launch_email_lease_until < ?)\`,
+         AND (launch_email_lease_until IS NULL OR launch_email_lease_until < ?)`,
     ).bind(leaseUntil, order.stripe_session_id, now).run();
 
     if (claim.meta?.changes !== 1) continue;
 
-    const downloadUrl = \`\${SITE_URL}\${EBOOK_DOWNLOAD_ROUTE}?token=\${encodeURIComponent(order.download_token)}\`;
+    const downloadUrl = `\${SITE_URL}\${EBOOK_DOWNLOAD_ROUTE}?token=\${encodeURIComponent(order.download_token)}`;
     try {
       await sendEbookDeliveryEmail(env, order.email, downloadUrl);
       await env.DB.prepare(
-        \`UPDATE ebook_orders
+        `UPDATE ebook_orders
          SET launch_emailed_at = CURRENT_TIMESTAMP, launch_email_lease_until = NULL, emailed_at = COALESCE(emailed_at, CURRENT_TIMESTAMP)
-         WHERE stripe_session_id = ?\`,
+         WHERE stripe_session_id = ?`,
       ).bind(order.stripe_session_id).run();
     } catch (error) {
       await env.DB.prepare(
