@@ -455,6 +455,57 @@ test("records a preorder confirmation without releasing the eBook before launch"
   assert.match(await ebookResponse.text(), /unlock.*September 15, 2026/i);
 });
 
+
+test("launch sweep delivers a pending preorder once after release", async () => {
+  const worker = await loadWorker();
+  const release = Date.parse("2026-09-15T04:00:00Z");
+  const originalNow = Date.now;
+  const originalFetch = globalThis.fetch;
+  const calls = [];
+  const sent = [];
+  let waitPromise;
+  const DB = {
+    prepare(sql) {
+      return {
+        bind(...values) {
+          return {
+            async all() {
+              assert.match(sql, /launch_emailed_at IS NULL/i);
+              return { results: [{ stripe_session_id: "cs_preorder", email: "buyer@example.com", download_token: "a".repeat(43) }] };
+            },
+            async run() {
+              calls.push({ sql, values });
+              if (/SET launch_email_lease_until = \\?/i.test(sql)) return { meta: { changes: 1 } };
+              return { success: true };
+            },
+          };
+        },
+      };
+    },
+  };
+  globalThis.fetch = async (input, init) => {
+    sent.push({ input: String(input), body: JSON.parse(String(init.body)) });
+    return new Response(null, { status: 201 });
+  };
+  Date.now = () => release;
+  try {
+    await worker.scheduled({}, { DB, BOOKS: {}, BREVO_API_KEY: "brevo-test-key" }, {
+      waitUntil(promise) { waitPromise = promise; },
+      passThroughOnException() {},
+    });
+    await waitPromise;
+  } finally {
+    Date.now = originalNow;
+    globalThis.fetch = originalFetch;
+  }
+
+  assert.equal(sent.length, 1);
+  assert.equal(sent[0].input, "https://api.brevo.com/v3/smtp/email");
+  assert.match(sent[0].body.subject, /eBook is ready/i);
+  assert.match(sent[0].body.htmlContent, /api\\/ebook-download\\?token=/i);
+  assert.equal(calls.filter((call) => /SET launch_emailed_at = CURRENT_TIMESTAMP/i.test(call.sql)).length, 1);
+});
+
 test("server-renders every part of the TRADE HUSTL3 ecosystem", async () => {
   const html = await (await render()).text();
   for (const title of ["The Book", "Resume Builder", "HUSTL3 PRO", "Jobsite Gear", "Program Partnerships"]) assert.match(html, new RegExp(`<h3>${title}<\\/h3>`, "i"));
