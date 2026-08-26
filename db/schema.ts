@@ -20,6 +20,8 @@ export const ebookOrders = sqliteTable(
     status: text("status").notNull().default("paid"),
     downloadToken: text("download_token").notNull().unique(),
     emailedAt: text("emailed_at"),
+    launchEmailedAt: text("launch_emailed_at"),
+    launchEmailLeaseUntil: integer("launch_email_lease_until"),
     createdAt: text("created_at").notNull().default(sql`(CURRENT_TIMESTAMP)`),
   },
   (table) => [index("ebook_orders_email_idx").on(table.email)],
