@@ -320,7 +320,7 @@ export default function BookPage() {
         </p>
         <div className="availability-grid">
           <article><span>AMAZON PAPERBACK</span><strong>$24.99</strong><small>Scheduled for September 15, 2026</small></article>
-          <article><span>DIRECT eBOOK</span><strong>$9.00</strong><small>Secure PDF delivered by email after payment</small></article>
+          <article><span>DIRECT eBOOK</span><strong>$9.99</strong><small>Secure PDF delivered by email after payment</small></article>
           <article><span>KINDLE eBOOK</span><strong>$9.99</strong><small>Amazon link will be added when the listing is live</small></article>
         </div>
         <LaunchPurchaseButton />

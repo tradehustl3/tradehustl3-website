@@ -332,7 +332,8 @@ test("direct sample access is sent back to the signup gate", async () => {
 test("keeps the direct eBook gated until the September 15 launch", async () => {
   const html = await (await renderPath("/book")).text();
   assert.match(html, /DIRECT eBOOK/i);
-  assert.match(html, /\$9\.00/i);
+  assert.match(html, /\$9\.99/i);
+  assert.doesNotMatch(html, /\$9\.00/i);
   assert.match(html, /Available September 15/i);
   assert.match(html, /Secure PDF delivered by email after payment/i);
   assert.doesNotMatch(html, /href="https:\/\/buy\.stripe\.com\/4gM5kwaQ96EscGf2uKbfO02"/i);

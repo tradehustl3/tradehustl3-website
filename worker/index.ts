@@ -404,7 +404,7 @@ async function handleStripeWebhook(request: Request, env: Env): Promise<Response
 
   if (
     !sessionId || paymentLinkId !== expectedPaymentLink || session?.payment_status !== "paid" ||
-    (amountTotal !== 900 && amountTotal !== 999) || currency !== "usd" || !isValidEmail(email)
+    amountTotal !== 999 || currency !== "usd" || !isValidEmail(email)
   ) {
     console.error("Stripe eBook checkout did not match the configured product.");
     return jsonResponse({ received: true });
