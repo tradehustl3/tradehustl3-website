@@ -536,7 +536,7 @@ test("routes the branded resume link to the Resume Builder", async () => {
   assert.equal(response.headers.get("location"), "https://tradehustl3.com/resume-builder");
 });
 
-test("server-renders the paid Resume Builder account entry and locked product rules", async () => {
+test("server-renders the preview-first Resume Builder account entry and product rules", async () => {
   const response = await renderPath("/resume-builder");
   assert.equal(response.status, 200);
   const html = await response.text();
@@ -546,10 +546,11 @@ test("server-renders the paid Resume Builder account entry and locked product ru
   assert.match(html, /Create account &amp; continue/i);
   assert.match(html, /\$9\.99/i);
   assert.match(html, /One completed resume/i);
-  assert.match(html, /Initial tailored resume build/i);
+  assert.match(html, /Initial tailored preview before payment/i);
+  assert.match(html, /TRADE HUSTL3 LLC logo watermark/i);
   assert.match(html, /Up to 3 AI corrections within 7 days/i);
   assert.match(html, /Clean PDF \+ editable DOCX downloads/i);
-  assert.doesNotMatch(html, /\$89\.99|free AI/i);
+  assert.doesNotMatch(html, /\$89\.99/i);
   for (const track of ["HVAC &amp; Refrigeration", "Electrical", "Plumbing", "Construction &amp; Carpentry", "Facilities Maintenance", "Welding &amp; Fabrication", "General Labor / Trade Helper"]) {
     assert.match(html, new RegExp(track, "i"));
   }
@@ -579,12 +580,12 @@ test("server-renders scanner-safe confirmation, intake, payment return, and revi
   assert.doesNotMatch(confirmation, /\/api\/resume-builder\/auth\/confirm/);
 
   const intake = await (await renderPath("/resume-builder/intake")).text();
-  assert.match(intake, /Nothing is generated until after payment/i);
-  assert.match(intake, /Total today[\s\S]*\$9\.99/i);
-  assert.match(intake, /no subscription/i);
+  assert.match(intake, /watermarked preview is built before payment/i);
+  assert.match(intake, /Preview first[\s\S]*\$0/i);
+  assert.match(intake, /Pay \$9\.99 only after reviewing/i);
 
   const payment = await (await renderPath("/resume-builder/payment-confirmed?resume_id=test")).text();
-  assert.match(payment, /Initial build \+ up to 3 corrections/i);
+  assert.match(payment, /Clean PDF \+ DOCX[\s\S]*up to 3 corrections/i);
 });
 
 test("uses the official navy, red, and gold palette", async () => {

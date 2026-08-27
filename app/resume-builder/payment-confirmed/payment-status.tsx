@@ -23,7 +23,7 @@ export function PaymentStatus() {
       if (!response.ok) throw new Error(result.message || "We could not check the payment yet.");
       if (result.resume?.paid) {
         setStage("ready");
-        setMessage("Payment confirmed. Your first resume build is ready to start.");
+        setMessage("Payment confirmed. Your clean resume and three correction runs are unlocked.");
         window.setTimeout(() => window.location.assign(`/resume-builder/review?resume_id=${encodeURIComponent(resumeId.current)}`), 900);
         return;
       }
@@ -60,7 +60,7 @@ export function PaymentStatus() {
       <p className="rb-kicker">/ SECURE PAYMENT RETURN</p>
       <h1>{stage === "ready" ? <>PAYMENT <span>CONFIRMED.</span></> : <>LOCKING IN YOUR <span>BUILD.</span></>}</h1>
       <p role="status">{message}</p>
-      <div className="rb-order-summary"><span>Resume Builder</span><strong>$9.99 paid once</strong><small>Initial build + up to 3 corrections</small></div>
+      <div className="rb-order-summary"><span>Resume Builder</span><strong>$9.99 paid once</strong><small>Clean PDF + DOCX · up to 3 corrections</small></div>
       {stage === "waiting" || stage === "error" ? <button className="rb-button rb-button-primary" type="button" onClick={() => { attempts.current = 0; void check(); }}>Check payment status <span>↻</span></button> : null}
       {stage === "error" ? <a className="rb-text-link" href="/resume-builder/intake">Return to your intake</a> : null}
       <small>Do not close this page while confirmation is in progress.</small>

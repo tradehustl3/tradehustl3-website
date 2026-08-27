@@ -15,7 +15,7 @@ export default function IntakePage() {
       <FlowSteps current={2} />
       <section className="rb-flow-intro">
         <div><p className="rb-kicker">/ STEP 02</p><h1>GIVE US THE FACTS.<br /><span>WE’LL SHAPE THE STORY.</span></h1></div>
-        <p>Use plain language. Be specific, stay honest, and include real tools, systems, responsibilities, and results. Your intake is saved before checkout.</p>
+        <p>Use plain language. Be specific, stay honest, and include real tools, systems, responsibilities, and results. Your intake is saved before your free watermarked preview is built.</p>
       </section>
       <IntakeForm />
     </main>

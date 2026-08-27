@@ -12,7 +12,7 @@ export default function PaymentConfirmedPage() {
   return (
     <main className="rb-page rb-flow-page">
       <ResumeBuilderHeader />
-      <FlowSteps current={3} />
+      <FlowSteps current={4} />
       <section className="rb-centered-stage"><PaymentStatus /></section>
     </main>
   );

@@ -55,6 +55,7 @@ const MAGIC_LINK_TTL_SECONDS = 60 * 20;
 const RESUME_PRICE_CENTS = 999;
 const RESUME_PLAN = "resume_mvp_999";
 const RESUME_TOTAL_AI_RUNS = 4;
+const INITIAL_PREVIEW_RUNS = 1;
 const DEFAULT_CLAUDE_MODEL = "claude-sonnet-5";
 const INTAKE_PATH = "/resume-builder/intake";
 const encoder = new TextEncoder();
@@ -91,10 +92,10 @@ const NON_RETRYABLE_FAILURES: ReadonlySet<ResumeFailureCode> = new Set([
 
 const INTAKE_CORRECTION_MESSAGE =
   "We need a little more information to build your resume safely. Return to your intake "
-  + "and add or correct the highlighted details. Your payment is safe and no AI run was used.";
+  + "and add or correct the highlighted details. No AI run was used.";
 
 const RETRY_MESSAGE =
-  "Your payment is safe. No AI run was used. Please try generating the resume again.";
+  "No AI run was used. Please try generating the resume again.";
 
 export const INTAKE_SECTION = {
   contact: "contact information",
@@ -497,13 +498,13 @@ async function getResumeStatus(request: Request, env: ResumeBuilderEnv, resumeId
       targetJobPosting: resume.target_job_posting,
       status: resume.status,
       paid: Boolean(entitlement),
-      runsUsed: entitlement?.credits_used ?? 0,
+      runsUsed: entitlement?.credits_used ?? (generated ? INITIAL_PREVIEW_RUNS : 0),
       runsTotal: entitlement?.credits_total ?? RESUME_TOTAL_AI_RUNS,
       correctionsRemaining: generated && entitlement
         ? Math.max(0, entitlement.credits_total - entitlement.credits_used)
-        : generated ? 0 : 3,
+        : 0,
       previewUrl: generated ? `/api/resume-builder/resumes/${resumeId}/files/preview` : null,
-      downloads: generated ? {
+      downloads: generated && entitlement ? {
         pdf: `/api/resume-builder/resumes/${resumeId}/files/pdf`,
         docx: `/api/resume-builder/resumes/${resumeId}/files/docx`,
       } : null,
@@ -540,6 +541,9 @@ async function createCheckout(request: Request, env: ResumeBuilderEnv, resumeId:
   if (await findEntitlement(env, resumeId, user.userId)) {
     return json({ ok: false, message: "This resume is already paid." }, 409);
   }
+  if (!resume.generated_json) {
+    return json({ ok: false, message: "Generate and review the watermarked preview before checkout." }, 409);
+  }
 
   const stripeKey = env.STRIPE_SECRET_KEY?.trim();
   const priceId = env.STRIPE_RESUME_PRICE_ID?.trim();
@@ -564,7 +568,7 @@ async function createCheckout(request: Request, env: ResumeBuilderEnv, resumeId:
   form.set("customer_email", user.email);
   form.set("client_reference_id", orderId);
   form.set("success_url", `${SITE_URL}/resume-builder/payment-confirmed?resume_id=${encodeURIComponent(resumeId)}&session_id={CHECKOUT_SESSION_ID}`);
-  form.set("cancel_url", `${SITE_URL}${INTAKE_PATH}?resume_id=${encodeURIComponent(resumeId)}`);
+  form.set("cancel_url", `${SITE_URL}/resume-builder/review?resume_id=${encodeURIComponent(resumeId)}`);
   form.set("metadata[product]", "resume_builder_mvp");
   form.set("metadata[order_id]", orderId);
   form.set("metadata[resume_id]", resumeId);
@@ -813,7 +817,7 @@ async function handleResumeStripeWebhook(request: Request, env: ResumeBuilderEnv
       `INSERT INTO entitlements
        (entitlement_id, user_id, resume_id, kind, plan, status, credits_total, credits_used,
         source_order_id, stripe_customer_id)
-       SELECT ?, ?, ?, 'one_time', ?, 'active', ?, 0, ?, ?
+       SELECT ?, ?, ?, 'one_time', ?, 'active', ?, ?, ?, ?
        WHERE EXISTS (
          SELECT 1 FROM resume_orders WHERE order_id = ? AND status = 'paid'
        )
@@ -824,6 +828,7 @@ async function handleResumeStripeWebhook(request: Request, env: ResumeBuilderEnv
       resumeId,
       RESUME_PLAN,
       RESUME_TOTAL_AI_RUNS,
+      INITIAL_PREVIEW_RUNS,
       orderId,
       stripeCustomer,
       orderId,
@@ -1271,11 +1276,13 @@ async function generateResume(
   const resume = await findOwnedResume(env, resumeId, user.userId);
   if (!resume) return json({ ok: false, message: "Resume not found." }, 404);
   const entitlement = await findEntitlement(env, resumeId, user.userId);
-  if (!entitlement) return json({ ok: false, message: "Complete the $9.99 payment before generating." }, 402);
 
   const body = await parseJsonBody(request, 8_000);
   const correctionRequest = cleanText(body?.correctionRequest, 2_000) || null;
   const isCorrection = Boolean(resume.generated_json);
+  if (isCorrection && !entitlement) {
+    return json({ ok: false, message: "Complete the $9.99 payment to unlock clean files and corrections." }, 402);
+  }
   if (isCorrection && !correctionRequest) {
     return json({ ok: false, message: "Describe the correction you want made." }, 400);
   }
@@ -1292,15 +1299,17 @@ async function generateResume(
     return json({ ok: false, message: "A resume generation is already in progress." }, 409);
   }
 
-  const reserved = await env.DB.prepare(
-    `UPDATE entitlements SET credits_used = credits_used + 1, updated_at = CURRENT_TIMESTAMP
-     WHERE entitlement_id = ? AND status = 'active' AND credits_used < credits_total`,
-  ).bind(entitlement.entitlement_id).run() as D1MutationResult;
-  if ((reserved.meta?.changes ?? 0) !== 1) {
-    await env.DB.prepare(
-      "UPDATE resumes SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE resume_id = ? AND user_id = ? AND status = 'generating'",
-    ).bind(resume.status, resumeId, user.userId).run();
-    return json({ ok: false, message: "All permitted AI runs have been used." }, 409);
+  if (entitlement) {
+    const reserved = await env.DB.prepare(
+      `UPDATE entitlements SET credits_used = credits_used + 1, updated_at = CURRENT_TIMESTAMP
+       WHERE entitlement_id = ? AND status = 'active' AND credits_used < credits_total`,
+    ).bind(entitlement.entitlement_id).run() as D1MutationResult;
+    if ((reserved.meta?.changes ?? 0) !== 1) {
+      await env.DB.prepare(
+        "UPDATE resumes SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE resume_id = ? AND user_id = ? AND status = 'generating'",
+      ).bind(resume.status, resumeId, user.userId).run();
+      return json({ ok: false, message: "All permitted AI runs have been used." }, 409);
+    }
   }
 
   const generationId = crypto.randomUUID();
@@ -1370,30 +1379,26 @@ async function generateResume(
       env,
       previousObjectKeys.filter((objectKey) => !newObjectKeys.includes(objectKey)),
     );
-    const runsUsed = entitlement.credits_used + 1;
+    const runsUsed = entitlement ? entitlement.credits_used + 1 : INITIAL_PREVIEW_RUNS;
     return json({
       ok: true,
       resumeId,
       status: "ready",
       runNumber: runsUsed,
       runsTotal: RESUME_TOTAL_AI_RUNS,
-      correctionsRemaining: Math.max(0, RESUME_TOTAL_AI_RUNS - runsUsed),
+      correctionsRemaining: entitlement ? Math.max(0, RESUME_TOTAL_AI_RUNS - runsUsed) : 0,
       previewUrl: `/api/resume-builder/resumes/${resumeId}/files/preview`,
-      downloads: {
+      downloads: entitlement ? {
         pdf: `/api/resume-builder/resumes/${resumeId}/files/pdf`,
         docx: `/api/resume-builder/resumes/${resumeId}/files/docx`,
-      },
+      } : null,
     });
   } catch (error) {
     await cleanupGenerationFiles(env, newObjectKeys);
     const failure = classifyGenerationError(error);
     const retryable = isRetryableFailure(failure.code);
     console.error("Resume generation pipeline failed", failure.code, failure.guardTelemetry ?? undefined);
-    await env.DB.batch([
-      env.DB.prepare(
-        `UPDATE entitlements SET credits_used = CASE WHEN credits_used > 0 THEN credits_used - 1 ELSE 0 END,
-         updated_at = CURRENT_TIMESTAMP WHERE entitlement_id = ?`,
-      ).bind(entitlement.entitlement_id),
+    const failureStatements = [
       env.DB.prepare(
         `UPDATE resumes SET status = ?, updated_at = CURRENT_TIMESTAMP
          WHERE resume_id = ? AND user_id = ? AND status = 'generating'`,
@@ -1410,13 +1415,20 @@ async function generateResume(
         model,
         JSON.stringify(failure.guardTelemetry ?? { code: failure.code.toLowerCase() }),
       ),
-    ]);
+    ];
+    if (entitlement) {
+      failureStatements.unshift(env.DB.prepare(
+        `UPDATE entitlements SET credits_used = CASE WHEN credits_used > 0 THEN credits_used - 1 ELSE 0 END,
+         updated_at = CURRENT_TIMESTAMP WHERE entitlement_id = ?`,
+      ).bind(entitlement.entitlement_id));
+    }
+    await env.DB.batch(failureStatements);
     return json({
       ok: false,
       code: failure.code,
       retryable,
       action: failureAction(failure.code),
-      paymentSafe: true,
+      paymentSafe: Boolean(entitlement),
       runConsumed: false,
       missing: failure.missing,
       intakeUrl: retryable ? null : `${INTAKE_PATH}?resume_id=${encodeURIComponent(resumeId)}`,
@@ -1436,9 +1448,11 @@ async function serveResumeFile(
   const user = await requireUser(request, env);
   if (!user) return json({ ok: false, message: "Sign in to continue." }, 401);
   const resume = await findOwnedResume(env, resumeId, user.userId);
-  if (!resume || !await findEntitlement(env, resumeId, user.userId)) {
+  if (!resume) {
     return json({ ok: false, message: "File not found." }, 404);
   }
+  const entitlement = await findEntitlement(env, resumeId, user.userId);
+  if (format !== "preview" && !entitlement) return json({ ok: false, message: "File not found." }, 404);
   const file = await env.DB.prepare(
     `SELECT object_key FROM resume_files WHERE resume_id = ? AND user_id = ? AND format = ?
      ORDER BY created_at DESC LIMIT 1`,
@@ -1454,7 +1468,8 @@ async function serveResumeFile(
   headers.set("Content-Type", isDocx
     ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
     : "application/pdf");
-  headers.set("Content-Disposition", `${isPreview ? "inline" : "attachment"}; filename="${filename}"`);
+  const showInline = isPreview || (format === "pdf" && new URL(request.url).searchParams.get("view") === "1");
+  headers.set("Content-Disposition", `${showInline ? "inline" : "attachment"}; filename="${filename}"`);
   headers.set("Cache-Control", "private, no-store");
   headers.set("Referrer-Policy", "no-referrer");
   headers.set("X-Content-Type-Options", "nosniff");
