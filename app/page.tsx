@@ -1,135 +1,177 @@
 import Image from "next/image";
 import { SignupForm } from "./signup-form";
 import { SocialLinks } from "./social-links";
+import styles from "./home.module.css";
 
-const pillars = [
-  { number: "01", title: "The Book", description: "The TRADE HUSTL3 career playbook by Zachary Ellis (KDP ISBN 9798193043355), launching September 15, 2026.", action: "Explore the book", href: "/book" },
-  { number: "02", title: "Resume Builder", description: "Turn licenses, certifications, field hours, and real jobsite experience into a resume that gets understood.", action: "Build your edge", href: "/resume-builder" },
-  { number: "03", title: "HUSTL3 PRO", description: "Premium tools, practical training, and a community built for tradespeople ready for the next level.", action: "Join the waitlist", href: "#join" },
-  { number: "04", title: "Jobsite Gear", description: "Hard-wearing essentials that carry the mindset from the jobsite to everywhere else.", action: "Gear up", href: "#join" },
-  { number: "05", title: "Program Partnerships", description: "Resources and collaboration for trade schools, workforce programs, and the people building tomorrow's talent.", action: "Partner with us", href: "mailto:partners@tradehustl3.com" },
+const proof = [
+  ["ENTER", "Get the trade map."],
+  ["EARN", "Build the resume."],
+  ["ELEVATE", "Move with a plan."],
 ];
 
-const steps = [
-  ["ENTER", "Choose the trade. Learn the culture. Step onto the jobsite ready."],
-  ["EARN", "Build real skills, stack credentials, and make your work impossible to ignore."],
-  ["ELEVATE", "Lead crews, grow your income, own your future, and bring others with you."],
-];
-
-const audiences = [
-  "Students exploring skilled trades",
-  "Apprentices and entry-level technicians",
-  "Career changers",
-  "Working tradespeople",
-  "Future supervisors and owners",
-  "Trade schools and workforce programs",
-];
-
-const nextHustl3 = [
+const tools = [
   {
     number: "01",
     title: "TRADE HUSTL3 Rule Builder",
-    description: "Not sure where to start? Use the Rule Builder to narrow your direction, understand the path, and know your next move before you spend time or money.",
-    action: "Sign Up Now",
+    copy: "Pick the right lane before you waste time, money, or momentum.",
     href: "#signup-now",
+    action: "Sign Up Now",
   },
   {
     number: "02",
     title: "Resume Builder",
-    description: "Turn your real trade experience, certifications, licenses, field hours, and skills into an ATS-ready resume built to get understood by employers.",
-    action: "Build My Resume",
+    copy: "Turn your real field experience, certifications, and skills into an ATS-ready resume.",
     href: "/resume-builder",
+    action: "Build My Resume — $9.99",
   },
   {
     number: "03",
-    title: "Meet HUSTL3 BOT",
-    description: "Your jobsite-minded AI guide for trade questions, career direction, next-step planning, and practical answers without the corporate fluff.",
-    action: "Get Early Access",
+    title: "HUSTL3 BOT",
+    copy: "Jobsite-minded AI guidance for trade questions, next-step planning, and career direction.",
     href: "#signup-now",
+    action: "Get Early Access",
   },
 ];
 
 export default function Home() {
   return (
-    <main>
-      <header className="site-header">
-        <a className="brand-link" href="#top" aria-label="TRADE HUSTL3 home">
-          <Image className="header-logo" src="/trade-hustl3-logo.png" alt="TRADE HUSTL3 logo" width={68} height={68} priority />
-          <span className="wordmark">TRADE HUSTL<span>3</span></span>
+    <main className={styles.page}>
+      <header className={styles.header}>
+        <a className={styles.brand} href="#top" aria-label="TRADE HUSTL3 home">
+          <Image
+            src="/trade-hustl3-logo.png"
+            alt="TRADE HUSTL3 logo"
+            width={54}
+            height={54}
+            priority
+            className={styles.logo}
+          />
         </a>
-        <nav aria-label="Primary navigation">
-          <a href="/book">The Book</a><a href="/resume-builder">Resume Builder</a><a href="#ecosystem">Ecosystem</a><a href="#mission">Mission</a><a href="#field">From the field</a><a className="nav-cta" href="#join">Get in early</a>
+
+        <nav className={styles.nav} aria-label="Primary navigation">
+          <a href="/book#free-guides">FREE GUIDES</a>
+          <a href="/book">THE BOOK</a>
+          <a href="/resume-builder">BUILD MY RESUME</a>
+          <a className={styles.navCta} href="/resume-builder">BUILD MY RESUME — $9.99</a>
         </nav>
       </header>
 
-      <section className="hero" id="top">
-        <div className="hero-grid" aria-hidden="true" />
-        <div className="hero-content">
-          <div className="eyebrow"><span /> BUILT FOR THE ONES WHO BUILD</div>
-          <h1>BUILT BY <em>HUSTLE.</em><br />BACKED BY <strong>TRADES.</strong></h1>
-          <p className="hero-copy">A career platform and movement for the skilled trades—made to help you enter strong, earn more, and elevate what comes next.</p>
-          <div className="hero-actions"><a className="button button-primary" href="#ecosystem">Explore the ecosystem <span>↗</span></a><a className="button button-secondary" href="#mission">Why we exist</a></div>
+      <section className={styles.hero} id="top">
+        <div className={styles.heroGlow} aria-hidden="true" />
+        <div className={styles.heroGrid}>
+          <div className={styles.heroCopy}>
+            <div className={styles.kicker}>BUILT FOR THE ONES WHO BUILD</div>
+            <h1>
+              YOUR FUTURE<br />
+              DOESN&apos;T NEED<br />
+              <span>PERMISSION.</span>
+            </h1>
+            <p className={styles.subhead}>THE RESUME BUILDER BUILT FOR SKILLED TRADES.</p>
+            <p className={styles.bodyCopy}>
+              Turn real field experience into a professional, ATS-ready resume without watering down what you actually know how to do.
+            </p>
+
+            <div className={styles.actions}>
+              <a className={styles.primaryButton} href="/resume-builder">BUILD MY RESUME — $9.99 <span>→</span></a>
+              <a className={styles.secondaryButton} href="/book#free-guides">GET THE FREE TRADE GUIDES <span>↗</span></a>
+            </div>
+
+            <p className={styles.microcopy}>ONE-TIME $9.99 · NO SUBSCRIPTION · BUILT FOR THE TRADES</p>
+          </div>
+
+          <div className={styles.visualWrap} aria-label="TRADE HUSTL3 Resume Builder preview">
+            <div className={styles.visualCard}>
+              <div className={styles.visualTopline}>
+                <span>TRADE HUSTL3</span>
+                <span>RESUME BUILDER</span>
+              </div>
+              <div className={styles.screenShell}>
+                <div className={styles.screenBar}>
+                  <span />
+                  <span />
+                  <span />
+                </div>
+                <div className={styles.resumePreview}>
+                  <div className={styles.resumeBrand}>TH</div>
+                  <div className={styles.resumeText}>
+                    <strong>FIELD EXPERIENCE THAT READS LIKE VALUE.</strong>
+                    <span />
+                    <span />
+                    <span />
+                    <span className={styles.shortLine} />
+                  </div>
+                </div>
+              </div>
+              <div className={styles.visualFooter}>
+                <Image
+                  src="/trade-hustl3-resume-builder-logo.png"
+                  alt="TRADE HUSTL3 Resume Builder"
+                  width={250}
+                  height={80}
+                  className={styles.resumeLogo}
+                />
+                <div>
+                  <strong>ATS READY</strong>
+                  <span>PDF + DOCX</span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-        <div className="hero-logo-wrap">
-          <div className="logo-rule"><span>FIELD-BUILT</span><span>EST. 2026</span></div>
-          <Image className="hero-logo" src="/trade-hustl3-logo.png" alt="TRADE HUSTL3 logo" width={500} height={500} priority />
+
+        <div className={styles.proofStrip}>
+          {proof.map(([title, copy]) => (
+            <div className={styles.proofItem} key={title}>
+              <strong>{title}</strong>
+              <span>{copy}</span>
+            </div>
+          ))}
         </div>
-        <div className="marquee" aria-label="Enter, Earn, Elevate"><div>ENTER <b>◆</b> EARN <b>◆</b> ELEVATE <b>◆</b> ENTER <b>◆</b> EARN <b>◆</b> ELEVATE</div></div>
       </section>
 
-      <section className="intro" id="mission">
-        <p className="section-label">/ THE MISSION</p>
-        <div><h2>THE TRADES DON&apos;T NEED A BACKUP PLAN.</h2><p>They need a bigger platform. TRADE HUSTL3 connects practical tools, trusted resources, and real opportunity for the people who keep the world moving.</p></div>
-      </section>
+      <section className={styles.toolsSection} id="tools">
+        <div className={styles.sectionIntro}>
+          <span>THE TRADE HUSTL3 SYSTEM</span>
+          <h2>CHOOSE YOUR NEXT <em>HUSTL3.</em></h2>
+          <p>Start with the problem you need solved, pick the tool, then move.</p>
+        </div>
 
-      <section className="field-section" id="field">
-        <div className="field-story"><p className="section-label">/ WHY WE EXIST</p><h2>BUILT FROM<br />THE <span>FIELD.</span></h2><p>Founded by HVAC and facilities maintenance professional Zachary Ellis, TRADE HUSTL3 was built from real field experience and trades supervision—not theory. The mission is to shorten the learning curve for people entering the skilled trades and give working tradespeople practical tools to earn more, move up, and build something bigger.</p></div>
-        <div className="audience-block"><p className="section-label">/ WHO THIS IS FOR</p><h3>WHO THIS IS FOR</h3><ul>{audiences.map((audience, index) => <li key={audience}><span>0{index + 1}</span>{audience}</li>)}</ul></div>
-      </section>
-
-      <section className="ecosystem" id="ecosystem">
-        <div className="section-heading"><p className="section-label">/ ONE ECOSYSTEM. FIVE WAYS FORWARD.</p><h2>TOOLS FOR THE<br /><span>WHOLE JOURNEY.</span></h2></div>
-        <div className="pillar-grid">{pillars.map((pillar) => <article className="pillar-card" key={pillar.number}><div className="card-top"><span>{pillar.number}</span><span>↗</span></div><h3>{pillar.title}</h3><p>{pillar.description}</p><a href={pillar.href}>{pillar.action} <span>→</span></a></article>)}</div>
-      </section>
-
-      <section className="path-section"><div className="path-heading"><p className="section-label">/ THE PATH</p><h2>NO SHORTCUTS.<br />JUST <span>FORWARD.</span></h2></div><div className="steps">{steps.map(([title, copy], index) => <div className="step" key={title}><span className="step-number">0{index + 1}</span><div><h3>{title}<b>.</b></h3><p>{copy}</p></div></div>)}</div></section>
-      <section className="quote-band"><blockquote>“YOUR HANDS BUILT THE WORLD.<br /><span>YOUR HUSTLE BUILDS WHAT&apos;S NEXT.</span>”</blockquote></section>
-
-      <section className="join" id="join">
-        <p className="section-label">/ PICK THE TOOL THAT MOVES YOU FORWARD</p>
-        <h2>CHOOSE YOUR<br />NEXT <span>HUSTL3.</span></h2>
-        <p>Start with the problem you need solved. Pick your tool, sign up or purchase, and get straight to the next move—without wasting time trying to figure out what comes first.</p>
-
-        <div className="pillar-grid">
-          {nextHustl3.map((item) => (
-            <article className="pillar-card" key={item.number}>
-              <div className="card-top"><span>{item.number}</span><span>↗</span></div>
-              <h3>{item.title}</h3>
-              <p>{item.description}</p>
-              <a href={item.href}>{item.action} <span>→</span></a>
+        <div className={styles.toolGrid}>
+          {tools.map((tool) => (
+            <article className={styles.toolCard} key={tool.number}>
+              <div className={styles.toolNumber}>{tool.number}</div>
+              <h3>{tool.title}</h3>
+              <p>{tool.copy}</p>
+              <a href={tool.href}>{tool.action} <span>→</span></a>
             </article>
           ))}
         </div>
+      </section>
 
-        <div className="steps" style={{ maxWidth: 980, margin: "70px auto 48px", textAlign: "left" }}>
-          <div className="step"><span className="step-number">01</span><div><h3>PICK IT<b>.</b></h3><p>Choose the TRADE HUSTL3 tool that matches what you need right now.</p></div></div>
-          <div className="step"><span className="step-number">02</span><div><h3>GET IN<b>.</b></h3><p>Sign up or complete your purchase through the secure TRADE HUSTL3 flow.</p></div></div>
-          <div className="step"><span className="step-number">03</span><div><h3>MOVE<b>.</b></h3><p>Get access, use the tool, and leave with a clear next action—not another dead-end resource.</p></div></div>
+      <section className={styles.signupSection} id="signup-now">
+        <div>
+          <span>GET IN EARLY</span>
+          <h2>STAY IN THE LOOP.</h2>
+          <p>Get product drops, free trade resources, and early access to the Rule Builder and HUSTL3 BOT.</p>
         </div>
-
-        <div id="signup-now">
-          <p className="section-label">/ SIGN UP NOW</p>
-          <p>Want early access to the Rule Builder, HUSTL3 BOT, product drops, and new trade resources? Get on the list and tell us what matters to you.</p>
+        <div className={styles.signupWrap}>
           <SignupForm />
-          <small>By joining, you agree to receive TRADE HUSTL3 emails. Unsubscribe anytime. No spam—just moves worth making.</small>
         </div>
       </section>
 
-      <footer>
-        <div className="footer-brand"><div className="wordmark">TRADE HUSTL<span>3</span></div><p>Built by Hustle, Backed by Trades.</p><SocialLinks /></div>
-        <div className="footer-links"><a href="/book">The Book</a><a href="/resume-builder">Resume Builder</a><a href="#ecosystem">Ecosystem</a><a href="#mission">Mission</a><a href="#field">From the field</a><a href="mailto:partners@tradehustl3.com">Partnerships</a></div>
-        <div className="footer-legal"><a href="/privacy">Privacy</a><a href="/terms">Terms</a><a href="/resume-builder/refund-policy">Resume refunds</a><a href="/book/refund-policy">eBook policy</a><a href="/data-deletion">Data requests</a><a href="/contact">Support</a></div>
-        <p className="copyright">© 2026 TRADE HUSTL3. ALL GRIT RESERVED.</p>
+      <footer className={styles.footer}>
+        <div>
+          <Image src="/trade-hustl3-logo.png" alt="TRADE HUSTL3" width={54} height={54} className={styles.footerLogo} />
+          <p>Built by Hustle, Backed by Trades.</p>
+          <SocialLinks />
+        </div>
+        <div className={styles.footerLinks}>
+          <a href="/book">The Book</a>
+          <a href="/resume-builder">Resume Builder</a>
+          <a href="/privacy">Privacy</a>
+          <a href="/terms">Terms</a>
+          <a href="/contact">Support</a>
+        </div>
       </footer>
     </main>
   );
