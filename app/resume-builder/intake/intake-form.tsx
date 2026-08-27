@@ -51,7 +51,6 @@ export function IntakeForm() {
   const [editingResumeId, setEditingResumeId] = useState("");
   const [editingPaid, setEditingPaid] = useState(false);
   const [draft, setDraft] = useState<ResumeStatus | null>(null);
-  const [savedResumeId, setSavedResumeId] = useState("");
   const [initializing, setInitializing] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState("");
@@ -100,27 +99,6 @@ export function IntakeForm() {
     void initialize();
     return () => { active = false; };
   }, []);
-
-  async function startCheckout(resumeId: string) {
-    setSubmitting(true);
-    setMessage("");
-    try {
-      const response = await fetch(`/api/resume-builder/resumes/${encodeURIComponent(resumeId)}/checkout`, {
-        method: "POST",
-        credentials: "same-origin",
-        headers: { "Content-Type": "application/json" },
-        body: "{}",
-      });
-      const result = await response.json() as { checkoutUrl?: string; message?: string };
-      if (!response.ok || !result.checkoutUrl) {
-        throw new Error(result.message || "Secure checkout is temporarily unavailable.");
-      }
-      window.location.assign(result.checkoutUrl);
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Secure checkout is temporarily unavailable.");
-      setSubmitting(false);
-    }
-  }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -171,37 +149,17 @@ export function IntakeForm() {
       const result = await response.json() as { resumeId?: string; message?: string };
       const resumeId = result.resumeId || editingResumeId;
       if (!response.ok || !resumeId) throw new Error(result.message || "We could not save your intake.");
-      if (editingPaid) {
-        window.location.assign(`/resume-builder/review?resume_id=${encodeURIComponent(resumeId)}`);
-        return;
-      }
-      setSavedResumeId(resumeId);
-      await startCheckout(resumeId);
+      window.location.assign(`/resume-builder/review?resume_id=${encodeURIComponent(resumeId)}`);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "We could not save your intake.");
       setSubmitting(false);
     }
   }
 
-  if (savedResumeId) {
-    return (
-      <div className="rb-retry-card">
-        <span className="rb-message-icon">✓</span>
-        <p className="rb-kicker">/ INTAKE SAVED</p>
-        <h2>YOUR DETAILS ARE SECURE.</h2>
-        <p>No resume has been generated yet. Complete the one-time $9.99 payment to unlock the initial build and three corrections.</p>
-        {message ? <p className="rb-inline-error" role="alert">{message}</p> : null}
-        <button className="rb-button rb-button-primary" type="button" disabled={submitting} onClick={() => startCheckout(savedResumeId)}>
-          {submitting ? "Opening secure checkout…" : "Continue to $9.99 checkout"} <span>↗</span>
-        </button>
-      </div>
-    );
-  }
-
   const intake = draft?.intake ?? {};
   const career = intake.career ?? {};
   const jobs = [intake.experience?.[0] ?? {}, intake.experience?.[1] ?? {}];
-  const primaryAction = editingPaid ? "Save intake & return to review" : "Save & continue to payment";
+  const primaryAction = editingPaid ? "Save intake & return to review" : "Save & build my preview";
 
   return (
     <form
@@ -216,7 +174,7 @@ export function IntakeForm() {
           <p>Verified account</p>
           <strong>{user?.email || "Secure session"}</strong>
         </div>
-        <small>{editingPaid ? "Your payment and available AI runs are unchanged." : "Nothing is generated until after payment."}</small>
+        <small>{editingPaid ? "Your payment and available AI runs are unchanged." : "Your first watermarked preview is built before payment."}</small>
       </div>
 
       {editingResumeId ? (
@@ -305,7 +263,7 @@ export function IntakeForm() {
       ) : null}
 
       <div className="rb-checkout-bar">
-        <div><span>{editingPaid ? "Already paid" : "Total today"}</span><strong>{editingPaid ? "$0" : "$9.99"}</strong><small>{editingPaid ? "No extra charge · available runs unchanged" : "One completed resume · no subscription"}</small></div>
+        <div><span>{editingPaid ? "Already paid" : "Preview first"}</span><strong>{editingPaid ? "$0" : "$0"}</strong><small>{editingPaid ? "No extra charge · available runs unchanged" : "Pay $9.99 only after reviewing the watermarked resume"}</small></div>
         <button className="rb-button rb-button-primary" type="submit" disabled={submitting}>{submitting ? "Saving your intake…" : primaryAction} <span>→</span></button>
       </div>
       {message ? <p className="rb-inline-error rb-form-error" role="alert">{message}</p> : null}

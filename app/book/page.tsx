@@ -203,7 +203,7 @@ export default function BookPage() {
           <p className="section-label">/ FREE 2026-2027 GUIDE</p>
           <h2>GET THE FREE<br /><span>GUIDE PREVIEW.</span></h2>
           <p>
-            Enter your email to unlock the six-page preview of <em>TRADE HUSTL3: 10 High-Opportunity Trades — 2026-2027 Edition</em>. It includes the guide&apos;s source standard, verified power-line and HVAC profiles, national pay context, and practical next steps.
+            Enter your email to unlock the seven-page preview of <em>TRADE HUSTL3: 10 High-Opportunity Trades — 2026-2027 Edition</em> (cover included). It includes the guide&apos;s source standard, verified power-line and HVAC profiles, national pay context, and practical next steps.
           </p>
           <SignupForm mode="sample" />
           <small className="sample-consent">By unlocking the free guide, you agree to receive TRADE HUSTL3 book and career updates. Unsubscribe anytime.</small>

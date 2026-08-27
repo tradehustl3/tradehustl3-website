@@ -5,7 +5,7 @@ export function ResumeBuilderHeader() {
   return (
     <header className="rb-header">
       <a className="rb-brand" href="/" aria-label="TRADE HUSTL3 home">
-        <Image src="/trade-hustl3-resume-builder-logo.png" alt="TRADE HUSTL3 Resume Builder logo" width={64} height={64} priority />
+        <Image src="/resume-builder-logo-llc.png" alt="TRADE HUSTL3 LLC Resume Builder logo" width={64} height={64} priority />
         <span>TRADE HUSTL<span>3</span></span>
       </a>
       <div className="rb-header-product">

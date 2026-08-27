@@ -34,7 +34,7 @@
 
 .rb-steps {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   margin: 0;
   padding: 0 clamp(20px, 5vw, 76px);
   list-style: none;

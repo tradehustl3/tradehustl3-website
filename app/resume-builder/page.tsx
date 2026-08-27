@@ -49,14 +49,14 @@ export default function ResumeBuilderPage() {
       <section className="rb-package" aria-labelledby="package-title">
         <div>
           <p className="rb-kicker">/ ONE STRAIGHTFORWARD PACKAGE</p>
-          <h2 id="package-title">PAY ONCE. BUILD IT RIGHT.</h2>
+          <h2 id="package-title">PREVIEW FIRST. PAY ONCE.</h2>
         </div>
         <div className="rb-package-card">
           <div className="rb-package-price"><span>$</span><strong>9</strong><sup>99</sup></div>
-          <p>Payment happens after you complete the intake and before any AI generation.</p>
+          <p>Your first resume is built before checkout. Review the protected logo-watermarked preview, then pay once to remove the watermark.</p>
           <ul>
-            <li><span>✓</span> Initial tailored resume build</li>
-            <li><span>✓</span> Watermarked review copy</li>
+            <li><span>✓</span> Initial tailored preview before payment</li>
+            <li><span>✓</span> TRADE HUSTL3 LLC logo watermark</li>
             <li><span>✓</span> Up to 3 AI corrections within 7 days</li>
             <li><span>✓</span> Clean PDF + editable DOCX downloads</li>
           </ul>

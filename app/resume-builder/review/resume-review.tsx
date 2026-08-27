@@ -33,6 +33,7 @@ export function ResumeReview() {
   const [resume, setResume] = useState<Resume | null>(null);
   const [loading, setLoading] = useState(true);
   const [working, setWorking] = useState(false);
+  const [checkingOut, setCheckingOut] = useState(false);
   const [message, setMessage] = useState("");
   const [intakeNotice, setIntakeNotice] = useState<GenerationFailure | null>(null);
 
@@ -102,6 +103,26 @@ export function ResumeReview() {
     event.currentTarget.reset();
   }
 
+  async function startCheckout() {
+    if (!resumeId) return;
+    setCheckingOut(true);
+    setMessage("");
+    try {
+      const response = await fetch(`/api/resume-builder/resumes/${encodeURIComponent(resumeId)}/checkout`, {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: "{}",
+      });
+      const result = await response.json() as { checkoutUrl?: string; message?: string };
+      if (!response.ok || !result.checkoutUrl) throw new Error(result.message || "Secure checkout is temporarily unavailable.");
+      window.location.assign(result.checkoutUrl);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Secure checkout is temporarily unavailable.");
+      setCheckingOut(false);
+    }
+  }
+
   if (loading) {
     return <div className="rb-review-loading" role="status"><span /><p>Loading your secure workspace…</p></div>;
   }
@@ -141,40 +162,41 @@ export function ResumeReview() {
               <ul>{intakeNotice.missing.map((item) => <li key={item}>{item}</li>)}</ul>
             </div>
           ) : null}
-          <p className="rb-intake-reassurance">Your $9.99 payment is safe, this failed attempt used no AI run, and any previous resume files are unchanged.</p>
+          <p className="rb-intake-reassurance">This failed attempt used no AI run, and any previous resume files are unchanged.</p>
           <a className="rb-button rb-button-primary" href={intakeNotice.intakeUrl ?? "/resume-builder/intake"}>Return to intake <span>→</span></a>
         </section>
       ) : null}
 
-      {!resume.paid ? (
-        <section className="rb-unpaid-card">
-          <p className="rb-kicker">/ PAYMENT REQUIRED</p><h2>GENERATION IS STILL LOCKED.</h2>
-          <p>Your intake is saved. Complete the one-time $9.99 payment before the first AI run.</p>
-          <a className="rb-button rb-button-primary" href={`/resume-builder/intake?resume_id=${encodeURIComponent(resume.resumeId)}`}>Continue to payment <span>→</span></a>
-        </section>
-      ) : !hasDraft ? (
+      {!hasDraft ? (
         <section className="rb-first-build">
           <div className="rb-blueprint" aria-hidden="true"><span>ATS</span><i /><i /><i /><i /></div>
-          <div><p className="rb-kicker">/ PAYMENT CONFIRMED</p><h2>READY FOR THE FIRST BUILD.</h2><p>This uses run 1 of 4. Claude Sonnet will organize only the experience and facts you provided—no invented licenses, employers, or results.</p>
-          <button className="rb-button rb-button-primary" type="button" disabled={working} onClick={() => void runGeneration()}>{working ? "Building your resume…" : "Generate my paid resume"} <span>→</span></button></div>
+          <div><p className="rb-kicker">/ PREVIEW BEFORE YOU PAY</p><h2>READY FOR THE FIRST BUILD.</h2><p>Claude Sonnet will organize only the experience and facts you provided—no invented licenses, employers, or results. You will review a protected, logo-watermarked copy before checkout.</p>
+          <button className="rb-button rb-button-primary" type="button" disabled={working} onClick={() => void runGeneration()}>{working ? "Building your resume…" : "Build my watermarked preview"} <span>→</span></button></div>
         </section>
       ) : (
         <section className="rb-review-grid">
           <div className="rb-preview-panel">
-            <div className="rb-preview-toolbar"><div><span className="rb-status-dot" />Watermarked review copy</div><small>Review only · clean files below</small></div>
-            <iframe key={`${resume.previewUrl}-${resume.runsUsed}`} src={`${resume.previewUrl}?run=${resume.runsUsed}`} title="Watermarked resume review" />
+            <div className="rb-preview-toolbar"><div><span className="rb-status-dot" />{resume.paid ? "Clean paid resume" : "Protected watermarked preview"}</div><small>{resume.paid ? "Watermark removed · clean files below" : "Preview only · pay to remove watermark"}</small></div>
+            <iframe key={`${resume.previewUrl}-${resume.runsUsed}-${resume.paid}`} src={resume.paid && resume.downloads ? `${resume.downloads.pdf}?view=1&run=${resume.runsUsed}` : `${resume.previewUrl}?run=${resume.runsUsed}`} title={resume.paid ? "Clean paid resume" : "Watermarked resume preview"} />
           </div>
 
           <aside className="rb-review-sidebar">
-            <div className="rb-review-status"><p className="rb-kicker">/ REVIEW + REFINE</p><h2>MAKE IT SOUND LIKE YOU.</h2><p>Check names, dates, certifications, job duties, and contact information before downloading.</p></div>
+            <div className="rb-review-status"><p className="rb-kicker">/ {resume.paid ? "REVIEW + REFINE" : "PREVIEW BEFORE YOU PAY"}</p><h2>{resume.paid ? "MAKE IT SOUND LIKE YOU." : "LIKE WHAT YOU SEE?"}</h2><p>{resume.paid ? "Check names, dates, certifications, job duties, and contact information before downloading." : "Your first resume is ready. Pay once to remove the watermark, unlock the clean PDF and DOCX, and receive up to three corrections."}</p></div>
 
-            <form className="rb-correction-form" onSubmit={submitCorrection}>
+            {resume.paid ? <form className="rb-correction-form" onSubmit={submitCorrection}>
               <div className="rb-correction-count"><strong>{resume.correctionsRemaining}</strong><span>AI corrections remaining</span></div>
               <label htmlFor="correctionRequest">What needs to change?</label>
               <textarea id="correctionRequest" name="correctionRequest" rows={6} maxLength={2000} required disabled={working || resume.correctionsRemaining < 1} placeholder="Example: Change the end date at Apex Mechanical to June 2025 and emphasize my rooftop-unit diagnostics." />
               <button className="rb-button rb-button-secondary-dark rb-button-full" type="submit" disabled={working || resume.correctionsRemaining < 1}>{working ? "Applying correction…" : resume.correctionsRemaining > 0 ? "Apply one correction" : "All corrections used"} <span>↻</span></button>
               <small>One submitted correction uses one run. Failed generations are restored automatically.</small>
-            </form>
+            </form> : (
+              <div className="rb-unpaid-card">
+                <p className="rb-kicker">/ ONE-TIME PURCHASE</p>
+                <h2>REMOVE THE WATERMARK.</h2>
+                <p>Pay $9.99 once. No subscription. Clean PDF and editable DOCX unlock after Stripe confirms payment.</p>
+                <button className="rb-button rb-button-primary rb-button-full" type="button" disabled={checkingOut} onClick={() => void startCheckout()}>{checkingOut ? "Opening secure checkout…" : "Unlock clean resume — $9.99"} <span>↗</span></button>
+              </div>
+            )}
 
             {resume.downloads ? (
               <div className="rb-downloads">

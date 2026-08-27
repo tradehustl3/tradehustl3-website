@@ -214,17 +214,104 @@ test("the MVP intake records the locked $9.99 price", async () => {
   assert.equal(DB.writes.some((write) => /INSERT INTO resumes/i.test(write.sql)), true);
 });
 
-test("no free AI generation is allowed", async () => {
+test("one watermarked preview generation is allowed before payment", async () => {
+  const objects = new Map<string, Uint8Array>();
+  const previewResume: GeneratedResume = {
+    basics: { fullName: "Marcus Reed", targetTitle: "HVAC Technician", email: "member@example.com" },
+    summary: "HVAC service professional with hands-on preventive maintenance experience.",
+    skills: ["Preventive maintenance", "Leak detection", "Control wiring", "Multimeter"],
+    certifications: [],
+    experience: [{
+      jobTitle: "HVAC Service Helper",
+      employer: "Buckeye Comfort Systems",
+      bullets: ["Supported split-system tune-ups alongside lead technicians"],
+    }],
+    education: [],
+    additionalInformation: [],
+  };
   const response = await handleResumeBuilderRoute(
     new Request("https://tradehustl3.com/api/resume-builder/resumes/resume-1/generate", {
       method: "POST",
       headers: { "Content-Type": "application/json", Cookie: sessionCookie },
       body: "{}",
     }),
-    { DB: fakeDb({ entitlement: null }) as unknown as D1Database },
+    {
+      DB: fakeDb({ entitlement: null }) as unknown as D1Database,
+      BOOKS: {
+        async put(key: string, bytes: Uint8Array) { objects.set(key, bytes); },
+        async delete(key: string) { objects.delete(key); },
+      } as unknown as R2Bucket,
+      ANTHROPIC_API_KEY: "test-key",
+    },
+    {
+      anthropicFetch: async () => new Response(JSON.stringify({
+        content: [{ type: "text", text: JSON.stringify(previewResume) }],
+        usage: { input_tokens: 10, output_tokens: 20 },
+      }), { status: 200, headers: { "Content-Type": "application/json" } }),
+      createDocx: async () => new TextEncoder().encode("DOCX"),
+      createPdf: async (_resume, watermarked) => new TextEncoder().encode(watermarked ? "PREVIEW" : "PDF"),
+    },
   );
-  assert.equal(response?.status, 402);
-  assert.match(JSON.stringify(await response?.json()), /\$9\.99 payment/i);
+  assert.equal(response?.status, 200);
+  const result = await response?.json() as { previewUrl?: string; downloads?: unknown; runNumber?: number };
+  assert.match(result.previewUrl ?? "", /\/files\/preview/i);
+  assert.equal(result.downloads, null);
+  assert.equal(result.runNumber, 1);
+  assert.equal(objects.size, 3);
+});
+
+test("checkout is unavailable until the watermarked preview exists", async () => {
+  const response = await handleResumeBuilderRoute(
+    new Request("https://tradehustl3.com/api/resume-builder/resumes/resume-1/checkout", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Cookie: sessionCookie },
+      body: "{}",
+    }),
+    { DB: fakeDb({ generated: false, entitlement: null }) as unknown as D1Database },
+  );
+  assert.equal(response?.status, 409);
+  assert.match(JSON.stringify(await response?.json()), /watermarked preview before checkout/i);
+});
+
+test("an unpaid owner can view only the protected preview file", async () => {
+  const DB = {
+    prepare(sql: string) {
+      return {
+        bind() {
+          return {
+            async first() {
+              if (/FROM sessions s/i.test(sql)) return { user_id: "user-1", email: "member@example.com", full_name: "Member" };
+              if (/FROM resumes WHERE/i.test(sql)) return {
+                resume_id: "resume-1",
+                user_id: "user-1",
+                trade: "HVAC & Refrigeration",
+                title: "HVAC Resume",
+                intake_json: "{}",
+                generated_json: JSON.stringify(sampleResume),
+                target_job_posting: null,
+                status: "ready",
+              };
+              if (/FROM entitlements/i.test(sql)) return null;
+              if (/SELECT object_key FROM resume_files/i.test(sql)) return { object_key: "preview.pdf" };
+              return null;
+            },
+          };
+        },
+      };
+    },
+  };
+  const BOOKS = { async get() { return { body: new TextEncoder().encode("protected preview") }; } };
+  const preview = await handleResumeBuilderRoute(
+    new Request("https://tradehustl3.com/api/resume-builder/resumes/resume-1/files/preview", { headers: { Cookie: sessionCookie } }),
+    { DB: DB as unknown as D1Database, BOOKS: BOOKS as unknown as R2Bucket },
+  );
+  const cleanPdf = await handleResumeBuilderRoute(
+    new Request("https://tradehustl3.com/api/resume-builder/resumes/resume-1/files/pdf", { headers: { Cookie: sessionCookie } }),
+    { DB: DB as unknown as D1Database, BOOKS: BOOKS as unknown as R2Bucket },
+  );
+  assert.equal(preview?.status, 200);
+  assert.match(preview?.headers.get("content-disposition") ?? "", /^inline/i);
+  assert.equal(cleanPdf?.status, 404);
 });
 
 test("the initial generation plus three corrections is capped at four runs", async () => {
@@ -310,6 +397,7 @@ test("a verified $9.99 Stripe event grants exactly four AI runs", async () => {
   const entitlement = batches[0].find((statement) => /INSERT INTO entitlements/i.test(statement.sql));
   assert.ok(entitlement);
   assert.equal(entitlement.values.includes(4), true);
+  assert.equal(entitlement.values.includes(1), true);
   assert.equal(entitlement.values.includes("resume_mvp_999"), true);
 });
 

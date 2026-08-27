@@ -15,6 +15,7 @@ import {
   ROBOTO_ITALIC_BASE64,
   ROBOTO_REGULAR_BASE64,
 } from "./roboto-fonts";
+import { RESUME_WATERMARK_LOGO_BASE64 } from "./resume-watermark-logo";
 
 export type ResumeCertification = {
   name: string;
@@ -363,18 +364,25 @@ export async function createResumePdf(resume: GeneratedResume, watermarked = fal
   }
 
   if (watermarked) {
+    const watermarkLogo = await document.embedPng(decodeFont(RESUME_WATERMARK_LOGO_BASE64));
     for (const page of document.getPages()) {
-      for (const y of [170, 390, 610]) {
-        page.drawText("TRADE HUSTL3 PREVIEW", {
-          x: 70,
-          y,
-          size: 36,
-          font: writer.bold,
-          color: rgb(0.84, 0.1, 0.12),
-          rotate: degrees(32),
-          opacity: 0.16,
-        });
-      }
+      page.drawImage(watermarkLogo, {
+        x: 48,
+        y: 225,
+        width: 515,
+        height: 344,
+        rotate: degrees(28),
+        opacity: 0.18,
+      });
+      page.drawText("PREVIEW — PAY $9.99 TO REMOVE WATERMARK", {
+        x: 58,
+        y: 82,
+        size: 18,
+        font: writer.bold,
+        color: rgb(0.84, 0.1, 0.12),
+        rotate: degrees(28),
+        opacity: 0.34,
+      });
     }
   }
 

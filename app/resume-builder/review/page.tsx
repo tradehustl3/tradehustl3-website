@@ -12,7 +12,7 @@ export default function ReviewPage() {
   return (
     <main className="rb-page rb-review-page">
       <ResumeBuilderHeader />
-      <FlowSteps current={4} />
+      <FlowSteps current={3} />
       <ResumeReview />
     </main>
   );
