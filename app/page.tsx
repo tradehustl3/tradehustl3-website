@@ -4,32 +4,32 @@ import { SocialLinks } from "./social-links";
 import styles from "./home.module.css";
 
 const proof = [
-  ["ENTER", "Get the trade map."],
-  ["EARN", "Build the resume."],
-  ["ELEVATE", "Move with a plan."],
+  ["ENTER", "GET THE TRADE MAP."],
+  ["EARN", "BUILD THE RESUME."],
+  ["ELEVATE", "MOVE WITH A PLAN."],
 ];
 
 const tools = [
   {
     number: "01",
-    title: "TRADE HUSTL3 Rule Builder",
+    title: "TRADE HUSTL3 RULE BUILDER",
     copy: "Pick the right lane before you waste time, money, or momentum.",
     href: "#signup-now",
-    action: "Sign Up Now",
+    action: "SIGN UP NOW",
   },
   {
     number: "02",
-    title: "Resume Builder",
-    copy: "Turn your real field experience, certifications, and skills into an ATS-ready resume.",
+    title: "RESUME BUILDER",
+    copy: "Turn field experience, certifications, licenses, and skills into an ATS-ready resume.",
     href: "/resume-builder",
-    action: "Build My Resume — $9.99",
+    action: "BUILD MY RESUME — $9.99",
   },
   {
     number: "03",
     title: "HUSTL3 BOT",
     copy: "Jobsite-minded AI guidance for trade questions, next-step planning, and career direction.",
     href: "#signup-now",
-    action: "Get Early Access",
+    action: "GET EARLY ACCESS",
   },
 ];
 
@@ -41,17 +41,17 @@ export default function Home() {
           <Image
             src="/trade-hustl3-logo.png"
             alt="TRADE HUSTL3 logo"
-            width={54}
-            height={54}
+            width={50}
+            height={50}
             priority
             className={styles.logo}
           />
+          <span className={styles.wordmark}>TRADE HUSTL<span>3</span></span>
         </a>
 
         <nav className={styles.nav} aria-label="Primary navigation">
           <a href="/book#free-guides">FREE GUIDES</a>
           <a href="/book">THE BOOK</a>
-          <a href="/resume-builder">BUILD MY RESUME</a>
           <a className={styles.navCta} href="/resume-builder">BUILD MY RESUME — $9.99</a>
         </nav>
       </header>
@@ -79,40 +79,47 @@ export default function Home() {
             <p className={styles.microcopy}>ONE-TIME $9.99 · NO SUBSCRIPTION · BUILT FOR THE TRADES</p>
           </div>
 
-          <div className={styles.visualWrap} aria-label="TRADE HUSTL3 Resume Builder preview">
-            <div className={styles.visualCard}>
+          <div className={styles.visualWrap} aria-label="TRADE HUSTL3 Resume Builder workspace preview">
+            <div className={styles.visualFrame}>
               <div className={styles.visualTopline}>
                 <span>TRADE HUSTL3</span>
                 <span>RESUME BUILDER</span>
               </div>
-              <div className={styles.screenShell}>
-                <div className={styles.screenBar}>
-                  <span />
-                  <span />
-                  <span />
-                </div>
-                <div className={styles.resumePreview}>
-                  <div className={styles.resumeBrand}>TH</div>
-                  <div className={styles.resumeText}>
-                    <strong>FIELD EXPERIENCE THAT READS LIKE VALUE.</strong>
-                    <span />
-                    <span />
-                    <span />
-                    <span className={styles.shortLine} />
+
+              <div className={styles.workspaceScene}>
+                <div className={styles.wallGlow} />
+                <div className={styles.hardHat} aria-hidden="true"><span /></div>
+                <div className={styles.laptop} aria-hidden="true">
+                  <div className={styles.laptopScreen}>
+                    <Image
+                      src="/trade-hustl3-resume-builder-logo.png"
+                      alt=""
+                      width={210}
+                      height={66}
+                      className={styles.screenLogo}
+                    />
+                    <div className={styles.resumeSheet}>
+                      <strong>SKILLED TRADES RESUME</strong>
+                      <span />
+                      <span />
+                      <span />
+                      <span className={styles.shortLine} />
+                    </div>
                   </div>
+                  <div className={styles.keyboard} />
                 </div>
+                <div className={styles.deskLine} />
+                <div className={styles.toolSilhouette} aria-hidden="true" />
               </div>
+
               <div className={styles.visualFooter}>
-                <Image
-                  src="/trade-hustl3-resume-builder-logo.png"
-                  alt="TRADE HUSTL3 Resume Builder"
-                  width={250}
-                  height={80}
-                  className={styles.resumeLogo}
-                />
                 <div>
-                  <strong>ATS READY</strong>
+                  <strong>ATS-READY</strong>
                   <span>PDF + DOCX</span>
+                </div>
+                <div>
+                  <strong>BUILT FOR TRADES</strong>
+                  <span>REAL EXPERIENCE. REAL VALUE.</span>
                 </div>
               </div>
             </div>
@@ -126,6 +133,51 @@ export default function Home() {
               <span>{copy}</span>
             </div>
           ))}
+        </div>
+      </section>
+
+      <section className={styles.offerSection} id="offers">
+        <div className={styles.offerHeading}>
+          <span>START HERE</span>
+          <h2>TOOLS THAT MOVE YOU <em>FORWARD.</em></h2>
+        </div>
+
+        <div className={styles.offerGrid}>
+          <article className={styles.resumeOffer}>
+            <div className={styles.offerBadge}>MOST POPULAR</div>
+            <Image
+              src="/trade-hustl3-resume-builder-logo-llc.png"
+              alt="TRADE HUSTL3 Resume Builder"
+              width={430}
+              height={180}
+              className={styles.offerLogo}
+            />
+            <h3>TRADE HUSTL3 RESUME BUILDER</h3>
+            <p>Built specifically for skilled trades. Turn jobsite experience, certifications, field hours, and real skills into a resume employers can understand fast.</p>
+            <div className={styles.offerChips}>
+              <span>ONE-TIME $9.99 PAYMENT</span>
+              <span>NO SUBSCRIPTION</span>
+              <span>ATS-READY</span>
+              <span>PDF + DOCX</span>
+            </div>
+            <a href="/resume-builder" className={styles.offerCta}>BUILD MY RESUME — $9.99 <span>→</span></a>
+          </article>
+
+          <article className={styles.guideOffer}>
+            <div className={styles.guideEyebrow}>FREE TRADE RESOURCE</div>
+            <div className={styles.guideVisual}>
+              <Image
+                src="/trade-hustl3-book-cover.jpg"
+                alt="TRADE HUSTL3 guide"
+                width={280}
+                height={420}
+                className={styles.guideCover}
+              />
+            </div>
+            <h3>TOP 10 TRADES FOR 2026–2027</h3>
+            <p>Explore high-opportunity skilled trades, what they pay, how to enter, and where the demand is moving next.</p>
+            <a href="/book#free-guides" className={styles.guideCta}>GET THE FREE GUIDE <span>↗</span></a>
+          </article>
         </div>
       </section>
 
@@ -161,7 +213,10 @@ export default function Home() {
 
       <footer className={styles.footer}>
         <div>
-          <Image src="/trade-hustl3-logo.png" alt="TRADE HUSTL3" width={54} height={54} className={styles.footerLogo} />
+          <div className={styles.footerBrand}>
+            <Image src="/trade-hustl3-logo.png" alt="TRADE HUSTL3" width={48} height={48} className={styles.footerLogo} />
+            <span className={styles.wordmark}>TRADE HUSTL<span>3</span></span>
+          </div>
           <p>Built by Hustle, Backed by Trades.</p>
           <SocialLinks />
         </div>
