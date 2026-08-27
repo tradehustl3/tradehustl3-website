@@ -94,7 +94,7 @@ async function sendEbookDeliveryEmail(env: EbookStripeEnv, email: string, downlo
             <p style="font-size:16px;line-height:1.6;color:#c5ced5">Thank you for investing in your skilled-trades future. Use the private link below to download the complete eBook.</p>
             <p style="margin:28px 0"><a href="${downloadUrl}" style="display:inline-block;background:#d9361e;color:#ffffff;padding:16px 22px;text-decoration:none;font-weight:700">DOWNLOAD YOUR EBOOK</a></p>
             <p style="font-size:13px;line-height:1.6;color:#9cabb5">Keep this email for future downloads. This private link is tied to your purchase and should not be shared.</p>
-            <p style="color:#d6a52a;font-weight:700">BUILT BY HUSTL3. BACKED BY TRADES.</p>
+            <p style="color:#d6a52a;font-weight:700">Built by Hustle, Backed by Trades.</p>
           </div>
         </div>`,
     }),
@@ -132,7 +132,7 @@ async function sendEbookPreorderConfirmationEmail(env: EbookStripeEnv, email: st
             <h1 style="margin:16px 0;color:#ffffff">Your eBook preorder is confirmed.</h1>
             <p style="font-size:16px;line-height:1.6;color:#c5ced5">Thank you for investing in your skilled-trades future. Your complete TRADE HUSTL3 eBook will be delivered to this email address on September 15, 2026.</p>
             <p style="font-size:16px;line-height:1.6;color:#c5ced5">No download is available before launch. You will receive a second email with your private download link when the book is released.</p>
-            <p style="color:#d6a52a;font-weight:700">BUILT BY HUSTL3. BACKED BY TRADES.</p>
+            <p style="color:#d6a52a;font-weight:700">Built by Hustle, Backed by Trades.</p>
           </div>
         </div>`,
     }),

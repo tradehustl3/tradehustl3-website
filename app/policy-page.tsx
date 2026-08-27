@@ -36,7 +36,7 @@ export function PolicyPage({
       <article className="policy-content">{children}</article>
 
       <footer className="policy-footer">
-        <div><strong>TRADE HUSTL3 LLC</strong><p>Atlanta, Georgia · Built by Hustle. Backed by Trades.</p></div>
+        <div><strong>TRADE HUSTL3 LLC</strong><p>Atlanta, Georgia · Built by Hustle, Backed by Trades.</p></div>
         <div className="policy-footer-links">
           <Link href="/privacy">Privacy</Link>
           <Link href="/terms">Terms</Link>
