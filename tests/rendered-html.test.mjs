@@ -35,6 +35,20 @@ async function createStripeSignature(payload, secret) {
   return `t=${timestamp},v1=${hex}`;
 }
 
+async function sendEbookStripeEvent(worker, event, env) {
+  const payload = JSON.stringify(event);
+  const signature = await createStripeSignature(payload, env.STRIPE_WEBHOOK_SECRET);
+  return worker.fetch(
+    new Request("https://tradehustl3.com/api/stripe/webhook", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Stripe-Signature": signature },
+      body: payload,
+    }),
+    env,
+    { waitUntil() {}, passThroughOnException() {} },
+  );
+}
+
 test("server-renders the corrected TRADE HUSTL3 brand and metadata", async () => {
   const response = await render();
   assert.equal(response.status, 200);
@@ -343,8 +357,10 @@ test("renders a private order-confirmation page", async () => {
   const response = await renderPath("/book/order-confirmed");
   assert.equal(response.status, 200);
   const html = await response.text();
-  assert.match(html, /PAYMENT CONFIRMED/i);
-  assert.match(html, /private download link/i);
+  assert.match(html, /PREORDER CONFIRMED/i);
+  assert.match(html, /\$9\.99/i);
+  assert.match(html, /charged today/i);
+  assert.match(html, /September 15, 2026/i);
   assert.match(html, /name="robots" content="noindex, nofollow"/i);
 });
 
@@ -354,10 +370,12 @@ test("records a preorder confirmation without releasing the eBook before launch"
   const paymentLinkId = "plink_trade_hustl3_ebook";
   const sessionId = "cs_live_trade_hustl3";
   const event = JSON.stringify({
+    id: "evt_ebook_checkout",
     type: "checkout.session.completed",
     data: {
       object: {
         id: sessionId,
+        payment_intent: "pi_trade_hustl3",
         payment_link: paymentLinkId,
         payment_status: "paid",
         amount_total: 999,
@@ -379,10 +397,12 @@ test("records a preorder confirmation without releasing the eBook before launch"
                   stripe_session_id: values[0],
                   email: values[1],
                   payment_link_id: values[2],
-                  amount_total: values[3],
-                  currency: values[4],
+                  stripe_payment_intent_id: values[3],
+                  amount_total: values[4],
+                  amount_refunded: 0,
+                  currency: values[5],
                   status: "paid",
-                  download_token: values[5],
+                  download_token: values[6],
                   emailed_at: null,
                   launch_emailed_at: null,
                 };
@@ -391,8 +411,16 @@ test("records a preorder confirmation without releasing the eBook before launch"
               return { success: true };
             },
             async first() {
+              if (/SELECT MAX\(amount_refunded\)/i.test(sql)) return { amount_refunded: null };
               if (/WHERE stripe_session_id/i.test(sql) && order?.stripe_session_id === values[0]) {
-                return { email: order.email, download_token: order.download_token, emailed_at: order.emailed_at, launch_emailed_at: order.launch_emailed_at };
+                return {
+                  email: order.email,
+                  download_token: order.download_token,
+                  emailed_at: order.emailed_at,
+                  launch_emailed_at: order.launch_emailed_at,
+                  status: order.status,
+                  stripe_payment_intent_id: order.stripe_payment_intent_id,
+                };
               }
               if (/WHERE download_token/i.test(sql) && order?.download_token === values[0]) {
                 return { stripe_session_id: order.stripe_session_id };
@@ -456,6 +484,147 @@ test("records a preorder confirmation without releasing the eBook before launch"
   assert.match(await ebookResponse.text(), /unlock.*September 15, 2026/i);
 });
 
+test("rejects a signed eBook checkout that is not exactly $9.99", async () => {
+  const worker = await loadWorker();
+  let databaseCalls = 0;
+  const DB = {
+    prepare() {
+      databaseCalls += 1;
+      throw new Error("A wrong-price checkout must not reach the database.");
+    },
+  };
+  const response = await sendEbookStripeEvent(worker, {
+    id: "evt_wrong_price",
+    type: "checkout.session.completed",
+    data: { object: {
+      id: "cs_wrong_price",
+      payment_intent: "pi_wrong_price",
+      payment_link: "plink_trade_hustl3_ebook",
+      payment_status: "paid",
+      amount_total: 500,
+      currency: "usd",
+      customer_details: { email: "buyer@example.com" },
+    } },
+  }, {
+    DB,
+    BOOKS: {},
+    STRIPE_WEBHOOK_SECRET: "whsec_wrong_price",
+    STRIPE_EBOOK_PAYMENT_LINK_ID: "plink_trade_hustl3_ebook",
+  });
+
+  assert.equal(response.status, 200);
+  assert.deepEqual(await response.json(), { received: true });
+  assert.equal(databaseCalls, 0);
+});
+
+test("reconciles a full refund that arrives before delayed eBook payment succeeds", async () => {
+  const worker = await loadWorker();
+  const refundEvents = new Map();
+  let order = null;
+  const DB = {
+    prepare(sql) {
+      return {
+        bind(...values) {
+          return {
+            async run() {
+              if (/INSERT OR IGNORE INTO ebook_refund_events/i.test(sql)) {
+                if (!refundEvents.has(values[0])) refundEvents.set(values[0], { paymentIntentId: values[1], amountRefunded: values[2], currency: values[3] });
+              } else if (/INSERT OR IGNORE INTO ebook_orders/i.test(sql) && !order) {
+                order = {
+                  stripe_session_id: values[0],
+                  email: values[1],
+                  payment_link_id: values[2],
+                  stripe_payment_intent_id: values[3],
+                  amount_total: values[4],
+                  amount_refunded: 0,
+                  currency: values[5],
+                  status: "paid",
+                  download_token: values[6],
+                  emailed_at: null,
+                  launch_emailed_at: null,
+                };
+              } else if (/SET amount_refunded = MAX/i.test(sql) && order) {
+                const amountRefunded = values[0];
+                order.amount_refunded = Math.max(order.amount_refunded, amountRefunded);
+                if (order.amount_refunded >= order.amount_total) order.status = "refunded";
+              }
+              return { success: true };
+            },
+            async first() {
+              if (/SELECT MAX\(amount_refunded\)/i.test(sql)) {
+                const amounts = [...refundEvents.values()]
+                  .filter((event) => event.paymentIntentId === values[0] && event.currency === values[1])
+                  .map((event) => event.amountRefunded);
+                return { amount_refunded: amounts.length ? Math.max(...amounts) : null };
+              }
+              if (/FROM ebook_orders WHERE stripe_session_id/i.test(sql) && order?.stripe_session_id === values[0]) {
+                return {
+                  email: order.email,
+                  download_token: order.download_token,
+                  emailed_at: order.emailed_at,
+                  launch_emailed_at: order.launch_emailed_at,
+                  status: order.status,
+                  stripe_payment_intent_id: order.stripe_payment_intent_id,
+                };
+              }
+              return null;
+            },
+          };
+        },
+      };
+    },
+  };
+  const env = {
+    DB,
+    BOOKS: {},
+    BREVO_API_KEY: "brevo-test-key",
+    STRIPE_WEBHOOK_SECRET: "whsec_out_of_order",
+    STRIPE_EBOOK_PAYMENT_LINK_ID: "plink_trade_hustl3_ebook",
+  };
+  const originalFetch = globalThis.fetch;
+  let emailCalls = 0;
+  globalThis.fetch = async () => {
+    emailCalls += 1;
+    return new Response(null, { status: 201 });
+  };
+
+  try {
+    const refundResponse = await sendEbookStripeEvent(worker, {
+      id: "evt_refund_first",
+      type: "charge.refunded",
+      data: { object: {
+        payment_intent: "pi_delayed_ebook",
+        amount: 999,
+        amount_refunded: 999,
+        currency: "usd",
+      } },
+    }, env);
+    assert.equal(refundResponse.status, 200);
+
+    const paymentResponse = await sendEbookStripeEvent(worker, {
+      id: "evt_delayed_payment",
+      type: "checkout.session.async_payment_succeeded",
+      data: { object: {
+        id: "cs_delayed_ebook",
+        payment_intent: "pi_delayed_ebook",
+        payment_link: "plink_trade_hustl3_ebook",
+        payment_status: "paid",
+        amount_total: 999,
+        currency: "usd",
+        customer_details: { email: "delayed@example.com" },
+      } },
+    }, env);
+    assert.equal(paymentResponse.status, 200);
+    assert.deepEqual(await paymentResponse.json(), { received: true });
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+
+  assert.equal(order.status, "refunded");
+  assert.equal(order.amount_refunded, 999);
+  assert.equal(emailCalls, 0);
+});
+
 
 test("launch sweep delivers a pending preorder once after release", async () => {
   const worker = await loadWorker();
@@ -472,7 +641,12 @@ test("launch sweep delivers a pending preorder once after release", async () => 
           return {
             async all() {
               assert.match(sql, /launch_emailed_at IS NULL/i);
+              assert.match(sql, /status = 'paid'/i);
               return { results: [{ stripe_session_id: "cs_preorder", email: "buyer@example.com", download_token: "a".repeat(43) }] };
+            },
+            async first() {
+              if (/launch_email_lease_until = \?/i.test(sql)) return { stripe_session_id: "cs_preorder" };
+              return null;
             },
             async run() {
               calls.push({ sql, values });
