@@ -15,16 +15,34 @@ export const ebookOrders = sqliteTable(
     stripeSessionId: text("stripe_session_id").primaryKey(),
     email: text("email").notNull(),
     paymentLinkId: text("payment_link_id").notNull(),
+    stripePaymentIntentId: text("stripe_payment_intent_id"),
     amountTotal: integer("amount_total").notNull(),
+    amountRefunded: integer("amount_refunded").notNull().default(0),
     currency: text("currency").notNull(),
     status: text("status").notNull().default("paid"),
     downloadToken: text("download_token").notNull().unique(),
     emailedAt: text("emailed_at"),
     launchEmailedAt: text("launch_emailed_at"),
     launchEmailLeaseUntil: integer("launch_email_lease_until"),
+    refundedAt: text("refunded_at"),
     createdAt: text("created_at").notNull().default(sql`(CURRENT_TIMESTAMP)`),
   },
-  (table) => [index("ebook_orders_email_idx").on(table.email)],
+  (table) => [
+    index("ebook_orders_email_idx").on(table.email),
+    uniqueIndex("ebook_orders_payment_intent_idx").on(table.stripePaymentIntentId),
+  ],
+);
+
+export const ebookRefundEvents = sqliteTable(
+  "ebook_refund_events",
+  {
+    eventId: text("event_id").primaryKey(),
+    paymentIntentId: text("payment_intent_id").notNull(),
+    amountRefunded: integer("amount_refunded").notNull(),
+    currency: text("currency").notNull(),
+    createdAt: text("created_at").notNull().default(sql`(CURRENT_TIMESTAMP)`),
+  },
+  (table) => [index("ebook_refund_events_payment_intent_idx").on(table.paymentIntentId)],
 );
 
 export const users = sqliteTable(

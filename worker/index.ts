@@ -339,13 +339,23 @@ async function runEbookLaunchDelivery(env: Env): Promise<void> {
 
     if (claim.meta?.changes !== 1) continue;
 
+    const stillDeliverable = await env.DB.prepare(
+      `SELECT stripe_session_id
+       FROM ebook_orders
+       WHERE stripe_session_id = ?
+         AND status = 'paid'
+         AND launch_emailed_at IS NULL
+         AND launch_email_lease_until = ?`,
+    ).bind(order.stripe_session_id, leaseUntil).first<{ stripe_session_id: string }>();
+    if (!stillDeliverable) continue;
+
     const downloadUrl = `${SITE_URL}${EBOOK_DOWNLOAD_ROUTE}?token=${encodeURIComponent(order.download_token)}`;
     try {
       await sendEbookDeliveryEmail(env, order.email, downloadUrl);
       await env.DB.prepare(
         `UPDATE ebook_orders
          SET launch_emailed_at = CURRENT_TIMESTAMP, launch_email_lease_until = NULL, emailed_at = COALESCE(emailed_at, CURRENT_TIMESTAMP)
-         WHERE stripe_session_id = ?`,
+         WHERE stripe_session_id = ? AND status = 'paid'`,
       ).bind(order.stripe_session_id).run();
     } catch (error) {
       await env.DB.prepare(
@@ -356,15 +366,180 @@ async function runEbookLaunchDelivery(env: Env): Promise<void> {
   }
 }
 
-type StripeCheckoutSession = {
-  id?: unknown;
-  payment_link?: unknown;
-  payment_status?: unknown;
-  amount_total?: unknown;
-  currency?: unknown;
-  customer_email?: unknown;
-  customer_details?: { email?: unknown } | null;
-};
+function objectRecord(value: unknown): Record<string, unknown> | null {
+  return value !== null && typeof value === "object" && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : null;
+}
+
+async function reconcileEbookRefund(
+  env: Env,
+  stripeSessionId: string,
+  paymentIntentId: string,
+  amountTotal: number,
+  currency: string,
+): Promise<void> {
+  const pending = await env.DB.prepare(
+    `SELECT MAX(amount_refunded) AS amount_refunded
+     FROM ebook_refund_events
+     WHERE payment_intent_id = ? AND currency = ?`,
+  ).bind(paymentIntentId, currency).first<{ amount_refunded: number | null }>();
+  const amountRefunded = pending?.amount_refunded ?? 0;
+  if (amountRefunded <= 0) return;
+
+  await env.DB.prepare(
+    `UPDATE ebook_orders
+     SET amount_refunded = MAX(amount_refunded, ?),
+         status = CASE WHEN MAX(amount_refunded, ?) >= amount_total THEN 'refunded' ELSE status END,
+         refunded_at = CASE WHEN MAX(amount_refunded, ?) >= amount_total THEN COALESCE(refunded_at, CURRENT_TIMESTAMP) ELSE refunded_at END
+     WHERE stripe_session_id = ?
+       AND stripe_payment_intent_id = ?
+       AND amount_total = ?
+       AND currency = ?`,
+  ).bind(
+    amountRefunded,
+    amountRefunded,
+    amountRefunded,
+    stripeSessionId,
+    paymentIntentId,
+    amountTotal,
+    currency,
+  ).run();
+}
+
+async function fulfillPaidEbookSession(session: Record<string, unknown>, env: Env): Promise<Response> {
+  const customerDetails = objectRecord(session.customer_details);
+  const sessionId = typeof session.id === "string" ? session.id : "";
+  const paymentLinkId = typeof session.payment_link === "string" ? session.payment_link : "";
+  const paymentIntentId = typeof session.payment_intent === "string" ? session.payment_intent : "";
+  const emailValue = customerDetails?.email ?? session.customer_email;
+  const email = typeof emailValue === "string" ? emailValue.trim().toLowerCase() : "";
+  const amountTotal = session.amount_total;
+  const currency = typeof session.currency === "string" ? session.currency.toLowerCase() : "";
+  const expectedPaymentLink = env.STRIPE_EBOOK_PAYMENT_LINK_ID?.trim() || "";
+
+  if (
+    !sessionId || !paymentIntentId || paymentLinkId !== expectedPaymentLink || session.payment_status !== "paid" ||
+    amountTotal !== 999 || currency !== "usd" || !isValidEmail(email)
+  ) {
+    console.error(JSON.stringify({ message: "Stripe eBook checkout did not match the configured product." }));
+    return jsonResponse({ received: true });
+  }
+
+  try {
+    const downloadToken = randomDownloadToken();
+    await env.DB.prepare(
+      `INSERT OR IGNORE INTO ebook_orders
+       (stripe_session_id, email, payment_link_id, stripe_payment_intent_id, amount_total,
+        amount_refunded, currency, status, download_token)
+       VALUES (?, ?, ?, ?, ?, 0, ?, 'paid', ?)`,
+    ).bind(sessionId, email, paymentLinkId, paymentIntentId, amountTotal, currency, downloadToken).run();
+
+    await env.DB.prepare(
+      `UPDATE ebook_orders
+       SET stripe_payment_intent_id = COALESCE(stripe_payment_intent_id, ?)
+       WHERE stripe_session_id = ?
+         AND (stripe_payment_intent_id IS NULL OR stripe_payment_intent_id = ?)`,
+    ).bind(paymentIntentId, sessionId, paymentIntentId).run();
+
+    await reconcileEbookRefund(env, sessionId, paymentIntentId, amountTotal, currency);
+
+    const order = await env.DB.prepare(
+      `SELECT email, download_token, emailed_at, launch_emailed_at, status, stripe_payment_intent_id
+       FROM ebook_orders WHERE stripe_session_id = ?`,
+    ).bind(sessionId).first<{
+      email: string;
+      download_token: string;
+      emailed_at: string | null;
+      launch_emailed_at: string | null;
+      status: string;
+      stripe_payment_intent_id: string | null;
+    }>();
+
+    if (!order?.download_token || order.stripe_payment_intent_id !== paymentIntentId) {
+      throw new Error("The paid eBook order could not be stored safely.");
+    }
+    if (order.status !== "paid") return jsonResponse({ received: true });
+
+    if (Date.now() < EBOOK_RELEASE_AT) {
+      if (!order.emailed_at) {
+        await sendEbookPreorderConfirmationEmail(env, order.email || email);
+        await env.DB.prepare(
+          "UPDATE ebook_orders SET emailed_at = CURRENT_TIMESTAMP WHERE stripe_session_id = ? AND status = 'paid'",
+        ).bind(sessionId).run();
+      }
+    } else if (!order.launch_emailed_at) {
+      const downloadUrl = `${SITE_URL}${EBOOK_DOWNLOAD_ROUTE}?token=${encodeURIComponent(order.download_token)}`;
+      await sendEbookDeliveryEmail(env, order.email || email, downloadUrl);
+      await env.DB.prepare(
+        `UPDATE ebook_orders
+         SET emailed_at = COALESCE(emailed_at, CURRENT_TIMESTAMP),
+             launch_emailed_at = CURRENT_TIMESTAMP,
+             launch_email_lease_until = NULL
+         WHERE stripe_session_id = ? AND status = 'paid'`,
+      ).bind(sessionId).run();
+    }
+
+    return jsonResponse({ received: true });
+  } catch (error) {
+    console.error(JSON.stringify({
+      message: "Stripe eBook fulfillment failed",
+      error: error instanceof Error ? error.message : "Unknown error",
+    }));
+    return jsonResponse({ received: false }, 500);
+  }
+}
+
+async function recordEbookRefund(eventId: string, charge: Record<string, unknown>, env: Env): Promise<Response> {
+  const paymentIntentId = typeof charge.payment_intent === "string" ? charge.payment_intent : "";
+  const amountTotal = charge.amount;
+  const amountRefunded = charge.amount_refunded;
+  const currency = typeof charge.currency === "string" ? charge.currency.toLowerCase() : "";
+
+  if (
+    !eventId || !paymentIntentId || amountTotal !== 999 ||
+    typeof amountRefunded !== "number" || !Number.isSafeInteger(amountRefunded) ||
+    amountRefunded <= 0 || amountRefunded > amountTotal || currency !== "usd"
+  ) {
+    console.error(JSON.stringify({ message: "Stripe eBook refund did not match the configured product." }));
+    return jsonResponse({ received: true });
+  }
+
+  try {
+    await env.DB.prepare(
+      `INSERT OR IGNORE INTO ebook_refund_events
+       (event_id, payment_intent_id, amount_refunded, currency)
+       VALUES (?, ?, ?, ?)`,
+    ).bind(eventId, paymentIntentId, amountRefunded, currency).run();
+
+    await env.DB.prepare(
+      `UPDATE ebook_orders
+       SET amount_refunded = MAX(amount_refunded, ?),
+           status = CASE WHEN MAX(amount_refunded, ?) >= amount_total THEN 'refunded' ELSE status END,
+           refunded_at = CASE WHEN MAX(amount_refunded, ?) >= amount_total THEN COALESCE(refunded_at, CURRENT_TIMESTAMP) ELSE refunded_at END,
+           launch_email_lease_until = CASE WHEN MAX(amount_refunded, ?) >= amount_total THEN NULL ELSE launch_email_lease_until END
+       WHERE stripe_payment_intent_id = ?
+         AND amount_total = ?
+         AND currency = ?`,
+    ).bind(
+      amountRefunded,
+      amountRefunded,
+      amountRefunded,
+      amountRefunded,
+      paymentIntentId,
+      amountTotal,
+      currency,
+    ).run();
+
+    return jsonResponse({ received: true });
+  } catch (error) {
+    console.error(JSON.stringify({
+      message: "Stripe eBook refund processing failed",
+      error: error instanceof Error ? error.message : "Unknown error",
+    }));
+    return jsonResponse({ received: false }, 500);
+  }
+}
 
 async function handleStripeWebhook(request: Request, env: Env): Promise<Response> {
   if (request.method !== "POST") {
@@ -385,70 +560,25 @@ async function handleStripeWebhook(request: Request, env: Env): Promise<Response
     return jsonResponse({ received: false }, 400);
   }
 
-  let event: { type?: unknown; data?: { object?: StripeCheckoutSession } };
+  let event: unknown;
   try {
-    event = JSON.parse(payload) as typeof event;
+    event = JSON.parse(payload);
   } catch {
     return jsonResponse({ received: false }, 400);
   }
 
-  if (event.type !== "checkout.session.completed") return jsonResponse({ received: true });
+  const eventRecord = objectRecord(event);
+  const eventType = typeof eventRecord?.type === "string" ? eventRecord.type : "";
+  const eventId = typeof eventRecord?.id === "string" ? eventRecord.id : "";
+  const data = objectRecord(eventRecord?.data);
+  const stripeObject = objectRecord(data?.object);
+  if (!stripeObject) return jsonResponse({ received: true });
 
-  const session = event.data?.object;
-  const sessionId = typeof session?.id === "string" ? session.id : "";
-  const paymentLinkId = typeof session?.payment_link === "string" ? session.payment_link : "";
-  const emailValue = session?.customer_details?.email ?? session?.customer_email;
-  const email = typeof emailValue === "string" ? emailValue.trim().toLowerCase() : "";
-  const amountTotal = session?.amount_total;
-  const currency = typeof session?.currency === "string" ? session.currency.toLowerCase() : "";
-
-  if (
-    !sessionId || paymentLinkId !== expectedPaymentLink || session?.payment_status !== "paid" ||
-    amountTotal !== 999 || currency !== "usd" || !isValidEmail(email)
-  ) {
-    console.error("Stripe eBook checkout did not match the configured product.");
-    return jsonResponse({ received: true });
+  if (eventType === "charge.refunded") return recordEbookRefund(eventId, stripeObject, env);
+  if (eventType === "checkout.session.completed" || eventType === "checkout.session.async_payment_succeeded") {
+    return fulfillPaidEbookSession(stripeObject, env);
   }
-
-  try {
-    const downloadToken = randomDownloadToken();
-    await env.DB.prepare(
-      `INSERT OR IGNORE INTO ebook_orders
-       (stripe_session_id, email, payment_link_id, amount_total, currency, status, download_token)
-       VALUES (?, ?, ?, ?, ?, 'paid', ?)`,
-    ).bind(sessionId, email, paymentLinkId, amountTotal, currency, downloadToken).run();
-
-    const order = await env.DB.prepare(
-      "SELECT email, download_token, emailed_at, launch_emailed_at FROM ebook_orders WHERE stripe_session_id = ? AND status = 'paid'",
-    ).bind(sessionId).first<{
-      email: string;
-      download_token: string;
-      emailed_at: string | null;
-      launch_emailed_at: string | null;
-    }>();
-
-    if (!order?.download_token) throw new Error("The paid eBook order could not be stored.");
-
-    if (Date.now() < EBOOK_RELEASE_AT) {
-      if (!order.emailed_at) {
-        await sendEbookPreorderConfirmationEmail(env, order.email || email);
-        await env.DB.prepare(
-          "UPDATE ebook_orders SET emailed_at = CURRENT_TIMESTAMP WHERE stripe_session_id = ?",
-        ).bind(sessionId).run();
-      }
-    } else if (!order.launch_emailed_at) {
-      const downloadUrl = `${SITE_URL}${EBOOK_DOWNLOAD_ROUTE}?token=${encodeURIComponent(order.download_token)}`;
-      await sendEbookDeliveryEmail(env, order.email || email, downloadUrl);
-      await env.DB.prepare(
-        "UPDATE ebook_orders SET emailed_at = COALESCE(emailed_at, CURRENT_TIMESTAMP), launch_emailed_at = CURRENT_TIMESTAMP, launch_email_lease_until = NULL WHERE stripe_session_id = ?",
-      ).bind(sessionId).run();
-    }
-
-    return jsonResponse({ received: true });
-  } catch (error) {
-    console.error("Stripe eBook fulfillment failed", error);
-    return jsonResponse({ received: false }, 500);
-  }
+  return jsonResponse({ received: true });
 }
 
 async function servePurchasedEbook(request: Request, env: Env): Promise<Response> {
