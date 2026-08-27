@@ -1,3 +1,4 @@
+import { ComingSoon } from './coming-soon';
 import { ResourceForm } from './resource-form';
 import Image from 'next/image';
 
@@ -59,11 +60,11 @@ export default function Home() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }} />
       <header className="site-header">
         <a className="brand" href="#top" aria-label="TRADE HUSTL3 home">
-          <span className="brand-mark"><Image src="/trade-hustl3-logo.png" alt="" width={46} height={46} /></span><span className="brand-wordmark">TRADE HUSTL<span className="brand-three">3</span></span>
+          <span className="brand-mark"><Image src="/trade-hustl3-logo.png" alt="TRADE HUSTL3 logo" width={46} height={46} /></span><span className="brand-wordmark">TRADE HUSTL<span className="brand-three">3</span></span>
         </a>
         <nav aria-label="Primary navigation">
           <a href="#resources">Free guides</a><a href="#book">The book</a>
-          <a className="button button-small" href="#resume-builder">Build my resume — $9.99</a>
+          <a className="button button-small" href="/resume-builder">Build my resume — $9.99</a>
         </nav>
       </header>
 
@@ -75,7 +76,7 @@ export default function Home() {
           <p className="hero-product-title">The Resume Builder Built to Lead the Skilled Trades</p>
           <p className="hero-lede">Professional skilled-trades resume builder for HVAC, electrical, plumbing, welding, facilities maintenance, construction, and trade professionals who want stronger resumes and better opportunities.</p>
           <div className="hero-actions">
-            <a className="button" href="#resume-builder">Build my resume — $9.99 <span aria-hidden="true">↗</span></a>
+            <a className="button" href="/resume-builder">Build my resume — $9.99 <span aria-hidden="true">↗</span></a>
             <a className="button button-secondary" href="#resources">Get the free trade guides <span aria-hidden="true">↓</span></a>
           </div>
           <div className="path-label" aria-label="Enter. Earn. Elevate."><span>Enter.</span><i /><span>Earn.</span><i /><span>Elevate.</span><i /></div>
@@ -85,7 +86,7 @@ export default function Home() {
           <div className="interface-topline"><span className="product-card-brand"><Image src="/trade-hustl3-resume-builder-logo.png" alt="TRADE HUSTL3 Resume Builder" width={86} height={70} /></span><b>CAREER SYSTEM ONLINE</b></div>
           <div className="hero-workstation">
             <div className="hero-photo-frame">
-              <Image src="/trade-hustl3-resume-workspace.png" alt="Trades workspace with safety vest, work boots, and laptop displaying Trash resumes equals trash results" fill sizes="(max-width: 960px) 92vw, 46vw" priority />
+              <Image src="/trade-hustl3-resume-workspace.png" alt="Skilled-trades workspace with a safety vest, work boots, and a laptop" fill sizes="(max-width: 960px) 92vw, 46vw" priority />
               <span className="photo-label">Built for the work ahead</span>
             </div>
             <div className="hero-feature-grid" aria-label="Resume Builder features">
@@ -119,7 +120,7 @@ export default function Home() {
             <div className="resume-service-points">
               {resumeServicePoints.map((item) => <span key={item.label}><i aria-hidden="true">{item.icon}</i>{item.label}</span>)}
             </div>
-            <a className="button full-button" href="#integration-notice">Build my resume — $9.99 <span aria-hidden="true">→</span></a>
+            <a className="button full-button card-cta" href="/resume-builder">Build my resume — $9.99 <span aria-hidden="true">→</span></a>
           </article>
 
           <article className="conversion-card guide-card" id="top-trades-guide">
@@ -157,20 +158,32 @@ export default function Home() {
             </div>
           </div>
           <div className="hustl3-bot-panel">
-            <div className="bot-copy"><p>Meet HUSTL3 BOT</p><h3>Your intelligent assistant for stronger, smarter trade resumes.</h3><span>Built to HUSTL3. Backed by skill.</span></div>
+            <div className="bot-copy"><p>Meet HUSTL3 BOT</p><h3>Your intelligent assistant for stronger, smarter trade resumes.</h3><span>Built by Hustle, Backed by Trades.</span></div>
             <Image src="/hustl3-bot-branded.png" alt="HUSTL3 BOT wearing a branded white hard hat and a TRADE HUSTL3 Resume Builder logo on an orange reflective safety vest" width={420} height={630} />
           </div>
         </section>
-        <p className="integration-note" id="integration-notice"><strong>Review build:</strong> Production URLs, subscriber endpoints, and the two separate PDF download links were not present in the supplied project files, so this prototype does not send visitor data or invent routes.</p>
       </section>
 
-      <section className="steps-section section-shell">
-        <div className="section-heading compact"><p className="eyebrow"><span>03</span> The pathway</p><h2>Start where you are.<br /><em>Build what&apos;s next.</em></h2></div>
-        <ol className="steps-grid">
-          <li><span>01</span><div><h3>Choose Your Path</h3><p>Explore skilled trades and identify your direction.</p></div></li>
-          <li><span>02</span><div><h3>Build Your Tools</h3><p>Create a professional resume and access practical career resources.</p></div></li>
-          <li><span>03</span><div><h3>Enter. Earn. Elevate.</h3><p>Apply, build experience, increase your value, and work toward ownership.</p></div></li>
-        </ol>
+      <section className="steps-section section-shell" aria-labelledby="pick-next-title">
+        <div className="section-heading compact"><p className="eyebrow"><span>03</span> Pick your next HUSTL3</p><h2 id="pick-next-title">Start where you are.<br /><em>Build what&apos;s next.</em></h2></div>
+        <div className="tool-grid">
+          <a className="tool-card" href="#resources">
+            <span className="tool-badge">Start here</span>
+            <span className="tool-index" aria-hidden="true">01</span>
+            <span className="tool-card-title">Choose Your Path</span>
+            <span className="tool-card-copy">Explore skilled trades and get the free Top 10 Trades 2026–2027 guide.</span>
+            <span className="tool-cta">Get the free guide <span aria-hidden="true">→</span></span>
+          </a>
+          <a className="tool-card is-live" href="/resume-builder">
+            <span className="tool-badge">Live now</span>
+            <span className="tool-index" aria-hidden="true">02</span>
+            <span className="tool-card-title">Build Your Tools</span>
+            <span className="tool-card-copy">Turn your field experience into a professional, ATS-ready resume.</span>
+            <span className="tool-cta">Build my resume — $9.99 <span aria-hidden="true">→</span></span>
+            <span className="tool-note">More tools coming</span>
+          </a>
+          <ComingSoon />
+        </div>
       </section>
 
       <section className="book-section" id="book">
@@ -199,10 +212,24 @@ export default function Home() {
 
       <section className="final-cta section-shell">
         <p className="eyebrow"><span>07</span> Your next move</p><h2>Bring your skills.<br /><em>We&apos;ll help shape the story.</em></h2><p>One payment. No subscription. A professional resume built for where you&apos;re headed.</p>
-        <a className="button" href="#resume-builder">Build my resume — $9.99 <span aria-hidden="true">↗</span></a>
+        <a className="button" href="/resume-builder">Build my resume — $9.99 <span aria-hidden="true">↗</span></a>
       </section>
 
-      <footer><div><Image src="/trade-hustl3-logo.png" alt="" width={46} height={46} /><strong>TRADE HUSTL3 LLC</strong></div><p>Built by Hustle, Backed by Trades.</p><p>ENTER. EARN. ELEVATE.</p></footer>
+      <footer>
+        <div><Image src="/trade-hustl3-logo.png" alt="TRADE HUSTL3 logo" width={46} height={46} /><strong>TRADE HUSTL3 LLC</strong></div>
+        <p>Built by Hustle, Backed by Trades.</p>
+        <nav className="footer-nav" aria-label="Footer">
+          <a href="/resume-builder">Resume Builder</a>
+          <a href="/book">The Book</a>
+          <a href="/privacy">Privacy</a>
+          <a href="/terms">Terms</a>
+          <a href="/resume-builder/refund-policy">Resume Refunds</a>
+          <a href="/book/refund-policy">eBook Policy</a>
+          <a href="/data-deletion">Data Requests</a>
+          <a href="/contact">Support</a>
+        </nav>
+        <p>ENTER. EARN. ELEVATE.</p>
+      </footer>
     </main>
   );
 }

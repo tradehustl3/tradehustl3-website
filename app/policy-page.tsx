@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import "./page-shell.css";
 
 export const LEGAL_UPDATED = "August 25, 2026";
 export const SUPPORT_EMAIL = "support@tradehustl3.com";
