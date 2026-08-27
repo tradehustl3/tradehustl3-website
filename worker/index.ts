@@ -179,7 +179,7 @@ async function sendSampleDeliveryEmail(env: Env, email: string, sampleUrl: strin
             <h1 style="margin:16px 0;color:#ffffff">Your free trade guide preview is ready.</h1>
             <p style="font-size:16px;line-height:1.6;color:#c5ced5">Open the seven-page 2026-2027 preview (cover included) for verified trade profiles, national pay context, the guide's source standard, and practical next steps.</p>
             <p style="margin:28px 0"><a href="${sampleUrl}" style="display:inline-block;background:#d9361e;color:#ffffff;padding:16px 22px;text-decoration:none;font-weight:700">OPEN THE FREE GUIDE</a></p>
-            <p style="color:#d6a52a;font-weight:700">BUILT BY HUSTL3. BACKED BY TRADES.</p>
+            <p style="color:#d6a52a;font-weight:700">Built by Hustle, Backed by Trades.</p>
           </div>
         </div>`,
     }),
