@@ -184,7 +184,7 @@ test("server-renders the required segmented signup", async () => {
   const html = await (await render()).text();
   assert.match(html, /I(?:&#x27;|')M INTERESTED IN/i);
   assert.match(html, /<select[^>]+id="interest"[^>]+required/i);
-  for (const interest of ["The TRADE HUSTL3 Book", "Resume Builder", "HUSTL3 PRO", "Jobsite Gear", "School / Workforce Partnership", "General TRADE HUSTL3 Updates"]) assert.match(html, new RegExp(interest.replace("/", "\\/"), "i"));
+  for (const interest of ["The TRADE HUSTL3 Book", "Resume Builder", "TRADE HUSTL3 Rule Builder", "HUSTL3 BOT", "HUSTL3 PRO", "Jobsite Gear", "School / Workforce Partnership", "General TRADE HUSTL3 Updates"]) assert.match(html, new RegExp(interest.replace("/", "\\/"), "i"));
   assert.match(html, /type="email"/i);
   for (const key of ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term"]) assert.match(html, new RegExp(`name="${key}"`, "i"));
 });

@@ -29,6 +29,8 @@ interface ExecutionContext {
 const allowedInterests = new Set([
   "The TRADE HUSTL3 Book",
   "Resume Builder",
+  "TRADE HUSTL3 Rule Builder",
+  "HUSTL3 BOT",
   "HUSTL3 PRO",
   "Jobsite Gear",
   "School / Workforce Partnership",

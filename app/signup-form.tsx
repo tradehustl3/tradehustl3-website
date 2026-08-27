@@ -6,6 +6,8 @@ import type { FormEvent } from "react";
 const interests = [
   "The TRADE HUSTL3 Book",
   "Resume Builder",
+  "TRADE HUSTL3 Rule Builder",
+  "HUSTL3 BOT",
   "HUSTL3 PRO",
   "Jobsite Gear",
   "School / Workforce Partnership",
@@ -39,6 +41,15 @@ export function SignupForm({ mode = "general" }: { mode?: "general" | "sample" }
       const preserved = current ?? sessionStorage.getItem(key);
       const input = formRef.current?.elements.namedItem(key);
       if (preserved && input instanceof HTMLInputElement) input.value = preserved;
+    }
+    const requestedInterest = params.get("interest");
+    const interestField = formRef.current?.elements.namedItem("interest");
+    if (
+      requestedInterest
+      && interests.includes(requestedInterest)
+      && interestField instanceof HTMLSelectElement
+    ) {
+      interestField.value = requestedInterest;
     }
   }, []);
 

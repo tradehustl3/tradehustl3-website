@@ -29,9 +29,9 @@ const nextHustl3 = [
   {
     number: "01",
     title: "TRADE HUSTL3 Rule Builder",
-    description: "Not sure where to start? Use the Rule Builder to narrow your direction, understand the path, and know your next move before you spend time or money.",
-    action: "Sign Up Now",
-    href: "#signup-now",
+    description: "In development: a guided way to narrow your trade direction and map your next move before you spend time or money. Join the waitlist to get it first.",
+    action: "Join the waitlist",
+    href: `?interest=${encodeURIComponent("TRADE HUSTL3 Rule Builder")}#signup-now`,
   },
   {
     number: "02",
@@ -43,9 +43,9 @@ const nextHustl3 = [
   {
     number: "03",
     title: "Meet HUSTL3 BOT",
-    description: "Your jobsite-minded AI guide for trade questions, career direction, next-step planning, and practical answers without the corporate fluff.",
-    action: "Get Early Access",
-    href: "#signup-now",
+    description: "Coming to early access: a jobsite-minded AI guide for trade questions, career direction, and next-step planning—without the corporate fluff.",
+    action: "Join the waitlist",
+    href: `?interest=${encodeURIComponent("HUSTL3 BOT")}#signup-now`,
   },
 ];
 
@@ -98,7 +98,7 @@ export default function Home() {
       <section className="join" id="join">
         <p className="section-label">/ PICK THE TOOL THAT MOVES YOU FORWARD</p>
         <h2>CHOOSE YOUR<br />NEXT <span>HUSTL3.</span></h2>
-        <p>Start with the problem you need solved. Pick your tool, sign up or purchase, and get straight to the next move—without wasting time trying to figure out what comes first.</p>
+        <p>Start with the problem you need solved. Pick your tool, join the waitlist or check out, and get straight to your next move—without wasting time figuring out what comes first.</p>
 
         <div className="pillar-grid">
           {nextHustl3.map((item) => (
@@ -119,7 +119,7 @@ export default function Home() {
 
         <div id="signup-now">
           <p className="section-label">/ SIGN UP NOW</p>
-          <p>Want early access to the Rule Builder, HUSTL3 BOT, product drops, and new trade resources? Get on the list and tell us what matters to you.</p>
+          <p>Want early access to the Rule Builder, HUSTL3 BOT, product drops, and new trade resources? Get on the list and choose what matters to you.</p>
           <SignupForm />
           <small>By joining, you agree to receive TRADE HUSTL3 emails. Unsubscribe anytime. No spam—just moves worth making.</small>
         </div>
