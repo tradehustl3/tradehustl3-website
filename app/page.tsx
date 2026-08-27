@@ -25,6 +25,30 @@ const audiences = [
   "Trade schools and workforce programs",
 ];
 
+const nextHustl3 = [
+  {
+    number: "01",
+    title: "TRADE HUSTL3 Rule Builder",
+    description: "Not sure where to start? Use the Rule Builder to narrow your direction, understand the path, and know your next move before you spend time or money.",
+    action: "Sign Up Now",
+    href: "#signup-now",
+  },
+  {
+    number: "02",
+    title: "Resume Builder",
+    description: "Turn your real trade experience, certifications, licenses, field hours, and skills into an ATS-ready resume built to get understood by employers.",
+    action: "Build My Resume",
+    href: "/resume-builder",
+  },
+  {
+    number: "03",
+    title: "Meet HUSTL3 BOT",
+    description: "Your jobsite-minded AI guide for trade questions, career direction, next-step planning, and practical answers without the corporate fluff.",
+    action: "Get Early Access",
+    href: "#signup-now",
+  },
+];
+
 export default function Home() {
   return (
     <main>
@@ -72,9 +96,33 @@ export default function Home() {
       <section className="quote-band"><blockquote>“YOUR HANDS BUILT THE WORLD.<br /><span>YOUR HUSTLE BUILDS WHAT&apos;S NEXT.</span>”</blockquote></section>
 
       <section className="join" id="join">
-        <p className="section-label">/ GET IN EARLY</p><h2>CHOOSE YOUR<br />NEXT <span>MOVE.</span></h2>
-        <p>Tell us what you want updates about. We&apos;ll keep what lands in your inbox focused on the tools, releases, and opportunities that matter to you.</p>
-        <SignupForm /><small>By joining, you agree to receive TRADE HUSTL3 emails. Unsubscribe anytime. No spam—just moves worth making.</small>
+        <p className="section-label">/ PICK THE TOOL THAT MOVES YOU FORWARD</p>
+        <h2>CHOOSE YOUR<br />NEXT <span>HUSTL3.</span></h2>
+        <p>Start with the problem you need solved. Pick your tool, sign up or purchase, and get straight to the next move—without wasting time trying to figure out what comes first.</p>
+
+        <div className="pillar-grid">
+          {nextHustl3.map((item) => (
+            <article className="pillar-card" key={item.number}>
+              <div className="card-top"><span>{item.number}</span><span>↗</span></div>
+              <h3>{item.title}</h3>
+              <p>{item.description}</p>
+              <a href={item.href}>{item.action} <span>→</span></a>
+            </article>
+          ))}
+        </div>
+
+        <div className="steps" style={{ maxWidth: 980, margin: "70px auto 48px", textAlign: "left" }}>
+          <div className="step"><span className="step-number">01</span><div><h3>PICK IT<b>.</b></h3><p>Choose the TRADE HUSTL3 tool that matches what you need right now.</p></div></div>
+          <div className="step"><span className="step-number">02</span><div><h3>GET IN<b>.</b></h3><p>Sign up or complete your purchase through the secure TRADE HUSTL3 flow.</p></div></div>
+          <div className="step"><span className="step-number">03</span><div><h3>MOVE<b>.</b></h3><p>Get access, use the tool, and leave with a clear next action—not another dead-end resource.</p></div></div>
+        </div>
+
+        <div id="signup-now">
+          <p className="section-label">/ SIGN UP NOW</p>
+          <p>Want early access to the Rule Builder, HUSTL3 BOT, product drops, and new trade resources? Get on the list and tell us what matters to you.</p>
+          <SignupForm />
+          <small>By joining, you agree to receive TRADE HUSTL3 emails. Unsubscribe anytime. No spam—just moves worth making.</small>
+        </div>
       </section>
 
       <footer>
