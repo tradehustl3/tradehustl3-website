@@ -8,10 +8,13 @@ type ResourceFormProps = {
   includeInterest?: boolean;
 };
 
-// Book-interest signups are the existing flow that unlocks the free
-// "TRADE HUSTL3: 10 High-Opportunity Trades — 2026-2027 Edition" guide:
-// POST /api/subscribe stores the subscriber in D1, syncs the Brevo contact,
-// emails the gated PDF link, and returns { sampleUrl: "/api/free-sample" }.
+// The free "Top 10 Trades for 2026-2027" guide IS the repo's only free PDF:
+// worker/assets/trade-hustl3-free-sample.pdf, served at /api/free-sample as
+// "TRADE HUSTL3: 10 High-Opportunity Trades — 2026-2027 Edition" (see README
+// and worker/index.ts sendSampleDeliveryEmail). The interest value below is
+// legacy-named but it is the ONLY /api/subscribe branch that delivers that
+// PDF: it stores the D1 subscriber, syncs the Brevo contact, emails the gated
+// link, and returns { sampleUrl: "/api/free-sample" }.
 const GUIDE_INTEREST = 'The TRADE HUSTL3 Book';
 const UTM_KEYS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'] as const;
 
