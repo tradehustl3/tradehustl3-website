@@ -72,14 +72,14 @@ export default function Home() {
         <div className="hero-copy">
           <p className="eyebrow"><span>01</span> Resume Builder / skilled trades</p>
           <h1>Your future<br />doesn&apos;t need<br /><em>permission.</em></h1>
-          <p className="hero-product-title">The Resume Builder Built for Skilled Trades.</p>
-          <p className="hero-lede">Build a professional resume, improve your opportunities, and create a real pathway from your first opportunity to ownership.</p>
+          <p className="hero-product-title">The Resume Builder Built to Lead the Skilled Trades</p>
+          <p className="hero-lede">Professional skilled-trades resume builder for HVAC, electrical, plumbing, welding, facilities maintenance, construction, and trade professionals who want stronger resumes and better opportunities.</p>
           <div className="hero-actions">
             <a className="button" href="#resume-builder">Build my resume — $9.99 <span aria-hidden="true">↗</span></a>
             <a className="button button-secondary" href="#resources">Get the free trade guides <span aria-hidden="true">↓</span></a>
           </div>
           <div className="path-label" aria-label="Enter. Earn. Elevate."><span>Enter.</span><i /><span>Earn.</span><i /><span>Elevate.</span><i /></div>
-          <p className="hero-intelligence"><span aria-hidden="true">◆</span> Powered by HUSTLE BOT — Intelligent Enhancement for Skilled Trades Resumes</p>
+          <p className="hero-intelligence"><span aria-hidden="true">◆</span> Powered by HUSTL3 BOT — Intelligent Enhancement for Skilled Trades Resumes</p>
         </div>
         <div className="hero-visual" aria-label="TRADE HUSTL3 Resume Builder features and trust proof">
           <div className="interface-topline"><span className="product-card-brand"><Image src="/trade-hustl3-resume-builder-logo.png" alt="TRADE HUSTL3 Resume Builder" width={86} height={70} /></span><b>CAREER SYSTEM ONLINE</b></div>
@@ -91,9 +91,9 @@ export default function Home() {
             <div className="hero-feature-grid" aria-label="Resume Builder features">
               {heroFeatures.map((feature) => <span key={feature}>{feature}</span>)}
             </div>
-            <div className="hero-proof"><span>Credibility / 01</span><strong>Trusted by thousands of tradesmen and tradeswomen</strong><p>The #1 go-to resume builder for the trades.</p></div>
+            <div className="hero-proof"><span>Credibility / 01</span><strong>Built for the people who keep America working.</strong><p>Trade-focused. ATS-ready. Built to compete.</p></div>
           </div>
-          <div className="interface-footer"><span>Powered by HUSTLE BOT</span><span className="live-dot">System online</span></div>
+          <div className="interface-footer"><span>Powered by HUSTL3 BOT</span><span className="live-dot">System online</span></div>
         </div>
       </section>
 
@@ -147,8 +147,11 @@ export default function Home() {
 
         <section className="builder-feature-strip" aria-labelledby="builder-features-title">
           <div className="builder-feature-main">
-            <p className="strip-kicker">The professional advantage</p>
-            <h3 id="builder-features-title">Get more with the<br /><span>TRADE HUSTL3 Resume Builder</span></h3>
+            <p className="strip-kicker">Why TRADE HUSTL3</p>
+            <h3 id="builder-features-title">Built to Become the Go-To<br /><span>Resume Builder for the Skilled Trades</span></h3>
+            <p className="strip-lede">TRADE HUSTL3 Resume Builder is built specifically for HVAC technicians, electricians, plumbers, welders, maintenance professionals, construction workers, and the next generation entering the skilled trades.</p>
+            <p className="strip-lede"><strong>Trade-focused. ATS-ready. Built to compete.</strong></p>
+            <p className="strip-lede">HUSTL3 BOT helps turn real trade experience, certifications, skills, tools, and accomplishments into a professional resume designed for today&apos;s hiring systems.</p>
             <div className="builder-features">
               {builderStripFeatures.map((feature) => <div key={feature.label}><span aria-hidden="true">{feature.icon}</span><p>{feature.label}</p></div>)}
             </div>
