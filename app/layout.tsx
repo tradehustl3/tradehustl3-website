@@ -90,7 +90,7 @@ const structuredData = {
       numberOfPages: 586,
       inLanguage: "en-US",
       url: `${SITE_URL}/book`,
-      image: `${SITE_URL}/trade-hustl3-book-cover.jpg`,
+      image: `${SITE_URL}/trade-hustl3-book-cover-main.png`,
       author: { "@id": `${SITE_URL}/#zachary-ellis` },
       publisher: { "@id": `${SITE_URL}/#organization` },
     },

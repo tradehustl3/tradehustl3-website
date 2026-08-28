@@ -16,6 +16,9 @@ const localBindingConfig = {
   main: "./worker/index.ts",
   compatibility_flags: ["nodejs_compat"],
   keep_vars: true,
+  assets: {
+    binding: "ASSETS",
+  },
   triggers: {
     crons: ["*/5 * * * *"],
   },
