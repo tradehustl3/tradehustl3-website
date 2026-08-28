@@ -6,16 +6,22 @@ export interface EbookStripeEnv {
   BREVO_SAMPLE_SENDER_EMAIL?: string;
   STRIPE_WEBHOOK_SECRET?: string;
   STRIPE_EBOOK_PAYMENT_LINK_ID?: string;
+  STRIPE_SECRET_KEY?: string;
+  STRIPE_EBOOK_PRICE_ID?: string;
 }
 
 const SITE_URL = "https://tradehustl3.com";
 const STRIPE_WEBHOOK_ROUTE = "/api/stripe/webhook";
+const EBOOK_CHECKOUT_ROUTE = "/api/ebook-checkout";
+const EBOOK_ORDER_STATUS_ROUTE = "/api/ebook-order-status";
 const EBOOK_DOWNLOAD_ROUTE = "/api/ebook-download";
 const EBOOK_OBJECT_KEY = "TRADE-HUSTL3-COMPLETE-EBOOK.pdf";
 export const EBOOK_RELEASE_AT = Date.parse("2026-09-15T04:00:00Z");
 const EBOOK_LAUNCH_BATCH_SIZE = 25;
 const EBOOK_LAUNCH_LEASE_SECONDS = 10 * 60;
 const encoder = new TextEncoder();
+const EBOOK_PRICE_CENTS = 999;
+const DIRECT_CHECKOUT_SOURCE = "server_checkout";
 
 function jsonResponse(body: Record<string, unknown>, status = 200): Response {
   return Response.json(body, {
@@ -209,6 +215,91 @@ function objectRecord(value: unknown): Record<string, unknown> | null {
     : null;
 }
 
+function hasTrustedOrigin(request: Request): boolean {
+  const origin = request.headers.get("Origin");
+  if (!origin) return true;
+  try {
+    const parsedOrigin = new URL(origin).origin;
+    return parsedOrigin === SITE_URL || parsedOrigin === new URL(request.url).origin;
+  } catch {
+    return false;
+  }
+}
+
+async function createEbookCheckout(request: Request, env: EbookStripeEnv): Promise<Response> {
+  if (request.method !== "POST") {
+    return new Response("Method Not Allowed", { status: 405, headers: { Allow: "POST" } });
+  }
+  if (!hasTrustedOrigin(request)) return jsonResponse({ ok: false, message: "Request origin rejected." }, 403);
+
+  const stripeKey = env.STRIPE_SECRET_KEY?.trim();
+  const priceId = env.STRIPE_EBOOK_PRICE_ID?.trim();
+  if (!stripeKey || !priceId) return jsonResponse({ ok: false, message: "Checkout is temporarily unavailable." }, 503);
+
+  const checkoutOrigin = new URL(request.url).origin;
+  const form = new URLSearchParams();
+  form.set("mode", "payment");
+  form.set("line_items[0][price]", priceId);
+  form.set("line_items[0][quantity]", "1");
+  form.set("customer_creation", "always");
+  form.set("success_url", `${checkoutOrigin}/book/order-confirmed?session_id={CHECKOUT_SESSION_ID}`);
+  form.set("cancel_url", `${checkoutOrigin}/book`);
+  form.set("metadata[product]", "ebook");
+  form.set("payment_intent_data[metadata][product]", "ebook");
+
+  let stripeResponse: Response;
+  try {
+    stripeResponse = await fetch("https://api.stripe.com/v1/checkout/sessions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${stripeKey}`,
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: form,
+      signal: AbortSignal.timeout(15_000),
+    });
+  } catch (error) {
+    console.error("eBook Stripe checkout request failed", error);
+    return jsonResponse({ ok: false, message: "Checkout is temporarily unavailable." }, 503);
+  }
+
+  const stripe = await stripeResponse.json() as { id?: unknown; url?: unknown; error?: { message?: unknown } };
+  if (!stripeResponse.ok || typeof stripe.id !== "string" || typeof stripe.url !== "string") {
+    console.error("eBook Stripe checkout failed", stripeResponse.status);
+    return jsonResponse({ ok: false, message: "Checkout is temporarily unavailable." }, 503);
+  }
+  return jsonResponse({ ok: true, checkoutUrl: stripe.url, checkoutSessionId: stripe.id });
+}
+
+async function getEbookOrderStatus(request: Request, env: EbookStripeEnv): Promise<Response> {
+  if (request.method !== "GET") {
+    return new Response("Method Not Allowed", { status: 405, headers: { Allow: "GET" } });
+  }
+  const sessionId = new URL(request.url).searchParams.get("session_id")?.trim() ?? "";
+  if (!/^cs_[A-Za-z0-9_]+$/.test(sessionId)) return jsonResponse({ ok: true, verified: false });
+
+  const order = await env.DB.prepare(
+    `SELECT stripe_session_id
+     FROM ebook_orders
+     WHERE stripe_session_id = ?
+       AND status = 'paid'
+       AND amount_total = ?
+       AND currency = 'usd'
+       AND stripe_payment_intent_id IS NOT NULL
+       AND download_token IS NOT NULL
+     LIMIT 1`,
+  ).bind(sessionId, EBOOK_PRICE_CENTS).first<{ stripe_session_id: string }>();
+  if (!order) return jsonResponse({ ok: true, verified: false });
+  return jsonResponse({
+    ok: true,
+    verified: true,
+    transactionId: order.stripe_session_id,
+    contentName: "ebook",
+    value: 9.99,
+    currency: "USD",
+  });
+}
+
 async function reconcileEbookRefund(
   env: EbookStripeEnv,
   stripeSessionId: string,
@@ -254,10 +345,13 @@ async function fulfillPaidEbookSession(session: Record<string, unknown>, env: Eb
   const amountTotal = session.amount_total;
   const currency = typeof session.currency === "string" ? session.currency.toLowerCase() : "";
   const expectedPaymentLink = env.STRIPE_EBOOK_PAYMENT_LINK_ID?.trim() || "";
+  const metadata = objectRecord(session.metadata);
+  const isConfiguredPaymentLink = Boolean(expectedPaymentLink && paymentLinkId === expectedPaymentLink);
+  const isServerCheckout = !paymentLinkId && metadata?.product === "ebook";
 
   if (
-    !sessionId || !paymentIntentId || paymentLinkId !== expectedPaymentLink || session.payment_status !== "paid" ||
-    amountTotal !== 999 || currency !== "usd" || !isValidEmail(email)
+    !sessionId || !paymentIntentId || (!isConfiguredPaymentLink && !isServerCheckout) || session.payment_status !== "paid" ||
+    amountTotal !== EBOOK_PRICE_CENTS || currency !== "usd" || !isValidEmail(email)
   ) {
     console.error(JSON.stringify({ message: "Stripe eBook checkout did not match the configured product." }));
     return jsonResponse({ received: true });
@@ -270,7 +364,7 @@ async function fulfillPaidEbookSession(session: Record<string, unknown>, env: Eb
        (stripe_session_id, email, payment_link_id, stripe_payment_intent_id, amount_total,
         amount_refunded, currency, status, download_token)
        VALUES (?, ?, ?, ?, ?, 0, ?, 'paid', ?)`,
-    ).bind(sessionId, email, paymentLinkId, paymentIntentId, amountTotal, currency, downloadToken).run();
+    ).bind(sessionId, email, paymentLinkId || DIRECT_CHECKOUT_SOURCE, paymentIntentId, amountTotal, currency, downloadToken).run();
 
     await env.DB.prepare(
       `UPDATE ebook_orders
@@ -388,11 +482,10 @@ async function handleStripeWebhook(request: Request, env: EbookStripeEnv): Promi
   }
 
   const webhookSecret = env.STRIPE_WEBHOOK_SECRET?.trim() || "";
-  const expectedPaymentLink = env.STRIPE_EBOOK_PAYMENT_LINK_ID?.trim() || "";
   const signatureHeader = request.headers.get("Stripe-Signature") || "";
   const payload = await request.text();
 
-  if (!webhookSecret || !expectedPaymentLink || !env.DB || !env.BOOKS) {
+  if (!webhookSecret || !env.DB || !env.BOOKS) {
     console.error("Stripe eBook fulfillment is not configured.");
     return jsonResponse({ received: false }, 503);
   }
@@ -461,6 +554,8 @@ async function servePurchasedEbook(request: Request, env: EbookStripeEnv): Promi
 
 export async function handleEbookStripeRoute(request: Request, env: EbookStripeEnv): Promise<Response | null> {
   const pathname = new URL(request.url).pathname;
+  if (pathname === EBOOK_CHECKOUT_ROUTE) return createEbookCheckout(request, env);
+  if (pathname === EBOOK_ORDER_STATUS_ROUTE) return getEbookOrderStatus(request, env);
   if (pathname === STRIPE_WEBHOOK_ROUTE) return handleStripeWebhook(request, env);
   if (pathname === EBOOK_DOWNLOAD_ROUTE) return servePurchasedEbook(request, env);
   return null;

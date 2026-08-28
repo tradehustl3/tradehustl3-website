@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
+import { createTrackedCheckout } from "../../meta-commerce";
 
 type Resume = {
   resumeId: string;
@@ -123,14 +124,10 @@ export function ResumeReview() {
     setCheckingOut(true);
     setMessage("");
     try {
-      const response = await fetch(`/api/resume-builder/resumes/${encodeURIComponent(resumeId)}/checkout`, {
-        method: "POST",
-        credentials: "same-origin",
-        headers: { "Content-Type": "application/json" },
-        body: "{}",
-      });
-      const result = await response.json() as { checkoutUrl?: string; message?: string };
-      if (!response.ok || !result.checkoutUrl) throw new Error(result.message || "Secure checkout is temporarily unavailable.");
+      const result = await createTrackedCheckout(
+        `/api/resume-builder/resumes/${encodeURIComponent(resumeId)}/checkout`,
+        "resume_builder",
+      );
       window.location.assign(result.checkoutUrl);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Secure checkout is temporarily unavailable.");

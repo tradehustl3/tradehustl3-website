@@ -274,6 +274,59 @@ test("a checkout session for the wrong payment link is silently ignored, not ful
   assert.equal(db.orders.length, 0, "no order should be created for a mismatched payment link");
 });
 
+test("a server-created eBook checkout session is fulfilled without a Payment Link", async () => {
+  const db = fakeEbookDb();
+  const env = baseEnv(db);
+  const now = Math.floor(Date.now() / 1000);
+  await withMockedBrevo(async () => {
+    const response = await postWebhook(env, {
+      id: "evt_server_checkout_1",
+      type: "checkout.session.completed",
+      data: { object: {
+        id: "cs_server_ebook_1",
+        payment_intent: "pi_server_ebook_1",
+        payment_status: "paid",
+        amount_total: 999,
+        currency: "usd",
+        customer_details: { email: "server-checkout@example.com" },
+        metadata: { product: "ebook" },
+      } },
+    }, now);
+    assert.equal(response.status, 200);
+  });
+  assert.equal(db.orders[0]?.payment_link_id, "server_checkout");
+  assert.equal(db.orders[0]?.status, "paid");
+});
+
+test("the eBook server checkout returns the Stripe session before navigation", async () => {
+  const db = fakeEbookDb();
+  const env = { ...baseEnv(db), STRIPE_SECRET_KEY: "sk_test", STRIPE_EBOOK_PRICE_ID: "price_ebook" };
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+    assert.equal(String(input), "https://api.stripe.com/v1/checkout/sessions");
+    assert.equal(new Headers(init?.headers).get("Authorization"), "Bearer sk_test");
+    return new Response(JSON.stringify({ id: "cs_created_ebook", url: "https://checkout.stripe.com/cs_created_ebook" }), { status: 200 });
+  }) as typeof fetch;
+  try {
+    const response = await handleEbookStripeRoute(
+      new Request("https://preview.tradehustl3.com/api/ebook-checkout", {
+        method: "POST",
+        headers: { Origin: "https://preview.tradehustl3.com" },
+        body: "{}",
+      }),
+      env,
+    );
+    assert.equal(response?.status, 200);
+    assert.deepEqual(await response?.json(), {
+      ok: true,
+      checkoutUrl: "https://checkout.stripe.com/cs_created_ebook",
+      checkoutSessionId: "cs_created_ebook",
+    });
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
 test("an invalid Stripe signature is rejected", async () => {
   const db = fakeEbookDb();
   const env = baseEnv(db);
