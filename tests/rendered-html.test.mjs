@@ -128,10 +128,14 @@ test("publishes the customer protection pages with TRADE HUSTL3 LLC contact deta
 });
 
 test("requires policy and AI acknowledgement before a new Resume Builder checkout", async () => {
-  const intakeSource = await readFile(new URL("../app/resume-builder/intake/intake-form.tsx", import.meta.url), "utf8");
-  assert.match(intakeSource, /name="legalConsent" required/i);
+  const wizardSource = await readFile(new URL("../app/resume-builder/intake/wizard.tsx", import.meta.url), "utf8");
+  // The final BUILD step keeps a checked policy acknowledgement for unpaid users,
+  // and step validation blocks the build until it is checked.
+  assert.match(wizardSource, /rb-legal-consent/);
+  assert.match(wizardSource, /checked=\{legalConsent\}/);
+  assert.match(wizardSource, /step === 6 && !paid && !legalConsent/);
   for (const path of ["/terms", "/privacy", "/resume-builder/refund-policy", "/resume-builder/ai-disclosure"]) {
-    assert.match(intakeSource, new RegExp(`href="${path.replaceAll("/", "\\/")}"`, "i"));
+    assert.match(wizardSource, new RegExp(`href="${path.replaceAll("/", "\\/")}"`, "i"));
   }
 });
 
@@ -719,12 +723,14 @@ test("server-renders the preview-first Resume Builder account entry and product 
   assert.match(html, /Skilled Trades Resume Builder \| TRADE HUSTL3/i);
   assert.match(html, /START YOUR RESUME/i);
   assert.match(html, /Create account &amp; continue/i);
+  assert.match(html, /ACCOUNT · STAGE 1 OF 5/i);
   assert.match(html, /\$9\.99/i);
   assert.match(html, /One completed resume/i);
-  assert.match(html, /Initial tailored preview before payment/i);
-  assert.match(html, /TRADE HUSTL3 LLC logo watermark/i);
-  assert.match(html, /Up to 3 AI corrections within 7 days/i);
-  assert.match(html, /Clean PDF \+ editable DOCX downloads/i);
+  assert.match(html, /watermarked preview before payment/i);
+  assert.match(html, /ATS-friendly structure across seven trade tracks/i);
+  assert.match(html, /Up to 3 corrections within 7 days/i);
+  assert.match(html, /Clean PDF \+ editable DOCX after payment/i);
+  assert.match(html, /No subscription · no auto-renewal/i);
   assert.doesNotMatch(html, /\$89\.99/i);
   for (const track of ["HVAC &amp; Refrigeration", "Electrical", "Plumbing", "Construction &amp; Carpentry", "Facilities Maintenance", "Welding &amp; Fabrication", "General Labor / Trade Helper"]) {
     assert.match(html, new RegExp(track, "i"));
@@ -735,7 +741,7 @@ test("server-renders the preview-first Resume Builder account entry and product 
 test("server-renders scanner-safe confirmation, intake, payment return, and review routes", async () => {
   const routes = [
     ["/resume-builder/confirm?token=test", /CONFIRM THIS[\s\S]*SIGN-IN/i],
-    ["/resume-builder/intake", /GIVE US THE FACTS[\s\S]*WE(?:’|&#x27;|')LL SHAPE THE STORY/i],
+    ["/resume-builder/intake", /SEVEN QUICK STEPS[\s\S]*ONE TRADE-READY RESUME/i],
     ["/resume-builder/payment-confirmed?resume_id=test", /LOCKING IN YOUR[\s\S]*BUILD/i],
     ["/resume-builder/review?resume_id=test", /Loading your secure workspace/i],
   ];
@@ -755,9 +761,10 @@ test("server-renders scanner-safe confirmation, intake, payment return, and revi
   assert.doesNotMatch(confirmation, /\/api\/resume-builder\/auth\/confirm/);
 
   const intake = await (await renderPath("/resume-builder/intake")).text();
-  assert.match(intake, /watermarked preview is built before payment/i);
-  assert.match(intake, /Preview first[\s\S]*\$0/i);
-  assert.match(intake, /Pay \$9\.99 only after reviewing/i);
+  assert.match(intake, /Loading your secure workspace/i);
+  assert.match(intake, /HUSTL3 BOT guides each step/i);
+  assert.match(intake, /autosave to your verified account/i);
+  assert.match(intake, /name="robots" content="noindex, nofollow"/i);
 
   const payment = await (await renderPath("/resume-builder/payment-confirmed?resume_id=test")).text();
   assert.match(payment, /Clean PDF \+ DOCX[\s\S]*up to 3 corrections/i);

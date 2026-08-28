@@ -58,6 +58,11 @@ const RESUME_TOTAL_AI_RUNS = 4;
 const INITIAL_PREVIEW_RUNS = 1;
 const DEFAULT_CLAUDE_MODEL = "claude-sonnet-5";
 const INTAKE_PATH = "/resume-builder/intake";
+// The guided intake collects an unbounded number of work-history roles plus
+// structured field-value groups. These bounds stay well within Worker limits
+// while allowing a realistic multi-role trades resume.
+const MAX_INTAKE_JSON_CHARS = 120_000;
+const MAX_RESUME_BODY_BYTES = 160_000;
 const encoder = new TextEncoder();
 
 export type ResumeFailureCode =
@@ -435,7 +440,7 @@ function validateResumeInput(body: Record<string, unknown> | null):
     };
   }
   const intakeJson = JSON.stringify(intake);
-  if (intakeJson.length > 40_000) {
+  if (intakeJson.length > MAX_INTAKE_JSON_CHARS) {
     return { ok: false, response: json({ ok: false, message: "The intake is too large." }, 413) };
   }
   return { ok: true, value: { trade, title, targetJobPosting, intakeJson } };
@@ -446,7 +451,7 @@ async function createResume(request: Request, env: ResumeBuilderEnv): Promise<Re
   if (!hasTrustedOrigin(request)) return json({ ok: false, message: "Request origin rejected." }, 403);
   const user = await requireUser(request, env);
   if (!user) return json({ ok: false, message: "Sign in to continue." }, 401);
-  const parsed = validateResumeInput(await parseJsonBody(request));
+  const parsed = validateResumeInput(await parseJsonBody(request, MAX_RESUME_BODY_BYTES));
   if (!parsed.ok) return parsed.response;
   const { trade, title, targetJobPosting, intakeJson } = parsed.value;
   const resumeId = crypto.randomUUID();
@@ -519,7 +524,7 @@ async function updateResume(request: Request, env: ResumeBuilderEnv, resumeId: s
   if (!user) return json({ ok: false, message: "Sign in to continue." }, 401);
   const resume = await findOwnedResume(env, resumeId, user.userId);
   if (!resume) return json({ ok: false, message: "Resume not found." }, 404);
-  const parsed = validateResumeInput(await parseJsonBody(request));
+  const parsed = validateResumeInput(await parseJsonBody(request, MAX_RESUME_BODY_BYTES));
   if (!parsed.ok) return parsed.response;
   const { trade, title, targetJobPosting, intakeJson } = parsed.value;
   await env.DB.prepare(
@@ -1067,6 +1072,11 @@ function intakeNumericSections(
   const root = recordValue(intake);
   const contact = recordValue(root.contact);
   const career = recordValue(root.career);
+  // Structured field-value groups from the guided intake. Numbers a customer
+  // enters here (license years, cert counts, tool sizes) are their own facts and
+  // must not be flagged as invented. Never include the target job posting.
+  const fieldValue = recordValue(root.fieldValue);
+  const targetJob = recordValue(root.targetJob);
   const experience = Array.isArray(root.experience) ? root.experience : [];
   const workClaims = experience.map((item) => {
     const record = recordValue(item);
@@ -1074,29 +1084,51 @@ function intakeNumericSections(
       employer: record.employer,
       jobTitle: record.jobTitle,
       location: record.location,
+      employmentType: record.employmentType,
       responsibilitiesAndWins: record.responsibilitiesAndWins,
     };
   });
-  const workDetails = experience.map((item) => recordValue(item).responsibilitiesAndWins);
+  // Every free-text detail field a role can carry in the guided intake.
+  const workDetails = experience.map((item) => {
+    const record = recordValue(item);
+    return [
+      record.responsibilitiesAndWins,
+      record.responsibilities,
+      record.equipment,
+      record.systems,
+      record.workPerformed,
+      record.leadership,
+      record.workOrders,
+      record.measurable,
+    ];
+  });
+  const workDateParts = experience.map((item) => {
+    const record = recordValue(item);
+    return [record.dates, record.startDate, record.endDate];
+  });
   const correction = correctionRequest ?? "";
   return {
-    "contact information": sourceText(contact, title, correction),
-    "career summary": sourceText(career.yearsExperience, career.summaryNotes, workDetails, correction),
+    "contact information": sourceText(contact, targetJob, title, correction),
+    "career summary": sourceText(career.yearsExperience, career.summaryNotes, workDetails, fieldValue, correction),
     "skills and tools": sourceText(
       career.skillsAndTools,
       career.licensesAndCertifications,
       career.safetyTraining,
+      fieldValue,
       correction,
     ),
     "certifications and training": sourceText(
       career.licensesAndCertifications,
       career.safetyTraining,
+      fieldValue.certifications,
+      fieldValue.licenses,
+      fieldValue.safety,
       correction,
     ),
-    "work history": sourceText(workClaims, career.skillsAndTools, correction),
-    "work dates": sourceText(experience.map((item) => recordValue(item).dates), correction),
+    "work history": sourceText(workClaims, workDetails, career.skillsAndTools, fieldValue, correction),
+    "work dates": sourceText(workDateParts, correction),
     education: sourceText(root.education, correction),
-    "additional information": sourceText(root.additionalDetails, career.safetyTraining, correction),
+    "additional information": sourceText(root.additionalDetails, career.safetyTraining, fieldValue, targetJob, correction),
   };
 }
 

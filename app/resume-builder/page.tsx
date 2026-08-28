@@ -32,17 +32,20 @@ export default function ResumeBuilderPage() {
             Give us the facts. TRADE HUSTL3 turns your tools, tickets, field hours, and real responsibilities into one clear, ATS-friendly resume.
           </p>
           <div className="rb-proof-row" aria-label="Resume Builder package details">
-            <div><strong>$9.99</strong><span>One completed resume</span></div>
-            <div><strong>4</strong><span>Total AI runs</span></div>
-            <div><strong>2</strong><span>Clean file formats</span></div>
+            <div><strong>$9.99</strong><span>One-time · no subscription</span></div>
+            <div><strong>7</strong><span>Skilled-trade tracks</span></div>
+            <div><strong>3</strong><span>Corrections within 7 days</span></div>
           </div>
         </div>
 
         <aside className="rb-entry-panel" aria-labelledby="account-title">
-          <p className="rb-panel-index">STEP 01 / 04</p>
+          <p className="rb-panel-index">ACCOUNT · STAGE 1 OF 5</p>
           <h2 id="account-title">START YOUR RESUME</h2>
           <p>Create your verified account first. Your intake is saved to your account—not just this device.</p>
           <AccountStart />
+          <ol className="rb-stage-map" aria-label="How it works">
+            <li>Account</li><li>Build</li><li>Preview</li><li>Unlock</li><li>Download</li>
+          </ol>
         </aside>
       </section>
 
@@ -55,10 +58,11 @@ export default function ResumeBuilderPage() {
           <div className="rb-package-price"><span>$</span><strong>9</strong><sup>99</sup></div>
           <p>Your first resume is built before checkout. Review the protected logo-watermarked preview, then pay once to remove the watermark.</p>
           <ul>
-            <li><span>✓</span> Initial tailored preview before payment</li>
-            <li><span>✓</span> TRADE HUSTL3 LLC logo watermark</li>
-            <li><span>✓</span> Up to 3 AI corrections within 7 days</li>
-            <li><span>✓</span> Clean PDF + editable DOCX downloads</li>
+            <li><span>✓</span> One completed resume · watermarked preview before payment</li>
+            <li><span>✓</span> ATS-friendly structure across seven trade tracks</li>
+            <li><span>✓</span> Up to 3 corrections within 7 days</li>
+            <li><span>✓</span> Clean PDF + editable DOCX after payment</li>
+            <li><span>✓</span> No subscription · no auto-renewal</li>
           </ul>
         </div>
       </section>

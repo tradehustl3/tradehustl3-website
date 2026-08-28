@@ -2,10 +2,12 @@
   --rb-navy: #071a2b;
   --rb-ink: #0a1420;
   --rb-panel: #0c2539;
-  --rb-red: #d9361e;
+  --rb-red: #d71920;
+  --rb-red-deep: #b3141a;
   --rb-gold: #d6a52a;
   --rb-cream: #f4f0e7;
   --rb-line: #d6a52a42;
+  --rb-steel: #c5d7f5;
   min-height: 100vh;
   background: var(--rb-navy);
   color: var(--rb-cream);
@@ -155,7 +157,6 @@
 .rb-flow-intro { display: grid; grid-template-columns: 1.2fr .8fr; align-items: end; gap: 60px; padding: 70px clamp(22px, 6vw, 86px) 56px; background: #071a2b; color: var(--rb-cream); }
 .rb-flow-intro h1 { font-size: clamp(52px, 6.5vw, 92px); }
 .rb-flow-intro > p { max-width: 530px; margin: 0; padding-left: 22px; border-left: 3px solid var(--rb-gold); color: #b7c2c9; font-size: 16px; line-height: 1.65; }
-.rb-intake-form { width: min(1180px, calc(100% - 44px)); margin: 42px auto 0; }
 .rb-form-banner { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; padding: 17px 20px; border: 1px solid #b4b3ad; background: #f8f6f0; }
 .rb-form-banner > div { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 3px 12px; }
 .rb-form-banner .rb-status-dot { grid-row: 1 / span 2; }
@@ -286,7 +287,6 @@
   .rb-centered-stage { padding: 34px 14px; }
   .rb-confirm-card, .rb-payment-card { padding: 34px 24px; box-shadow: 8px 8px 0 #d9361e24; }
   .rb-flow-intro { padding: 58px 22px 42px; }
-  .rb-intake-form { width: calc(100% - 24px); }
   .rb-form-banner { align-items: flex-start; flex-direction: column; gap: 12px; }
   .rb-form-section { padding: 27px 18px; }
   .rb-field-grid, .rb-field-grid-3 { grid-template-columns: 1fr; }
@@ -312,4 +312,170 @@
 @media (prefers-reduced-motion: reduce) {
   .rb-button { transition: none; }
   .rb-review-loading span, .rb-working-overlay > span { animation: none; }
+}
+
+/* ============================================================
+   Guided intake wizard (Step BUILD) + HUSTL3 BOT
+   ============================================================ */
+.rb-wiz-page { background: linear-gradient(180deg, #071a2b, #0a1a24 60%, #0b1620); color: var(--rb-cream); }
+.rb-wiz-page .rb-header, .rb-wiz-page .rb-steps { color: var(--rb-cream); }
+.rb-wiz-intro { align-items: center; }
+.rb-wiz-intro h1 { font-size: clamp(44px, 5.4vw, 78px); }
+
+.rb-wiz { width: min(1320px, calc(100% - 44px)); margin: 30px auto 120px; }
+
+/* progress ------------------------------------------------------ */
+.rb-wiz-progress { margin-bottom: 22px; }
+.rb-wiz-progress-head { display: flex; justify-content: space-between; margin-bottom: 12px; color: #9fb1bd; font-size: 10px; font-weight: 800; letter-spacing: .13em; text-transform: uppercase; }
+.rb-wiz-progress-head span:first-child { color: var(--rb-gold); }
+.rb-wiz-dots { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin: 0; padding: 0; list-style: none; }
+.rb-wiz-dot button { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 7px; padding: 10px 4px; border: 0; border-top: 3px solid #24384a; background: transparent; color: #7f929e; cursor: pointer; font: inherit; }
+.rb-wiz-dot button:disabled { cursor: default; }
+.rb-wiz-dot span { width: 26px; height: 26px; display: grid; place-items: center; border: 1px solid #3c5061; border-radius: 50%; font-size: 11px; font-weight: 900; }
+.rb-wiz-dot small { font-size: 8.5px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+.rb-wiz-dot-current button { border-top-color: var(--rb-red); color: var(--rb-cream); }
+.rb-wiz-dot-current span { border-color: var(--rb-red); background: var(--rb-red); color: #fff; }
+.rb-wiz-dot-done button { border-top-color: var(--rb-gold); color: var(--rb-gold); }
+.rb-wiz-dot-done span { border-color: var(--rb-gold); background: var(--rb-gold); color: var(--rb-navy); }
+.rb-wiz-dot button:hover:not(:disabled) span { border-color: var(--rb-gold); }
+
+/* shell -------------------------------------------------------- */
+.rb-wiz-shell { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 20px; align-items: start; }
+.rb-wiz-main { padding: clamp(26px, 3.6vw, 46px); border-top: 4px solid var(--rb-red); background: var(--rb-cream); color: var(--rb-navy); box-shadow: 0 24px 60px #02101c66; }
+.rb-wiz-main > .rb-kicker { margin-bottom: 18px; }
+.rb-wiz-step h1 { font-family: var(--font-display), Impact, sans-serif; font-size: clamp(30px, 3.5vw, 46px); line-height: .98; letter-spacing: -.01em; }
+.rb-wiz-step h1:focus-visible { outline: 3px solid var(--rb-gold); outline-offset: 6px; }
+.rb-wiz-lead { max-width: 640px; margin: 14px 0 26px; color: #4c5962; font-size: 15px; line-height: 1.62; }
+.rb-review-note { font-weight: 800; color: var(--rb-navy); }
+
+/* trade + level cards ---------------------------------------- */
+.rb-trade-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; }
+.rb-trade-card { display: flex; flex-direction: column; gap: 8px; padding: 20px; border: 1px solid #b9b7ae; border-left: 4px solid #b9b7ae; background: #fffdf8; text-align: left; cursor: pointer; transition: border-color .18s, transform .18s, box-shadow .18s; }
+.rb-trade-card:hover { transform: translateY(-3px); box-shadow: 10px 10px 0 #071a2b12; }
+.rb-trade-card-name { font-family: var(--font-display), Impact, sans-serif; font-size: 19px; letter-spacing: .01em; }
+.rb-trade-card-note { color: #616d75; font-size: 12.5px; line-height: 1.5; }
+.rb-trade-card-on { border-color: var(--rb-red); border-left-color: var(--rb-red); background: #fff; box-shadow: 10px 10px 0 #d7192018; }
+.rb-trade-card-on .rb-trade-card-name { color: var(--rb-red-deep); }
+.rb-level-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+.rb-level-card { padding: 20px 18px; border: 1px solid #b9b7ae; background: #fffdf8; font-weight: 800; font-size: 14px; cursor: pointer; transition: border-color .18s, transform .18s; }
+.rb-level-card:hover { transform: translateY(-2px); }
+.rb-level-card-on { border-color: var(--rb-red); border-width: 2px; background: #fff; color: var(--rb-red-deep); }
+
+/* fields ----------------------------------------------------- */
+.rb-wiz-contact { margin: 0 0 26px; padding: 22px; border: 1px solid #c7c5bc; background: #fbfaf5; }
+.rb-wiz-contact legend { padding: 0 8px; color: var(--rb-red); font-size: 10px; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; }
+.rb-wiz-main .rb-field label span { text-transform: none; font-weight: 600; color: #7a8309; color: #6a7780; }
+.rb-field-invalid input, .rb-field-invalid textarea, .rb-field-invalid select { border-color: var(--rb-red); box-shadow: 0 0 0 3px #d7192022; }
+.rb-wiz-main .rb-field + .rb-field { margin-top: 0; }
+.rb-wiz-main .rb-field-wide { margin-top: 18px; }
+
+/* roles ---------------------------------------------------- */
+.rb-roles { display: flex; flex-direction: column; gap: 18px; margin-top: 8px; }
+.rb-role { margin: 0; padding: 22px; border: 1px solid #bcbab1; border-top: 3px solid var(--rb-navy); background: #fbfaf5; }
+.rb-role-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+.rb-role-head legend { float: left; padding: 0; color: var(--rb-red); font-size: 11px; font-weight: 900; letter-spacing: .13em; text-transform: uppercase; }
+.rb-role-end { display: flex; align-items: center; gap: 12px; }
+.rb-role-end .rb-inline-input { flex: 1; min-height: 50px; padding: 0 14px; border: 1px solid #b9b8b1; background: #fffdf8; font: inherit; font-size: 15px; }
+.rb-check { display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; color: #4c5962; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; }
+.rb-check input { width: 17px; height: 17px; accent-color: var(--rb-red); }
+.rb-add-role { margin-top: 18px; }
+
+/* chips -------------------------------------------------- */
+.rb-chipfield { margin-bottom: 22px; }
+.rb-chipfield > label { display: block; margin-bottom: 6px; color: #23313a; font-size: 10px; font-weight: 900; letter-spacing: .11em; text-transform: uppercase; }
+.rb-chipfield-hint { margin: 0 0 12px; color: #66727a; font-size: 12px; line-height: 1.5; }
+.rb-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.rb-chip { padding: 9px 13px; border: 1px solid #b3b1a8; border-radius: 999px; background: #fffdf8; color: #3a464e; cursor: pointer; font: inherit; font-size: 12.5px; font-weight: 700; transition: border-color .15s, background .15s, color .15s; }
+.rb-chip:hover { border-color: var(--rb-navy); }
+.rb-chip-selected { border-color: var(--rb-red); background: #d7192012; color: var(--rb-red-deep); }
+.rb-chip-custom { border-style: dashed; }
+.rb-chip-add { display: flex; gap: 8px; margin-top: 12px; }
+.rb-chip-input { flex: 1; min-height: 44px; max-width: 320px; padding: 0 13px; border: 1px solid #b9b8b1; background: #fffdf8; font: inherit; font-size: 14px; }
+.rb-chip-add-btn { padding: 0 16px; border: 1px solid var(--rb-navy); background: transparent; color: var(--rb-navy); cursor: pointer; font: inherit; font-size: 10px; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; }
+.rb-chip-add-btn:hover { background: var(--rb-navy); color: #fff; }
+
+/* review summary --------------------------------------- */
+.rb-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
+.rb-summary-card { padding: 18px; border: 1px solid #c7c5bc; background: #fbfaf5; }
+.rb-summary-card-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-bottom: 10px; }
+.rb-summary-card-head h2 { font-size: 12px; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; color: #33414a; }
+.rb-summary-card-body p { margin: 0 0 4px; color: #3f4c54; font-size: 13.5px; line-height: 1.5; }
+.rb-summary-long { white-space: pre-wrap; }
+.rb-summary-role { padding: 7px 0; border-top: 1px solid #d9d7ce; }
+.rb-summary-role strong { display: block; font-size: 13px; }
+.rb-summary-role span { color: #6a7780; font-size: 11.5px; }
+
+/* generate step --------------------------------------- */
+.rb-generate h1 { max-width: 12ch; }
+.rb-value-reminder { margin-top: 20px; padding: 22px 24px; border-left: 5px solid var(--rb-red); background: #071a2b; color: var(--rb-cream); }
+.rb-value-reminder ul { margin: 0; padding-left: 20px; display: grid; gap: 8px; }
+.rb-value-reminder li { font-size: 14px; line-height: 1.4; }
+.rb-value-reminder strong { color: var(--rb-gold); }
+
+/* wizard nav ----------------------------------------- */
+.rb-wiz-errors { margin-top: 20px; padding: 16px 18px; border: 1px solid #c99723; border-left: 5px solid var(--rb-gold); background: #fff8df; color: var(--rb-navy); }
+.rb-wiz-errors ul { margin: 8px 0 0; padding-left: 20px; }
+.rb-wiz-errors li { margin: 3px 0; font-size: 13px; }
+.rb-wiz-nav { display: flex; align-items: center; gap: 14px; margin-top: 26px; padding-top: 20px; border-top: 1px solid #cdcbc2; }
+.rb-wiz-nav .rb-button-primary { margin-left: auto; }
+.rb-button-ghost { border-color: #9aa7b0; background: transparent; color: var(--rb-navy); }
+.rb-button-ghost:hover:not(:disabled) { border-color: var(--rb-navy); background: var(--rb-navy); color: #fff; }
+.rb-button-build { background: var(--rb-red); }
+.rb-save-state { font-size: 10px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: #6a7780; }
+.rb-save-state[data-state="saved"] { color: #14765b; }
+.rb-save-state[data-state="error"] { color: var(--rb-red-deep); }
+
+.rb-wiz-loading { min-height: 320px; display: grid; place-items: center; align-content: center; gap: 14px; color: var(--rb-cream); }
+.rb-wiz-loading span { width: 36px; height: 36px; border: 3px solid #ffffff22; border-top-color: var(--rb-gold); border-radius: 50%; animation: rb-spin .8s linear infinite; }
+
+/* HUSTL3 BOT + value rail ---------------------------- */
+.rb-wiz-side { display: flex; flex-direction: column; gap: 16px; position: sticky; top: 18px; }
+.rb-bot { border: 1px solid #204058; background: #0c2539; }
+.rb-bot-toggle { display: none; width: 100%; align-items: center; gap: 12px; padding: 14px 16px; border: 0; background: transparent; color: var(--rb-cream); cursor: pointer; font: inherit; text-align: left; }
+.rb-bot-toggle-text { display: flex; flex-direction: column; }
+.rb-bot-toggle-text strong { font-size: 12px; letter-spacing: .12em; }
+.rb-bot-toggle-text small { color: #9fb1bd; font-size: 11px; }
+.rb-bot-chevron { margin-left: auto; color: var(--rb-gold); }
+.rb-bot-body { padding: 20px; }
+.rb-bot-avatar { display: block; }
+.rb-bot-avatar img { width: 100%; height: auto; display: block; }
+.rb-bot-avatar-lg { width: 96px; margin-bottom: 12px; filter: drop-shadow(0 8px 16px #0209138c); }
+.rb-bot-name { margin: 0 0 12px; font-family: var(--font-display), Impact, sans-serif; font-size: 16px; letter-spacing: .06em; color: var(--rb-cream); }
+.rb-bot-name span { display: block; color: var(--rb-gold); font-family: inherit; font-size: 9px; letter-spacing: .2em; }
+.rb-bot-tips { margin: 0; padding: 0; list-style: none; display: grid; gap: 12px; }
+.rb-bot-tips li { padding-left: 16px; border-left: 2px solid var(--rb-red); color: #c9d5dc; font-size: 12.5px; line-height: 1.55; }
+.rb-bot-trade { margin: 14px 0 0; color: #8fa1ad; font-size: 11px; }
+.rb-bot-trade strong { color: var(--rb-gold); }
+.rb-value-rail { padding: 18px 20px; border: 1px solid #204058; background: #081f31; }
+.rb-value-rail p { margin: 0 0 10px; color: var(--rb-gold); font-size: 9px; font-weight: 900; letter-spacing: .18em; }
+.rb-value-rail ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; }
+.rb-value-rail li { padding-left: 16px; position: relative; color: #b9c6cd; font-size: 12px; line-height: 1.45; }
+.rb-value-rail li::before { content: "✓"; position: absolute; left: 0; color: var(--rb-gold); font-weight: 900; }
+
+/* entry-page stage map ------------------------------ */
+.rb-stage-map { display: flex; flex-wrap: wrap; gap: 8px; margin: 26px 0 0; padding: 0; list-style: none; counter-reset: stage; }
+.rb-stage-map li { counter-increment: stage; padding: 7px 12px; border: 1px solid #c1beb2; color: #4f5b63; font-size: 9px; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; }
+.rb-stage-map li::before { content: counter(stage, decimal-leading-zero) " · "; color: var(--rb-red); }
+
+/* --- wizard responsive --- */
+@media (max-width: 1040px) {
+  .rb-wiz-shell { grid-template-columns: 1fr; }
+  .rb-wiz-side { position: static; order: -1; }
+  .rb-bot-toggle { display: flex; }
+  .rb-bot-body { display: none; padding-top: 0; }
+  .rb-bot-body[data-open="true"] { display: block; padding-top: 16px; }
+  .rb-bot-avatar-lg { width: 64px; }
+}
+@media (max-width: 700px) {
+  .rb-wiz { width: calc(100% - 24px); margin-bottom: 96px; }
+  .rb-wiz-dots { grid-template-columns: repeat(7, 1fr); gap: 3px; }
+  .rb-wiz-dot small { display: none; }
+  .rb-wiz-dot button { padding: 8px 2px; }
+  .rb-wiz-main { padding: 22px 16px; }
+  .rb-summary { grid-template-columns: 1fr; }
+  .rb-wiz-nav { position: sticky; bottom: 0; z-index: 6; flex-wrap: wrap; margin-top: 22px; padding: 14px; background: #f4f0e7; box-shadow: 0 -10px 24px #02101c30; }
+  .rb-wiz-nav .rb-button { flex: 1 1 44%; justify-content: center; gap: 10px; }
+  .rb-wiz-nav .rb-button-primary { margin-left: 0; }
+  .rb-save-state { flex-basis: 100%; order: 3; text-align: center; }
+  .rb-role-end { flex-direction: column; align-items: stretch; }
 }
