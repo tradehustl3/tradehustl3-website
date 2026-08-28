@@ -4,18 +4,37 @@ import "./globals.css";
 import { GoogleAnalytics } from "./google-analytics";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_TITLE, SITE_URL } from "./site";
 
-const display = Anton({ weight: "400", subsets: ["latin"], variable: "--font-display" });
-const body = Space_Grotesk({ subsets: ["latin"], variable: "--font-body" });
+const display = Anton({
+  weight: "400",
+  subsets: ["latin"],
+  variable: "--font-display",
+});
+
+const body = Space_Grotesk({
+  subsets: ["latin"],
+  variable: "--font-body",
+});
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: SITE_TITLE,
   description: SITE_DESCRIPTION,
   applicationName: SITE_NAME,
-  authors: [{ name: "Zachary Ellis", url: SITE_URL }],
+
+  authors: [
+    {
+      name: "Zachary Ellis",
+      url: SITE_URL,
+    },
+  ],
+
   creator: "Zachary Ellis",
   publisher: SITE_NAME,
-  alternates: { canonical: "/" },
+
+  alternates: {
+    canonical: "/",
+  },
+
   robots: {
     index: true,
     follow: true,
@@ -27,7 +46,11 @@ export const metadata: Metadata = {
       "max-video-preview": -1,
     },
   },
-  icons: { icon: "/favicon.svg" },
+
+  icons: {
+    icon: "/favicon.svg",
+  },
+
   openGraph: {
     title: SITE_TITLE,
     description: SITE_DESCRIPTION,
@@ -35,8 +58,16 @@ export const metadata: Metadata = {
     siteName: SITE_NAME,
     locale: "en_US",
     type: "website",
-    images: [{ url: "/og.png", width: 1731, height: 909, alt: "TRADE HUSTL3 — Built by Hustle, Backed by Trades" }],
+    images: [
+      {
+        url: "/og.png",
+        width: 1731,
+        height: 909,
+        alt: "TRADE HUSTL3 — Built by Hustle, Backed by Trades",
+      },
+    ],
   },
+
   twitter: {
     card: "summary_large_image",
     title: SITE_TITLE,
@@ -47,6 +78,7 @@ export const metadata: Metadata = {
 
 const structuredData = {
   "@context": "https://schema.org",
+
   "@graph": [
     {
       "@type": "Organization",
@@ -54,58 +86,140 @@ const structuredData = {
       name: SITE_NAME,
       url: SITE_URL,
       description: SITE_DESCRIPTION,
+
       logo: {
         "@type": "ImageObject",
         url: `${SITE_URL}/trade-hustl3-logo.png`,
         width: 1536,
         height: 1536,
       },
-      founder: { "@id": `${SITE_URL}/#zachary-ellis` },
+
+      founder: {
+        "@id": `${SITE_URL}/#zachary-ellis`,
+      },
+
       sameAs: ["https://github.com/tradehustl3"],
     },
+
     {
       "@type": "Person",
       "@id": `${SITE_URL}/#zachary-ellis`,
       name: "Zachary Ellis",
       jobTitle: "HVAC and facilities maintenance professional",
       url: SITE_URL,
-      worksFor: { "@id": `${SITE_URL}/#organization` },
+
+      worksFor: {
+        "@id": `${SITE_URL}/#organization`,
+      },
     },
+
     {
       "@type": "WebSite",
       "@id": `${SITE_URL}/#website`,
       url: SITE_URL,
       name: SITE_NAME,
       description: SITE_DESCRIPTION,
-      publisher: { "@id": `${SITE_URL}/#organization` },
+
+      publisher: {
+        "@id": `${SITE_URL}/#organization`,
+      },
+
       inLanguage: "en-US",
     },
+
     {
       "@type": "Book",
       "@id": `${SITE_URL}/book#book`,
       name: "TRADE HUSTL3: Built by Hustle, Backed by Trades",
-      description: "A practical career guide for entering, earning, and elevating in the skilled trades.",
+      description:
+        "A practical career guide for entering, earning, and elevating in the skilled trades.",
+
       isbn: "9798193043355",
       datePublished: "2026-09-15",
       numberOfPages: 586,
       inLanguage: "en-US",
+
       url: `${SITE_URL}/book`,
       image: `${SITE_URL}/trade-hustl3-book-cover.jpg`,
-      author: { "@id": `${SITE_URL}/#zachary-ellis` },
-      publisher: { "@id": `${SITE_URL}/#organization` },
+
+      author: {
+        "@id": `${SITE_URL}/#zachary-ellis`,
+      },
+
+      publisher: {
+        "@id": `${SITE_URL}/#organization`,
+      },
     },
   ],
 };
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
   return (
     <html lang="en">
       <body className={`${display.variable} ${body.variable}`}>
+        {/* Meta Pixel */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              !function(f,b,e,v,n,t,s)
+              {
+                if(f.fbq)return;
+                n=f.fbq=function(){
+                  n.callMethod
+                    ? n.callMethod.apply(n,arguments)
+                    : n.queue.push(arguments)
+                };
+
+                if(!f._fbq)f._fbq=n;
+
+                n.push=n;
+                n.loaded=!0;
+                n.version='2.0';
+                n.queue=[];
+
+                t=b.createElement(e);
+                t.async=!0;
+                t.src=v;
+
+                s=b.getElementsByTagName(e)[0];
+                s.parentNode.insertBefore(t,s);
+
+              }(
+                window,
+                document,
+                'script',
+                'https://connect.facebook.net/en_US/fbevents.js'
+              );
+
+              fbq('init', '2260020274539615');
+              fbq('track', 'PageView');
+            `,
+          }}
+        />
+
+        {/* Meta Pixel fallback when JavaScript is disabled */}
+        <noscript
+          dangerouslySetInnerHTML={{
+            __html:
+              '<img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=2260020274539615&ev=PageView&noscript=1" />',
+          }}
+        />
+
+        {/* SEO Structured Data */}
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(structuredData),
+          }}
         />
+
         {children}
+
+        {/* Google Analytics */}
         <GoogleAnalytics />
       </body>
     </html>
