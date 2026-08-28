@@ -23,7 +23,7 @@ export const metadata: Metadata = {
     type: "book",
     images: [
       {
-        url: "/trade-hustl3-book-cover.jpg",
+        url: "/trade-hustl3-book-cover-main.png",
         width: 1024,
         height: 1536,
         alt: "Official TRADE HUSTL3 book cover",
@@ -34,7 +34,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "TRADE HUSTL3 Book | Zachary Ellis",
     description: BOOK_DESCRIPTION,
-    images: ["/trade-hustl3-book-cover.jpg"],
+    images: ["/trade-hustl3-book-cover-main.png"],
   },
 };
 
@@ -49,7 +49,7 @@ const bookStructuredData = {
   bookFormat: "https://schema.org/Paperback",
   inLanguage: "en-US",
   url: `${SITE_URL}/book`,
-  image: `${SITE_URL}/trade-hustl3-book-cover.jpg`,
+  image: `${SITE_URL}/trade-hustl3-book-cover-main.png`,
   author: {
     "@type": "Person",
     "@id": `${SITE_URL}/#zachary-ellis`,
@@ -159,7 +159,7 @@ export default function BookPage() {
           <div className="book-cover-glow" aria-hidden="true" />
           <Image
             className="book-cover-image"
-            src="/trade-hustl3-book-cover.jpg"
+            src="/trade-hustl3-book-cover-main.png"
             alt="Official front cover of TRADE HUSTL3"
             width={1024}
             height={1536}
@@ -293,7 +293,7 @@ export default function BookPage() {
         <div className="author-portrait-frame">
           <Image
             className="author-portrait"
-            src="/zachary-ellis-author.jpg"
+            src="/zachary-ellis.png"
             alt="Zachary Ellis, author of TRADE HUSTL3"
             width={1086}
             height={1449}

@@ -27,13 +27,6 @@ const builderStripFeatures = [
   { icon: '⚙', label: 'Built for skilled trades' },
 ];
 
-const guideBenefits = [
-  { icon: '●●●', label: 'High-demand careers' },
-  { icon: '⚒', label: 'Practical skills' },
-  { icon: '◉', label: 'Real-world opportunities' },
-  { icon: '↗', label: 'Earning potential' },
-];
-
 const resumeProcess = [
   { step: '1', icon: '▤', title: 'Tell us your HUSTL3', copy: 'Share your experience, skills, certifications, and target job.' },
   { step: '2', icon: '◆', title: 'HUSTL3 BOT enhances it', copy: 'ATS optimization, trade-specific keywords, and stronger wording.' },
@@ -83,7 +76,7 @@ export default function Home() {
           <p className="hero-intelligence"><span aria-hidden="true">◆</span> Powered by HUSTL3 BOT — Intelligent Enhancement for Skilled Trades Resumes</p>
         </div>
         <div className="hero-visual" aria-label="TRADE HUSTL3 Resume Builder features and trust proof">
-          <div className="interface-topline"><span className="product-card-brand"><Image src="/trade-hustl3-resume-builder-logo.png" alt="TRADE HUSTL3 Resume Builder" width={86} height={70} /></span><b>CAREER SYSTEM ONLINE</b></div>
+          <div className="interface-topline"><span className="product-card-brand"><Image src="/trade-hustl3-resume-builder-logo-llc.png" alt="TRADE HUSTL3 Resume Builder" width={86} height={70} /></span><b>CAREER SYSTEM ONLINE</b></div>
           <div className="hero-workstation">
             <div className="hero-photo-frame">
               <Image src="/trade-hustl3-resume-workspace.png" alt="Skilled-trades workspace with a safety vest, work boots, and a laptop" fill sizes="(max-width: 960px) 92vw, 46vw" priority />
@@ -106,7 +99,7 @@ export default function Home() {
         <div className="conversion-grid">
           <article className="conversion-card resume-card" id="resume-builder">
             <div className="card-index"><span>01</span><b>Build your edge</b></div>
-            <Image className="resume-logo" src="/trade-hustl3-resume-builder-logo.png" alt="TRADE HUSTL3 Resume Builder" width={330} height={269} />
+            <Image className="resume-logo" src="/trade-hustl3-resume-builder-logo-llc.png" alt="TRADE HUSTL3 Resume Builder" width={330} height={269} />
             <h3>TRADE HUSTL3<br />Resume Builder</h3>
             <p>Turn your real experience, training, side work, and skills into a professional, ATS-ready resume built for skilled-trades opportunities.</p>
             <ul className="benefit-list">{resumeBenefits.map((benefit) => <li key={benefit}>{benefit}</li>)}</ul>
@@ -124,25 +117,19 @@ export default function Home() {
           </article>
 
           <article className="conversion-card guide-card" id="top-trades-guide">
-            <div className="guide-skyline" aria-hidden="true"><Image src="/guide-skyline-overlay.png" alt="" fill sizes="(max-width: 760px) 100vw, 50vw" /></div>
-            <div className="card-index"><span>02</span><b>Plan your future</b></div>
-            <div className="guide-mark">
-              <div className="guide-number-lockup">
-                <strong aria-hidden="true">10</strong>
-                <span>Trade<br />paths</span>
-              </div>
-              <small>Free career guide</small>
+            <div className="guide-card-artwork">
+              <Image
+                src="/top-trades-2026-2027-card.png"
+                alt="Top 10 Trades for 2026–2027 career guide artwork"
+                width={1122}
+                height={1402}
+              />
+              <details className="guide-signup">
+                <summary>Sign up now <span aria-hidden="true">→</span></summary>
+                <ResourceForm resourceName="Top 10 Trades PDF" buttonLabel="Send me the free PDF" includeInterest />
+              </details>
             </div>
-            <h3>Top 10 Trades<br />for 2026–2027</h3>
-            <p>Discover ten skilled-trades careers with strong entry points and room to grow. Built for real opportunities in a high-demand industry.</p>
-            <details className="guide-signup">
-              <summary>Sign up now <span aria-hidden="true">→</span></summary>
-              <ResourceForm resourceName="Top 10 Trades PDF" buttonLabel="Send me the free PDF" includeInterest />
-            </details>
-            <div className="guide-benefits" aria-label="Guide career benefits">
-              {guideBenefits.map((benefit) => <div key={benefit.label}><span aria-hidden="true">{benefit.icon}</span><p>{benefit.label}</p></div>)}
-            </div>
-            <div className="guide-tool-art" aria-hidden="true"><Image src="/top-trades-tools.png" alt="" fill sizes="(max-width: 760px) 88vw, 42vw" /></div>
+            <span className="guide-card-copy">Top 10 Trades for 2026–2027. Discover ten skilled-trades careers with strong entry points and room to grow. Built for real opportunities in a high-demand industry.</span>
           </article>
         </div>
 
@@ -189,7 +176,7 @@ export default function Home() {
       <section className="book-section" id="book">
         <div className="book-cover" aria-label="Book cover representation using the supplied TRADE HUSTL3 brand artwork">
           <span className="book-kicker">Enter. Earn. Elevate.</span>
-          <Image className="book-cover-image" src="/trade-hustl3-book-cover.jpg" alt="TRADE HUSTL3 book cover" width={430} height={645} />
+          <Image className="book-cover-image" src="/trade-hustl3-book-cover-main.png" alt="TRADE HUSTL3 book cover" width={430} height={645} />
         </div>
         <div className="book-copy">
           <p className="eyebrow"><span>04</span> The field guide</p>
@@ -233,4 +220,3 @@ export default function Home() {
     </main>
   );
 }
-

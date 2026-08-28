@@ -71,6 +71,26 @@ test("server-renders the corrected TRADE HUSTL3 brand and metadata", async () =>
   assert.match(html, /aria-label="Enter, Earn, Elevate"/i);
 });
 
+test("server-renders the master homepage assets", async () => {
+  const html = await (await render()).text();
+  for (const asset of [
+    "trade-hustl3-logo.png",
+    "trade-hustl3-resume-builder-logo-llc.png",
+    "trade-hustl3-resume-workspace.png",
+    "top-trades-2026-2027-card.png",
+    "trade-hustl3-book-cover-main.png",
+    "zachary-ellis.png",
+    "hustl3-bot-branded.png",
+  ]) assert.match(html, new RegExp(asset.replaceAll(".", "\\."), "i"));
+
+  for (const legacyAsset of [
+    "trade-hustl3-resume-builder-logo.png",
+    "trade-hustl3-book-cover.jpg",
+    "guide-skyline-overlay.png",
+    "top-trades-tools.png",
+  ]) assert.doesNotMatch(html, new RegExp(legacyAsset.replaceAll(".", "\\."), "i"));
+});
+
 test("server-renders credibility and audience content", async () => {
   const html = await (await render()).text();
   assert.match(html, /BUILT FROM[\s\S]*THE[\s\S]*FIELD\./i);
@@ -142,8 +162,8 @@ test("server-renders the official book page, cover, portrait, and current editio
 
   assert.match(html, /<title>TRADE HUSTL3 Book \| Zachary Ellis<\/title>/i);
   assert.match(html, /<link rel="canonical" href="https:\/\/tradehustl3\.com\/book"/i);
-  assert.match(html, /trade-hustl3-book-cover\.jpg/i);
-  assert.match(html, /zachary-ellis-author\.jpg/i);
+  assert.match(html, /trade-hustl3-book-cover-main\.png/i);
+  assert.match(html, /zachary-ellis\.png/i);
   assert.match(html, /DA[\s\S]*MAINTENANCE[\s\S]*MANE\./i);
   assert.equal(html.includes("Zachary Cameron Ellis"), false);
   assert.match(html, /September 15, 2026/i);
