@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
+import { createMetaLeadTracker } from "./meta-pixel";
+import { submitSignup } from "./signup-request";
 
 const interests = [
   "The TRADE HUSTL3 Book",
@@ -25,11 +27,13 @@ function trackEvent(eventName: string, parameters: Record<string, string>) {
 export function SignupForm({ mode = "general" }: { mode?: "general" | "sample" }) {
   const formRef = useRef<HTMLFormElement>(null);
   const hasTrackedFormStart = useRef(false);
+  const isSubmitting = useRef(false);
   const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
   const [message, setMessage] = useState("");
   const [sampleUrl, setSampleUrl] = useState("");
   const isSample = mode === "sample";
   const formName = isSample ? "free_2026_2027_trade_guide_preview" : "general_interest";
+  const [trackSampleLead] = useState(() => isSample ? createMetaLeadTracker("book_sample") : undefined);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -50,6 +54,9 @@ export function SignupForm({ mode = "general" }: { mode?: "general" | "sample" }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (isSubmitting.current) return;
+    isSubmitting.current = true;
+
     const formElement = event.currentTarget;
     setStatus("submitting");
     setMessage("");
@@ -58,10 +65,8 @@ export function SignupForm({ mode = "general" }: { mode?: "general" | "sample" }
     const form = new FormData(formElement);
 
     try {
-      const response = await fetch("/api/subscribe", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      const result = await submitSignup(
+        {
           email: form.get("email"),
           interest: form.get("interest"),
           utm_source: form.get("utm_source"),
@@ -69,11 +74,9 @@ export function SignupForm({ mode = "general" }: { mode?: "general" | "sample" }
           utm_campaign: form.get("utm_campaign"),
           utm_content: form.get("utm_content"),
           utm_term: form.get("utm_term"),
-        }),
-      });
-      const result = await response.json() as { message?: string; sampleUrl?: string };
-
-      if (!response.ok) throw new Error(result.message || "Signup failed.");
+        },
+        { trackMetaLead: trackSampleLead },
+      );
 
       setStatus("success");
       setMessage(result.message || "You're on the TRADE HUSTL3 list.");
@@ -87,6 +90,8 @@ export function SignupForm({ mode = "general" }: { mode?: "general" | "sample" }
     } catch (error) {
       setStatus("error");
       setMessage(error instanceof Error ? error.message : "We couldn't save your signup. Please try again.");
+    } finally {
+      isSubmitting.current = false;
     }
   }
 

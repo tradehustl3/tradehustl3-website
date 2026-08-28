@@ -140,7 +140,12 @@ export default function Home() {
             <p>Discover ten skilled-trades careers with strong entry points and room to grow. Built for real opportunities in a high-demand industry.</p>
             <details className="guide-signup">
               <summary data-cta="top-10-trades" data-cta-location="conversion-card">Sign up now <span aria-hidden="true">→</span></summary>
-              <ResourceForm resourceName="Top 10 Trades PDF" buttonLabel="Send me the free PDF" includeInterest />
+              <ResourceForm
+                resourceName="Top 10 Trades PDF"
+                buttonLabel="Send me the free PDF"
+                includeInterest
+                metaLeadContentName="top_10_trades"
+              />
             </details>
             <div className="guide-benefits" aria-label="Guide career benefits">
               {guideBenefits.map((benefit) => <div key={benefit.label}><span aria-hidden="true">{benefit.icon}</span><p>{benefit.label}</p></div>)}
@@ -211,6 +216,7 @@ export default function Home() {
                 includeFirstName={false}
                 ctaId="book-sample"
                 ctaLocation="sample-card"
+                metaLeadContentName="book_sample"
               />
             </div>
             <p className="sample-support">No purchase required. Get the sample sent directly to your email.</p>

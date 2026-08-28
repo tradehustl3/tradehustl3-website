@@ -1,6 +1,8 @@
 'use client';
 
-import { FormEvent, useId, useState } from 'react';
+import { FormEvent, useId, useRef, useState } from 'react';
+import { createMetaLeadTracker, type MetaLeadContentName } from './meta-pixel';
+import { submitSignup } from './signup-request';
 
 type ResourceFormProps = {
   resourceName: string;
@@ -9,6 +11,7 @@ type ResourceFormProps = {
   includeFirstName?: boolean;
   ctaId?: string;
   ctaLocation?: string;
+  metaLeadContentName?: MetaLeadContentName;
 };
 
 // The free "Top 10 Trades for 2026-2027" guide IS the repo's only free PDF:
@@ -46,14 +49,22 @@ export function ResourceForm({
   includeFirstName = true,
   ctaId,
   ctaLocation,
+  metaLeadContentName,
 }: ResourceFormProps) {
   const id = useId();
+  const isSubmitting = useRef(false);
   const [status, setStatus] = useState<Status>('idle');
   const [message, setMessage] = useState('No spam. Practical skilled-trades guidance only.');
   const [guideUrl, setGuideUrl] = useState('');
+  const [trackMetaLead] = useState(() => (
+    metaLeadContentName ? createMetaLeadTracker(metaLeadContentName) : undefined
+  ));
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (isSubmitting.current) return;
+    isSubmitting.current = true;
+
     const data = new FormData(event.currentTarget);
     const email = String(data.get('email') ?? '').trim();
 
@@ -62,21 +73,21 @@ export function ResourceForm({
     setGuideUrl('');
 
     try {
-      const response = await fetch('/api/subscribe', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, interest: GUIDE_INTEREST, ...collectUtm() }),
-      });
-      const result = (await response.json()) as { message?: string; sampleUrl?: string };
-      if (!response.ok) {
-        throw new Error(result.message || 'We could not send the guide. Please try again.');
-      }
+      const result = await submitSignup(
+        { email, interest: GUIDE_INTEREST, ...collectUtm() },
+        {
+          trackMetaLead,
+          fallbackErrorMessage: 'We could not send the guide. Please try again.',
+        },
+      );
       setStatus('success');
       setMessage(result.message || "You're on the list. Check your inbox for the free guide.");
       setGuideUrl(result.sampleUrl || '');
     } catch (error) {
       setStatus('error');
       setMessage(error instanceof Error ? error.message : 'We could not send the guide. Please try again.');
+    } finally {
+      isSubmitting.current = false;
     }
   }
 
