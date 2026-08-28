@@ -1,5 +1,6 @@
 import { ComingSoon } from './coming-soon';
 import { ResourceForm } from './resource-form';
+import { SocialLinks } from './social-links';
 import Image from 'next/image';
 
 const resumeBenefits = [
@@ -188,7 +189,6 @@ export default function Home() {
 
       <section className="book-section" id="book">
         <div className="book-cover" aria-label="Book cover representation using the supplied TRADE HUSTL3 brand artwork">
-          <span className="book-kicker">Enter. Earn. Elevate.</span>
           <Image className="book-cover-image" src="/trade-hustl3-book-cover.jpg" alt="TRADE HUSTL3 book cover" width={430} height={645} />
         </div>
         <div className="book-copy">
@@ -201,8 +201,29 @@ export default function Home() {
       </section>
 
       <section className="founder-section section-shell" id="book-details">
-        <div className="founder-photo"><Image src="/zachary-ellis.png" alt="Zachary Ellis, founder of TRADE HUSTL3" width={520} height={650} /><span>Founder / Author / Trades professional</span></div>
-        <div className="founder-copy"><p className="eyebrow"><span>05</span> Built from the field</p><h2>Real experience.<br /><em>No empty promises.</em></h2><p>TRADE HUSTL3 was built by Zachary Ellis—also known as Da Maintenance Mane—a trades professional with more than ten years of hands-on HVAC, facilities-maintenance, and leadership experience.</p><blockquote>“Built by Hustle, Backed by Trades.”</blockquote></div>
+        <div className="founder-photo">
+          <Image src="/zachary-ellis.png" alt="Zachary Ellis, known as Da Maintenance Mane, founder of TRADE HUSTL3" width={520} height={650} />
+          <span>Da Maintenance Mane</span>
+        </div>
+        <div className="founder-copy">
+          <p className="eyebrow"><span>05</span> — Built from the field</p>
+          <h2>Built in the field.<br />Built for <em>what&apos;s next.</em></h2>
+          <p className="founder-lede">This wasn&apos;t built from the sidelines. It was built from the work.</p>
+          <p>TRADE HUSTL3 was created by Zachary Ellis — Da Maintenance Mane — after more than a decade inside the skilled trades. Rooftops. Mechanical rooms. Service calls. Work orders. Long days. Leadership. Lessons earned the hard way.</p>
+          <p>But TRADE HUSTL3 isn&apos;t about one man&apos;s résumé. It&apos;s about what happens when real field knowledge gets turned into a pathway for the next generation.</p>
+          <p>The mission is bigger than getting a job. It&apos;s about learning a skill, building leverage, increasing your earning power, and creating options for your life.</p>
+          <blockquote className="founder-manifesto">
+            The field built the knowledge.<br />
+            The hustle built the mission.<br />
+            <em>Now we pass it forward.</em>
+          </blockquote>
+          <p className="founder-sign"><strong>Da Maintenance Mane</strong><span>Founder &amp; Author, TRADE HUSTL3</span></p>
+          <ul className="founder-path" aria-label="The TRADE HUSTL3 path">
+            <li><span>Enter</span><p>Find your way into the skilled trades.</p></li>
+            <li><span>Earn</span><p>Turn valuable skills into real earning power.</p></li>
+            <li><span>Elevate</span><p>Build experience, leverage, ownership, and options.</p></li>
+          </ul>
+        </div>
       </section>
 
       <section className="trust-section section-shell">
@@ -218,6 +239,10 @@ export default function Home() {
       <footer>
         <div><Image src="/trade-hustl3-logo.png" alt="TRADE HUSTL3 logo" width={46} height={46} /><strong>TRADE HUSTL3 LLC</strong></div>
         <p>Built by Hustle, Backed by Trades.</p>
+        <div className="footer-social">
+          <p className="footer-social-title">Follow TRADE HUSTL3</p>
+          <SocialLinks />
+        </div>
         <nav className="footer-nav" aria-label="Footer">
           <a href="/resume-builder">Resume Builder</a>
           <a href="/book">The Book</a>

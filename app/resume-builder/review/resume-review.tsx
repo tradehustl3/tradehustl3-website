@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useState } from "react";
+import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 
 type Resume = {
   resumeId: string;
@@ -30,6 +30,9 @@ export function ResumeReview() {
   const [resumeId] = useState(() => typeof window === "undefined"
     ? ""
     : new URLSearchParams(window.location.search).get("resume_id") ?? "");
+  const [autoBuild] = useState(() => typeof window !== "undefined"
+    && new URLSearchParams(window.location.search).get("build") === "1");
+  const autoBuildFired = useRef(false);
   const [resume, setResume] = useState<Resume | null>(null);
   const [loading, setLoading] = useState(true);
   const [working, setWorking] = useState(false);
@@ -64,6 +67,18 @@ export function ResumeReview() {
     }
     queueMicrotask(() => void load(resumeId));
   }, [load, resumeId]);
+
+  // The guided wizard sends the user here with ?build=1 to start the first
+  // protected preview automatically. This still routes through the same
+  // /generate endpoint, entitlement checks, and intake-correction handling.
+  useEffect(() => {
+    if (!autoBuild || autoBuildFired.current) return;
+    if (loading || working || !resume) return;
+    if (resume.previewUrl || resume.paid) return;
+    autoBuildFired.current = true;
+    void runGeneration();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoBuild, loading, working, resume]);
 
   async function runGeneration(correctionRequest?: string) {
     if (!resumeId) return;
