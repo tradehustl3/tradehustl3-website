@@ -204,7 +204,15 @@ export default function Home() {
               <li><strong>Your next move</strong><span>The starting point for a practical 90-day plan.</span></li>
             </ul>
             <p className="sample-benefit">Free <span aria-hidden="true">•</span> Instant access <span aria-hidden="true">•</span> Email delivery</p>
-            <a className="button full-button" href="/book#sample" data-cta="book-sample" data-cta-location="sample-card">Read 7 pages free <span aria-hidden="true">→</span></a>
+            <div className="sample-signup-box">
+              <ResourceForm
+                resourceName="free 7-page book sample"
+                buttonLabel="Email me the 7 pages"
+                includeFirstName={false}
+                ctaId="book-sample"
+                ctaLocation="sample-card"
+              />
+            </div>
             <p className="sample-support">No purchase required. Get the sample sent directly to your email.</p>
             <a className="sample-secondary" href="/book" data-cta="the-book" data-cta-location="sample-card">Want the full roadmap? Explore the complete book <span aria-hidden="true">→</span></a>
           </div>
@@ -287,4 +295,3 @@ export default function Home() {
     </main>
   );
 }
-
