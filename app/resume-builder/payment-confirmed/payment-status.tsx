@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { trackVerifiedMetaPurchase, type VerifiedPurchase } from "../../meta-commerce";
 
 type Stage = "checking" | "waiting" | "ready" | "error";
 
@@ -9,25 +8,20 @@ export function PaymentStatus() {
   const [stage, setStage] = useState<Stage>("checking");
   const [message, setMessage] = useState("Confirming your payment with the secure checkout provider…");
   const resumeId = useRef("");
-  const checkoutSessionId = useRef("");
   const attempts = useRef(0);
 
   const check = useCallback(async () => {
-    if (!resumeId.current || !checkoutSessionId.current) return;
+    if (!resumeId.current) return;
     setStage("checking");
     try {
-      const response = await fetch(
-        `/api/resume-builder/resumes/${encodeURIComponent(resumeId.current)}/purchase-status?session_id=${encodeURIComponent(checkoutSessionId.current)}`,
-        { credentials: "same-origin", cache: "no-store" },
-      );
+      const response = await fetch(`/api/resume-builder/resumes/${encodeURIComponent(resumeId.current)}`, { credentials: "same-origin", cache: "no-store" });
       if (response.status === 401) {
         window.location.assign("/resume-builder");
         return;
       }
-      const result = await response.json() as VerifiedPurchase & { message?: string };
+      const result = await response.json() as { resume?: { paid: boolean }; message?: string };
       if (!response.ok) throw new Error(result.message || "We could not check the payment yet.");
-      if (result.verified) {
-        trackVerifiedMetaPurchase(result, "resume_builder");
+      if (result.resume?.paid) {
         setStage("ready");
         setMessage("Payment confirmed. Your clean resume and three correction runs are unlocked.");
         window.setTimeout(() => window.location.assign(`/resume-builder/review?resume_id=${encodeURIComponent(resumeId.current)}`), 900);
@@ -42,12 +36,10 @@ export function PaymentStatus() {
   }, []);
 
   useEffect(() => {
-    const search = new URLSearchParams(window.location.search);
-    resumeId.current = search.get("resume_id") ?? "";
-    checkoutSessionId.current = search.get("session_id") ?? "";
-    if (!resumeId.current || !checkoutSessionId.current) {
+    resumeId.current = new URLSearchParams(window.location.search).get("resume_id") ?? "";
+    if (!resumeId.current) {
       setStage("error");
-      setMessage("This payment return is missing its secure checkout reference.");
+      setMessage("This payment return is missing the resume reference.");
       return;
     }
     void check();
