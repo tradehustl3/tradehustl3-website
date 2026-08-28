@@ -1,12 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createTrackedCheckout } from "../meta-commerce";
 
 const RELEASE_TIME = new Date("2026-09-15T00:00:00-04:00").getTime();
-const EBOOK_PAYMENT_LINK = "https://buy.stripe.com/4gM5kwaQ96EscGf2uKbfO02";
 
 export default function LaunchPurchaseButton() {
   const [isAvailable, setIsAvailable] = useState(false);
+  const [isOpening, setIsOpening] = useState(false);
+  const [message, setMessage] = useState("");
 
   useEffect(() => {
     const updateAvailability = () => setIsAvailable(Date.now() >= RELEASE_TIME);
@@ -26,9 +28,24 @@ export default function LaunchPurchaseButton() {
     );
   }
 
+  async function startCheckout() {
+    setIsOpening(true);
+    setMessage("");
+    try {
+      const checkout = await createTrackedCheckout("/api/ebook-checkout", "ebook");
+      window.location.assign(checkout.checkoutUrl);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Secure checkout is temporarily unavailable.");
+      setIsOpening(false);
+    }
+  }
+
   return (
-    <a className="button button-primary ebook-buy-button" href={EBOOK_PAYMENT_LINK}>
-      Buy the eBook — $9.99 <span>↗</span>
-    </a>
+    <div>
+      <button className="button button-primary ebook-buy-button" type="button" disabled={isOpening} onClick={() => void startCheckout()}>
+        {isOpening ? "Opening secure checkout…" : "Buy the eBook — $9.99"} <span>↗</span>
+      </button>
+      {message ? <p role="status">{message}</p> : null}
+    </div>
   );
 }

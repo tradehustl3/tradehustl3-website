@@ -567,13 +567,14 @@ async function createCheckout(request: Request, env: ResumeBuilderEnv, resumeId:
   ).bind(orderId, user.userId, resumeId, user.email, RESUME_PLAN, RESUME_PRICE_CENTS).run();
 
   const form = new URLSearchParams();
+  const checkoutOrigin = new URL(request.url).origin;
   form.set("mode", "payment");
   form.set("line_items[0][price]", priceId);
   form.set("line_items[0][quantity]", "1");
   form.set("customer_email", user.email);
   form.set("client_reference_id", orderId);
-  form.set("success_url", `${SITE_URL}/resume-builder/payment-confirmed?resume_id=${encodeURIComponent(resumeId)}&session_id={CHECKOUT_SESSION_ID}`);
-  form.set("cancel_url", `${SITE_URL}/resume-builder/review?resume_id=${encodeURIComponent(resumeId)}`);
+  form.set("success_url", `${checkoutOrigin}/resume-builder/payment-confirmed?resume_id=${encodeURIComponent(resumeId)}&session_id={CHECKOUT_SESSION_ID}`);
+  form.set("cancel_url", `${checkoutOrigin}/resume-builder/review?resume_id=${encodeURIComponent(resumeId)}`);
   form.set("metadata[product]", "resume_builder_mvp");
   form.set("metadata[order_id]", orderId);
   form.set("metadata[resume_id]", resumeId);
@@ -606,7 +607,44 @@ async function createCheckout(request: Request, env: ResumeBuilderEnv, resumeId:
   }
   await env.DB.prepare("UPDATE resume_orders SET stripe_session_id = ? WHERE order_id = ?")
     .bind(stripe.id, orderId).run();
-  return json({ ok: true, checkoutUrl: stripe.url });
+  return json({ ok: true, checkoutUrl: stripe.url, checkoutSessionId: stripe.id });
+}
+
+async function getPurchaseStatus(request: Request, env: ResumeBuilderEnv, resumeId: string): Promise<Response> {
+  if (request.method !== "GET") return methodNotAllowed("GET");
+  const user = await requireUser(request, env);
+  if (!user) return json({ ok: false, message: "Sign in to continue." }, 401);
+  const sessionId = new URL(request.url).searchParams.get("session_id")?.trim() ?? "";
+  if (!/^cs_[A-Za-z0-9_]+$/.test(sessionId)) {
+    return json({ ok: true, verified: false });
+  }
+
+  const purchase = await env.DB.prepare(
+    `SELECT o.stripe_session_id
+     FROM resume_orders o
+     INNER JOIN entitlements e ON e.source_order_id = o.order_id
+     WHERE o.stripe_session_id = ?
+       AND o.resume_id = ?
+       AND o.user_id = ?
+       AND o.status = 'paid'
+       AND o.amount_total = ?
+       AND o.currency = 'usd'
+       AND o.stripe_payment_intent_id IS NOT NULL
+       AND e.resume_id = o.resume_id
+       AND e.user_id = o.user_id
+       AND e.status = 'active'
+     LIMIT 1`,
+  ).bind(sessionId, resumeId, user.userId, RESUME_PRICE_CENTS).first<{ stripe_session_id: string }>();
+
+  if (!purchase) return json({ ok: true, verified: false });
+  return json({
+    ok: true,
+    verified: true,
+    transactionId: purchase.stripe_session_id,
+    contentName: "resume_builder",
+    value: 9.99,
+    currency: "USD",
+  });
 }
 
 function hexToBytes(value: string): Uint8Array | null {
@@ -1528,6 +1566,8 @@ export async function handleResumeBuilderRoute(
 
     const checkoutMatch = pathname.match(/^\/api\/resume-builder\/resumes\/([^/]+)\/checkout$/);
     if (checkoutMatch) return createCheckout(request, env, checkoutMatch[1]);
+    const purchaseStatusMatch = pathname.match(/^\/api\/resume-builder\/resumes\/([^/]+)\/purchase-status$/);
+    if (purchaseStatusMatch) return getPurchaseStatus(request, env, purchaseStatusMatch[1]);
     const generationMatch = pathname.match(/^\/api\/resume-builder\/resumes\/([^/]+)\/generate$/);
     if (generationMatch) return generateResume(request, env, generationMatch[1], dependencies);
     const fileMatch = pathname.match(/^\/api\/resume-builder\/resumes\/([^/]+)\/files\/(pdf|docx|preview)$/);
