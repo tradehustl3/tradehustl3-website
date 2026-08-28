@@ -217,7 +217,13 @@ function objectRecord(value: unknown): Record<string, unknown> | null {
 
 function hasTrustedOrigin(request: Request): boolean {
   const origin = request.headers.get("Origin");
-  return Boolean(origin && origin === new URL(request.url).origin);
+  if (!origin) return true;
+  try {
+    const parsedOrigin = new URL(origin).origin;
+    return parsedOrigin === SITE_URL || parsedOrigin === new URL(request.url).origin;
+  } catch {
+    return false;
+  }
 }
 
 async function createEbookCheckout(request: Request, env: EbookStripeEnv): Promise<Response> {
