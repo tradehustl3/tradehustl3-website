@@ -189,17 +189,20 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="book-section" id="book">
-        <div className="book-cover" aria-label="Book cover representation using the supplied TRADE HUSTL3 brand artwork">
-          <Image className="book-cover-image" src="/trade-hustl3-book-cover.jpg" alt="TRADE HUSTL3 book cover" width={430} height={645} />
-        </div>
-        <div className="book-copy">
-          <p className="eyebrow"><span>04</span> The field guide</p>
-          <h2>Not just a book.<br /><em>A starting line.</em></h2>
-          <p className="book-lede">TRADE HUSTL3 introduces readers to skilled-trades careers, earning potential, advancement, business ownership, and a practical 90-day action plan.</p>
-          <dl className="book-meta"><div><dt>Title</dt><dd>TRADE HUSTL3</dd></div><div><dt>Author</dt><dd>Zachary Ellis <span>/ Da Maintenance Mane</span></dd></div><div><dt>ISBN</dt><dd>9798193043355</dd></div><div><dt>Release</dt><dd>September 15, 2026</dd></div></dl>
-          <div className="hero-actions"><a className="text-link" href="#book-details">Explore the book <span aria-hidden="true">↓</span></a></div>
-        </div>
+      <section className="sample-cta section-shell" id="book" aria-labelledby="sample-cta-title">
+        <article className="conversion-card sample-card">
+          <div className="sample-card-art">
+            <Image src="/trade-hustl3-book-cover.jpg" alt="TRADE HUSTL3: Built by Hustle, Backed by Trades — book cover" width={300} height={450} />
+          </div>
+          <div className="sample-card-copy">
+            <p className="eyebrow"><span>04</span> Free 7-page book sample</p>
+            <h3 id="sample-cta-title">Get Inside TRADE HUSTL3 Before You Buy.</h3>
+            <p>Read the first seven pages of <em>TRADE HUSTL3: Built by Hustle, Backed by Trades</em> and see how the book approaches skilled trades, career opportunity, money, and building your next move.</p>
+            <p className="sample-benefit">Free <span aria-hidden="true">•</span> Instant access <span aria-hidden="true">•</span> Email delivery</p>
+            <a className="button full-button" href="/book#sample" data-cta="book-sample" data-cta-location="sample-card">Read 7 pages free <span aria-hidden="true">→</span></a>
+            <p className="sample-support">No purchase required. Get the sample sent directly to your email.</p>
+          </div>
+        </article>
       </section>
 
       <section className="founder-section section-shell" id="book-details">
@@ -231,22 +234,6 @@ export default function Home() {
       <section className="trust-section section-shell">
         <p className="eyebrow"><span>06</span> The standard</p>
         <div className="trust-grid">{trustPoints.map((point, index) => <div key={point}><span>{String(index + 1).padStart(2, '0')}</span><p>{point}</p></div>)}</div>
-      </section>
-
-      <section className="sample-cta section-shell" aria-labelledby="sample-cta-title">
-        <article className="conversion-card sample-card">
-          <div className="sample-card-art">
-            <Image src="/trade-hustl3-book-cover.jpg" alt="TRADE HUSTL3: Built by Hustle, Backed by Trades — book cover" width={300} height={450} />
-          </div>
-          <div className="sample-card-copy">
-            <p className="sample-eyebrow">Free 7-page book sample</p>
-            <h3 id="sample-cta-title">Get Inside TRADE HUSTL3 Before You Buy.</h3>
-            <p>Read the first seven pages of <em>TRADE HUSTL3: Built by Hustle, Backed by Trades</em> and see how the book approaches skilled trades, career opportunity, money, and building your next move.</p>
-            <p className="sample-benefit">Free <span aria-hidden="true">•</span> Instant access <span aria-hidden="true">•</span> Email delivery</p>
-            <a className="button full-button" href="/book#sample" data-cta="book-sample" data-cta-location="sample-card">Read 7 pages free <span aria-hidden="true">→</span></a>
-            <p className="sample-support">No purchase required. Get the sample sent directly to your email.</p>
-          </div>
-        </article>
       </section>
 
       <section className="ecosystem-section section-shell" aria-labelledby="ecosystem-title">
