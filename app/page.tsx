@@ -198,9 +198,15 @@ export default function Home() {
             <p className="eyebrow"><span>04</span> Free 7-page book sample</p>
             <h3 id="sample-cta-title">Get Inside TRADE HUSTL3 Before You Buy.</h3>
             <p>Read the first seven pages of <em>TRADE HUSTL3: Built by Hustle, Backed by Trades</em> and see how the book approaches skilled trades, career opportunity, money, and building your next move.</p>
+            <ul className="sample-gets" aria-label="What the sample covers">
+              <li><strong>The approach</strong><span>How TRADE HUSTL3 frames a skilled-trades career.</span></li>
+              <li><strong>Opportunity &amp; money</strong><span>Where the earning power and advancement really are.</span></li>
+              <li><strong>Your next move</strong><span>The starting point for a practical 90-day plan.</span></li>
+            </ul>
             <p className="sample-benefit">Free <span aria-hidden="true">•</span> Instant access <span aria-hidden="true">•</span> Email delivery</p>
             <a className="button full-button" href="/book#sample" data-cta="book-sample" data-cta-location="sample-card">Read 7 pages free <span aria-hidden="true">→</span></a>
             <p className="sample-support">No purchase required. Get the sample sent directly to your email.</p>
+            <a className="sample-secondary" href="/book" data-cta="the-book" data-cta-location="sample-card">Want the full roadmap? Explore the complete book <span aria-hidden="true">→</span></a>
           </div>
         </article>
       </section>
@@ -251,6 +257,12 @@ export default function Home() {
             <p>Guides, tools, and templates to keep building leverage after you start.</p>
           </li>
         </ul>
+        <div className="ecosystem-now">
+          <span>Available now</span>
+          <a href="/resume-builder" data-cta="resume-builder" data-cta-location="ecosystem">Resume Builder <span aria-hidden="true">→</span></a>
+          <a href="#resources" data-cta="top-10-trades" data-cta-location="ecosystem">Top 10 Trades <span aria-hidden="true">→</span></a>
+          <a href="/book" data-cta="the-book" data-cta-location="ecosystem">The Book <span aria-hidden="true">→</span></a>
+        </div>
       </section>
 
       <footer>
