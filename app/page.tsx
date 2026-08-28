@@ -1,4 +1,5 @@
 import { ComingSoon } from './coming-soon';
+import { CtaAnalytics } from './cta-analytics';
 import { ResourceForm } from './resource-form';
 import { SocialLinks } from './social-links';
 import Image from 'next/image';
@@ -59,13 +60,14 @@ export default function Home() {
   return (
     <main>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }} />
+      <CtaAnalytics />
       <header className="site-header">
         <a className="brand" href="#top" aria-label="TRADE HUSTL3 home">
           <span className="brand-mark"><Image src="/trade-hustl3-logo.png" alt="TRADE HUSTL3 logo" width={46} height={46} /></span><span className="brand-wordmark">TRADE HUSTL<span className="brand-three">3</span></span>
         </a>
         <nav aria-label="Primary navigation">
           <a href="#resources">Free guides</a><a href="#book">The book</a>
-          <a className="button button-small" href="/resume-builder">Build my resume — $9.99</a>
+          <a className="button button-small" href="/resume-builder" data-cta="resume-builder" data-cta-location="header">Build my resume — $9.99</a>
         </nav>
       </header>
 
@@ -77,8 +79,8 @@ export default function Home() {
           <p className="hero-product-title">The Resume Builder Built to Lead the Skilled Trades</p>
           <p className="hero-lede">Professional skilled-trades resume builder for HVAC, electrical, plumbing, welding, facilities maintenance, construction, and trade professionals who want stronger resumes and better opportunities.</p>
           <div className="hero-actions">
-            <a className="button" href="/resume-builder">Build my resume — $9.99 <span aria-hidden="true">↗</span></a>
-            <a className="button button-secondary" href="#resources">Get the free trade guides <span aria-hidden="true">↓</span></a>
+            <a className="button" href="/resume-builder" data-cta="resume-builder" data-cta-location="hero">Build my resume — $9.99 <span aria-hidden="true">↗</span></a>
+            <a className="button button-secondary" href="#resources" data-cta="free-guides" data-cta-location="hero">Get the free trade guides <span aria-hidden="true">↓</span></a>
           </div>
           <div className="path-label" aria-label="Enter. Earn. Elevate."><span>Enter.</span><i /><span>Earn.</span><i /><span>Elevate.</span><i /></div>
           <p className="hero-intelligence"><span aria-hidden="true">◆</span> Powered by HUSTL3 BOT — Intelligent Enhancement for Skilled Trades Resumes</p>
@@ -121,7 +123,7 @@ export default function Home() {
             <div className="resume-service-points">
               {resumeServicePoints.map((item) => <span key={item.label}><i aria-hidden="true">{item.icon}</i>{item.label}</span>)}
             </div>
-            <a className="button full-button card-cta" href="/resume-builder">Build my resume — $9.99 <span aria-hidden="true">→</span></a>
+            <a className="button full-button card-cta" href="/resume-builder" data-cta="resume-builder" data-cta-location="conversion-card">Build my resume — $9.99 <span aria-hidden="true">→</span></a>
           </article>
 
           <article className="conversion-card guide-card" id="top-trades-guide">
@@ -137,7 +139,7 @@ export default function Home() {
             <h3>Top 10 Trades<br />for 2026–2027</h3>
             <p>Discover ten skilled-trades careers with strong entry points and room to grow. Built for real opportunities in a high-demand industry.</p>
             <details className="guide-signup">
-              <summary>Sign up now <span aria-hidden="true">→</span></summary>
+              <summary data-cta="top-10-trades" data-cta-location="conversion-card">Sign up now <span aria-hidden="true">→</span></summary>
               <ResourceForm resourceName="Top 10 Trades PDF" buttonLabel="Send me the free PDF" includeInterest />
             </details>
             <div className="guide-benefits" aria-label="Guide career benefits">
@@ -168,14 +170,14 @@ export default function Home() {
       <section className="steps-section section-shell" aria-labelledby="pick-next-title">
         <div className="section-heading compact"><p className="eyebrow"><span>03</span> Pick your next HUSTL3</p><h2 id="pick-next-title">Start where you are.<br /><em>Build what&apos;s next.</em></h2></div>
         <div className="tool-grid">
-          <a className="tool-card" href="#resources">
+          <a className="tool-card" href="#resources" data-cta="top-10-trades" data-cta-location="steps">
             <span className="tool-badge">Start here</span>
             <span className="tool-index" aria-hidden="true">01</span>
             <span className="tool-card-title">Choose Your Path</span>
             <span className="tool-card-copy">Explore skilled trades and get the free Top 10 Trades 2026–2027 guide.</span>
             <span className="tool-cta">Get the free guide <span aria-hidden="true">→</span></span>
           </a>
-          <a className="tool-card is-live" href="/resume-builder">
+          <a className="tool-card is-live" href="/resume-builder" data-cta="resume-builder" data-cta-location="steps">
             <span className="tool-badge">Live now</span>
             <span className="tool-index" aria-hidden="true">02</span>
             <span className="tool-card-title">Build Your Tools</span>
@@ -231,9 +233,37 @@ export default function Home() {
         <div className="trust-grid">{trustPoints.map((point, index) => <div key={point}><span>{String(index + 1).padStart(2, '0')}</span><p>{point}</p></div>)}</div>
       </section>
 
-      <section className="final-cta section-shell">
-        <p className="eyebrow"><span>07</span> Your next move</p><h2>Bring your skills.<br /><em>We&apos;ll help shape the story.</em></h2><p>One payment. No subscription. A professional resume built for where you&apos;re headed.</p>
-        <a className="button" href="/resume-builder">Build my resume — $9.99 <span aria-hidden="true">↗</span></a>
+      <section className="sample-cta section-shell" aria-labelledby="sample-cta-title">
+        <article className="conversion-card sample-card">
+          <div className="sample-card-art">
+            <Image src="/trade-hustl3-book-cover.jpg" alt="TRADE HUSTL3: Built by Hustle, Backed by Trades — book cover" width={300} height={450} />
+          </div>
+          <div className="sample-card-copy">
+            <p className="sample-eyebrow">Free 7-page book sample</p>
+            <h3 id="sample-cta-title">Get Inside TRADE HUSTL3 Before You Buy.</h3>
+            <p>Read the first seven pages of <em>TRADE HUSTL3: Built by Hustle, Backed by Trades</em> and see how the book approaches skilled trades, career opportunity, money, and building your next move.</p>
+            <p className="sample-benefit">Free <span aria-hidden="true">•</span> Instant access <span aria-hidden="true">•</span> Email delivery</p>
+            <a className="button full-button" href="/book#sample" data-cta="book-sample" data-cta-location="sample-card">Read 7 pages free <span aria-hidden="true">→</span></a>
+            <p className="sample-support">No purchase required. Get the sample sent directly to your email.</p>
+          </div>
+        </article>
+      </section>
+
+      <section className="ecosystem-section section-shell" aria-labelledby="ecosystem-title">
+        <p className="eyebrow"><span>07</span> The TRADE HUSTL3 ecosystem</p>
+        <h2 id="ecosystem-title">More is <em>on the way.</em></h2>
+        <ul className="ecosystem-grid">
+          <li>
+            <span className="ecosystem-tag">Coming soon</span>
+            <h3>TRADE HUSTL3 Gear</h3>
+            <p>Jobsite-ready apparel and gear built for people who do the work.</p>
+          </li>
+          <li>
+            <span className="ecosystem-tag">Coming soon</span>
+            <h3>TRADE HUSTL3 Resources</h3>
+            <p>Guides, tools, and templates to keep building leverage after you start.</p>
+          </li>
+        </ul>
       </section>
 
       <footer>
