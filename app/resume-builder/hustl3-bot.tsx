@@ -64,7 +64,7 @@ export function Hustl3Bot({
         onClick={() => setOpen((value) => !value)}
       >
         <span className="rb-bot-avatar" aria-hidden="true">
-          <Image src="/hustl3-bot-branded.png" alt="" width={72} height={72} />
+          <Image src="/hustl3-bot-branded-transparent.png" alt="" width={44} height={72} />
         </span>
         <span className="rb-bot-toggle-text">
           <strong>HUSTL3 BOT</strong>
@@ -75,7 +75,7 @@ export function Hustl3Bot({
 
       <div id={panelId} className="rb-bot-body" data-open={open}>
         <div className="rb-bot-avatar rb-bot-avatar-lg" aria-hidden="true">
-          <Image src="/hustl3-bot-branded.png" alt="" width={128} height={128} priority />
+          <Image src="/hustl3-bot-branded-transparent.png" alt="" width={264} height={429} priority />
         </div>
         <p className="rb-bot-name">HUSTL3 BOT<span>ON THE JOB</span></p>
         <ul className="rb-bot-tips">
