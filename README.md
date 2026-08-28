@@ -41,9 +41,8 @@ Production setup:
 - Apply the numbered D1 migrations through `drizzle/0003_ebook_refund_safety.sql` in order. Keep `drizzle/0003_ebook_refund_safety_down.sql` as the reviewed rollback procedure; do not run it during deployment.
 - Add `STRIPE_WEBHOOK_SECRET` as an encrypted runtime secret.
 - Add `STRIPE_EBOOK_PAYMENT_LINK_ID` as a regular runtime variable.
-- Add `STRIPE_SECRET_KEY` and `STRIPE_EBOOK_PRICE_ID` as encrypted/regular runtime values for the server-created checkout flow.
 - Create one Stripe webhook at `https://tradehustl3.com/api/stripe/webhook` subscribed to `checkout.session.completed`, `checkout.session.async_payment_succeeded`, and `charge.refunded`.
-- Keep the Payment Link post-payment redirect at `https://tradehustl3.com/book/order-confirmed?session_id={CHECKOUT_SESSION_ID}` for legacy/preorder sessions. Server-created eBook sessions use the same redirect automatically.
+- Set the Payment Link post-payment redirect to `https://tradehustl3.com/book/order-confirmed?session_id={CHECKOUT_SESSION_ID}`.
 - Confirm the deployed Worker has the `*/5 * * * *` Cron Trigger from `vite.config.ts`.
 
 The webhook accepts only paid USD sessions for the configured Payment Link at exactly $9.99. Successful preorder customers are recorded in D1 and receive an immediate confirmation through Brevo. The release sweep sends a private download link only to orders that remain fully paid. A full refund revokes pending delivery and download access; a partial refund records the refunded amount while leaving access active. Refund events are stored separately so a refund delivered before its matching checkout event is still reconciled safely.
