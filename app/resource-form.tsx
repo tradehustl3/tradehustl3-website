@@ -6,6 +6,9 @@ type ResourceFormProps = {
   resourceName: string;
   buttonLabel: string;
   includeInterest?: boolean;
+  includeFirstName?: boolean;
+  ctaId?: string;
+  ctaLocation?: string;
 };
 
 // The free "Top 10 Trades for 2026-2027" guide IS the repo's only free PDF:
@@ -36,7 +39,14 @@ function collectUtm(): Record<string, string> {
 
 type Status = 'idle' | 'submitting' | 'success' | 'error';
 
-export function ResourceForm({ resourceName, buttonLabel, includeInterest = false }: ResourceFormProps) {
+export function ResourceForm({
+  resourceName,
+  buttonLabel,
+  includeInterest = false,
+  includeFirstName = true,
+  ctaId,
+  ctaLocation,
+}: ResourceFormProps) {
   const id = useId();
   const [status, setStatus] = useState<Status>('idle');
   const [message, setMessage] = useState('No spam. Practical skilled-trades guidance only.');
@@ -72,10 +82,12 @@ export function ResourceForm({ resourceName, buttonLabel, includeInterest = fals
 
   return (
     <form className="resource-form" onSubmit={handleSubmit} aria-describedby={`${id}-status`}>
-      <div className="field-row">
-        <label htmlFor={`${id}-name`}>First name</label>
-        <input id={`${id}-name`} name="firstName" autoComplete="given-name" />
-      </div>
+      {includeFirstName ? (
+        <div className="field-row">
+          <label htmlFor={`${id}-name`}>First name</label>
+          <input id={`${id}-name`} name="firstName" autoComplete="given-name" />
+        </div>
+      ) : null}
       <div className="field-row">
         <label htmlFor={`${id}-email`}>Email address</label>
         <input id={`${id}-email`} name="email" type="email" autoComplete="email" required />
@@ -91,7 +103,13 @@ export function ResourceForm({ resourceName, buttonLabel, includeInterest = fals
           </select>
         </div>
       ) : null}
-      <button className="button form-button" type="submit" disabled={status === 'submitting'}>
+      <button
+        className="button form-button"
+        type="submit"
+        disabled={status === 'submitting'}
+        data-cta={ctaId}
+        data-cta-location={ctaLocation}
+      >
         {status === 'submitting' ? 'Sending…' : buttonLabel} <span aria-hidden="true">↗</span>
       </button>
       <p
