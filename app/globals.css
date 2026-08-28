@@ -246,7 +246,8 @@ h2 em { color: var(--red); font-style: normal; }
 .sample-signup-box { max-width: 560px; margin-top: 2px; padding: 16px; border: 1px solid #123d8226; background: #f7f4ed; }
 .sample-signup-box .resource-form { grid-template-columns: minmax(0, 1fr) minmax(190px, .62fr); gap: 10px 12px; margin: 0; }
 .sample-signup-box .field-row { grid-column: 1; }
-.sample-signup-box .form-button { grid-column: 2; grid-row: 1; min-height: 47px; align-self: end; margin: 0; }
+.sample-signup-box .field-row label { color: #12377d; }
+.sample-signup-box .form-button { grid-column: 2; grid-row: 1; min-height: 47px; align-self: end; gap: 10px; margin: 0; font-size: 11px; letter-spacing: .05em; white-space: nowrap; }
 .sample-signup-box .form-status, .sample-signup-box .resource-guide-link { grid-column: 1 / -1; }
 .sample-signup-box .resource-guide-link { display: inline-flex; width: fit-content; align-items: center; gap: 10px; padding-bottom: 3px; border-bottom: 1px solid #12377d40; color: #12377d; font-size: 11px; font-weight: 900; letter-spacing: .06em; text-transform: uppercase; }
 .sample-secondary { display: inline-flex; align-items: center; gap: 8px; margin-top: 16px; padding-bottom: 3px; border-bottom: 1px solid #123d8233; color: #3f4c56; font-size: 12px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; transition: color .18s ease, border-color .18s ease; }
