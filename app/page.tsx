@@ -1,5 +1,6 @@
 import { ComingSoon } from './coming-soon';
 import { ResourceForm } from './resource-form';
+import { SocialLinks } from './social-links';
 import Image from 'next/image';
 
 const resumeBenefits = [
@@ -188,7 +189,6 @@ export default function Home() {
 
       <section className="book-section" id="book">
         <div className="book-cover" aria-label="Book cover representation using the supplied TRADE HUSTL3 brand artwork">
-          <span className="book-kicker">Enter. Earn. Elevate.</span>
           <Image className="book-cover-image" src="/trade-hustl3-book-cover.jpg" alt="TRADE HUSTL3 book cover" width={430} height={645} />
         </div>
         <div className="book-copy">
@@ -218,6 +218,10 @@ export default function Home() {
       <footer>
         <div><Image src="/trade-hustl3-logo.png" alt="TRADE HUSTL3 logo" width={46} height={46} /><strong>TRADE HUSTL3 LLC</strong></div>
         <p>Built by Hustle, Backed by Trades.</p>
+        <div className="footer-social">
+          <p className="footer-social-title">Follow TRADE HUSTL3</p>
+          <SocialLinks />
+        </div>
         <nav className="footer-nav" aria-label="Footer">
           <a href="/resume-builder">Resume Builder</a>
           <a href="/book">The Book</a>
