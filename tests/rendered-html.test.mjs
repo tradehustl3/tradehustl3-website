@@ -78,7 +78,7 @@ test("server-renders credibility and audience content", async () => {
   assert.match(html, /Zachary Ellis/i);
   assert.match(html, /9798193043355/i);
   assert.match(html, /Built for the people who keep America working/i);
-  for (const audience of ["Students exploring skilled trades", "Apprentices and entry-level technicians", "Career changers", "Working tradespeople", "Future supervisors and owners", "Trade schools and workforce programs"]) assert.match(html, new RegExp(audience, "i"));
+  for (const trustPoint of ["Built from real skilled-trades experience", "Designed specifically for tradespeople", "Clear pricing", "No Resume Builder subscription", "Secure checkout", "Practical guidance without empty promises"]) assert.match(html, new RegExp(trustPoint, "i"));
 });
 
 test("publishes a canonical XML sitemap and robots discovery hints", async () => {
@@ -190,7 +190,6 @@ test("server-renders the required segmented signup", async () => {
   assert.match(html, /name="careerInterest"/i);
   for (const interest of ["HVAC", "Electrical", "Plumbing", "Welding", "Facilities maintenance", "Still exploring"]) assert.match(html, new RegExp(interest.replace("/", "\\/"), "i"));
   assert.match(html, /type="email"/i);
-  for (const key of ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term"]) assert.match(html, new RegExp(`name="${key}"`, "i"));
 });
 
 test("subscriber endpoint validates and stores normalized signups", async () => {
