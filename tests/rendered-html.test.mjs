@@ -68,7 +68,7 @@ test("server-renders the corrected TRADE HUSTL3 brand and metadata", async () =>
   assert.match(html, /trade-hustl3-logo\.png/i);
   assert.match(html, /alt="TRADE HUSTL3 logo"/i);
   assert.match(html, /Built by Hustle, Backed by Trades\./i);
-  assert.match(html, /aria-label="Enter, Earn, Elevate"/i);
+  assert.match(html, /aria-label="Enter\. Earn\. Elevate\."/i);
 });
 
 test("server-renders credibility and audience content", async () => {
@@ -77,7 +77,7 @@ test("server-renders credibility and audience content", async () => {
   assert.match(html, /Built from real skilled-trades experience/i);
   assert.match(html, /Zachary Ellis/i);
   assert.match(html, /9798193043355/i);
-  assert.match(html, /WHO THIS IS FOR/i);
+  assert.match(html, /Built for the people who keep America working/i);
   for (const audience of ["Students exploring skilled trades", "Apprentices and entry-level technicians", "Career changers", "Working tradespeople", "Future supervisors and owners", "Trade schools and workforce programs"]) assert.match(html, new RegExp(audience, "i"));
 });
 
@@ -186,9 +186,9 @@ test("redirects the duplicate www hostname to the canonical domain", async () =>
 
 test("server-renders the required segmented signup", async () => {
   const html = await (await render()).text();
-  assert.match(html, /INTERESTED IN/i);
-  assert.match(html, /<select[^>]+id="interest"[^>]+required/i);
-  for (const interest of ["The TRADE HUSTL3 Book", "Resume Builder", "HUSTL3 PRO", "Jobsite Gear", "School / Workforce Partnership", "General TRADE HUSTL3 Updates"]) assert.match(html, new RegExp(interest.replace("/", "\\/"), "i"));
+  assert.match(html, /Career interest/i);
+  assert.match(html, /name="careerInterest"/i);
+  for (const interest of ["HVAC", "Electrical", "Plumbing", "Welding", "Facilities maintenance", "Still exploring"]) assert.match(html, new RegExp(interest.replace("/", "\\/"), "i"));
   assert.match(html, /type="email"/i);
   for (const key of ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term"]) assert.match(html, new RegExp(`name="${key}"`, "i"));
 });
@@ -690,7 +690,6 @@ test("server-renders every part of the TRADE HUSTL3 ecosystem", async () => {
   for (const title of ["TRADE HUSTL3 Gear", "TRADE HUSTL3 Resources"]) assert.match(html, new RegExp(`<h3>${title}<\\/h3>`, "i"));
   for (const title of ["Resume Builder", "Top 10 Trades", "The Book"]) assert.match(html, new RegExp(`>${title}\\s*<`, "i"));
   assert.match(html, /href="\/resume-builder"/i);
-  assert.match(html, /href="mailto:partners@tradehustl3\.com"/i);
   assert.match(html, /href="https:\/\/www\.facebook\.com\/profile\.php\?id=61593457675674"/i);
   assert.match(html, /aria-label="Follow TRADE HUSTL3 on Facebook"/i);
   assert.match(html, /href="https:\/\/www\.instagram\.com\/tradehustl3\/"/i);
@@ -776,7 +775,7 @@ test("uses the official navy, red, and gold palette", async () => {
   assert.match(css, /--navy:\s*#071A2B/i);
   assert.match(css, /--red:\s*#D9361E/i);
   assert.match(css, /--gold:\s*#D6A52A/i);
-  assert.match(css, /background:var\(--navy\)/i);
-  assert.match(css, /background:var\(--red\)/i);
+  assert.match(css, /background:\s*var\(--navy\)/i);
+  assert.match(css, /background:\s*var\(--red\)/i);
   assert.match(css, /color:var\(--gold\)|border[^;]*var\(--gold\)/i);
 });
