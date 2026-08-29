@@ -55,9 +55,18 @@ export type GeneratedResume = {
   additionalInformation: string[];
 };
 
-// Brand red — the only place color appears on the resume, per the ATS template spec.
+// Two selectable templates: "plain" is the strict ATS-safe layout (no
+// background, single color used only for divider rules). "navy" adds a
+// colored header band for a more designed look, trading some ATS caution
+// for visual polish — still real, selectable text throughout.
+export type ResumeTheme = "plain" | "navy";
+
 const BRAND_RED = "D71920";
 const BRAND_RED_RGB = rgb(0xd7 / 255, 0x19 / 255, 0x20 / 255);
+const BRAND_NAVY = "102F76";
+const BRAND_NAVY_RGB = rgb(0x10 / 255, 0x2f / 255, 0x76 / 255);
+const BRAND_GOLD = "F5B942";
+const BRAND_GOLD_RGB = rgb(0xf5 / 255, 0xb9 / 255, 0x42 / 255);
 
 const SECTION_BORDER = {
   bottom: { color: BRAND_RED, size: 6, style: BorderStyle.SINGLE },
@@ -67,12 +76,18 @@ function clean(value: string | undefined): string {
   return (value ?? "").replace(/\s+/g, " ").trim();
 }
 
-function sectionHeading(text: string): Paragraph {
+function sectionHeading(text: string, theme: ResumeTheme): Paragraph {
   return new Paragraph({
     heading: HeadingLevel.HEADING_2,
     border: SECTION_BORDER,
     spacing: { before: 220, after: 80 },
-    children: [new TextRun({ text, bold: true, size: 24, font: "Arial" })],
+    children: [new TextRun({
+      text,
+      bold: true,
+      size: 24,
+      font: "Arial",
+      color: theme === "navy" ? BRAND_NAVY : undefined,
+    })],
   });
 }
 
@@ -96,7 +111,48 @@ function certificationBullet(certification: ResumeCertification): Paragraph {
   });
 }
 
-export async function createResumeDocx(resume: GeneratedResume): Promise<Uint8Array> {
+function headerParagraphs(resume: GeneratedResume, contactLine: string, theme: ResumeTheme): Paragraph[] {
+  if (theme !== "navy") {
+    return [
+      new Paragraph({
+        alignment: AlignmentType.CENTER,
+        spacing: { after: 20 },
+        children: [new TextRun({ text: clean(resume.basics.fullName), bold: true, size: 42, font: "Arial" })],
+      }),
+      new Paragraph({
+        alignment: AlignmentType.CENTER,
+        spacing: { after: 20 },
+        children: [new TextRun({ text: clean(resume.basics.targetTitle), size: 24, font: "Arial" })],
+      }),
+      new Paragraph({
+        alignment: AlignmentType.CENTER,
+        spacing: { after: 160 },
+        children: [new TextRun({ text: contactLine, size: 20, font: "Arial" })],
+      }),
+    ];
+  }
+  const navyBand = { fill: BRAND_NAVY, type: "clear" as const, color: "auto" };
+  return [
+    new Paragraph({
+      shading: navyBand,
+      spacing: { before: 160, after: 40 },
+      children: [new TextRun({ text: clean(resume.basics.fullName), bold: true, size: 42, font: "Arial", color: "FFFFFF" })],
+    }),
+    new Paragraph({
+      shading: navyBand,
+      spacing: { after: 40 },
+      children: [new TextRun({ text: clean(resume.basics.targetTitle), size: 24, font: "Arial", color: BRAND_GOLD })],
+    }),
+    new Paragraph({
+      shading: navyBand,
+      border: { bottom: { color: BRAND_GOLD, size: 12, style: BorderStyle.SINGLE, space: 10 } },
+      spacing: { after: 200 },
+      children: [new TextRun({ text: contactLine, size: 20, font: "Arial", color: "FFFFFF" })],
+    }),
+  ];
+}
+
+export async function createResumeDocx(resume: GeneratedResume, theme: ResumeTheme = "plain"): Promise<Uint8Array> {
   const contactLine = [
     clean(resume.basics.location),
     clean(resume.basics.phone),
@@ -104,22 +160,8 @@ export async function createResumeDocx(resume: GeneratedResume): Promise<Uint8Ar
   ].filter(Boolean).join("  |  ");
 
   const children: Paragraph[] = [
-    new Paragraph({
-      alignment: AlignmentType.CENTER,
-      spacing: { after: 20 },
-      children: [new TextRun({ text: clean(resume.basics.fullName), bold: true, size: 42, font: "Arial" })],
-    }),
-    new Paragraph({
-      alignment: AlignmentType.CENTER,
-      spacing: { after: 20 },
-      children: [new TextRun({ text: clean(resume.basics.targetTitle), size: 24, font: "Arial" })],
-    }),
-    new Paragraph({
-      alignment: AlignmentType.CENTER,
-      spacing: { after: 160 },
-      children: [new TextRun({ text: contactLine, size: 20, font: "Arial" })],
-    }),
-    sectionHeading("PROFESSIONAL SUMMARY"),
+    ...headerParagraphs(resume, contactLine, theme),
+    sectionHeading("PROFESSIONAL SUMMARY", theme),
     new Paragraph({
       spacing: { after: 80 },
       children: [new TextRun({ text: clean(resume.summary), size: 21, font: "Arial" })],
@@ -127,14 +169,14 @@ export async function createResumeDocx(resume: GeneratedResume): Promise<Uint8Ar
   ];
 
   if (resume.certifications.length) {
-    children.push(sectionHeading("CERTIFICATIONS & LICENSES"));
+    children.push(sectionHeading("CERTIFICATIONS & LICENSES", theme));
     for (const certification of resume.certifications) {
       children.push(certificationBullet(certification));
     }
   }
 
   children.push(
-    sectionHeading("CORE SKILLS"),
+    sectionHeading("CORE SKILLS", theme),
     new Paragraph({
       spacing: { after: 80 },
       children: [new TextRun({ text: resume.skills.map(clean).filter(Boolean).join("  •  "), size: 21, font: "Arial" })],
@@ -142,7 +184,7 @@ export async function createResumeDocx(resume: GeneratedResume): Promise<Uint8Ar
   );
 
   if (resume.experience.length) {
-    children.push(sectionHeading("WORK EXPERIENCE"));
+    children.push(sectionHeading("WORK EXPERIENCE", theme));
     for (const job of resume.experience) {
       const dates = [clean(job.startDate), clean(job.endDate)].filter(Boolean).join(" – ");
       const organizationLine = [clean(job.employer), clean(job.location)].filter(Boolean).join(" — ");
@@ -171,7 +213,7 @@ export async function createResumeDocx(resume: GeneratedResume): Promise<Uint8Ar
   }
 
   if (resume.education.length) {
-    children.push(sectionHeading("EDUCATION & TRAINING"));
+    children.push(sectionHeading("EDUCATION & TRAINING", theme));
     for (const education of resume.education) {
       children.push(new Paragraph({
         keepNext: true,
@@ -194,7 +236,7 @@ export async function createResumeDocx(resume: GeneratedResume): Promise<Uint8Ar
   }
 
   if (resume.additionalInformation.length) {
-    children.push(sectionHeading("ADDITIONAL INFORMATION"));
+    children.push(sectionHeading("ADDITIONAL INFORMATION", theme));
     for (const item of resume.additionalInformation) children.push(bullet(item));
   }
 
@@ -228,14 +270,33 @@ type PdfWriter = {
   bold: PDFFont;
   italic: PDFFont;
   y: number;
+  theme: ResumeTheme;
 };
 
 const PDF_MARGIN = 50;
 const PDF_WIDTH = 612;
 const PDF_HEIGHT = 792;
+const ACCENT_BAR_WIDTH = 7;
+const HEADER_BAND_HEIGHT = 108;
+
+function themeSectionTitleColor(theme: ResumeTheme): ReturnType<typeof rgb> {
+  return theme === "navy" ? BRAND_NAVY_RGB : rgb(0.03, 0.03, 0.03);
+}
+
+function themeBulletColor(theme: ResumeTheme): ReturnType<typeof rgb> {
+  return theme === "navy" ? BRAND_RED_RGB : rgb(0, 0, 0);
+}
+
+function newPdfPage(writer: Pick<PdfWriter, "document" | "theme">): PDFPage {
+  const page = writer.document.addPage([PDF_WIDTH, PDF_HEIGHT]);
+  if (writer.theme === "navy") {
+    page.drawRectangle({ x: 0, y: 0, width: ACCENT_BAR_WIDTH, height: PDF_HEIGHT, color: BRAND_RED_RGB });
+  }
+  return page;
+}
 
 function addPage(writer: PdfWriter): void {
-  writer.page = writer.document.addPage([PDF_WIDTH, PDF_HEIGHT]);
+  writer.page = newPdfPage(writer);
   writer.y = PDF_HEIGHT - PDF_MARGIN;
 }
 
@@ -306,7 +367,7 @@ function writeSection(writer: PdfWriter, title: string): void {
     y: writer.y - 12,
     size: 12,
     font: writer.bold,
-    color: rgb(0.03, 0.03, 0.03),
+    color: themeSectionTitleColor(writer.theme),
   });
   writer.y -= 16;
   writer.page.drawLine({
@@ -320,7 +381,7 @@ function writeSection(writer: PdfWriter, title: string): void {
 
 function writeBullet(writer: PdfWriter, text: string): void {
   ensureSpace(writer, 16);
-  writer.page.drawText("•", { x: PDF_MARGIN + 7, y: writer.y - 10, size: 10, font: writer.regular });
+  writer.page.drawText("•", { x: PDF_MARGIN + 7, y: writer.y - 10, size: 10, font: writer.regular, color: themeBulletColor(writer.theme) });
   writeLines(writer, text, { indent: 20, size: 10.2, lineHeight: 12.5, after: 1.5 });
 }
 
@@ -365,7 +426,7 @@ function writeCertificationBullet(writer: PdfWriter, certification: ResumeCertif
   ];
   const lines = wrapSegments(segments, size, PDF_WIDTH - PDF_MARGIN * 2 - indent);
   ensureSpace(writer, Math.max(1, lines.length) * lineHeight + 1.5);
-  writer.page.drawText("•", { x: PDF_MARGIN + 7, y: writer.y - 10, size: 10, font: writer.regular });
+  writer.page.drawText("•", { x: PDF_MARGIN + 7, y: writer.y - 10, size: 10, font: writer.regular, color: themeBulletColor(writer.theme) });
   for (const line of lines) {
     let x = PDF_MARGIN + indent;
     for (const word of line) {
@@ -377,21 +438,36 @@ function writeCertificationBullet(writer: PdfWriter, certification: ResumeCertif
   writer.y -= 1.5;
 }
 
-export async function createResumePdf(resume: GeneratedResume, watermarked = false): Promise<Uint8Array> {
+function drawHeaderBand(writer: PdfWriter, resume: GeneratedResume): void {
+  const contentLeft = PDF_MARGIN;
+  writer.page.drawRectangle({ x: 0, y: PDF_HEIGHT - HEADER_BAND_HEIGHT, width: PDF_WIDTH, height: HEADER_BAND_HEIGHT, color: BRAND_NAVY_RGB });
+  writer.page.drawRectangle({ x: 0, y: PDF_HEIGHT - HEADER_BAND_HEIGHT - 3, width: PDF_WIDTH, height: 3, color: BRAND_GOLD_RGB });
+  writer.page.drawText(clean(resume.basics.fullName), { x: contentLeft, y: PDF_HEIGHT - 42, size: 21, font: writer.bold, color: rgb(1, 1, 1) });
+  writer.page.drawText(clean(resume.basics.targetTitle), { x: contentLeft, y: PDF_HEIGHT - 62, size: 12, font: writer.regular, color: BRAND_GOLD_RGB });
+  const contact = [resume.basics.location, resume.basics.phone, resume.basics.email].map(clean).filter(Boolean).join("   |   ");
+  writer.page.drawText(contact, { x: contentLeft, y: PDF_HEIGHT - 86, size: 10, font: writer.regular, color: rgb(1, 1, 1) });
+  writer.y = PDF_HEIGHT - HEADER_BAND_HEIGHT - 26;
+}
+
+export async function createResumePdf(resume: GeneratedResume, watermarked = false, theme: ResumeTheme = "plain"): Promise<Uint8Array> {
   const document = await PDFDocument.create();
   document.registerFontkit(fontkit);
   const writer: PdfWriter = {
     document,
-    page: document.addPage([PDF_WIDTH, PDF_HEIGHT]),
+    page: newPdfPage({ document, theme }),
     regular: await document.embedFont(decodeFont(ROBOTO_REGULAR_BASE64), { subset: true }),
     bold: await document.embedFont(decodeFont(ROBOTO_BOLD_BASE64), { subset: true }),
     italic: await document.embedFont(decodeFont(ROBOTO_ITALIC_BASE64), { subset: true }),
     y: PDF_HEIGHT - PDF_MARGIN,
+    theme,
   };
-
-  writeCentered(writer, resume.basics.fullName, writer.bold, 21, 0);
-  writeCentered(writer, resume.basics.targetTitle, writer.regular, 12, 0);
-  writeCentered(writer, [resume.basics.location, resume.basics.phone, resume.basics.email].map(clean).filter(Boolean).join("  |  "), writer.regular, 10, 10);
+  if (theme === "navy") {
+    drawHeaderBand(writer, resume);
+  } else {
+    writeCentered(writer, resume.basics.fullName, writer.bold, 21, 0);
+    writeCentered(writer, resume.basics.targetTitle, writer.regular, 12, 0);
+    writeCentered(writer, [resume.basics.location, resume.basics.phone, resume.basics.email].map(clean).filter(Boolean).join("  |  "), writer.regular, 10, 10);
+  }
 
   writeSection(writer, "PROFESSIONAL SUMMARY");
   writeLines(writer, resume.summary, { after: 4 });

@@ -1,4 +1,4 @@
-import { createResumeDocx, createResumePdf, GeneratedResume } from "./resume-documents";
+import { createResumeDocx, createResumePdf, GeneratedResume, ResumeTheme } from "./resume-documents";
 
 export interface ResumeBuilderEnv {
   DB: D1Database;
@@ -39,7 +39,14 @@ type ResumeRecord = {
   generated_json: string | null;
   target_job_posting: string | null;
   status: string;
+  theme: string;
 };
+
+const RESUME_THEMES: ReadonlySet<string> = new Set(["plain", "navy"]);
+
+function normalizeTheme(value: unknown): ResumeTheme {
+  return typeof value === "string" && RESUME_THEMES.has(value) ? value as ResumeTheme : "plain";
+}
 
 type EntitlementRecord = {
   entitlement_id: string;
@@ -424,6 +431,7 @@ type ValidatedResumeInput = {
   title: string;
   targetJobPosting: string | null;
   intakeJson: string;
+  theme: ResumeTheme;
 };
 
 function validateResumeInput(body: Record<string, unknown> | null):
@@ -443,7 +451,8 @@ function validateResumeInput(body: Record<string, unknown> | null):
   if (intakeJson.length > MAX_INTAKE_JSON_CHARS) {
     return { ok: false, response: json({ ok: false, message: "The intake is too large." }, 413) };
   }
-  return { ok: true, value: { trade, title, targetJobPosting, intakeJson } };
+  const theme = normalizeTheme(body?.theme);
+  return { ok: true, value: { trade, title, targetJobPosting, intakeJson, theme } };
 }
 
 async function createResume(request: Request, env: ResumeBuilderEnv): Promise<Response> {
@@ -453,18 +462,18 @@ async function createResume(request: Request, env: ResumeBuilderEnv): Promise<Re
   if (!user) return json({ ok: false, message: "Sign in to continue." }, 401);
   const parsed = validateResumeInput(await parseJsonBody(request, MAX_RESUME_BODY_BYTES));
   if (!parsed.ok) return parsed.response;
-  const { trade, title, targetJobPosting, intakeJson } = parsed.value;
+  const { trade, title, targetJobPosting, intakeJson, theme } = parsed.value;
   const resumeId = crypto.randomUUID();
   await env.DB.prepare(
-    `INSERT INTO resumes (resume_id, user_id, trade, title, intake_json, target_job_posting, status)
-     VALUES (?, ?, ?, ?, ?, ?, 'draft')`,
-  ).bind(resumeId, user.userId, trade, title, intakeJson, targetJobPosting).run();
+    `INSERT INTO resumes (resume_id, user_id, trade, title, intake_json, target_job_posting, theme, status)
+     VALUES (?, ?, ?, ?, ?, ?, ?, 'draft')`,
+  ).bind(resumeId, user.userId, trade, title, intakeJson, targetJobPosting, theme).run();
   return json({ ok: true, resumeId, status: "draft", price: { amount: RESUME_PRICE_CENTS, currency: "usd" } }, 201);
 }
 
 async function findOwnedResume(env: ResumeBuilderEnv, resumeId: string, userId: string): Promise<ResumeRecord | null> {
   return env.DB.prepare(
-    `SELECT resume_id, user_id, trade, title, intake_json, generated_json, target_job_posting, status
+    `SELECT resume_id, user_id, trade, title, intake_json, generated_json, target_job_posting, status, theme
      FROM resumes WHERE resume_id = ? AND user_id = ? AND deleted_at IS NULL`,
   ).bind(resumeId, userId).first<ResumeRecord>();
 }
@@ -502,6 +511,7 @@ async function getResumeStatus(request: Request, env: ResumeBuilderEnv, resumeId
       intake,
       targetJobPosting: resume.target_job_posting,
       status: resume.status,
+      theme: normalizeTheme(resume.theme),
       paid: Boolean(entitlement),
       runsUsed: entitlement?.credits_used ?? (generated ? INITIAL_PREVIEW_RUNS : 0),
       runsTotal: entitlement?.credits_total ?? RESUME_TOTAL_AI_RUNS,
@@ -524,16 +534,34 @@ async function updateResume(request: Request, env: ResumeBuilderEnv, resumeId: s
   if (!user) return json({ ok: false, message: "Sign in to continue." }, 401);
   const resume = await findOwnedResume(env, resumeId, user.userId);
   if (!resume) return json({ ok: false, message: "Resume not found." }, 404);
-  const parsed = validateResumeInput(await parseJsonBody(request, MAX_RESUME_BODY_BYTES));
+  const entitlement = await findEntitlement(env, resumeId, user.userId);
+
+  const body = await parseJsonBody(request, MAX_RESUME_BODY_BYTES);
+  // A style-only change (from the review page's template picker) skips the
+  // full trade/intake validation — it is not a content edit.
+  const themeOnly = body !== null && !("trade" in body) && !("intake" in body) && "theme" in body;
+  if (themeOnly) {
+    if (!RESUME_THEMES.has(String(body.theme))) {
+      return json({ ok: false, message: "Choose a supported resume style." }, 400);
+    }
+    const theme = normalizeTheme(body.theme);
+    await env.DB.prepare(
+      `UPDATE resumes SET theme = ?, updated_at = CURRENT_TIMESTAMP
+       WHERE resume_id = ? AND user_id = ? AND deleted_at IS NULL`,
+    ).bind(theme, resumeId, user.userId).run();
+    return json({ ok: true, resumeId, status: resume.status, paid: Boolean(entitlement), theme });
+  }
+
+  const parsed = validateResumeInput(body);
   if (!parsed.ok) return parsed.response;
   const { trade, title, targetJobPosting, intakeJson } = parsed.value;
+  const theme = body !== null && "theme" in body ? parsed.value.theme : normalizeTheme(resume.theme);
   await env.DB.prepare(
-    `UPDATE resumes SET trade = ?, title = ?, intake_json = ?, target_job_posting = ?,
+    `UPDATE resumes SET trade = ?, title = ?, intake_json = ?, target_job_posting = ?, theme = ?,
        updated_at = CURRENT_TIMESTAMP
      WHERE resume_id = ? AND user_id = ? AND deleted_at IS NULL`,
-  ).bind(trade, title, intakeJson, targetJobPosting, resumeId, user.userId).run();
-  const entitlement = await findEntitlement(env, resumeId, user.userId);
-  return json({ ok: true, resumeId, status: resume.status, paid: Boolean(entitlement) });
+  ).bind(trade, title, intakeJson, targetJobPosting, theme, resumeId, user.userId).run();
+  return json({ ok: true, resumeId, status: resume.status, paid: Boolean(entitlement), theme });
 }
 
 async function createCheckout(request: Request, env: ResumeBuilderEnv, resumeId: string): Promise<Response> {
@@ -1359,11 +1387,12 @@ async function generateResume(
     let docx: Uint8Array;
     let pdf: Uint8Array;
     let preview: Uint8Array;
+    const theme = normalizeTheme(resume.theme);
     try {
       [docx, pdf, preview] = await Promise.all([
-        (dependencies.createDocx ?? createResumeDocx)(generated.resume),
-        (dependencies.createPdf ?? createResumePdf)(generated.resume, false),
-        (dependencies.createPdf ?? createResumePdf)(generated.resume, true),
+        (dependencies.createDocx ?? createResumeDocx)(generated.resume, theme),
+        (dependencies.createPdf ?? createResumePdf)(generated.resume, false, theme),
+        (dependencies.createPdf ?? createResumePdf)(generated.resume, true, theme),
       ]);
     } catch {
       throw new ResumeGenerationError("DOCUMENT_RENDER_ERROR", "Document render error.");

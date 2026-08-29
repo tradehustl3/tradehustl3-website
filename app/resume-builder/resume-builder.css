@@ -247,7 +247,13 @@
 .rb-review-status, .rb-correction-form, .rb-downloads { padding: 27px; background: var(--rb-surface-2); }
 .rb-review-status { border-top: 4px solid var(--rb-red); }
 .rb-review-status h2, .rb-unpaid-card h2, .rb-first-build h2 { font-size: clamp(40px, 4vw, 57px); line-height: .93; }
-.rb-review-status > p:last-child, .rb-unpaid-card > p:not(.rb-kicker), .rb-first-build p:not(.rb-kicker) { color: var(--rb-ink-soft); line-height: 1.55; }
+.rb-review-status > p.rb-review-desc, .rb-unpaid-card > p:not(.rb-kicker), .rb-first-build p:not(.rb-kicker) { color: var(--rb-ink-soft); line-height: 1.55; }
+.rb-theme-label { display: block; margin: 18px 0 8px; color: var(--rb-navy); font-size: 9px; font-weight: 900; letter-spacing: .11em; text-transform: uppercase; }
+.rb-theme-picker { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; }
+.rb-theme-picker .rb-trade-card { padding: 14px 16px; }
+.rb-theme-picker .rb-trade-card-name { font-size: 14px; }
+.rb-theme-picker .rb-trade-card-note { font-size: 11px; }
+.rb-theme-note { display: block; margin-top: 10px; color: var(--rb-ink-soft); font-size: 10px; line-height: 1.5; }
 .rb-correction-count { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
 .rb-correction-count strong { color: var(--rb-red); font-family: var(--font-display); font-size: 48px; font-weight: 400; line-height: .8; }
 .rb-correction-count span, .rb-correction-form label { font-size: 9px; font-weight: 900; letter-spacing: .11em; text-transform: uppercase; }
