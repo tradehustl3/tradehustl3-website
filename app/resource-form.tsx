@@ -17,7 +17,7 @@ type ResourceFormProps = {
 };
 
 const TOP_TRADES_INTEREST = 'Top 10 Trades';
-const BOOK_SAMPLE_INTEREST = 'The TRADE HUSTL3 Book';
+const BOOK_SAMPLE_INTEREST = 'Book 7-Page Sample';
 const UTM_KEYS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'] as const;
 
 function collectUtm(): Record<string, string> {
