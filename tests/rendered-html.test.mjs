@@ -239,7 +239,7 @@ test("subscriber endpoint validates and stores normalized signups", async () => 
   assert.equal(response.status, 200);
   assert.deepEqual(await response.json(), { ok: true, message: "You're on the TRADE HUSTL3 list." });
   assert.equal(calls.length, 1);
-  assert.deepEqual(calls[0].values, ["member@example.com", "HUSTL3 PRO"]);
+  assert.deepEqual(calls[0].values, ["member@example.com", "HUSTL3 PRO", "website"]);
   assert.match(calls[0].sql, /ON CONFLICT\(email\) DO UPDATE/i);
   assert.equal(brevoCalls.length, 1);
   assert.equal(brevoCalls[0].input, "https://api.brevo.com/v3/contacts");
@@ -766,7 +766,7 @@ test("server-renders scanner-safe confirmation, intake, payment return, and revi
   assert.match(intake, /name="robots" content="noindex, nofollow"/i);
 
   const payment = await (await renderPath("/resume-builder/payment-confirmed?resume_id=test")).text();
-  assert.match(payment, /Clean PDF \+ DOCX[\s\S]*up to 3 corrections/i);
+  assert.match(payment, /clean PDF \+ editable DOCX[\s\S]*up to 3 corrections within 7 days/i);
 });
 
 test("uses the official navy, red, and gold palette", async () => {

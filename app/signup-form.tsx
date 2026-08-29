@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
+import { captureAttribution, trackGoogleEvent } from "./analytics";
 import { createMetaLeadTracker } from "./meta-pixel";
 import { submitSignup } from "./signup-request";
 
@@ -16,14 +17,6 @@ const interests = [
 
 const utmKeys = ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term"] as const;
 
-type AnalyticsWindow = Window & {
-  gtag?: (command: "event", eventName: string, parameters?: Record<string, string>) => void;
-};
-
-function trackEvent(eventName: string, parameters: Record<string, string>) {
-  (window as AnalyticsWindow).gtag?.("event", eventName, parameters);
-}
-
 export function SignupForm({ mode = "general" }: { mode?: "general" | "sample" }) {
   const formRef = useRef<HTMLFormElement>(null);
   const hasTrackedFormStart = useRef(false);
@@ -36,20 +29,17 @@ export function SignupForm({ mode = "general" }: { mode?: "general" | "sample" }
   const [trackSampleLead] = useState(() => isSample ? createMetaLeadTracker("book_sample") : undefined);
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
+    const attribution = captureAttribution();
     for (const key of utmKeys) {
-      const current = params.get(key);
-      if (current) sessionStorage.setItem(key, current);
-      const preserved = current ?? sessionStorage.getItem(key);
       const input = formRef.current?.elements.namedItem(key);
-      if (preserved && input instanceof HTMLInputElement) input.value = preserved;
+      if (attribution[key] && input instanceof HTMLInputElement) input.value = attribution[key];
     }
   }, []);
 
   function handleFormStart() {
     if (hasTrackedFormStart.current) return;
     hasTrackedFormStart.current = true;
-    trackEvent("form_start", { form_name: formName });
+    trackGoogleEvent("form_start", { form_name: formName });
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -69,6 +59,7 @@ export function SignupForm({ mode = "general" }: { mode?: "general" | "sample" }
         {
           email: form.get("email"),
           interest: form.get("interest"),
+          signup_source: isSample ? "book_sample" : "general_interest",
           utm_source: form.get("utm_source"),
           utm_medium: form.get("utm_medium"),
           utm_campaign: form.get("utm_campaign"),
@@ -81,11 +72,9 @@ export function SignupForm({ mode = "general" }: { mode?: "general" | "sample" }
       setStatus("success");
       setMessage(result.message || "You're on the TRADE HUSTL3 list.");
       setSampleUrl(result.sampleUrl || "");
-      trackEvent(isSample ? "generate_lead" : "sign_up", {
-        form_name: formName,
-        lead_source: String(form.get("utm_source") || "direct"),
-        campaign: String(form.get("utm_campaign") || "none"),
-      });
+      if (!isSample) {
+        trackGoogleEvent("sign_up", { form_name: formName });
+      }
       formElement.reset();
     } catch (error) {
       setStatus("error");
@@ -127,9 +116,14 @@ export function SignupForm({ mode = "general" }: { mode?: "general" | "sample" }
         {message}
       </p>
       {isSample && status === "success" && sampleUrl && (
-        <a className="sample-unlock-link" href={sampleUrl} target="_blank" rel="noreferrer">
-          OPEN YOUR FREE GUIDE <span>↗</span>
-        </a>
+        <div className="sample-success-actions">
+          <a className="sample-unlock-link" href={sampleUrl} target="_blank" rel="noreferrer">
+            OPEN YOUR FREE GUIDE <span>↗</span>
+          </a>
+          <a className="sample-next-step" href="#availability">
+            Explore the full TRADE HUSTL3 book <span>→</span>
+          </a>
+        </div>
       )}
     </>
   );

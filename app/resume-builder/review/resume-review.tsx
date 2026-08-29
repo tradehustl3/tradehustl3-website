@@ -1,6 +1,8 @@
 "use client";
 
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
+import { captureAttribution, createTrackedCheckout } from "../../analytics";
+import { ViewContentTracker } from "../../view-content-tracker";
 
 type Resume = {
   resumeId: string;
@@ -123,14 +125,11 @@ export function ResumeReview() {
     setCheckingOut(true);
     setMessage("");
     try {
-      const response = await fetch(`/api/resume-builder/resumes/${encodeURIComponent(resumeId)}/checkout`, {
-        method: "POST",
-        credentials: "same-origin",
-        headers: { "Content-Type": "application/json" },
-        body: "{}",
-      });
-      const result = await response.json() as { checkoutUrl?: string; message?: string };
-      if (!response.ok || !result.checkoutUrl) throw new Error(result.message || "Secure checkout is temporarily unavailable.");
+      const result = await createTrackedCheckout(
+        `/api/resume-builder/resumes/${encodeURIComponent(resumeId)}/checkout`,
+        "resume_builder",
+        captureAttribution(),
+      );
       window.location.assign(result.checkoutUrl);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Secure checkout is temporarily unavailable.");
@@ -157,6 +156,7 @@ export function ResumeReview() {
 
   return (
     <div className="rb-review-workspace">
+      <ViewContentTracker contentName="resume_builder" parameters={{ content_category: "resume_preview" }} eventKey="resume_builder_preview" />
       <section className="rb-review-topbar">
         <div><p className="rb-kicker">/ YOUR RESUME WORKSPACE</p><h1>{resume.title}</h1><span>{resume.trade}</span></div>
         <div className="rb-run-meter" aria-label={`${resume.runsUsed} of ${resume.runsTotal} AI runs used`}>
@@ -208,8 +208,9 @@ export function ResumeReview() {
               <div className="rb-unpaid-card">
                 <p className="rb-kicker">/ ONE-TIME PURCHASE</p>
                 <h2>REMOVE THE WATERMARK.</h2>
-                <p>Pay $9.99 once. No subscription. Clean PDF and editable DOCX unlock after Stripe confirms payment.</p>
+                <p><strong>$9.99 one-time payment.</strong> No subscription or recurring charge. Includes one completed TRADE HUSTL3 resume, a clean PDF, an editable DOCX, and up to three corrections during the seven days after payment.</p>
                 <button className="rb-button rb-button-primary rb-button-full" type="button" disabled={checkingOut} onClick={() => void startCheckout()}>{checkingOut ? "Opening secure checkout…" : "Unlock clean resume — $9.99"} <span>↗</span></button>
+                <small>Need help? <a href="mailto:support@tradehustl3.com">support@tradehustl3.com</a></small>
               </div>
             )}
 
@@ -225,6 +226,7 @@ export function ResumeReview() {
       )}
 
       {message ? <p className="rb-workspace-message" role="status">{message}</p> : null}
+      <p className="rb-flow-support">Need help? <a href="mailto:support@tradehustl3.com">support@tradehustl3.com</a></p>
       {working ? <div className="rb-working-overlay" role="status"><span /><strong>CLAUDE SONNET IS BUILDING</strong><small>This can take a minute. Keep this page open.</small></div> : null}
     </div>
   );

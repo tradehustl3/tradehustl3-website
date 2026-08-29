@@ -1,10 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-
-type AnalyticsWindow = Window & {
-  gtag?: (command: "event", eventName: string, parameters?: Record<string, string>) => void;
-};
+import { trackGoogleEvent } from "./analytics";
 
 /**
  * Fires one GA4 `cta_click` event per click on any element carrying a
@@ -24,7 +21,7 @@ export function CtaAnalytics() {
       };
       const label = (el.textContent || "").replace(/\s+/g, " ").trim().slice(0, 80);
       if (label) params.cta_label = label;
-      (window as AnalyticsWindow).gtag?.("event", "cta_click", params);
+      trackGoogleEvent("cta_click", params);
     }
     document.addEventListener("click", onClick, { capture: true });
     return () => document.removeEventListener("click", onClick, { capture: true });

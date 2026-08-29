@@ -2,6 +2,7 @@
 import { handleImageOptimization, DEFAULT_DEVICE_SIZES, DEFAULT_IMAGE_SIZES } from "vinext/server/image-optimization";
 import handler from "vinext/server/app-router-entry";
 import freeSampleDataUrl from "./assets/trade-hustl3-free-sample.pdf?inline";
+import { SUPPORT_EMAIL } from "../shared/customer-config";
 import { handleResumeBuilderRoute, ResumeBuilderEnv } from "./resume-builder";
 import { handleEbookStripeRoute, runEbookLaunchDelivery, EbookStripeEnv, EBOOK_RELEASE_AT } from "./ebook-stripe";
 
@@ -33,6 +34,13 @@ const allowedInterests = new Set([
   "Jobsite Gear",
   "School / Workforce Partnership",
   "General TRADE HUSTL3 Updates",
+]);
+
+const allowedSignupSources = new Set([
+  "book_sample",
+  "top_10_trades",
+  "general_interest",
+  "website",
 ]);
 
 const FREE_SAMPLE_PUBLIC_PATH = "/trade-hustl3-free-sample.pdf";
@@ -110,6 +118,7 @@ async function syncBrevoContact(
   contact: {
     email: string;
     interest: string;
+    source: string;
     utmSource: string;
     utmMedium: string;
     utmCampaign: string;
@@ -124,7 +133,7 @@ async function syncBrevoContact(
 
   const attributes: Record<string, string> = {
     INTEREST: contact.interest,
-    SIGNUP_SOURCE: "website",
+    SIGNUP_SOURCE: contact.source,
   };
   if (contact.utmSource) attributes.UTM_SOURCE = contact.utmSource;
   if (contact.utmMedium) attributes.UTM_MEDIUM = contact.utmMedium;
@@ -152,7 +161,7 @@ async function syncBrevoContact(
   }
 }
 
-async function sendSampleDeliveryEmail(env: Env, email: string, sampleUrl: string): Promise<void> {
+async function sendSampleDeliveryEmail(env: Env, email: string, sampleUrl: string, source: string): Promise<void> {
   const apiKey = env.BREVO_API_KEY?.trim();
   if (!apiKey) throw new Error("Brevo sample delivery is not configured.");
 
@@ -169,7 +178,9 @@ async function sendSampleDeliveryEmail(env: Env, email: string, sampleUrl: strin
         email: env.BREVO_SAMPLE_SENDER_EMAIL?.trim() || "updates@tradehustl3.com",
       },
       to: [{ email }],
-      subject: "Your TRADE HUSTL3 2026-2027 guide preview is ready",
+      subject: source === "top_10_trades"
+        ? "Your TRADE HUSTL3 Top 10 Trades preview is ready"
+        : "Your TRADE HUSTL3 trade guide preview is ready",
       htmlContent: `
         <div style="background:#071a2b;padding:32px;font-family:Arial,sans-serif;color:#f4f0e7">
           <div style="max-width:620px;margin:auto">
@@ -177,6 +188,8 @@ async function sendSampleDeliveryEmail(env: Env, email: string, sampleUrl: strin
             <h1 style="margin:16px 0;color:#ffffff">Your free trade guide preview is ready.</h1>
             <p style="font-size:16px;line-height:1.6;color:#c5ced5">Open the seven-page 2026-2027 preview (cover included) for verified trade profiles, national pay context, the guide's source standard, and practical next steps.</p>
             <p style="margin:28px 0"><a href="${sampleUrl}" style="display:inline-block;background:#d9361e;color:#ffffff;padding:16px 22px;text-decoration:none;font-weight:700">OPEN THE FREE GUIDE</a></p>
+            <p style="font-size:14px;line-height:1.6;color:#c5ced5">Ready for the next move? <a href="${SITE_URL}/resume-builder" style="color:#d6a52a">Build a trade-focused resume</a> or <a href="${SITE_URL}/book" style="color:#d6a52a">explore the complete TRADE HUSTL3 book</a>.</p>
+            <p style="font-size:13px;line-height:1.6;color:#9cabb5">Need help? <a href="mailto:${SUPPORT_EMAIL}" style="color:#d6a52a">${SUPPORT_EMAIL}</a></p>
             <p style="color:#d6a52a;font-weight:700">BUILT BY HUSTL3. BACKED BY TRADES.</p>
           </div>
         </div>`,
@@ -202,12 +215,15 @@ async function subscribe(request: Request, env: Env): Promise<Response> {
     const body = await request.json() as {
       email?: unknown;
       interest?: unknown;
+      signup_source?: unknown;
       utm_source?: unknown;
       utm_medium?: unknown;
       utm_campaign?: unknown;
     };
     const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
     const interest = typeof body.interest === "string" ? body.interest.trim() : "";
+    const requestedSource = typeof body.signup_source === "string" ? body.signup_source.trim() : "";
+    const source = allowedSignupSources.has(requestedSource) ? requestedSource : "website";
 
     if (!isValidEmail(email) || !allowedInterests.has(interest)) {
       return jsonResponse({ ok: false, message: "Enter a valid email and select an interest." }, 400);
@@ -215,16 +231,17 @@ async function subscribe(request: Request, env: Env): Promise<Response> {
 
     await env.DB.prepare(
       `INSERT INTO subscribers (email, interest, source, status)
-       VALUES (?, ?, 'website', 'active')
+       VALUES (?, ?, ?, 'active')
        ON CONFLICT(email) DO UPDATE SET
          interest = excluded.interest,
          source = excluded.source,
          status = 'active'`,
-    ).bind(email, interest).run();
+    ).bind(email, interest, source).run();
 
     await syncBrevoContact(env, {
       email,
       interest,
+      source,
       utmSource: trackingValue(body.utm_source),
       utmMedium: trackingValue(body.utm_medium),
       utmCampaign: trackingValue(body.utm_campaign),
@@ -236,13 +253,13 @@ async function subscribe(request: Request, env: Env): Promise<Response> {
       const token = await createSampleToken(email, apiKey);
       const emailedSampleUrl = `${SITE_URL}${FREE_SAMPLE_ROUTE}?token=${encodeURIComponent(token)}`;
       try {
-        await sendSampleDeliveryEmail(env, email, emailedSampleUrl);
+        await sendSampleDeliveryEmail(env, email, emailedSampleUrl, source);
       } catch (error) {
         console.error("Free guide delivery email failed", error);
       }
 
       return Response.json(
-        { ok: true, message: "You're in. Your free 2026-2027 trade guide preview is ready, and a copy is on its way to your inbox.", sampleUrl: FREE_SAMPLE_ROUTE },
+        { ok: true, message: "You're in. Your free 2026-2027 trade guide preview is ready, and a copy is on its way to your inbox.", sampleUrl: FREE_SAMPLE_ROUTE, funnel: source },
         {
           headers: {
             "Cache-Control": "no-store",

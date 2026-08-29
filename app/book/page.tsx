@@ -6,6 +6,7 @@ import { SITE_NAME, SITE_URL } from "../site";
 import { SignupForm } from "../signup-form";
 import LaunchPurchaseButton from "./launch-purchase-button";
 import ReleaseCountdown from "./release-countdown";
+import { ViewContentTracker } from "../view-content-tracker";
 
 const BOOK_TITLE = "TRADE HUSTL3: Built by Hustle, Backed by Trades";
 const BOOK_DESCRIPTION =
@@ -139,6 +140,7 @@ export default function BookPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(bookStructuredData) }}
       />
+      <ViewContentTracker contentName="ebook" parameters={{ content_type: "product", value: 9.99, currency: "USD" }} eventKey="book_landing" />
 
       <header className="site-header book-site-header">
         <Link className="brand-link" href="/" aria-label="TRADE HUSTL3 home">
@@ -203,7 +205,7 @@ export default function BookPage() {
           <p className="section-label">/ FREE 2026-2027 GUIDE</p>
           <h2>GET THE FREE<br /><span>GUIDE PREVIEW.</span></h2>
           <p>
-            Enter your email to unlock the seven-page preview of <em>TRADE HUSTL3: 10 High-Opportunity Trades — 2026-2027 Edition</em> (cover included). It includes the guide&apos;s source standard, verified power-line and HVAC profiles, national pay context, and practical next steps.
+            Enter your email to unlock the six-page preview of <em>TRADE HUSTL3: 10 High-Opportunity Trades — 2026-2027 Edition</em> (cover included). It includes the guide&apos;s source standard, verified power-line and HVAC profiles, national pay context, and practical next steps.
           </p>
           <SignupForm mode="sample" />
           <small className="sample-consent">By unlocking the free guide, you agree to receive TRADE HUSTL3 book and career updates. Unsubscribe anytime.</small>
@@ -325,12 +327,20 @@ export default function BookPage() {
         </div>
         <LaunchPurchaseButton />
         <p className="purchase-terms">By purchasing, you agree to the <Link href="/terms">Terms of Service</Link>, <Link href="/privacy">Privacy Policy</Link>, and <Link href="/book/refund-policy">eBook Delivery and Refund Policy</Link>.</p>
+        <p className="purchase-support">Need help before or after purchase? <a href="mailto:support@tradehustl3.com">support@tradehustl3.com</a></p>
+      </section>
+
+      <section className="book-faq" aria-labelledby="book-faq-title">
+        <p className="section-label">/ QUICK ANSWERS</p>
+        <h2 id="book-faq-title">BOOK PURCHASE FAQ</h2>
+        <details><summary>When is the direct eBook delivered?</summary><p>Preorders are charged at checkout. The private PDF is scheduled for email delivery on September 15, 2026. Purchases after release are delivered after Stripe confirms payment.</p></details>
+        <details><summary>What if my delivery email is missing?</summary><p>Check spam and promotions, then email <a href="mailto:support@tradehustl3.com">support@tradehustl3.com</a> from the address used at checkout.</p></details>
       </section>
 
       <footer>
         <div className="footer-brand"><div className="wordmark">TRADE HUSTL<span>3</span></div><p>Built by Hustle, Backed by Trades.</p><SocialLinks /></div>
         <div className="footer-links"><Link href="/">Home</Link><a href="#sample">Free guide</a><a href="#chapters">Chapters</a><a href="#author">Author</a><a href="mailto:partners@tradehustl3.com">Partnerships</a></div>
-        <div className="footer-legal"><Link href="/privacy">Privacy</Link><Link href="/terms">Terms</Link><Link href="/book/refund-policy">eBook policy</Link><Link href="/data-deletion">Data requests</Link><Link href="/contact">Support</Link></div>
+        <div className="footer-legal"><Link href="/privacy">Privacy</Link><Link href="/terms">Terms</Link><Link href="/book/refund-policy">eBook policy</Link><Link href="/data-deletion">Data requests</Link><Link href="/contact">Support</Link><a href="mailto:support@tradehustl3.com">support@tradehustl3.com</a></div>
         <p className="copyright">© 2026 TRADE HUSTL3. ALL GRIT RESERVED.</p>
       </footer>
     </main>

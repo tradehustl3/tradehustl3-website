@@ -60,6 +60,13 @@ function fakeEbookDb() {
                 const order = orders.find((candidate) => candidate.download_token === token && candidate.status === "paid");
                 return order ? ({ stripe_session_id: order.stripe_session_id } as unknown as T) : null;
               }
+              if (sql.includes("FROM ebook_orders") && sql.includes("amount_total = ?") && sql.includes("download_token IS NOT NULL")) {
+                const [sessionId, amountTotal, currency] = values as [string, number, string];
+                const order = findOrder(sessionId);
+                return order && order.status === "paid" && order.amount_total === amountTotal && order.currency === currency && order.stripe_payment_intent_id && order.download_token
+                  ? ({ stripe_session_id: order.stripe_session_id } as unknown as T)
+                  : null;
+              }
               return null;
             },
             async run() {
@@ -315,6 +322,20 @@ test("pre-launch: a paid checkout records the order and sends the preorder confi
     env,
   );
   assert.equal(downloadResponse?.status, 403, "the download route must stay locked before Sept 15 even for a paid order");
+
+  const statusResponse = await handleEbookStripeRoute(
+    new Request(`https://tradehustl3.com/api/ebook-order-status?session_id=${order.stripe_session_id}`),
+    env,
+  );
+  assert.equal(statusResponse?.status, 200);
+  assert.deepEqual(await statusResponse?.json(), {
+    ok: true,
+    verified: true,
+    transactionId: order.stripe_session_id,
+    contentName: "ebook",
+    value: 9.99,
+    currency: "USD",
+  });
 });
 
 test("post-launch: a paid checkout delivers the download link and the file actually downloads", async () => {

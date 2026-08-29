@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { trackCheckoutInitiated } from "../analytics";
+import { DIRECT_EBOOK_PRODUCT } from "../../shared/customer-config";
 
 const RELEASE_TIME = new Date("2026-09-15T00:00:00-04:00").getTime();
-const EBOOK_PAYMENT_LINK = "https://buy.stripe.com/4gM5kwaQ96EscGf2uKbfO02";
 
 export default function LaunchPurchaseButton() {
   const [isAvailable, setIsAvailable] = useState(false);
@@ -27,7 +28,17 @@ export default function LaunchPurchaseButton() {
   }
 
   return (
-    <a className="button button-primary ebook-buy-button" href={EBOOK_PAYMENT_LINK}>
+    <a
+      className="button button-primary ebook-buy-button"
+      href={DIRECT_EBOOK_PRODUCT.paymentLink}
+      onClick={() => trackCheckoutInitiated(
+        DIRECT_EBOOK_PRODUCT.contentName,
+        "configured_payment_link",
+        DIRECT_EBOOK_PRODUCT.value,
+        DIRECT_EBOOK_PRODUCT.currency,
+        "session",
+      )}
+    >
       Buy the eBook — $9.99 <span>↗</span>
     </a>
   );

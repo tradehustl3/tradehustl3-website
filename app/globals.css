@@ -283,6 +283,8 @@ footer .footer-social { grid-column: 1 / -1; display: flex; flex-direction: colu
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 .resource-guide-link { display: inline-flex; align-items: center; gap: 12px; margin-top: 12px; padding: 12px 18px; background: var(--gold); color: #071a2b; font-size: 11px; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
 .resource-guide-link:hover { background: var(--red); color: #fff; }
+.resource-success-actions { display: flex; align-items: center; gap: 12px 18px; flex-wrap: wrap; }
+.resource-next-step { display: inline-flex; align-items: center; gap: 8px; margin-top: 12px; color: #12377d; font-size: 10px; font-weight: 900; letter-spacing: .05em; text-transform: uppercase; text-decoration: underline; text-underline-offset: 3px; }
 .form-status.is-success { color: #2f7d3f !important; }
 
 @media (max-width: 1100px) { .conversion-intro { grid-template-columns: .42fr 1.58fr; }.conversion-card { min-height: 960px; }.resume-card .resume-logo { height: 210px; }.resume-process li { padding-inline: 10px; }.builder-feature-strip { grid-template-columns: minmax(0, 1.2fr) 330px; }.builder-features { grid-template-columns: repeat(3, 1fr); }.hustl3-bot-panel { min-height: 355px; }.tool-grid { grid-template-columns: repeat(2, 1fr); }.book-section { grid-template-columns: .7fr 1.3fr; gap: 60px; }.trust-grid { grid-template-columns: 1fr 1fr; }}

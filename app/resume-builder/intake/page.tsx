@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { FlowSteps } from "../flow-steps";
 import { ResumeBuilderHeader } from "../resume-builder-header";
 import { ResumeWizard } from "./wizard";
+import { ViewContentTracker } from "../../view-content-tracker";
 
 export const metadata: Metadata = {
   title: "Guided intake",
@@ -12,6 +13,7 @@ export default function IntakePage() {
   return (
     <main className="rb-page rb-intake-page rb-wiz-page">
       <ResumeBuilderHeader />
+      <ViewContentTracker contentName="resume_builder" parameters={{ content_category: "intake_start" }} eventKey="resume_builder_intake" />
       <FlowSteps current={2} />
       <section className="rb-flow-intro rb-wiz-intro">
         <div>
@@ -23,6 +25,7 @@ export default function IntakePage() {
           for your trade. Your answers autosave to your verified account, so you can leave and pick up where you stopped.
         </p>
       </section>
+      <p className="rb-flow-support">Need help? <a href="mailto:support@tradehustl3.com">support@tradehustl3.com</a></p>
       <ResumeWizard />
     </main>
   );

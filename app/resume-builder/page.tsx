@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { AccountStart } from "./account-start";
 import { FlowSteps } from "./flow-steps";
 import { ResumeBuilderHeader } from "./resume-builder-header";
+import { ViewContentTracker } from "../view-content-tracker";
 
 export const metadata: Metadata = {
   title: "Skilled Trades Resume Builder",
@@ -22,6 +23,7 @@ export default function ResumeBuilderPage() {
   return (
     <main className="rb-page">
       <ResumeBuilderHeader />
+      <ViewContentTracker contentName="resume_builder" parameters={{ content_type: "product", value: 9.99, currency: "USD" }} eventKey="resume_builder_landing" />
       <FlowSteps current={1} />
 
       <section className="rb-entry">
@@ -43,6 +45,7 @@ export default function ResumeBuilderPage() {
           <h2 id="account-title">START YOUR RESUME</h2>
           <p>Create your verified account first. Your intake is saved to your account—not just this device.</p>
           <AccountStart />
+          <p className="rb-support-note">Need help? <a href="mailto:support@tradehustl3.com">support@tradehustl3.com</a></p>
           <ol className="rb-stage-map" aria-label="How it works">
             <li>Account</li><li>Build</li><li>Preview</li><li>Unlock</li><li>Download</li>
           </ol>
@@ -77,10 +80,20 @@ export default function ResumeBuilderPage() {
         </ol>
       </section>
 
+      <section className="rb-faq" aria-labelledby="resume-faq-title">
+        <p className="rb-kicker">/ QUICK ANSWERS</p>
+        <h2 id="resume-faq-title">RESUME BUILDER FAQ</h2>
+        <div>
+          <details><summary>Is this a subscription?</summary><p>No. The Resume Builder is a $9.99 one-time payment with no recurring charge or auto-renewal.</p></details>
+          <details><summary>What does the purchase include?</summary><p>One completed TRADE HUSTL3 resume, a clean PDF, an editable DOCX, and up to three corrections during the seven days after payment.</p></details>
+          <details><summary>What if I need help?</summary><p>Email <a href="mailto:support@tradehustl3.com">support@tradehustl3.com</a> from the address connected to your account.</p></details>
+        </div>
+      </section>
+
       <footer className="rb-footer">
         <strong>TRADE HUSTL<span>3</span></strong>
         <p>Built by Hustle. Backed by Trades.</p>
-        <div className="rb-footer-links"><a href="/privacy">Privacy</a><a href="/terms">Terms</a><a href="/resume-builder/refund-policy">Refunds</a><a href="/resume-builder/ai-disclosure">AI disclosure</a><a href="/data-deletion">Data requests</a><a href="/contact">Support</a></div>
+        <div className="rb-footer-links"><a href="/privacy">Privacy</a><a href="/terms">Terms</a><a href="/resume-builder/refund-policy">Refunds</a><a href="/resume-builder/ai-disclosure">AI disclosure</a><a href="/data-deletion">Data requests</a><a href="/contact">Support</a><a href="mailto:support@tradehustl3.com">support@tradehustl3.com</a></div>
         <small>© 2026 TRADE HUSTL3. All grit reserved.</small>
       </footer>
     </main>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { trackVerifiedPurchase, type VerifiedPurchase } from "../../analytics";
 
 type Stage = "checking" | "waiting" | "ready" | "error";
 
@@ -8,22 +9,27 @@ export function PaymentStatus() {
   const [stage, setStage] = useState<Stage>("checking");
   const [message, setMessage] = useState("Confirming your payment with the secure checkout provider…");
   const resumeId = useRef("");
+  const checkoutSessionId = useRef("");
   const attempts = useRef(0);
 
   const check = useCallback(async () => {
-    if (!resumeId.current) return;
+    if (!resumeId.current || !checkoutSessionId.current) return;
     setStage("checking");
     try {
-      const response = await fetch(`/api/resume-builder/resumes/${encodeURIComponent(resumeId.current)}`, { credentials: "same-origin", cache: "no-store" });
+      const response = await fetch(
+        `/api/resume-builder/resumes/${encodeURIComponent(resumeId.current)}/purchase-status?session_id=${encodeURIComponent(checkoutSessionId.current)}`,
+        { credentials: "same-origin", cache: "no-store" },
+      );
       if (response.status === 401) {
         window.location.assign("/resume-builder");
         return;
       }
-      const result = await response.json() as { resume?: { paid: boolean }; message?: string };
+      const result = await response.json() as VerifiedPurchase & { message?: string };
       if (!response.ok) throw new Error(result.message || "We could not check the payment yet.");
-      if (result.resume?.paid) {
+      if (result.verified) {
+        trackVerifiedPurchase(result, "resume_builder");
         setStage("ready");
-        setMessage("Payment confirmed. Your clean resume and three correction runs are unlocked.");
+        setMessage("Payment confirmed. Your clean resume is unlocked, with up to three corrections available for seven days.");
         window.setTimeout(() => window.location.assign(`/resume-builder/review?resume_id=${encodeURIComponent(resumeId.current)}`), 900);
         return;
       }
@@ -36,10 +42,12 @@ export function PaymentStatus() {
   }, []);
 
   useEffect(() => {
-    resumeId.current = new URLSearchParams(window.location.search).get("resume_id") ?? "";
-    if (!resumeId.current) {
+    const search = new URLSearchParams(window.location.search);
+    resumeId.current = search.get("resume_id") ?? "";
+    checkoutSessionId.current = search.get("session_id") ?? "";
+    if (!resumeId.current || !checkoutSessionId.current) {
       setStage("error");
-      setMessage("This payment return is missing the resume reference.");
+      setMessage("This payment return is missing its secure checkout reference.");
       return;
     }
     void check();
@@ -60,9 +68,10 @@ export function PaymentStatus() {
       <p className="rb-kicker">/ SECURE PAYMENT RETURN</p>
       <h1>{stage === "ready" ? <>PAYMENT <span>CONFIRMED.</span></> : <>LOCKING IN YOUR <span>BUILD.</span></>}</h1>
       <p role="status">{message}</p>
-      <div className="rb-order-summary"><span>Resume Builder</span><strong>$9.99 paid once</strong><small>Clean PDF + DOCX · up to 3 corrections</small></div>
+      <div className="rb-order-summary"><span>Resume Builder</span><strong>$9.99 one-time payment</strong><small>No subscription or recurring charge · one completed resume · clean PDF + editable DOCX · up to 3 corrections within 7 days</small></div>
       {stage === "waiting" || stage === "error" ? <button className="rb-button rb-button-primary" type="button" onClick={() => { attempts.current = 0; void check(); }}>Check payment status <span>↻</span></button> : null}
       {stage === "error" ? <a className="rb-text-link" href="/resume-builder/intake">Return to your intake</a> : null}
+      <p className="rb-support-note">Need help? <a href="mailto:support@tradehustl3.com">support@tradehustl3.com</a></p>
       <small>Do not close this page while confirmation is in progress.</small>
     </div>
   );
