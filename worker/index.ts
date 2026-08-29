@@ -28,6 +28,7 @@ interface ExecutionContext {
 
 const allowedInterests = new Set([
   "Top 10 Trades",
+  "Book 7-Page Sample",
   "The TRADE HUSTL3 Book",
   "Resume Builder",
   "HUSTL3 PRO",
@@ -266,7 +267,7 @@ async function subscribe(request: Request, env: Env): Promise<Response> {
       utmCampaign: trackingValue(body.utm_campaign),
     });
 
-    if (interest === "Top 10 Trades") {
+    if (interest === "Top 10 Trades" || interest === "The TRADE HUSTL3 Book") {
       const apiKey = env.BREVO_API_KEY?.trim();
       if (!apiKey) throw new Error("Guide delivery is not configured.");
       const token = await createSampleToken(email, apiKey);
@@ -277,8 +278,12 @@ async function subscribe(request: Request, env: Env): Promise<Response> {
         console.error("Top 10 Trades delivery email failed", error);
       }
 
+      const message = interest === "The TRADE HUSTL3 Book"
+        ? "You're in. Your free 2026-2027 trade guide preview is ready, and a copy is on its way to your inbox."
+        : "You're in. Your free 2026-2027 Top 10 Trades guide is ready, and a copy is on its way to your inbox.";
+
       return Response.json(
-        { ok: true, message: "You're in. Your free 2026-2027 Top 10 Trades guide is ready, and a copy is on its way to your inbox.", sampleUrl: FREE_SAMPLE_ROUTE },
+        { ok: true, message, sampleUrl: FREE_SAMPLE_ROUTE },
         {
           headers: {
             "Cache-Control": "no-store",
@@ -288,7 +293,7 @@ async function subscribe(request: Request, env: Env): Promise<Response> {
       );
     }
 
-    if (interest === "The TRADE HUSTL3 Book") {
+    if (interest === "Book 7-Page Sample") {
       try {
         await sendBookSampleDeliveryEmail(env, email);
       } catch (error) {
@@ -369,7 +374,7 @@ const worker = {
     }
 
     if (url.pathname === FREE_SAMPLE_PUBLIC_PATH) {
-      return Response.redirect(`${SITE_URL}/top-10-trades#get-guide`, 302);
+      return Response.redirect(`${SITE_URL}/book#sample`, 302);
     }
 
     if (url.pathname === "/_vinext/image") {
