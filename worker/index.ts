@@ -27,6 +27,8 @@ interface ExecutionContext {
 }
 
 const allowedInterests = new Set([
+  "Top 10 Trades",
+  "Book 7-Page Sample",
   "The TRADE HUSTL3 Book",
   "Resume Builder",
   "HUSTL3 PRO",
@@ -152,9 +154,9 @@ async function syncBrevoContact(
   }
 }
 
-async function sendSampleDeliveryEmail(env: Env, email: string, sampleUrl: string): Promise<void> {
+async function sendTopTradesDeliveryEmail(env: Env, email: string, sampleUrl: string): Promise<void> {
   const apiKey = env.BREVO_API_KEY?.trim();
-  if (!apiKey) throw new Error("Brevo sample delivery is not configured.");
+  if (!apiKey) throw new Error("Brevo guide delivery is not configured.");
 
   const response = await fetch("https://api.brevo.com/v3/smtp/email", {
     method: "POST",
@@ -169,21 +171,56 @@ async function sendSampleDeliveryEmail(env: Env, email: string, sampleUrl: strin
         email: env.BREVO_SAMPLE_SENDER_EMAIL?.trim() || "updates@tradehustl3.com",
       },
       to: [{ email }],
-      subject: "Your TRADE HUSTL3 2026-2027 guide preview is ready",
+      subject: "Your TRADE HUSTL3 Top 10 Trades guide is ready",
       htmlContent: `
         <div style="background:#071a2b;padding:32px;font-family:Arial,sans-serif;color:#f4f0e7">
           <div style="max-width:620px;margin:auto">
             <p style="color:#d6a52a;font-weight:700;letter-spacing:2px">ENTER. EARN. ELEVATE.</p>
-            <h1 style="margin:16px 0;color:#ffffff">Your free trade guide preview is ready.</h1>
-            <p style="font-size:16px;line-height:1.6;color:#c5ced5">Open the seven-page 2026-2027 preview (cover included) for verified trade profiles, national pay context, the guide's source standard, and practical next steps.</p>
-            <p style="margin:28px 0"><a href="${sampleUrl}" style="display:inline-block;background:#d9361e;color:#ffffff;padding:16px 22px;text-decoration:none;font-weight:700">OPEN THE FREE GUIDE</a></p>
-            <p style="color:#d6a52a;font-weight:700">BUILT BY HUSTL3. BACKED BY TRADES.</p>
+            <h1 style="margin:16px 0;color:#ffffff">Your free Top 10 Trades guide is ready.</h1>
+            <p style="font-size:16px;line-height:1.6;color:#c5ced5">Open the seven-page 2026-2027 preview (cover included) for trade profiles, national pay context, the guide's source standard, and practical next steps.</p>
+            <p style="margin:28px 0"><a href="${sampleUrl}" style="display:inline-block;background:#d71920;color:#ffffff;padding:16px 22px;text-decoration:none;font-weight:700">OPEN THE FREE GUIDE</a></p>
+            <p style="color:#d6a52a;font-weight:700">BUILT BY HUSTLE. BACKED BY TRADES.</p>
           </div>
         </div>`,
     }),
   });
 
-  if (!response.ok) throw new Error(`Brevo sample delivery failed with status ${response.status}.`);
+  if (!response.ok) throw new Error(`Brevo guide delivery failed with status ${response.status}.`);
+}
+
+async function sendBookSampleDeliveryEmail(env: Env, email: string): Promise<void> {
+  const apiKey = env.BREVO_API_KEY?.trim();
+  if (!apiKey) throw new Error("Brevo book-sample delivery is not configured.");
+
+  const sampleUrl = `${SITE_URL}/book/sample/read`;
+  const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+      "api-key": apiKey,
+    },
+    body: JSON.stringify({
+      sender: {
+        name: "TRADE HUSTL3",
+        email: env.BREVO_SAMPLE_SENDER_EMAIL?.trim() || "updates@tradehustl3.com",
+      },
+      to: [{ email }],
+      subject: "Your free 7-page TRADE HUSTL3 book sample is ready",
+      htmlContent: `
+        <div style="background:#071a2b;padding:32px;font-family:Arial,sans-serif;color:#f4f0e7">
+          <div style="max-width:620px;margin:auto">
+            <p style="color:#d6a52a;font-weight:700;letter-spacing:2px">BUILT BY HUSTLE. BACKED BY TRADES.</p>
+            <h1 style="margin:16px 0;color:#ffffff">Your 7-page book sample is ready.</h1>
+            <p style="font-size:16px;line-height:1.6;color:#c5ced5">Read the cover, opening pages, table of contents, and the beginning of Chapter 1 from TRADE HUSTL3.</p>
+            <p style="margin:28px 0"><a href="${sampleUrl}" style="display:inline-block;background:#d71920;color:#ffffff;padding:16px 22px;text-decoration:none;font-weight:700">READ THE 7-PAGE SAMPLE</a></p>
+            <p style="color:#d6a52a;font-weight:700">ENTER. EARN. ELEVATE.</p>
+          </div>
+        </div>`,
+    }),
+  });
+
+  if (!response.ok) throw new Error(`Brevo book-sample delivery failed with status ${response.status}.`);
 }
 
 async function subscribe(request: Request, env: Env): Promise<Response> {
@@ -230,19 +267,23 @@ async function subscribe(request: Request, env: Env): Promise<Response> {
       utmCampaign: trackingValue(body.utm_campaign),
     });
 
-    if (interest === "The TRADE HUSTL3 Book") {
+    if (interest === "Top 10 Trades" || interest === "The TRADE HUSTL3 Book") {
       const apiKey = env.BREVO_API_KEY?.trim();
-      if (!apiKey) throw new Error("Sample delivery is not configured.");
+      if (!apiKey) throw new Error("Guide delivery is not configured.");
       const token = await createSampleToken(email, apiKey);
       const emailedSampleUrl = `${SITE_URL}${FREE_SAMPLE_ROUTE}?token=${encodeURIComponent(token)}`;
       try {
-        await sendSampleDeliveryEmail(env, email, emailedSampleUrl);
+        await sendTopTradesDeliveryEmail(env, email, emailedSampleUrl);
       } catch (error) {
-        console.error("Free guide delivery email failed", error);
+        console.error("Top 10 Trades delivery email failed", error);
       }
 
+      const message = interest === "The TRADE HUSTL3 Book"
+        ? "You're in. Your free 2026-2027 trade guide preview is ready, and a copy is on its way to your inbox."
+        : "You're in. Your free 2026-2027 Top 10 Trades guide is ready, and a copy is on its way to your inbox.";
+
       return Response.json(
-        { ok: true, message: "You're in. Your free 2026-2027 trade guide preview is ready, and a copy is on its way to your inbox.", sampleUrl: FREE_SAMPLE_ROUTE },
+        { ok: true, message, sampleUrl: FREE_SAMPLE_ROUTE },
         {
           headers: {
             "Cache-Control": "no-store",
@@ -250,6 +291,19 @@ async function subscribe(request: Request, env: Env): Promise<Response> {
           },
         },
       );
+    }
+
+    if (interest === "Book 7-Page Sample") {
+      try {
+        await sendBookSampleDeliveryEmail(env, email);
+      } catch (error) {
+        console.error("Book sample delivery email failed", error);
+      }
+      return jsonResponse({
+        ok: true,
+        message: "Your free 7-page TRADE HUSTL3 book sample is ready, and the reading link is on its way to your inbox.",
+        sampleUrl: "/book/sample/read",
+      });
     }
 
     return jsonResponse({ ok: true, message: "You're on the TRADE HUSTL3 list." });
@@ -267,7 +321,7 @@ async function serveFreeSample(request: Request, env: Env): Promise<Response> {
   const tokenGranted = Boolean(token && secret && await isValidSampleToken(token, secret));
 
   if (!cookieGranted && !tokenGranted) {
-    return Response.redirect(`${SITE_URL}/book#sample`, 302);
+    return Response.redirect(`${SITE_URL}/top-10-trades#get-guide`, 302);
   }
 
   const encoded = freeSampleDataUrl.slice(freeSampleDataUrl.indexOf(",") + 1);

@@ -32,7 +32,7 @@ export function SignupForm({ mode = "general" }: { mode?: "general" | "sample" }
   const [message, setMessage] = useState("");
   const [sampleUrl, setSampleUrl] = useState("");
   const isSample = mode === "sample";
-  const formName = isSample ? "free_2026_2027_trade_guide_preview" : "general_interest";
+  const formName = isSample ? "free_2026_2027_guide" : "general_interest";
   const [trackSampleLead] = useState(() => isSample ? createMetaLeadTracker("book_sample") : undefined);
 
   useEffect(() => {
@@ -120,7 +120,7 @@ export function SignupForm({ mode = "general" }: { mode?: "general" | "sample" }
         </div>
         {utmKeys.map((key) => <input key={key} type="hidden" name={key} defaultValue="" />)}
         <button type="submit" disabled={status === "submitting"}>
-          {status === "submitting" ? "UNLOCKING..." : isSample ? "UNLOCK THE FREE GUIDE" : "KEEP ME POSTED"} <span>↗</span>
+          {status === "submitting" ? "SENDING..." : isSample ? "UNLOCK THE FREE GUIDE" : "KEEP ME POSTED"} <span>↗</span>
         </button>
       </form>
       <p className={`signup-status ${status}`} role={status === "error" ? "alert" : "status"} aria-live="polite">
@@ -128,7 +128,7 @@ export function SignupForm({ mode = "general" }: { mode?: "general" | "sample" }
       </p>
       {isSample && status === "success" && sampleUrl && (
         <a className="sample-unlock-link" href={sampleUrl} target="_blank" rel="noreferrer">
-          OPEN YOUR FREE GUIDE <span>↗</span>
+          OPEN THE FREE GUIDE <span>↗</span>
         </a>
       )}
     </>

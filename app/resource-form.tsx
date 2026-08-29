@@ -12,16 +12,12 @@ type ResourceFormProps = {
   ctaId?: string;
   ctaLocation?: string;
   metaLeadContentName?: MetaLeadContentName;
+  signupInterest?: string;
+  successLinkLabel?: string;
 };
 
-// The free "Top 10 Trades for 2026-2027" guide IS the repo's only free PDF:
-// worker/assets/trade-hustl3-free-sample.pdf, served at /api/free-sample as
-// "TRADE HUSTL3: 10 High-Opportunity Trades — 2026-2027 Edition" (see README
-// and worker/index.ts sendSampleDeliveryEmail). The interest value below is
-// legacy-named but it is the ONLY /api/subscribe branch that delivers that
-// PDF: it stores the D1 subscriber, syncs the Brevo contact, emails the gated
-// link, and returns { sampleUrl: "/api/free-sample" }.
-const GUIDE_INTEREST = 'The TRADE HUSTL3 Book';
+const TOP_TRADES_INTEREST = 'Top 10 Trades';
+const BOOK_SAMPLE_INTEREST = 'Book 7-Page Sample';
 const UTM_KEYS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'] as const;
 
 function collectUtm(): Record<string, string> {
@@ -50,6 +46,8 @@ export function ResourceForm({
   ctaId,
   ctaLocation,
   metaLeadContentName,
+  signupInterest,
+  successLinkLabel = 'Open your free guide',
 }: ResourceFormProps) {
   const id = useId();
   const isSubmitting = useRef(false);
@@ -59,6 +57,9 @@ export function ResourceForm({
   const [trackMetaLead] = useState(() => (
     metaLeadContentName ? createMetaLeadTracker(metaLeadContentName) : undefined
   ));
+  const resolvedSignupInterest = metaLeadContentName === 'book_sample'
+    ? BOOK_SAMPLE_INTEREST
+    : (signupInterest || TOP_TRADES_INTEREST);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -74,14 +75,14 @@ export function ResourceForm({
 
     try {
       const result = await submitSignup(
-        { email, interest: GUIDE_INTEREST, ...collectUtm() },
+        { email, interest: resolvedSignupInterest, ...collectUtm() },
         {
           trackMetaLead,
           fallbackErrorMessage: 'We could not send the guide. Please try again.',
         },
       );
       setStatus('success');
-      setMessage(result.message || "You're on the list. Check your inbox for the free guide.");
+      setMessage(result.message || "You're on the list. Check your inbox for the free resource.");
       setGuideUrl(result.sampleUrl || '');
     } catch (error) {
       setStatus('error');
@@ -133,7 +134,7 @@ export function ResourceForm({
       </p>
       {status === 'success' && guideUrl ? (
         <a className="resource-guide-link" href={guideUrl} target="_blank" rel="noreferrer">
-          Open your free guide <span aria-hidden="true">↗</span>
+          {successLinkLabel} <span aria-hidden="true">↗</span>
         </a>
       ) : null}
     </form>

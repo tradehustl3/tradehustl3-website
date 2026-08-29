@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Anton, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import { GoogleAnalytics } from "./google-analytics";
+import { MetaCampaignViewTracker } from "./meta-view-content";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_TITLE, SITE_URL } from "./site";
 
 const display = Anton({
@@ -208,6 +209,9 @@ export default function RootLayout({
               '<img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=2260020274539615&ev=PageView&noscript=1" />',
           }}
         />
+
+        {/* Route-specific Meta ViewContent events for campaign funnels */}
+        <MetaCampaignViewTracker />
 
         {/* SEO Structured Data */}
         <script
