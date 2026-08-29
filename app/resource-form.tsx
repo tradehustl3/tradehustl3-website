@@ -57,8 +57,9 @@ export function ResourceForm({
   const [trackMetaLead] = useState(() => (
     metaLeadContentName ? createMetaLeadTracker(metaLeadContentName) : undefined
   ));
-  const resolvedSignupInterest = signupInterest
-    || (metaLeadContentName === 'book_sample' ? BOOK_SAMPLE_INTEREST : TOP_TRADES_INTEREST);
+  const resolvedSignupInterest = metaLeadContentName === 'book_sample'
+    ? BOOK_SAMPLE_INTEREST
+    : (signupInterest || TOP_TRADES_INTEREST);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
