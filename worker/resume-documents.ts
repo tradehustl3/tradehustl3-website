@@ -55,8 +55,12 @@ export type GeneratedResume = {
   additionalInformation: string[];
 };
 
+// Brand red — the only place color appears on the resume, per the ATS template spec.
+const BRAND_RED = "D71920";
+const BRAND_RED_RGB = rgb(0xd7 / 255, 0x19 / 255, 0x20 / 255);
+
 const SECTION_BORDER = {
-  bottom: { color: "8A8A8A", size: 6, style: BorderStyle.SINGLE },
+  bottom: { color: BRAND_RED, size: 6, style: BorderStyle.SINGLE },
 };
 
 function clean(value: string | undefined): string {
@@ -80,6 +84,18 @@ function bullet(text: string): Paragraph {
   });
 }
 
+function certificationBullet(certification: ResumeCertification): Paragraph {
+  const rest = [clean(certification.issuer), clean(certification.year)].filter(Boolean).join(" — ");
+  return new Paragraph({
+    bullet: { level: 0 },
+    spacing: { after: 40 },
+    children: [
+      new TextRun({ text: clean(certification.name), bold: true, size: 21, font: "Arial" }),
+      ...(rest ? [new TextRun({ text: ` — ${rest}`, size: 21, font: "Arial" })] : []),
+    ],
+  });
+}
+
 export async function createResumeDocx(resume: GeneratedResume): Promise<Uint8Array> {
   const contactLine = [
     clean(resume.basics.location),
@@ -91,7 +107,7 @@ export async function createResumeDocx(resume: GeneratedResume): Promise<Uint8Ar
     new Paragraph({
       alignment: AlignmentType.CENTER,
       spacing: { after: 20 },
-      children: [new TextRun({ text: clean(resume.basics.fullName), bold: true, size: 34, font: "Arial" })],
+      children: [new TextRun({ text: clean(resume.basics.fullName), bold: true, size: 42, font: "Arial" })],
     }),
     new Paragraph({
       alignment: AlignmentType.CENTER,
@@ -108,23 +124,22 @@ export async function createResumeDocx(resume: GeneratedResume): Promise<Uint8Ar
       spacing: { after: 80 },
       children: [new TextRun({ text: clean(resume.summary), size: 21, font: "Arial" })],
     }),
+  ];
+
+  if (resume.certifications.length) {
+    children.push(sectionHeading("CERTIFICATIONS & LICENSES"));
+    for (const certification of resume.certifications) {
+      children.push(certificationBullet(certification));
+    }
+  }
+
+  children.push(
     sectionHeading("CORE SKILLS"),
     new Paragraph({
       spacing: { after: 80 },
       children: [new TextRun({ text: resume.skills.map(clean).filter(Boolean).join("  •  "), size: 21, font: "Arial" })],
     }),
-  ];
-
-  if (resume.certifications.length) {
-    children.push(sectionHeading("CERTIFICATIONS"));
-    for (const certification of resume.certifications) {
-      children.push(bullet([
-        clean(certification.name),
-        clean(certification.issuer),
-        clean(certification.year),
-      ].filter(Boolean).join(" — ")));
-    }
-  }
+  );
 
   if (resume.experience.length) {
     children.push(sectionHeading("WORK EXPERIENCE"));
@@ -156,7 +171,7 @@ export async function createResumeDocx(resume: GeneratedResume): Promise<Uint8Ar
   }
 
   if (resume.education.length) {
-    children.push(sectionHeading("EDUCATION AND TRAINING"));
+    children.push(sectionHeading("EDUCATION & TRAINING"));
     for (const education of resume.education) {
       children.push(new Paragraph({
         keepNext: true,
@@ -195,7 +210,8 @@ export async function createResumeDocx(resume: GeneratedResume): Promise<Uint8Ar
     sections: [{
       properties: {
         page: {
-          margin: { top: 720, right: 720, bottom: 720, left: 720 },
+          // 0.7in margins (twentieths of a point: 1440 per inch) — within the 0.6-0.75in spec range.
+          margin: { top: 1008, right: 1008, bottom: 1008, left: 1008 },
         },
       },
       children,
@@ -287,17 +303,17 @@ function writeSection(writer: PdfWriter, title: string): void {
   writer.y -= 7;
   writer.page.drawText(title, {
     x: PDF_MARGIN,
-    y: writer.y - 11,
-    size: 11,
+    y: writer.y - 12,
+    size: 12,
     font: writer.bold,
     color: rgb(0.03, 0.03, 0.03),
   });
-  writer.y -= 15;
+  writer.y -= 16;
   writer.page.drawLine({
     start: { x: PDF_MARGIN, y: writer.y },
     end: { x: PDF_WIDTH - PDF_MARGIN, y: writer.y },
-    thickness: 0.55,
-    color: rgb(0.48, 0.48, 0.48),
+    thickness: 0.9,
+    color: BRAND_RED_RGB,
   });
   writer.y -= 6;
 }
@@ -306,6 +322,59 @@ function writeBullet(writer: PdfWriter, text: string): void {
   ensureSpace(writer, 16);
   writer.page.drawText("•", { x: PDF_MARGIN + 7, y: writer.y - 10, size: 10, font: writer.regular });
   writeLines(writer, text, { indent: 20, size: 10.2, lineHeight: 12.5, after: 1.5 });
+}
+
+function wrapSegments(
+  segments: { text: string; font: PDFFont }[],
+  size: number,
+  width: number,
+): { text: string; font: PDFFont }[][] {
+  const words: { text: string; font: PDFFont }[] = [];
+  for (const segment of segments) {
+    const cleaned = clean(segment.text);
+    if (!cleaned) continue;
+    for (const word of cleaned.split(" ")) words.push({ text: word, font: segment.font });
+  }
+  const lines: { text: string; font: PDFFont }[][] = [];
+  let current: { text: string; font: PDFFont }[] = [];
+  let currentWidth = 0;
+  for (const word of words) {
+    const spaceWidth = current.length ? current[current.length - 1].font.widthOfTextAtSize(" ", size) : 0;
+    const wordWidth = word.font.widthOfTextAtSize(word.text, size);
+    if (current.length && currentWidth + spaceWidth + wordWidth > width) {
+      lines.push(current);
+      current = [word];
+      currentWidth = wordWidth;
+    } else {
+      current.push(word);
+      currentWidth += spaceWidth + wordWidth;
+    }
+  }
+  if (current.length) lines.push(current);
+  return lines;
+}
+
+function writeCertificationBullet(writer: PdfWriter, certification: ResumeCertification): void {
+  const size = 10.2;
+  const indent = 20;
+  const lineHeight = 12.5;
+  const rest = [clean(certification.issuer), clean(certification.year)].filter(Boolean).join(" — ");
+  const segments = [
+    { text: clean(certification.name), font: writer.bold },
+    ...(rest ? [{ text: ` — ${rest}`, font: writer.regular }] : []),
+  ];
+  const lines = wrapSegments(segments, size, PDF_WIDTH - PDF_MARGIN * 2 - indent);
+  ensureSpace(writer, Math.max(1, lines.length) * lineHeight + 1.5);
+  writer.page.drawText("•", { x: PDF_MARGIN + 7, y: writer.y - 10, size: 10, font: writer.regular });
+  for (const line of lines) {
+    let x = PDF_MARGIN + indent;
+    for (const word of line) {
+      writer.page.drawText(word.text, { x, y: writer.y - size, size, font: word.font, color: rgb(0.07, 0.07, 0.07) });
+      x += word.font.widthOfTextAtSize(`${word.text} `, size);
+    }
+    writer.y -= lineHeight;
+  }
+  writer.y -= 1.5;
 }
 
 export async function createResumePdf(resume: GeneratedResume, watermarked = false): Promise<Uint8Array> {
@@ -320,21 +389,20 @@ export async function createResumePdf(resume: GeneratedResume, watermarked = fal
     y: PDF_HEIGHT - PDF_MARGIN,
   };
 
-  writeCentered(writer, resume.basics.fullName, writer.bold, 18, 0);
+  writeCentered(writer, resume.basics.fullName, writer.bold, 21, 0);
   writeCentered(writer, resume.basics.targetTitle, writer.regular, 12, 0);
   writeCentered(writer, [resume.basics.location, resume.basics.phone, resume.basics.email].map(clean).filter(Boolean).join("  |  "), writer.regular, 10, 10);
 
   writeSection(writer, "PROFESSIONAL SUMMARY");
   writeLines(writer, resume.summary, { after: 4 });
-  writeSection(writer, "CORE SKILLS");
-  writeLines(writer, resume.skills.map(clean).filter(Boolean).join("  •  "), { after: 4 });
 
   if (resume.certifications.length) {
-    writeSection(writer, "CERTIFICATIONS");
-    for (const certification of resume.certifications) {
-      writeBullet(writer, [certification.name, certification.issuer, certification.year].map(clean).filter(Boolean).join(" — "));
-    }
+    writeSection(writer, "CERTIFICATIONS & LICENSES");
+    for (const certification of resume.certifications) writeCertificationBullet(writer, certification);
   }
+
+  writeSection(writer, "CORE SKILLS");
+  writeLines(writer, resume.skills.map(clean).filter(Boolean).join("  •  "), { after: 4 });
 
   if (resume.experience.length) {
     writeSection(writer, "WORK EXPERIENCE");
@@ -351,7 +419,7 @@ export async function createResumePdf(resume: GeneratedResume, watermarked = fal
   }
 
   if (resume.education.length) {
-    writeSection(writer, "EDUCATION AND TRAINING");
+    writeSection(writer, "EDUCATION & TRAINING");
     for (const education of resume.education) {
       writeLines(writer, [education.credential, education.year].map(clean).filter(Boolean).join("  |  "), { font: writer.bold, size: 10.7, after: 0 });
       writeLines(writer, [education.institution, education.location].map(clean).filter(Boolean).join(" — "), { font: writer.italic, size: 10.2, after: 1 });
