@@ -2,11 +2,14 @@
 
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 
+type ResumeTheme = "plain" | "navy";
+
 type Resume = {
   resumeId: string;
   trade: string;
   title: string;
   status: string;
+  theme: ResumeTheme;
   paid: boolean;
   runsUsed: number;
   runsTotal: number;
@@ -14,6 +17,11 @@ type Resume = {
   previewUrl: string | null;
   downloads: { pdf: string; docx: string } | null;
 };
+
+const THEME_OPTIONS: { value: ResumeTheme; label: string; note: string }[] = [
+  { value: "plain", label: "Plain — ATS Safe", note: "No background. Plain text throughout so applicant tracking systems parse it cleanly." },
+  { value: "navy", label: "Navy — Styled", note: "A navy header band and gold accent line for a more designed look. Still real, selectable text." },
+];
 
 type GenerationFailure = {
   code?: string;
@@ -39,6 +47,7 @@ export function ResumeReview() {
   const [checkingOut, setCheckingOut] = useState(false);
   const [message, setMessage] = useState("");
   const [intakeNotice, setIntakeNotice] = useState<GenerationFailure | null>(null);
+  const [themeSaving, setThemeSaving] = useState(false);
 
   const load = useCallback(async (id: string) => {
     try {
@@ -118,6 +127,52 @@ export function ResumeReview() {
     event.currentTarget.reset();
   }
 
+  async function updateTheme(theme: ResumeTheme) {
+    if (!resumeId || !resume || resume.theme === theme || themeSaving) return;
+    const previous = resume.theme;
+    setThemeSaving(true);
+    setResume({ ...resume, theme });
+    try {
+      const response = await fetch(`/api/resume-builder/resumes/${encodeURIComponent(resumeId)}`, {
+        method: "PATCH",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ theme }),
+      });
+      if (!response.ok) throw new Error("We could not save your template choice.");
+    } catch (error) {
+      setResume((current) => current ? { ...current, theme: previous } : current);
+      setMessage(error instanceof Error ? error.message : "We could not save your template choice.");
+    } finally {
+      setThemeSaving(false);
+    }
+  }
+
+  function renderThemePicker() {
+    if (!resume) return null;
+    return (
+      <div className="rb-theme-picker" role="radiogroup" aria-label="Resume template style">
+        {THEME_OPTIONS.map((option) => {
+          const selected = resume.theme === option.value;
+          return (
+            <button
+              type="button"
+              key={option.value}
+              role="radio"
+              aria-checked={selected}
+              className={`rb-trade-card${selected ? " rb-trade-card-on" : ""}`}
+              disabled={themeSaving}
+              onClick={() => void updateTheme(option.value)}
+            >
+              <span className="rb-trade-card-name">{option.label}</span>
+              <span className="rb-trade-card-note">{option.note}</span>
+            </button>
+          );
+        })}
+      </div>
+    );
+  }
+
   async function startCheckout() {
     if (!resumeId) return;
     setCheckingOut(true);
@@ -186,6 +241,8 @@ export function ResumeReview() {
         <section className="rb-first-build">
           <div className="rb-blueprint" aria-hidden="true"><span>ATS</span><i /><i /><i /><i /></div>
           <div><p className="rb-kicker">/ PREVIEW BEFORE YOU PAY</p><h2>READY FOR THE FIRST BUILD.</h2><p>Claude Sonnet will organize only the experience and facts you provided—no invented licenses, employers, or results. You will review a protected, logo-watermarked copy before checkout.</p>
+          <span className="rb-theme-label">Choose your template</span>
+          {renderThemePicker()}
           <button className="rb-button rb-button-primary" type="button" disabled={working} onClick={() => void runGeneration()}>{working ? "Building your resume…" : "Build my watermarked preview"} <span>→</span></button></div>
         </section>
       ) : (
@@ -196,7 +253,11 @@ export function ResumeReview() {
           </div>
 
           <aside className="rb-review-sidebar">
-            <div className="rb-review-status"><p className="rb-kicker">/ {resume.paid ? "REVIEW + REFINE" : "PREVIEW BEFORE YOU PAY"}</p><h2>{resume.paid ? "MAKE IT SOUND LIKE YOU." : "LIKE WHAT YOU SEE?"}</h2><p>{resume.paid ? "Check names, dates, certifications, job duties, and contact information before downloading." : "Your first resume is ready. Pay once to remove the watermark, unlock the clean PDF and DOCX, and receive up to three corrections."}</p></div>
+            <div className="rb-review-status"><p className="rb-kicker">/ {resume.paid ? "REVIEW + REFINE" : "PREVIEW BEFORE YOU PAY"}</p><h2>{resume.paid ? "MAKE IT SOUND LIKE YOU." : "LIKE WHAT YOU SEE?"}</h2><p className="rb-review-desc">{resume.paid ? "Check names, dates, certifications, job duties, and contact information before downloading." : "Your first resume is ready. Pay once to remove the watermark, unlock the clean PDF and DOCX, and receive up to three corrections."}</p>
+              <span className="rb-theme-label">Template</span>
+              {renderThemePicker()}
+              <small className="rb-theme-note">Switching styles applies the next time you {resume.paid ? "submit a correction" : "build a preview"}.</small>
+            </div>
 
             {resume.paid ? <form className="rb-correction-form" onSubmit={submitCorrection}>
               <div className="rb-correction-count"><strong>{resume.correctionsRemaining}</strong><span>AI corrections remaining</span></div>
