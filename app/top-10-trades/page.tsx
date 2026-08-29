@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { CtaAnalytics } from '../cta-analytics';
 import { ResourceForm } from '../resource-form';
 import { SITE_NAME, SITE_URL } from '../site';
+import { SUPPORT_EMAIL } from '../../shared/customer-config';
+import { ViewContentTracker } from '../view-content-tracker';
 import styles from './page.module.css';
 
 const PAGE_TITLE = 'Free Top 10 Trades Guide for 2026–2027 | TRADE HUSTL3';
@@ -64,6 +66,7 @@ export default function TopTenTradesPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
       />
       <CtaAnalytics />
+      <ViewContentTracker contentName="top_10_trades" />
 
       <header className={styles.header}>
         <Link className={styles.brand} href="/" aria-label="TRADE HUSTL3 home">
@@ -105,9 +108,16 @@ export default function TopTenTradesPage() {
               ctaId="top-10-trades"
               ctaLocation="top-10-campaign-page"
               metaLeadContentName="top_10_trades"
+              nextStepHref="/resume-builder"
+              nextStepLabel="Build my resume — $9.99"
             />
             <p className={styles.consent}>
-              No purchase required. By requesting the guide, you agree to receive TRADE HUSTL3 career and product updates. Unsubscribe anytime.
+              Free. No purchase required. Email delivery. By requesting the guide you agree to receive
+              TRADE HUSTL3 career and product updates, and you can unsubscribe anytime — see our{' '}
+              <Link href="/privacy">Privacy Policy</Link>.
+            </p>
+            <p className={styles.support}>
+              Need help? <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>
             </p>
           </div>
         </div>
@@ -167,6 +177,7 @@ export default function TopTenTradesPage() {
       <footer className={styles.footer}>
         <Link className={styles.footerBrand} href="/">TRADE HUSTL<span>3</span> LLC</Link>
         <p>Built by Hustle, Backed by Trades.</p>
+        <p className={styles.footerSupport}>Need help? <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a></p>
         <nav aria-label="Footer links">
           <Link href="/privacy">Privacy</Link>
           <Link href="/terms">Terms</Link>

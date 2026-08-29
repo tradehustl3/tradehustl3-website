@@ -4,7 +4,6 @@ import { FormEvent, useId, useRef, useState } from 'react';
 import { captureAttribution } from './analytics';
 import { createMetaLeadTracker, type MetaLeadContentName } from './meta-pixel';
 import { submitSignup } from './signup-request';
-import { ViewContentTracker } from './view-content-tracker';
 
 type ResourceFormProps = {
   resourceName: string;
@@ -14,18 +13,14 @@ type ResourceFormProps = {
   ctaId?: string;
   ctaLocation?: string;
   metaLeadContentName?: MetaLeadContentName;
+  /** Brevo list interest. Both free funnels use the book interest; the two are
+   *  told apart downstream by `signup_source` (top_10_trades vs book_sample). */
+  signupInterest?: string;
+  successLinkLabel?: string;
   nextStepHref?: string;
   nextStepLabel?: string;
 };
 
-// The free "Top 10 Trades for 2026-2027" guide IS the repo's only free PDF:
-// worker/assets/trade-hustl3-free-sample.pdf, served at /api/free-sample as
-// "TRADE HUSTL3: 10 High-Opportunity Trades — 2026-2027 Edition" (see README
-// and worker/index.ts sendSampleDeliveryEmail). The interest value below is
-// legacy-named but it is the ONLY /api/subscribe branch that delivers that
-// PDF: it stores the D1 subscriber, syncs the Brevo contact, emails the gated
-// link, and returns { sampleUrl: "/api/free-sample" }.
-const GUIDE_INTEREST = 'The TRADE HUSTL3 Book';
 type Status = 'idle' | 'submitting' | 'success' | 'error';
 
 export function ResourceForm({
@@ -36,6 +31,8 @@ export function ResourceForm({
   ctaId,
   ctaLocation,
   metaLeadContentName,
+  signupInterest = 'The TRADE HUSTL3 Book',
+  successLinkLabel = 'Open your free guide',
   nextStepHref,
   nextStepLabel,
 }: ResourceFormProps) {
@@ -65,7 +62,7 @@ export function ResourceForm({
       const result = await submitSignup(
         {
           email,
-          interest: GUIDE_INTEREST,
+          interest: signupInterest,
           signup_source: metaLeadContentName || 'website',
           ...attribution,
         },
@@ -87,7 +84,6 @@ export function ResourceForm({
 
   return (
     <form className="resource-form" onSubmit={handleSubmit} aria-describedby={`${id}-status`}>
-      {metaLeadContentName ? <ViewContentTracker contentName={metaLeadContentName} observe /> : null}
       {includeFirstName ? (
         <div className="field-row">
           <label htmlFor={`${id}-name`}>First name</label>
@@ -128,8 +124,12 @@ export function ResourceForm({
       </p>
       {status === 'success' && guideUrl ? (
         <div className="resource-success-actions">
-          <a className="resource-guide-link" href={guideUrl} target="_blank" rel="noreferrer">
-            Open your free guide <span aria-hidden="true">↗</span>
+          <a
+            className="resource-guide-link"
+            href={guideUrl}
+            {...(guideUrl.includes('/api/') ? { target: '_blank', rel: 'noreferrer' } : {})}
+          >
+            {successLinkLabel} <span aria-hidden="true">↗</span>
           </a>
           {nextStepHref && nextStepLabel ? (
             <a className="resource-next-step" href={nextStepHref}>

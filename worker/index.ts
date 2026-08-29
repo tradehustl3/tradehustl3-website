@@ -47,6 +47,17 @@ const FREE_SAMPLE_PUBLIC_PATH = "/trade-hustl3-free-sample.pdf";
 const FREE_SAMPLE_ROUTE = "/api/free-sample";
 const SAMPLE_COOKIE = "tradehustl3_sample_access=granted";
 const SITE_URL = "https://tradehustl3.com";
+// Two distinct free lead magnets, each with its own dedicated landing page:
+//   top_10_trades → /top-10-trades  → gated Top 10 Trades 2026-2027 PDF (/api/free-sample)
+//   book_sample   → /book/sample    → on-page 7-page book excerpt reader (#read)
+// They are told apart by `signup_source`, never by the shared Brevo interest.
+const GUIDE_PAGE_PATH = "/top-10-trades";
+const BOOK_SAMPLE_PAGE_PATH = "/book/sample";
+// BOOK SAMPLE PDF ASSET REQUIRED: there is no real 7-page book-excerpt PDF in
+// the repo (worker/assets/ ships only the Top 10 Trades guide). Until a genuine
+// excerpt is added, the book sample is delivered as the /book/sample#read web
+// reader and this route reports a clear pending state — it never serves a file.
+const BOOK_SAMPLE_ROUTE = "/api/book-sample";
 const encoder = new TextEncoder();
 
 function jsonResponse(body: Record<string, unknown>, status = 200): Response {
@@ -185,10 +196,10 @@ async function sendSampleDeliveryEmail(env: Env, email: string, sampleUrl: strin
         <div style="background:#071a2b;padding:32px;font-family:Arial,sans-serif;color:#f4f0e7">
           <div style="max-width:620px;margin:auto">
             <p style="color:#d6a52a;font-weight:700;letter-spacing:2px">ENTER. EARN. ELEVATE.</p>
-            <h1 style="margin:16px 0;color:#ffffff">Your free trade guide preview is ready.</h1>
-            <p style="font-size:16px;line-height:1.6;color:#c5ced5">Open the seven-page 2026-2027 preview (cover included) for verified trade profiles, national pay context, the guide's source standard, and practical next steps.</p>
-            <p style="margin:28px 0"><a href="${sampleUrl}" style="display:inline-block;background:#d9361e;color:#ffffff;padding:16px 22px;text-decoration:none;font-weight:700">OPEN THE FREE GUIDE</a></p>
-            <p style="font-size:14px;line-height:1.6;color:#c5ced5">Ready for the next move? <a href="${SITE_URL}/resume-builder" style="color:#d6a52a">Build a trade-focused resume</a> or <a href="${SITE_URL}/book" style="color:#d6a52a">explore the complete TRADE HUSTL3 book</a>.</p>
+            <h1 style="margin:16px 0;color:#ffffff">Your free Top 10 Trades guide is ready.</h1>
+            <p style="font-size:16px;line-height:1.6;color:#c5ced5">Open the seven-page 2026-2027 guide (cover included) for verified trade profiles, national pay context, the guide's source standard, and practical next steps.</p>
+            <p style="margin:28px 0"><a href="${sampleUrl}" style="display:inline-block;background:#d71920;color:#ffffff;padding:16px 22px;text-decoration:none;font-weight:700">OPEN THE FREE GUIDE</a></p>
+            <p style="font-size:14px;line-height:1.6;color:#c5ced5">Found your direction? <a href="${SITE_URL}/resume-builder" style="color:#d6a52a">Build a trade-focused resume with TRADE HUSTL3 Resume Builder</a>.</p>
             <p style="font-size:13px;line-height:1.6;color:#9cabb5">Need help? <a href="mailto:${SUPPORT_EMAIL}" style="color:#d6a52a">${SUPPORT_EMAIL}</a></p>
             <p style="color:#d6a52a;font-weight:700">BUILT BY HUSTL3. BACKED BY TRADES.</p>
           </div>
@@ -197,6 +208,43 @@ async function sendSampleDeliveryEmail(env: Env, email: string, sampleUrl: strin
   });
 
   if (!response.ok) throw new Error(`Brevo sample delivery failed with status ${response.status}.`);
+}
+
+async function sendBookSampleDeliveryEmail(env: Env, email: string): Promise<void> {
+  const apiKey = env.BREVO_API_KEY?.trim();
+  if (!apiKey) throw new Error("Brevo book-sample delivery is not configured.");
+  const readerUrl = `${SITE_URL}${BOOK_SAMPLE_PAGE_PATH}#read`;
+
+  const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+      "api-key": apiKey,
+    },
+    body: JSON.stringify({
+      sender: {
+        name: "TRADE HUSTL3",
+        email: env.BREVO_SAMPLE_SENDER_EMAIL?.trim() || "updates@tradehustl3.com",
+      },
+      to: [{ email }],
+      subject: "Your free 7-page TRADE HUSTL3 book sample is ready",
+      htmlContent: `
+        <div style="background:#071a2b;padding:32px;font-family:Arial,sans-serif;color:#f4f0e7">
+          <div style="max-width:620px;margin:auto">
+            <p style="color:#d6a52a;font-weight:700;letter-spacing:2px">ENTER. EARN. ELEVATE.</p>
+            <h1 style="margin:16px 0;color:#ffffff">Your 7-page book sample is ready.</h1>
+            <p style="font-size:16px;line-height:1.6;color:#c5ced5">Read the cover, opening pages, the table of contents, and the beginning of Chapter 1 of <em>TRADE HUSTL3: Built by Hustle, Backed by Trades</em>.</p>
+            <p style="margin:28px 0"><a href="${readerUrl}" style="display:inline-block;background:#d71920;color:#ffffff;padding:16px 22px;text-decoration:none;font-weight:700">READ THE 7-PAGE SAMPLE</a></p>
+            <p style="font-size:14px;line-height:1.6;color:#c5ced5">Ready for the whole thing? <a href="${SITE_URL}/book" style="color:#d6a52a">Continue with the full TRADE HUSTL3 book</a>.</p>
+            <p style="font-size:13px;line-height:1.6;color:#9cabb5">Need help? <a href="mailto:${SUPPORT_EMAIL}" style="color:#d6a52a">${SUPPORT_EMAIL}</a></p>
+            <p style="color:#d6a52a;font-weight:700">BUILT BY HUSTLE. BACKED BY TRADES.</p>
+          </div>
+        </div>`,
+    }),
+  });
+
+  if (!response.ok) throw new Error(`Brevo book-sample delivery failed with status ${response.status}.`);
 }
 
 async function subscribe(request: Request, env: Env): Promise<Response> {
@@ -248,18 +296,34 @@ async function subscribe(request: Request, env: Env): Promise<Response> {
     });
 
     if (interest === "The TRADE HUSTL3 Book") {
+      // book_sample funnel: the 7-page excerpt is the on-page web reader — no PDF.
+      if (source === "book_sample") {
+        try {
+          await sendBookSampleDeliveryEmail(env, email);
+        } catch (error) {
+          console.error("Book sample delivery email failed", error);
+        }
+        return jsonResponse({
+          ok: true,
+          message: "You're in. Your free 7-page TRADE HUSTL3 book sample is ready to read, and the link is on its way to your inbox.",
+          sampleUrl: `${BOOK_SAMPLE_PAGE_PATH}#read`,
+          funnel: source,
+        });
+      }
+
+      // Every other book-interest signup is the Top 10 Trades guide funnel.
       const apiKey = env.BREVO_API_KEY?.trim();
-      if (!apiKey) throw new Error("Sample delivery is not configured.");
+      if (!apiKey) throw new Error("Guide delivery is not configured.");
       const token = await createSampleToken(email, apiKey);
       const emailedSampleUrl = `${SITE_URL}${FREE_SAMPLE_ROUTE}?token=${encodeURIComponent(token)}`;
       try {
         await sendSampleDeliveryEmail(env, email, emailedSampleUrl, source);
       } catch (error) {
-        console.error("Free guide delivery email failed", error);
+        console.error("Top 10 Trades guide delivery email failed", error);
       }
 
       return Response.json(
-        { ok: true, message: "You're in. Your free 2026-2027 trade guide preview is ready, and a copy is on its way to your inbox.", sampleUrl: FREE_SAMPLE_ROUTE, funnel: source },
+        { ok: true, message: "You're in. Your free 2026-2027 Top 10 Trades guide is ready, and a copy is on its way to your inbox.", sampleUrl: FREE_SAMPLE_ROUTE, funnel: source },
         {
           headers: {
             "Cache-Control": "no-store",
@@ -284,7 +348,7 @@ async function serveFreeSample(request: Request, env: Env): Promise<Response> {
   const tokenGranted = Boolean(token && secret && await isValidSampleToken(token, secret));
 
   if (!cookieGranted && !tokenGranted) {
-    return Response.redirect(`${SITE_URL}/book#sample`, 302);
+    return Response.redirect(`${SITE_URL}${GUIDE_PAGE_PATH}#get-guide`, 302);
   }
 
   const encoded = freeSampleDataUrl.slice(freeSampleDataUrl.indexOf(",") + 1);
@@ -296,6 +360,21 @@ async function serveFreeSample(request: Request, env: Env): Promise<Response> {
   headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
   if (tokenGranted) headers.set("Set-Cookie", `${SAMPLE_COOKIE}; Max-Age=604800; Path=/; HttpOnly; Secure; SameSite=Lax`);
   return new Response(sample, { status: 200, headers });
+}
+
+/**
+ * BOOK SAMPLE PDF ASSET REQUIRED. No genuine 7-page book excerpt PDF exists in
+ * the repo, so there is nothing to download here. This route always resolves
+ * (never 404s / never serves the Top 10 Trades guide) and points the reader at
+ * the on-page /book/sample#read reader, which is the real sample access today.
+ */
+function serveBookSamplePending(): Response {
+  return jsonResponse({
+    ok: false,
+    pending: true,
+    message: "The downloadable 7-page TRADE HUSTL3 book sample is being finalized. Read it now at /book/sample#read.",
+    readerUrl: `${BOOK_SAMPLE_PAGE_PATH}#read`,
+  }, 200);
 }
 
 // Image security config. SVG sources with .svg extension auto-skip the
@@ -336,8 +415,12 @@ const worker = {
       return serveFreeSample(request, env);
     }
 
+    if (url.pathname === BOOK_SAMPLE_ROUTE) {
+      return serveBookSamplePending();
+    }
+
     if (url.pathname === FREE_SAMPLE_PUBLIC_PATH) {
-      return Response.redirect(`${SITE_URL}/book#sample`, 302);
+      return Response.redirect(`${SITE_URL}${GUIDE_PAGE_PATH}#get-guide`, 302);
     }
 
     if (url.pathname === "/_vinext/image") {

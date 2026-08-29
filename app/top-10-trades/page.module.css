@@ -181,6 +181,36 @@
   font-size: 0.78rem;
   line-height: 1.55;
 }
+.consent a {
+  color: var(--gold);
+}
+.support {
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+.support a {
+  color: var(--gold);
+  text-decoration: none;
+}
+.support a:hover,
+.support a:focus-visible {
+  text-decoration: underline;
+}
+.footerSupport {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: #9fb1bd;
+  font-size: 0.8rem;
+}
+.footerSupport a {
+  color: var(--gold);
+  text-decoration: none;
+}
+.footerSupport a:hover,
+.footerSupport a:focus-visible {
+  text-decoration: underline;
+}
 
 .formCard :global(.resource-form) {
   display: grid;

@@ -22,6 +22,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.9,
     },
     {
+      url: `${SITE_URL}/book/sample`,
+      lastModified: new Date("2026-08-29T00:00:00.000Z"),
+      changeFrequency: "monthly",
+      priority: 0.8,
+    },
+    {
       url: `${SITE_URL}/resume-builder`,
       lastModified: new Date("2026-08-24T00:00:00.000Z"),
       changeFrequency: "monthly",
