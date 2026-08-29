@@ -8,8 +8,9 @@
 | `/resume-builder` | `ViewContent` | Product page client mount, once per browser session | `content_name=resume_builder`, `value=9.99`, `currency=USD` |
 | Resume intake or preview | `ViewContent` | Stage mount, once per stage per browser session | `content_name=resume_builder`, stage category |
 | `/book` | `ViewContent` | Book page client mount, once per browser session | `content_name=ebook`, `value=9.99`, `currency=USD` |
-| Top Trades offer or book-interest preview offer | `ViewContent` | Offer enters the viewport | Funnel content name |
+| Top Trades offer or book-sample offer (homepage / landing page) | `ViewContent` | Offer enters the viewport | Funnel content name (`top_10_trades` or `book_sample`) |
 | Successful free-offer signup | `Lead` | `/api/subscribe` returns a 2xx response with `ok: true` | `content_name`, `content_category=lead_offer` |
+| Resource viewed from the delivery email | `ViewContent` | `/top-10-trades` or `/book/sample` renders with a valid `?token=` (the "guide/sample viewed" funnel step) | `content_name=top_10_trades` or `book_sample` |
 | Resume checkout | `InitiateCheckout` | Server creates and returns a Stripe Checkout Session | `content_name=resume_builder`, session-deduped ID, `value=9.99`, `currency=USD` |
 | Direct eBook checkout | `InitiateCheckout` | Customer follows the existing configured Stripe Payment Link | `content_name=ebook`, `value=9.99`, `currency=USD` |
 | Resume purchase | `Purchase` | Authenticated status endpoint finds the exact paid order and active entitlement for the returned Stripe session | `transaction_id`, `content_name=resume_builder`, `value=9.99`, `currency=USD` |
@@ -35,7 +36,7 @@ For future human sales attribution, accept a short validated `agent_id` or signe
 
 - Meta Events Manager: use Test Events for Pixel `2260020274539615`; verify one `Lead` only after a successful response, `InitiateCheckout` at each checkout handoff, and one `Purchase` with the exact Stripe session ID, USD, and 9.99 value. Confirm domain verification and Aggregated Event Measurement priorities before campaigns.
 - Gmail/Namecheap: create or verify the `support@tradehustl3.com` mailbox/forwarder, send inbound and outbound tests, verify SPF/DKIM/DMARC alignment, and confirm replies arrive in the monitored Gmail inbox. Repository code cannot verify this routing.
-- Brevo: confirm sender authentication for the configured sender, list ID, and the required contact attributes. Test each funnel source, magic link, preview delivery, preorder confirmation, and release delivery. Confirm unsubscribe handling for nurture email.
+- Brevo: confirm sender authentication for the configured sender, list ID, and the required contact attributes. Test both free-resource funnels end to end — `top_10_trades` should email a `/top-10-trades?token=` link that unlocks `/api/free-sample`, and `book_sample` should email a `/book/sample?token=` link that unlocks `/api/book-sample`. Also test the resume magic link, preorder confirmation, and release delivery, and confirm unsubscribe handling for nurture email. Replace `worker/assets/trade-hustl3-book-sample.pdf` (currently a placeholder) with the real 7-page book excerpt before the book-sample campaign goes live.
 - Stripe: in test mode, verify the Resume price is exactly $9.99 USD, the direct eBook Payment Link is exactly $9.99 USD, success redirects include `{CHECKOUT_SESSION_ID}`, and both webhook endpoints receive the configured paid/refund events. Do not use a live charge for QA.
 - GA4: verify Realtime/DebugView for `generate_lead`, `begin_checkout`, and `purchase`, register any desired custom dimensions, exclude internal/test traffic, and confirm transaction-ID deduplication.
 - Google Ads: create or import the documented conversions. If using direct tags, provide `AW-...` and the real labels through the listed build variables. Keep all conversion variables blank until then.

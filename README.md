@@ -32,7 +32,18 @@ The `/api/subscribe` endpoint stores normalized signups in D1 and creates or upd
 
 Brevo must contain the text attributes `INTEREST`, `SIGNUP_SOURCE`, `UTM_SOURCE`, `UTM_MEDIUM`, and `UTM_CAMPAIGN`. `SIGNUP_SOURCE` receives `book_sample`, `top_10_trades`, `general_interest`, or the legacy `website` fallback.
 
-Book-interest signups receive the gated seven-page preview (cover included) of *TRADE HUSTL3: 10 High-Opportunity Trades — 2026-2027 Edition*. The Worker serves the PDF from `worker/assets/trade-hustl3-free-sample.pdf` through `/api/free-sample`; direct public asset requests continue to redirect to the email gate.
+### Free resource funnels
+
+There are two free lead magnets. Both post `interest: "The TRADE HUSTL3 Book"`; the Worker picks the resource from `signup_source`:
+
+| Resource | `signup_source` | Landing page | Gated download | PDF asset | Access cookie |
+| --- | --- | --- | --- | --- | --- |
+| Top 10 Trades 2026-2027 guide | `top_10_trades` | `/top-10-trades` | `/api/free-sample` | `worker/assets/trade-hustl3-free-sample.pdf` | `tradehustl3_sample_access` |
+| TRADE HUSTL3 7-page book sample | `book_sample` | `/book/sample` | `/api/book-sample` | `worker/assets/trade-hustl3-book-sample.pdf` | `tradehustl3_book_sample_access` |
+
+On a successful signup the Worker stores the D1 subscriber, syncs the Brevo contact, sets the matching access cookie, and emails a delivery link that points at the **dedicated landing page** (`/top-10-trades?token=…` or `/book/sample?token=…`), never straight at the raw PDF route. Tokens are HMAC-signed per resource, so a guide link cannot unlock the book sample. Direct requests to the old public path `/trade-hustl3-free-sample.pdf` redirect to `/top-10-trades`.
+
+> ⚠️ `worker/assets/trade-hustl3-book-sample.pdf` currently ships as a **placeholder copy** of the guide preview so the build stays green. Replace it with the real 7-page book excerpt before launch — no code change is needed.
 
 ## Secure eBook preorder fulfillment
 

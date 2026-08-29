@@ -1,6 +1,5 @@
 import { ComingSoon } from './coming-soon';
 import { CtaAnalytics } from './cta-analytics';
-import { ResourceForm } from './resource-form';
 import { SocialLinks } from './social-links';
 import Image from 'next/image';
 
@@ -138,17 +137,9 @@ export default function Home() {
             </div>
             <h3>Top 10 Trades<br />for 2026–2027</h3>
             <p>Discover ten skilled-trades careers with strong entry points and room to grow. Built for real opportunities in a high-demand industry.</p>
-            <details className="guide-signup">
-              <summary data-cta="top-10-trades" data-cta-location="conversion-card">Sign up now <span aria-hidden="true">→</span></summary>
-              <ResourceForm
-                resourceName="Top 10 Trades PDF"
-                buttonLabel="Send me the free PDF"
-                includeInterest
-                metaLeadContentName="top_10_trades"
-                nextStepHref="/resume-builder"
-                nextStepLabel="Turn your target trade into a job-ready resume"
-              />
-            </details>
+            <a className="button full-button card-cta" href="/top-10-trades" data-cta="top-10-trades" data-cta-location="conversion-card">
+              View the free Top 10 Trades guide <span aria-hidden="true">→</span>
+            </a>
             <div className="guide-benefits" aria-label="Guide career benefits">
               {guideBenefits.map((benefit) => <div key={benefit.label}><span aria-hidden="true">{benefit.icon}</span><p>{benefit.label}</p></div>)}
             </div>
@@ -177,7 +168,7 @@ export default function Home() {
       <section className="steps-section section-shell" aria-labelledby="pick-next-title">
         <div className="section-heading compact"><p className="eyebrow"><span>03</span> Pick your next HUSTL3</p><h2 id="pick-next-title">Start where you are.<br /><em>Build what&apos;s next.</em></h2></div>
         <div className="tool-grid">
-          <a className="tool-card" href="#resources" data-cta="top-10-trades" data-cta-location="steps">
+          <a className="tool-card" href="/top-10-trades" data-cta="top-10-trades" data-cta-location="steps">
             <span className="tool-badge">Start here</span>
             <span className="tool-index" aria-hidden="true">01</span>
             <span className="tool-card-title">Choose Your Path</span>
@@ -202,9 +193,9 @@ export default function Home() {
             <Image src="/trade-hustl3-book-cover.jpg" alt="TRADE HUSTL3: Built by Hustle, Backed by Trades — book cover" width={300} height={450} />
           </div>
           <div className="sample-card-copy">
-          <p className="eyebrow"><span>04</span> Free 6-page trade guide preview</p>
+          <p className="eyebrow"><span>04</span> Free 7-page book sample</p>
             <h3 id="sample-cta-title">See the TRADE HUSTL3 Approach Before You Buy.</h3>
-            <p>Preview <em>TRADE HUSTL3: 10 High-Opportunity Trades — 2026-2027 Edition</em> and see the source standard, two verified trade profiles, national pay context, and practical next steps.</p>
+            <p>Read seven pages of <em>TRADE HUSTL3: Built by Hustle, Backed by Trades</em> — the source standard, two verified trade profiles, national pay context, and practical next steps.</p>
             <ul className="sample-gets" aria-label="What the sample covers">
               <li><strong>The approach</strong><span>How TRADE HUSTL3 frames a skilled-trades career.</span></li>
               <li><strong>Opportunity &amp; money</strong><span>Where the earning power and advancement really are.</span></li>
@@ -212,18 +203,11 @@ export default function Home() {
             </ul>
             <p className="sample-benefit">Free <span aria-hidden="true">•</span> Instant access <span aria-hidden="true">•</span> Email delivery</p>
             <div className="sample-signup-box">
-              <ResourceForm
-                resourceName="free 6-page trade guide preview"
-                buttonLabel="Email me the free preview"
-                includeFirstName={false}
-                ctaId="book-sample"
-                ctaLocation="sample-card"
-                metaLeadContentName="book_sample"
-                nextStepHref="/book"
-                nextStepLabel="Explore the full TRADE HUSTL3 book"
-              />
+              <a className="button full-button" href="/book/sample" data-cta="book-sample" data-cta-location="sample-card">
+                Read the free 7-page sample <span aria-hidden="true">→</span>
+              </a>
             </div>
-            <p className="sample-support">No purchase required. Get the six-page preview sent directly to your email.</p>
+            <p className="sample-support">No purchase required. Read seven pages, then decide.</p>
             <a className="sample-secondary" href="/book" data-cta="the-book" data-cta-location="sample-card">Want the full roadmap? Explore the complete book <span aria-hidden="true">→</span></a>
           </div>
         </article>
@@ -278,7 +262,7 @@ export default function Home() {
         <div className="ecosystem-now">
           <span>Available now</span>
           <a href="/resume-builder" data-cta="resume-builder" data-cta-location="ecosystem">Resume Builder <span aria-hidden="true">→</span></a>
-          <a href="#resources" data-cta="top-10-trades" data-cta-location="ecosystem">Top 10 Trades <span aria-hidden="true">→</span></a>
+          <a href="/top-10-trades" data-cta="top-10-trades" data-cta-location="ecosystem">Top 10 Trades <span aria-hidden="true">→</span></a>
           <a href="/book" data-cta="the-book" data-cta-location="ecosystem">The Book <span aria-hidden="true">→</span></a>
         </div>
       </section>

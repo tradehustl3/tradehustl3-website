@@ -3,7 +3,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { SocialLinks } from "../social-links";
 import { SITE_NAME, SITE_URL } from "../site";
-import { SignupForm } from "../signup-form";
 import LaunchPurchaseButton from "./launch-purchase-button";
 import ReleaseCountdown from "./release-countdown";
 import { ViewContentTracker } from "../view-content-tracker";
@@ -149,10 +148,10 @@ export default function BookPage() {
         </Link>
         <nav aria-label="Book page navigation">
           <Link href="/">Home</Link>
-          <a href="#sample">Free guide</a>
+          <a href="#sample">Free sample</a>
           <a href="#chapters">Chapters</a>
           <a href="#author">Author</a>
-          <a className="nav-cta" href="#sample">Get the Free Guide</a>
+          <Link className="nav-cta" href="/book/sample">Read the Free Sample</Link>
         </nav>
       </header>
 
@@ -183,7 +182,7 @@ export default function BookPage() {
             The blueprint, the game plan, and the movement for people ready to build a future through skilled trades. Go from exploring your options to choosing a path, developing real ability, increasing your value, and creating something that belongs to you.
           </p>
           <div className="hero-actions">
-            <a className="button button-primary" href="#sample">Get the Free Guide <span>↗</span></a>
+            <Link className="button button-primary" href="/book/sample">Read the Free Sample <span>↗</span></Link>
             <Link className="button button-secondary" href="/#join">Get launch updates</Link>
           </div>
           <div className="countdown-wrap">
@@ -202,13 +201,15 @@ export default function BookPage() {
 
       <section className="book-sample" id="sample">
         <div className="sample-intro">
-          <p className="section-label">/ FREE 2026-2027 GUIDE</p>
-          <h2>GET THE FREE<br /><span>GUIDE PREVIEW.</span></h2>
+          <p className="section-label">/ FREE 7-PAGE SAMPLE</p>
+          <h2>READ THE FIRST<br /><span>7 PAGES.</span></h2>
           <p>
-            Enter your email to unlock the six-page preview of <em>TRADE HUSTL3: 10 High-Opportunity Trades — 2026-2027 Edition</em> (cover included). It includes the guide&apos;s source standard, verified power-line and HVAC profiles, national pay context, and practical next steps.
+            Read seven pages of <em>TRADE HUSTL3: Built by Hustle, Backed by Trades</em> free — the guide&apos;s source standard, verified power-line and HVAC profiles, national pay context, and the start of the 90-Day Action Plan. No purchase required.
           </p>
-          <SignupForm mode="sample" />
-          <small className="sample-consent">By unlocking the free guide, you agree to receive TRADE HUSTL3 book and career updates. Unsubscribe anytime.</small>
+          <Link className="button button-primary" href="/book/sample" data-cta="book-sample" data-cta-location="book-sample-teaser">
+            Read my free 7-page sample <span>↗</span>
+          </Link>
+          <small className="sample-consent">The sample page emails you a copy and keeps it saved to your browser. Unsubscribe anytime.</small>
         </div>
         <figure className="sample-quote">
           <blockquote>
@@ -339,7 +340,7 @@ export default function BookPage() {
 
       <footer>
         <div className="footer-brand"><div className="wordmark">TRADE HUSTL<span>3</span></div><p>Built by Hustle, Backed by Trades.</p><SocialLinks /></div>
-        <div className="footer-links"><Link href="/">Home</Link><a href="#sample">Free guide</a><a href="#chapters">Chapters</a><a href="#author">Author</a><a href="mailto:partners@tradehustl3.com">Partnerships</a></div>
+        <div className="footer-links"><Link href="/">Home</Link><Link href="/book/sample">Free sample</Link><a href="#chapters">Chapters</a><a href="#author">Author</a><a href="mailto:partners@tradehustl3.com">Partnerships</a></div>
         <div className="footer-legal"><Link href="/privacy">Privacy</Link><Link href="/terms">Terms</Link><Link href="/book/refund-policy">eBook policy</Link><Link href="/data-deletion">Data requests</Link><Link href="/contact">Support</Link><a href="mailto:support@tradehustl3.com">support@tradehustl3.com</a></div>
         <p className="copyright">© 2026 TRADE HUSTL3. ALL GRIT RESERVED.</p>
       </footer>
