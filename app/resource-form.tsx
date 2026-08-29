@@ -18,13 +18,14 @@ type ResourceFormProps = {
   nextStepLabel?: string;
 };
 
-// The free "Top 10 Trades for 2026-2027" guide IS the repo's only free PDF:
-// worker/assets/trade-hustl3-free-sample.pdf, served at /api/free-sample as
-// "TRADE HUSTL3: 10 High-Opportunity Trades — 2026-2027 Edition" (see README
-// and worker/index.ts sendSampleDeliveryEmail). The interest value below is
-// legacy-named but it is the ONLY /api/subscribe branch that delivers that
-// PDF: it stores the D1 subscriber, syncs the Brevo contact, emails the gated
-// link, and returns { sampleUrl: "/api/free-sample" }.
+// This interest value is the ONLY /api/subscribe branch that delivers a free
+// PDF. The Worker then picks which resource by signup_source (see
+// worker/index.ts resourceFromSource): "top_10_trades" -> the Top 10 Trades
+// guide (/api/free-sample), "book_sample" -> the 7-page book sample
+// (/api/book-sample). Both flows store the D1 subscriber, sync the Brevo
+// contact, email the gated dedicated-page link, and return { sampleUrl } for
+// the matching download route. The name is legacy; Brevo keeps segmenting on
+// SIGNUP_SOURCE, so leave INTEREST stable here.
 const GUIDE_INTEREST = 'The TRADE HUSTL3 Book';
 type Status = 'idle' | 'submitting' | 'success' | 'error';
 
