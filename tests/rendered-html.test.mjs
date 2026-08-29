@@ -901,7 +901,7 @@ test("Top 10 Trades signup stores source top_10_trades and delivers the guide PD
   assert.equal(brevoContact.body.attributes.SIGNUP_SOURCE, "top_10_trades");
 });
 
-test("book-sample signup stores source book_sample and never serves the guide PDF", async () => {
+test("book-sample signup stores source book_sample and delivers its own gated PDF", async () => {
   const worker = await loadWorker();
   const brevo = [];
   const originalFetch = globalThis.fetch;
@@ -924,29 +924,169 @@ test("book-sample signup stores source book_sample and never serves the guide PD
   const body = await res.json();
   assert.equal(body.ok, true);
   assert.equal(body.funnel, "book_sample");
-  assert.equal(body.sampleUrl, "/book/sample#read");
-  // the two funnels do NOT resolve to the same asset
+  // book sample has its own delivery route, distinct from the guide's
+  assert.equal(body.sampleUrl, "/api/book-sample");
   assert.notEqual(body.sampleUrl, "/api/free-sample");
-  // book sample never unlocks the gated guide PDF
-  assert.doesNotMatch(res.headers.get("set-cookie") ?? "", /tradehustl3_sample_access/i);
+  // success copy is never a scary error when the signup itself succeeded
+  assert.match(body.message, /book sample is ready/i);
+  assert.doesNotMatch(body.message, /error|sorry|unavailable|fail/i);
+  // it grants its OWN cookie, not the guide's
+  const setCookie = res.headers.get("set-cookie") ?? "";
+  assert.match(setCookie, /tradehustl3_book_sample_access=granted/i);
+  assert.doesNotMatch(setCookie, /tradehustl3_sample_access=granted/i);
   assert.ok(DB.binds.some((b) => b.args.includes("book_sample")));
   const brevoContact = brevo.find((c) => c.input.includes("/contacts"));
   assert.equal(brevoContact.body.attributes.SIGNUP_SOURCE, "book_sample");
   const brevoEmail = brevo.find((c) => c.input.includes("/smtp/email"));
   assert.match(brevoEmail.body.subject, /7-page TRADE HUSTL3 book sample/i);
+  // email links the gated book-sample PDF, the browser reader, and support
+  assert.match(brevoEmail.body.htmlContent, /https:\/\/tradehustl3\.com\/api\/book-sample\?token=/i);
+  assert.match(brevoEmail.body.htmlContent, /DOWNLOAD THE 7-PAGE SAMPLE \(PDF\)/i);
   assert.match(brevoEmail.body.htmlContent, /\/book\/sample#read/i);
+  assert.match(brevoEmail.body.htmlContent, /mailto:support@tradehustl3\.com/i);
+  // it must NOT link the Top 10 Trades guide route
+  assert.doesNotMatch(brevoEmail.body.htmlContent, /\/api\/free-sample/i);
 });
 
-test("/api/book-sample reports a pending state instead of exposing a broken download", async () => {
+test("/api/book-sample serves the real 7-page book PDF once the visitor is gated", async () => {
+  const worker = await loadWorker();
+  const brevo = [];
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (input, init) => {
+    brevo.push({ input: String(input), body: JSON.parse(String(init.body)) });
+    return new Response(null, { status: 201 });
+  };
+  const DB = recordingDB();
+  let signup;
+  try {
+    signup = await subscribeVia(worker, {
+      email: "reader@example.com",
+      interest: "The TRADE HUSTL3 Book",
+      signup_source: "book_sample",
+    }, { DB, BREVO_API_KEY: "k", BREVO_LIST_ID: "3" });
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+  const cookie = (signup.headers.get("set-cookie") ?? "").split(";")[0];
+  assert.match(cookie, /tradehustl3_book_sample_access=granted/i);
+
+  const cookieResponse = await worker.fetch(
+    new Request("https://tradehustl3.com/api/book-sample", { headers: { Cookie: cookie } }),
+    { BREVO_API_KEY: "k" },
+    { waitUntil() {}, passThroughOnException() {} },
+  );
+  assert.equal(cookieResponse.status, 200);
+  assert.match(cookieResponse.headers.get("content-type") ?? "", /application\/pdf/i);
+  assert.match(
+    cookieResponse.headers.get("content-disposition") ?? "",
+    /TRADE-HUSTL3-7-Page-Book-Sample\.pdf/i,
+  );
+  assert.match(cookieResponse.headers.get("cache-control") ?? "", /no-store/i);
+  const bookBytes = new Uint8Array(await cookieResponse.arrayBuffer());
+  assert.equal(new TextDecoder().decode(bookBytes.slice(0, 5)), "%PDF-");
+
+  // The signed token from the email also unlocks it, and sets the cookie.
+  const token = brevo
+    .find((c) => c.input.includes("/smtp/email"))
+    .body.htmlContent.match(/\/api\/book-sample\?token=([^"&]+)/)[1];
+  const tokenResponse = await worker.fetch(
+    new Request(`https://tradehustl3.com/api/book-sample?token=${token}`),
+    { BREVO_API_KEY: "k" },
+    { waitUntil() {}, passThroughOnException() {} },
+  );
+  assert.equal(tokenResponse.status, 200);
+  assert.match(tokenResponse.headers.get("content-type") ?? "", /application\/pdf/i);
+  assert.match(tokenResponse.headers.get("set-cookie") ?? "", /tradehustl3_book_sample_access=granted/i);
+
+  // The book-sample PDF is a genuinely different file from the guide PDF.
+  const guideBytes = await readFile(
+    new URL("../worker/assets/trade-hustl3-free-sample.pdf", import.meta.url),
+  );
+  const bookFileBytes = await readFile(
+    new URL("../worker/assets/trade-hustl3-seven-page-book-sample.pdf", import.meta.url),
+  );
+  assert.notEqual(bookFileBytes.length, guideBytes.length);
+  assert.ok(!bookFileBytes.equals(guideBytes));
+  // the bytes served on /api/book-sample are the book-sample file, not the guide
+  assert.equal(bookBytes.length, bookFileBytes.length);
+  assert.ok(Buffer.from(bookBytes).equals(bookFileBytes));
+});
+
+test("/api/book-sample turns unauthenticated visitors back to its own landing page", async () => {
   const worker = await loadWorker();
   const res = await worker.fetch(
     new Request("https://tradehustl3.com/api/book-sample"),
-    {},
+    { BREVO_API_KEY: "k" },
     { waitUntil() {}, passThroughOnException() {} },
   );
-  assert.equal(res.status, 200);
-  const body = await res.json();
-  assert.equal(body.pending, true);
-  assert.equal(body.readerUrl, "/book/sample#read");
+  assert.equal(res.status, 302);
+  assert.equal(res.headers.get("location"), "https://tradehustl3.com/book/sample");
   assert.doesNotMatch(res.headers.get("content-type") ?? "", /application\/pdf/i);
+});
+
+test("a guide grant never unlocks the book sample, and vice versa", async () => {
+  const worker = await loadWorker();
+  const brevo = [];
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (input, init) => {
+    brevo.push({ input: String(input), body: JSON.parse(String(init.body)) });
+    return new Response(null, { status: 201 });
+  };
+  const DB = recordingDB();
+  let guideSignup;
+  let bookSignup;
+  try {
+    guideSignup = await subscribeVia(worker, {
+      email: "guide@example.com",
+      interest: "The TRADE HUSTL3 Book",
+      signup_source: "top_10_trades",
+    }, { DB, BREVO_API_KEY: "k", BREVO_LIST_ID: "3" });
+    bookSignup = await subscribeVia(worker, {
+      email: "book@example.com",
+      interest: "The TRADE HUSTL3 Book",
+      signup_source: "book_sample",
+    }, { DB, BREVO_API_KEY: "k", BREVO_LIST_ID: "3" });
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+
+  const emails = brevo.filter((c) => c.input.includes("/smtp/email"));
+  const guideToken = emails
+    .find((c) => c.body.htmlContent.includes("/api/free-sample?token="))
+    .body.htmlContent.match(/\/api\/free-sample\?token=([^"&]+)/)[1];
+  const bookToken = emails
+    .find((c) => c.body.htmlContent.includes("/api/book-sample?token="))
+    .body.htmlContent.match(/\/api\/book-sample\?token=([^"&]+)/)[1];
+  const guideCookie = (guideSignup.headers.get("set-cookie") ?? "").split(";")[0];
+  const bookCookie = (bookSignup.headers.get("set-cookie") ?? "").split(";")[0];
+
+  const crossChecks = [
+    ["https://tradehustl3.com/api/book-sample", { Cookie: guideCookie }],
+    [`https://tradehustl3.com/api/book-sample?token=${guideToken}`, {}],
+    ["https://tradehustl3.com/api/free-sample", { Cookie: bookCookie }],
+    [`https://tradehustl3.com/api/free-sample?token=${bookToken}`, {}],
+  ];
+  for (const [target, headers] of crossChecks) {
+    const res = await worker.fetch(
+      new Request(target, { headers }),
+      { BREVO_API_KEY: "k" },
+      { waitUntil() {}, passThroughOnException() {} },
+    );
+    assert.equal(res.status, 302, `${target} must not serve across resources`);
+    assert.doesNotMatch(res.headers.get("content-type") ?? "", /application\/pdf/i);
+  }
+
+  // Sanity: each grant DOES unlock its own resource.
+  const guideOk = await worker.fetch(
+    new Request(`https://tradehustl3.com/api/free-sample?token=${guideToken}`),
+    { BREVO_API_KEY: "k" },
+    { waitUntil() {}, passThroughOnException() {} },
+  );
+  assert.equal(guideOk.status, 200);
+  const bookOk = await worker.fetch(
+    new Request(`https://tradehustl3.com/api/book-sample?token=${bookToken}`),
+    { BREVO_API_KEY: "k" },
+    { waitUntil() {}, passThroughOnException() {} },
+  );
+  assert.equal(bookOk.status, 200);
 });

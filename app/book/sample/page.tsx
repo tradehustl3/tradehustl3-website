@@ -120,10 +120,11 @@ export default function BookSamplePage() {
           <p className={styles.eyebrow}>FREE 7-PAGE BOOK SAMPLE</p>
           <h1>GET INSIDE<br /><span>TRADE HUSTL3.</span></h1>
           <p className={styles.lede}>
-            Read the cover, opening pages, table of contents, and the beginning of Chapter 1 before you buy. No purchase required.
+            The cover, opening pages, the full table of contents, and the beginning of Chapter 1 — before you
+            buy. No purchase required. We email you the PDF, and you can read it in your browser below.
           </p>
           <div className={styles.formCard}>
-            <p className={styles.formKicker}>Send the sample to your inbox</p>
+            <p className={styles.formKicker}>Send the PDF to your inbox</p>
             <h2>Your 7 pages are ready.</h2>
             <ResourceForm
               resourceName="free 7-page TRADE HUSTL3 book sample"
@@ -132,7 +133,7 @@ export default function BookSamplePage() {
               ctaId="book-sample"
               ctaLocation="book-sample-campaign"
               metaLeadContentName="book_sample"
-              successLinkLabel="Read the 7-page sample"
+              successLinkLabel="Open the 7-page sample (PDF)"
               nextStepHref="/book"
               nextStepLabel="Continue with the full book"
             />
@@ -143,14 +144,17 @@ export default function BookSamplePage() {
             </p>
             <p className={styles.support}>Need help? <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a></p>
           </div>
-          <a className={styles.readJump} href="#read">Or read the sample now <span aria-hidden="true">↓</span></a>
+          <a className={styles.readJump} href="#read">Prefer to skim first? Read it in your browser <span aria-hidden="true">↓</span></a>
         </div>
       </section>
 
       <section className={styles.readerIntro} id="read" aria-labelledby="reader-title">
         <p className={styles.eyebrow}>THE SAMPLE</p>
         <h2 id="reader-title">7 PAGES. COVER INCLUDED.</h2>
-        <p>These are the opening seven pages of the current TRADE HUSTL3 eBook interior, presented as an easy web reader.</p>
+        <p>
+          The same opening seven pages we email you as a PDF, mirrored here as a browser reader so you can
+          start reading right away.
+        </p>
       </section>
 
       <section className={styles.reader} aria-label="Seven-page TRADE HUSTL3 book sample">
