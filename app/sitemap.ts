@@ -16,6 +16,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.9,
     },
     {
+      url: `${SITE_URL}/top-10-trades`,
+      lastModified: new Date("2026-08-29T00:00:00.000Z"),
+      changeFrequency: "monthly",
+      priority: 0.9,
+    },
+    {
       url: `${SITE_URL}/resume-builder`,
       lastModified: new Date("2026-08-24T00:00:00.000Z"),
       changeFrequency: "monthly",
