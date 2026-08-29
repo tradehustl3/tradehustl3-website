@@ -17,6 +17,7 @@ type ResourceFormProps = {
 };
 
 const TOP_TRADES_INTEREST = 'Top 10 Trades';
+const BOOK_SAMPLE_INTEREST = 'The TRADE HUSTL3 Book';
 const UTM_KEYS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'] as const;
 
 function collectUtm(): Record<string, string> {
@@ -45,7 +46,7 @@ export function ResourceForm({
   ctaId,
   ctaLocation,
   metaLeadContentName,
-  signupInterest = TOP_TRADES_INTEREST,
+  signupInterest,
   successLinkLabel = 'Open your free guide',
 }: ResourceFormProps) {
   const id = useId();
@@ -56,6 +57,8 @@ export function ResourceForm({
   const [trackMetaLead] = useState(() => (
     metaLeadContentName ? createMetaLeadTracker(metaLeadContentName) : undefined
   ));
+  const resolvedSignupInterest = signupInterest
+    || (metaLeadContentName === 'book_sample' ? BOOK_SAMPLE_INTEREST : TOP_TRADES_INTEREST);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -71,7 +74,7 @@ export function ResourceForm({
 
     try {
       const result = await submitSignup(
-        { email, interest: signupInterest, ...collectUtm() },
+        { email, interest: resolvedSignupInterest, ...collectUtm() },
         {
           trackMetaLead,
           fallbackErrorMessage: 'We could not send the guide. Please try again.',
