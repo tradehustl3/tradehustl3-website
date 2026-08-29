@@ -192,7 +192,7 @@ async function sendBookSampleDeliveryEmail(env: Env, email: string): Promise<voi
   const apiKey = env.BREVO_API_KEY?.trim();
   if (!apiKey) throw new Error("Brevo book-sample delivery is not configured.");
 
-  const sampleUrl = `${SITE_URL}/book/sample#read`;
+  const sampleUrl = `${SITE_URL}/book/sample/read`;
   const response = await fetch("https://api.brevo.com/v3/smtp/email", {
     method: "POST",
     headers: {
@@ -302,7 +302,7 @@ async function subscribe(request: Request, env: Env): Promise<Response> {
       return jsonResponse({
         ok: true,
         message: "Your free 7-page TRADE HUSTL3 book sample is ready, and the reading link is on its way to your inbox.",
-        sampleUrl: "/book/sample#read",
+        sampleUrl: "/book/sample/read",
       });
     }
 
