@@ -1,8 +1,10 @@
 'use client';
 
 import { FormEvent, useId, useRef, useState } from 'react';
+import { captureAttribution } from './analytics';
 import { createMetaLeadTracker, type MetaLeadContentName } from './meta-pixel';
 import { submitSignup } from './signup-request';
+import { ViewContentTracker } from './view-content-tracker';
 
 type ResourceFormProps = {
   resourceName: string;
@@ -12,6 +14,8 @@ type ResourceFormProps = {
   ctaId?: string;
   ctaLocation?: string;
   metaLeadContentName?: MetaLeadContentName;
+  nextStepHref?: string;
+  nextStepLabel?: string;
 };
 
 // The free "Top 10 Trades for 2026-2027" guide IS the repo's only free PDF:
@@ -22,24 +26,6 @@ type ResourceFormProps = {
 // PDF: it stores the D1 subscriber, syncs the Brevo contact, emails the gated
 // link, and returns { sampleUrl: "/api/free-sample" }.
 const GUIDE_INTEREST = 'The TRADE HUSTL3 Book';
-const UTM_KEYS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'] as const;
-
-function collectUtm(): Record<string, string> {
-  const params = new URLSearchParams(window.location.search);
-  const out: Record<string, string> = {};
-  for (const key of UTM_KEYS) {
-    let value = params.get(key) ?? '';
-    try {
-      if (value) window.sessionStorage.setItem(key, value);
-      else value = window.sessionStorage.getItem(key) ?? '';
-    } catch {
-      /* sessionStorage unavailable */
-    }
-    if (value) out[key] = value;
-  }
-  return out;
-}
-
 type Status = 'idle' | 'submitting' | 'success' | 'error';
 
 export function ResourceForm({
@@ -50,6 +36,8 @@ export function ResourceForm({
   ctaId,
   ctaLocation,
   metaLeadContentName,
+  nextStepHref,
+  nextStepLabel,
 }: ResourceFormProps) {
   const id = useId();
   const isSubmitting = useRef(false);
@@ -73,8 +61,14 @@ export function ResourceForm({
     setGuideUrl('');
 
     try {
+      const attribution = captureAttribution();
       const result = await submitSignup(
-        { email, interest: GUIDE_INTEREST, ...collectUtm() },
+        {
+          email,
+          interest: GUIDE_INTEREST,
+          signup_source: metaLeadContentName || 'website',
+          ...attribution,
+        },
         {
           trackMetaLead,
           fallbackErrorMessage: 'We could not send the guide. Please try again.',
@@ -93,6 +87,7 @@ export function ResourceForm({
 
   return (
     <form className="resource-form" onSubmit={handleSubmit} aria-describedby={`${id}-status`}>
+      {metaLeadContentName ? <ViewContentTracker contentName={metaLeadContentName} observe /> : null}
       {includeFirstName ? (
         <div className="field-row">
           <label htmlFor={`${id}-name`}>First name</label>
@@ -132,9 +127,16 @@ export function ResourceForm({
         {message}
       </p>
       {status === 'success' && guideUrl ? (
-        <a className="resource-guide-link" href={guideUrl} target="_blank" rel="noreferrer">
-          Open your free guide <span aria-hidden="true">↗</span>
-        </a>
+        <div className="resource-success-actions">
+          <a className="resource-guide-link" href={guideUrl} target="_blank" rel="noreferrer">
+            Open your free guide <span aria-hidden="true">↗</span>
+          </a>
+          {nextStepHref && nextStepLabel ? (
+            <a className="resource-next-step" href={nextStepHref}>
+              {nextStepLabel} <span aria-hidden="true">→</span>
+            </a>
+          ) : null}
+        </div>
       ) : null}
     </form>
   );

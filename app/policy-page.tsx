@@ -1,9 +1,10 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { SUPPORT_EMAIL } from "../shared/customer-config";
 import "./page-shell.css";
 
 export const LEGAL_UPDATED = "August 25, 2026";
-export const SUPPORT_EMAIL = "support@tradehustl3.com";
+export { SUPPORT_EMAIL };
 
 export function PolicyPage({
   eyebrow,
@@ -24,6 +25,7 @@ export function PolicyPage({
           <Link href="/book">The Book</Link>
           <Link href="/resume-builder">Resume Builder</Link>
           <Link href="/contact">Support</Link>
+          <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>
         </nav>
       </header>
 

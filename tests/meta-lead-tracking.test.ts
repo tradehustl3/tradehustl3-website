@@ -3,7 +3,7 @@ import { afterEach, test } from "node:test";
 import { createMetaLeadTracker } from "../app/meta-pixel";
 import { submitSignup } from "../app/signup-request";
 
-type PixelCall = ["track", "Lead", { content_name: string }];
+type PixelCall = ["track", "Lead", { content_name: string; content_category: string }, { eventID: string }];
 
 const originalWindow = Object.getOwnPropertyDescriptor(globalThis, "window");
 
@@ -41,7 +41,7 @@ test("successful Top 10 Trades signup fires one Meta Lead", async () => {
     },
   );
 
-  assert.deepEqual(calls, [["track", "Lead", { content_name: "top_10_trades" }]]);
+  assert.deepEqual(calls, [["track", "Lead", { content_name: "top_10_trades", content_category: "lead_offer" }, { eventID: "Lead:top_10_trades" }]]);
 });
 
 test("successful book-sample signup fires one Meta Lead", async () => {
@@ -55,7 +55,7 @@ test("successful book-sample signup fires one Meta Lead", async () => {
     },
   );
 
-  assert.deepEqual(calls, [["track", "Lead", { content_name: "book_sample" }]]);
+  assert.deepEqual(calls, [["track", "Lead", { content_name: "book_sample", content_category: "lead_offer" }, { eventID: "Lead:book_sample" }]]);
 });
 
 test("failed signup fires zero Meta Lead events", async () => {
@@ -87,5 +87,17 @@ test("repeat or double successful submission does not duplicate the Meta Lead", 
   ]);
   await submitSignup(payload, options);
 
-  assert.deepEqual(calls, [["track", "Lead", { content_name: "book_sample" }]]);
+  assert.deepEqual(calls, [["track", "Lead", { content_name: "book_sample", content_category: "lead_offer" }, { eventID: "Lead:book_sample" }]]);
+});
+
+test("successful signup stays successful when Meta and Google are unavailable", async () => {
+  Object.defineProperty(globalThis, "window", { configurable: true, value: {} });
+  const result = await submitSignup(
+    { email: "blocked@example.com", interest: "The TRADE HUSTL3 Book" },
+    {
+      trackMetaLead: createMetaLeadTracker("book_sample"),
+      fetchImpl: signupResponse() as typeof fetch,
+    },
+  );
+  assert.equal(result.ok, true);
 });

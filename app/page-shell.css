@@ -257,6 +257,15 @@
 .ebook-buy-button { display: inline-flex; align-items: center; }
 .purchase-terms { max-width: 720px; margin: 18px auto 0; color: #93a0aa; font-size: 10px; line-height: 1.6; }
 .purchase-terms a { color: var(--gold); font-weight: 800; text-decoration: underline; text-underline-offset: 3px; }
+.purchase-support { margin-top: 18px !important; font-size: 13px !important; }
+.purchase-support a, .book-faq a, .order-confirmed-note a { color: var(--gold); font-weight: 800; text-decoration: underline; text-underline-offset: 3px; }
+.book-faq { padding: 90px clamp(24px, 7vw, 110px); background: #071a2b; }
+.book-faq h2 { margin: 18px 0 35px; font-size: clamp(46px, 5vw, 76px); }
+.book-faq details { max-width: 920px; padding: 20px 0; border-top: 1px solid #ffffff24; }
+.book-faq summary { cursor: pointer; color: var(--gold); font-weight: 800; text-transform: uppercase; letter-spacing: .04em; }
+.book-faq details p { max-width: 760px; color: #bdc8cf; line-height: 1.65; }
+.sample-success-actions { display: flex; align-items: center; gap: 14px 20px; flex-wrap: wrap; }
+.sample-next-step { color: var(--gold); font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; }
 
 /* ---- book footer (scoped: the homepage <footer> has no class and its own rules) ---- */
 .book-page footer { padding: 60px clamp(24px, 7vw, 110px) 35px; border-top: 1px solid #d6a52a44; display: grid; grid-template-columns: 1fr auto; gap: 36px 70px; background: #04121e; }

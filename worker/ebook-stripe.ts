@@ -1,4 +1,5 @@
 /** Stripe checkout/refund webhook handling and private eBook delivery. */
+import { DIRECT_EBOOK_PRODUCT, SUPPORT_EMAIL } from "../shared/customer-config";
 export interface EbookStripeEnv {
   DB: D1Database;
   BOOKS?: R2Bucket;
@@ -10,6 +11,7 @@ export interface EbookStripeEnv {
 
 const SITE_URL = "https://tradehustl3.com";
 const STRIPE_WEBHOOK_ROUTE = "/api/stripe/webhook";
+const EBOOK_ORDER_STATUS_ROUTE = "/api/ebook-order-status";
 const EBOOK_DOWNLOAD_ROUTE = "/api/ebook-download";
 const EBOOK_OBJECT_KEY = "TRADE-HUSTL3-COMPLETE-EBOOK.pdf";
 export const EBOOK_RELEASE_AT = Date.parse("2026-09-15T04:00:00Z");
@@ -94,6 +96,7 @@ async function sendEbookDeliveryEmail(env: EbookStripeEnv, email: string, downlo
             <p style="font-size:16px;line-height:1.6;color:#c5ced5">Thank you for investing in your skilled-trades future. Use the private link below to download the complete eBook.</p>
             <p style="margin:28px 0"><a href="${downloadUrl}" style="display:inline-block;background:#d9361e;color:#ffffff;padding:16px 22px;text-decoration:none;font-weight:700">DOWNLOAD YOUR EBOOK</a></p>
             <p style="font-size:13px;line-height:1.6;color:#9cabb5">Keep this email for future downloads. This private link is tied to your purchase and should not be shared.</p>
+            <p style="font-size:13px;line-height:1.6;color:#9cabb5">Need help? <a href="mailto:${SUPPORT_EMAIL}" style="color:#d6a52a">${SUPPORT_EMAIL}</a></p>
             <p style="color:#d6a52a;font-weight:700">BUILT BY HUSTL3. BACKED BY TRADES.</p>
           </div>
         </div>`,
@@ -132,6 +135,7 @@ async function sendEbookPreorderConfirmationEmail(env: EbookStripeEnv, email: st
             <h1 style="margin:16px 0;color:#ffffff">Your eBook preorder is confirmed.</h1>
             <p style="font-size:16px;line-height:1.6;color:#c5ced5">Thank you for investing in your skilled-trades future. Your complete TRADE HUSTL3 eBook will be delivered to this email address on September 15, 2026.</p>
             <p style="font-size:16px;line-height:1.6;color:#c5ced5">No download is available before launch. You will receive a second email with your private download link when the book is released.</p>
+            <p style="font-size:13px;line-height:1.6;color:#9cabb5">Need help? <a href="mailto:${SUPPORT_EMAIL}" style="color:#d6a52a">${SUPPORT_EMAIL}</a></p>
             <p style="color:#d6a52a;font-weight:700">BUILT BY HUSTL3. BACKED BY TRADES.</p>
           </div>
         </div>`,
@@ -257,7 +261,7 @@ async function fulfillPaidEbookSession(session: Record<string, unknown>, env: Eb
 
   if (
     !sessionId || !paymentIntentId || paymentLinkId !== expectedPaymentLink || session.payment_status !== "paid" ||
-    amountTotal !== 999 || currency !== "usd" || !isValidEmail(email)
+    amountTotal !== DIRECT_EBOOK_PRODUCT.priceCents || currency !== DIRECT_EBOOK_PRODUCT.stripeCurrency || !isValidEmail(email)
   ) {
     console.error(JSON.stringify({ message: "Stripe eBook checkout did not match the configured product." }));
     return jsonResponse({ received: true });
@@ -334,7 +338,7 @@ async function recordEbookRefund(eventId: string, charge: Record<string, unknown
   const currency = typeof charge.currency === "string" ? charge.currency.toLowerCase() : "";
 
   if (
-    !eventId || !paymentIntentId || amountTotal !== 999 ||
+    !eventId || !paymentIntentId || amountTotal !== DIRECT_EBOOK_PRODUCT.priceCents ||
     typeof amountRefunded !== "number" || !Number.isSafeInteger(amountRefunded) ||
     amountRefunded <= 0 || amountRefunded > amountTotal || currency !== "usd"
   ) {
@@ -459,8 +463,43 @@ async function servePurchasedEbook(request: Request, env: EbookStripeEnv): Promi
   return new Response(ebook.body, { status: 200, headers });
 }
 
+async function getEbookOrderStatus(request: Request, env: EbookStripeEnv): Promise<Response> {
+  if (request.method !== "GET") {
+    return new Response("Method Not Allowed", { status: 405, headers: { Allow: "GET" } });
+  }
+  if (!env.DB) return jsonResponse({ ok: false, verified: false }, 503);
+  const sessionId = new URL(request.url).searchParams.get("session_id")?.trim() ?? "";
+  if (!/^cs_[A-Za-z0-9_]+$/.test(sessionId)) return jsonResponse({ ok: true, verified: false });
+
+  const order = await env.DB.prepare(
+    `SELECT stripe_session_id
+     FROM ebook_orders
+     WHERE stripe_session_id = ?
+       AND status = 'paid'
+       AND amount_total = ?
+       AND currency = ?
+       AND stripe_payment_intent_id IS NOT NULL
+       AND download_token IS NOT NULL
+     LIMIT 1`,
+  ).bind(
+    sessionId,
+    DIRECT_EBOOK_PRODUCT.priceCents,
+    DIRECT_EBOOK_PRODUCT.stripeCurrency,
+  ).first<{ stripe_session_id: string }>();
+  if (!order) return jsonResponse({ ok: true, verified: false });
+  return jsonResponse({
+    ok: true,
+    verified: true,
+    transactionId: order.stripe_session_id,
+    contentName: DIRECT_EBOOK_PRODUCT.contentName,
+    value: DIRECT_EBOOK_PRODUCT.value,
+    currency: DIRECT_EBOOK_PRODUCT.currency,
+  });
+}
+
 export async function handleEbookStripeRoute(request: Request, env: EbookStripeEnv): Promise<Response | null> {
   const pathname = new URL(request.url).pathname;
+  if (pathname === EBOOK_ORDER_STATUS_ROUTE) return getEbookOrderStatus(request, env);
   if (pathname === STRIPE_WEBHOOK_ROUTE) return handleStripeWebhook(request, env);
   if (pathname === EBOOK_DOWNLOAD_ROUTE) return servePurchasedEbook(request, env);
   return null;

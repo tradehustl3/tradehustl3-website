@@ -1,4 +1,5 @@
 import { createResumeDocx, createResumePdf, GeneratedResume } from "./resume-documents";
+import { RESUME_BUILDER_PRODUCT, SUPPORT_EMAIL } from "../shared/customer-config";
 
 export interface ResumeBuilderEnv {
   DB: D1Database;
@@ -46,16 +47,18 @@ type EntitlementRecord = {
   credits_total: number;
   credits_used: number;
   status: string;
+  access_expires_at: number | null;
 };
 
 const SITE_URL = "https://tradehustl3.com";
 const SESSION_COOKIE_NAME = "tradehustl3_resume_session";
 const SESSION_TTL_SECONDS = 60 * 60 * 24 * 14;
 const MAGIC_LINK_TTL_SECONDS = 60 * 20;
-const RESUME_PRICE_CENTS = 999;
+const RESUME_PRICE_CENTS = RESUME_BUILDER_PRODUCT.priceCents;
 const RESUME_PLAN = "resume_mvp_999";
 const RESUME_TOTAL_AI_RUNS = 4;
 const INITIAL_PREVIEW_RUNS = 1;
+const CORRECTION_WINDOW_SECONDS = 60 * 60 * 24 * 7;
 const DEFAULT_CLAUDE_MODEL = "claude-sonnet-5";
 const INTAKE_PATH = "/resume-builder/intake";
 // The guided intake collects an unbounded number of work-history roles plus
@@ -299,6 +302,7 @@ async function sendMagicLinkEmail(env: ResumeBuilderEnv, email: string, confirma
             <p style="font-size:16px;line-height:1.6;color:#c5ced5">Open the confirmation page below, then press the confirmation button. The extra confirmation step keeps automated email security scanners from signing in as you.</p>
             <p style="margin:28px 0"><a href="${confirmationUrl}" style="display:inline-block;background:#d71920;color:#ffffff;padding:16px 22px;text-decoration:none;font-weight:700">OPEN CONFIRMATION PAGE</a></p>
             <p style="font-size:13px;line-height:1.6;color:#9cabb5">This link expires in 20 minutes and can only be used once.</p>
+            <p style="font-size:13px;line-height:1.6;color:#9cabb5">Need help? <a href="mailto:${SUPPORT_EMAIL}" style="color:#d6a52a">${SUPPORT_EMAIL}</a></p>
           </div>
         </div>`,
     }),
@@ -471,12 +475,15 @@ async function findOwnedResume(env: ResumeBuilderEnv, resumeId: string, userId: 
 
 async function findEntitlement(env: ResumeBuilderEnv, resumeId: string, userId: string): Promise<EntitlementRecord | null> {
   return env.DB.prepare(
-    `SELECT entitlement_id, credits_total, credits_used, status
+    `SELECT entitlement_id, credits_total, credits_used, status, access_expires_at
      FROM entitlements
      WHERE resume_id = ? AND user_id = ? AND status = 'active'
-       AND (access_expires_at IS NULL OR access_expires_at > ?)
      ORDER BY created_at DESC LIMIT 1`,
-  ).bind(resumeId, userId, nowSeconds()).first<EntitlementRecord>();
+  ).bind(resumeId, userId).first<EntitlementRecord>();
+}
+
+function correctionWindowOpen(entitlement: EntitlementRecord): boolean {
+  return entitlement.access_expires_at === null || entitlement.access_expires_at > nowSeconds();
 }
 
 async function getResumeStatus(request: Request, env: ResumeBuilderEnv, resumeId: string): Promise<Response> {
@@ -486,6 +493,7 @@ async function getResumeStatus(request: Request, env: ResumeBuilderEnv, resumeId
   const resume = await findOwnedResume(env, resumeId, user.userId);
   if (!resume) return json({ ok: false, message: "Resume not found." }, 404);
   const entitlement = await findEntitlement(env, resumeId, user.userId);
+  const correctionsAvailable = Boolean(entitlement && correctionWindowOpen(entitlement));
   const generated = Boolean(resume.generated_json);
   let intake: unknown = {};
   try {
@@ -505,9 +513,12 @@ async function getResumeStatus(request: Request, env: ResumeBuilderEnv, resumeId
       paid: Boolean(entitlement),
       runsUsed: entitlement?.credits_used ?? (generated ? INITIAL_PREVIEW_RUNS : 0),
       runsTotal: entitlement?.credits_total ?? RESUME_TOTAL_AI_RUNS,
-      correctionsRemaining: generated && entitlement
+      correctionsRemaining: generated && entitlement && correctionsAvailable
         ? Math.max(0, entitlement.credits_total - entitlement.credits_used)
         : 0,
+      correctionWindowEndsAt: entitlement?.access_expires_at
+        ? new Date(entitlement.access_expires_at * 1000).toISOString()
+        : null,
       previewUrl: generated ? `/api/resume-builder/resumes/${resumeId}/files/preview` : null,
       downloads: generated && entitlement ? {
         pdf: `/api/resume-builder/resumes/${resumeId}/files/pdf`,
@@ -560,6 +571,7 @@ async function createCheckout(request: Request, env: ResumeBuilderEnv, resumeId:
   }
 
   const orderId = crypto.randomUUID();
+  const attribution = await parseJsonBody(request, 4_000) ?? {};
   await env.DB.prepare(
     `INSERT INTO resume_orders
      (order_id, user_id, resume_id, email, plan, amount_total, currency, status)
@@ -572,14 +584,19 @@ async function createCheckout(request: Request, env: ResumeBuilderEnv, resumeId:
   form.set("line_items[0][quantity]", "1");
   form.set("customer_email", user.email);
   form.set("client_reference_id", orderId);
-  form.set("success_url", `${SITE_URL}/resume-builder/payment-confirmed?resume_id=${encodeURIComponent(resumeId)}&session_id={CHECKOUT_SESSION_ID}`);
-  form.set("cancel_url", `${SITE_URL}/resume-builder/review?resume_id=${encodeURIComponent(resumeId)}`);
+  const checkoutOrigin = new URL(request.url).origin;
+  form.set("success_url", `${checkoutOrigin}/resume-builder/payment-confirmed?resume_id=${encodeURIComponent(resumeId)}&session_id={CHECKOUT_SESSION_ID}`);
+  form.set("cancel_url", `${checkoutOrigin}/resume-builder/review?resume_id=${encodeURIComponent(resumeId)}`);
   form.set("metadata[product]", "resume_builder_mvp");
   form.set("metadata[order_id]", orderId);
   form.set("metadata[resume_id]", resumeId);
   form.set("metadata[user_id]", user.userId);
   form.set("payment_intent_data[metadata][product]", "resume_builder_mvp");
   form.set("payment_intent_data[metadata][order_id]", orderId);
+  for (const key of ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term", "gclid", "fbclid"] as const) {
+    const value = cleanText(attribution[key], 160);
+    if (value) form.set(`metadata[${key}]`, value);
+  }
 
   let stripeResponse: Response;
   try {
@@ -606,7 +623,53 @@ async function createCheckout(request: Request, env: ResumeBuilderEnv, resumeId:
   }
   await env.DB.prepare("UPDATE resume_orders SET stripe_session_id = ? WHERE order_id = ?")
     .bind(stripe.id, orderId).run();
-  return json({ ok: true, checkoutUrl: stripe.url });
+  return json({
+    ok: true,
+    checkoutUrl: stripe.url,
+    checkoutSessionId: stripe.id,
+    value: RESUME_BUILDER_PRODUCT.value,
+    currency: RESUME_BUILDER_PRODUCT.currency,
+  });
+}
+
+async function getPurchaseStatus(request: Request, env: ResumeBuilderEnv, resumeId: string): Promise<Response> {
+  if (request.method !== "GET") return methodNotAllowed("GET");
+  const user = await requireUser(request, env);
+  if (!user) return json({ ok: false, message: "Sign in to continue." }, 401);
+  const sessionId = new URL(request.url).searchParams.get("session_id")?.trim() ?? "";
+  if (!/^cs_[A-Za-z0-9_]+$/.test(sessionId)) return json({ ok: true, verified: false });
+
+  const purchase = await env.DB.prepare(
+    `SELECT o.stripe_session_id
+     FROM resume_orders o
+     INNER JOIN entitlements e ON e.source_order_id = o.order_id
+     WHERE o.stripe_session_id = ?
+       AND o.resume_id = ?
+       AND o.user_id = ?
+       AND o.status = 'paid'
+       AND o.amount_total = ?
+       AND o.currency = ?
+       AND o.stripe_payment_intent_id IS NOT NULL
+       AND e.resume_id = o.resume_id
+       AND e.user_id = o.user_id
+       AND e.status = 'active'
+     LIMIT 1`,
+  ).bind(
+    sessionId,
+    resumeId,
+    user.userId,
+    RESUME_BUILDER_PRODUCT.priceCents,
+    RESUME_BUILDER_PRODUCT.stripeCurrency,
+  ).first<{ stripe_session_id: string }>();
+  if (!purchase) return json({ ok: true, verified: false });
+  return json({
+    ok: true,
+    verified: true,
+    transactionId: purchase.stripe_session_id,
+    contentName: RESUME_BUILDER_PRODUCT.contentName,
+    value: RESUME_BUILDER_PRODUCT.value,
+    currency: RESUME_BUILDER_PRODUCT.currency,
+  });
 }
 
 function hexToBytes(value: string): Uint8Array | null {
@@ -821,8 +884,8 @@ async function handleResumeStripeWebhook(request: Request, env: ResumeBuilderEnv
     env.DB.prepare(
       `INSERT INTO entitlements
        (entitlement_id, user_id, resume_id, kind, plan, status, credits_total, credits_used,
-        source_order_id, stripe_customer_id)
-       SELECT ?, ?, ?, 'one_time', ?, 'active', ?, ?, ?, ?
+        access_expires_at, source_order_id, stripe_customer_id)
+       SELECT ?, ?, ?, 'one_time', ?, 'active', ?, ?, ?, ?, ?
        WHERE EXISTS (
          SELECT 1 FROM resume_orders WHERE order_id = ? AND status = 'paid'
        )
@@ -834,6 +897,7 @@ async function handleResumeStripeWebhook(request: Request, env: ResumeBuilderEnv
       RESUME_PLAN,
       RESUME_TOTAL_AI_RUNS,
       INITIAL_PREVIEW_RUNS,
+      nowSeconds() + CORRECTION_WINDOW_SECONDS,
       orderId,
       stripeCustomer,
       orderId,
@@ -1315,6 +1379,9 @@ async function generateResume(
   if (isCorrection && !entitlement) {
     return json({ ok: false, message: "Complete the $9.99 payment to unlock clean files and corrections." }, 402);
   }
+  if (isCorrection && entitlement && !correctionWindowOpen(entitlement)) {
+    return json({ ok: false, message: "The seven-day correction window has ended. Your clean PDF and DOCX remain available." }, 409);
+  }
   if (isCorrection && !correctionRequest) {
     return json({ ok: false, message: "Describe the correction you want made." }, 400);
   }
@@ -1528,6 +1595,8 @@ export async function handleResumeBuilderRoute(
 
     const checkoutMatch = pathname.match(/^\/api\/resume-builder\/resumes\/([^/]+)\/checkout$/);
     if (checkoutMatch) return createCheckout(request, env, checkoutMatch[1]);
+    const purchaseStatusMatch = pathname.match(/^\/api\/resume-builder\/resumes\/([^/]+)\/purchase-status$/);
+    if (purchaseStatusMatch) return getPurchaseStatus(request, env, purchaseStatusMatch[1]);
     const generationMatch = pathname.match(/^\/api\/resume-builder\/resumes\/([^/]+)\/generate$/);
     if (generationMatch) return generateResume(request, env, generationMatch[1], dependencies);
     const fileMatch = pathname.match(/^\/api\/resume-builder\/resumes\/([^/]+)\/files\/(pdf|docx|preview)$/);

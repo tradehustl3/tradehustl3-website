@@ -13,11 +13,15 @@ npm run dev
 
 Open the local address printed by the development server.
 
-## Analytics
+## Analytics and conversion tracking
 
-GA4 is optional and loads only when `NEXT_PUBLIC_GA_MEASUREMENT_ID` is set. For local development, add the variable to your local environment. For the live site, add `NEXT_PUBLIC_GA_MEASUREMENT_ID` as a Cloudflare build environment variable in the project dashboard, using the real GA4 Measurement ID for the property, then redeploy.
+The production GA4 Measurement ID defaults to `G-PHLN0C7BWF` and can be overridden with `NEXT_PUBLIC_GA_MEASUREMENT_ID`. The Meta base Pixel uses ID `2260020274539615`. Conversion helpers emit no email address or other customer-entered PII.
 
-Standard page views include the current URL and its normal UTM parameters (`utm_source`, `utm_medium`, `utm_campaign`, `utm_content`, and `utm_term`). Signup submissions preserve those values during the visit and send source, medium, and campaign attribution to Brevo.
+Standard page views include the current URL and its normal UTM parameters (`utm_source`, `utm_medium`, `utm_campaign`, `utm_content`, and `utm_term`). The browser also preserves `gclid`, `gbraid`, `wbraid`, and `fbclid` for the current visit without overwriting query-string values. Signup submissions send their distinct funnel source plus source, medium, and campaign attribution to Brevo. Resume Builder checkout sessions receive the available campaign and click identifiers as non-PII Stripe metadata.
+
+Google Ads remains disabled until real values are supplied. Set `NEXT_PUBLIC_GOOGLE_ADS_ID` and only the conversion labels that exist in Google Ads, then redeploy. Alternatively, import the GA4 `generate_lead`, `begin_checkout`, and `purchase` events into Google Ads; do not enable a direct label and import the same GA4 conversion as Primary at the same time.
+
+See `docs/marketing-readiness.md` for the event map, dashboard verification steps, and the proposed future D1 attribution design.
 
 ## Email signup integration
 
@@ -26,7 +30,7 @@ The `/api/subscribe` endpoint stores normalized signups in D1 and creates or upd
 - `BREVO_API_KEY` as an encrypted secret.
 - `BREVO_LIST_ID` as a regular variable containing the numeric website-subscriber list ID.
 
-Brevo must contain the text attributes `INTEREST`, `SIGNUP_SOURCE`, `UTM_SOURCE`, `UTM_MEDIUM`, and `UTM_CAMPAIGN`.
+Brevo must contain the text attributes `INTEREST`, `SIGNUP_SOURCE`, `UTM_SOURCE`, `UTM_MEDIUM`, and `UTM_CAMPAIGN`. `SIGNUP_SOURCE` receives `book_sample`, `top_10_trades`, `general_interest`, or the legacy `website` fallback.
 
 Book-interest signups receive the gated seven-page preview (cover included) of *TRADE HUSTL3: 10 High-Opportunity Trades — 2026-2027 Edition*. The Worker serves the PDF from `worker/assets/trade-hustl3-free-sample.pdf` through `/api/free-sample`; direct public asset requests continue to redirect to the email gate.
 

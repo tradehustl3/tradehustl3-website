@@ -35,7 +35,7 @@ const sampleResume: GeneratedResume = {
   additionalInformation: ["Valid driver's license and reliable transportation"],
 };
 
-function fakeDb(options: { generated?: boolean; entitlement?: { used: number; total: number } | null } = {}) {
+function fakeDb(options: { generated?: boolean; entitlement?: { used: number; total: number; expiresAt?: number | null } | null } = {}) {
   const writes: Array<{ sql: string; values: unknown[] }> = [];
   return {
     writes,
@@ -44,6 +44,7 @@ function fakeDb(options: { generated?: boolean; entitlement?: { used: number; to
         bind(...values: unknown[]) {
           return {
             async first() {
+              if (/RETURNING count/i.test(sql)) return { count: 1 };
               if (/FROM sessions s/i.test(sql)) {
                 return { user_id: "user-1", email: "member@example.com", full_name: "Member" };
               }
@@ -70,6 +71,7 @@ function fakeDb(options: { generated?: boolean; entitlement?: { used: number; to
                   credits_total: options.entitlement.total,
                   credits_used: options.entitlement.used,
                   status: "active",
+                  access_expires_at: options.entitlement.expiresAt ?? null,
                 };
               }
               return null;
@@ -273,6 +275,53 @@ test("checkout is unavailable until the watermarked preview exists", async () =>
   assert.match(JSON.stringify(await response?.json()), /watermarked preview before checkout/i);
 });
 
+test("checkout returns a server-created Stripe session and preserves campaign metadata", async () => {
+  const DB = fakeDb({ generated: true, entitlement: null });
+  const originalFetch = globalThis.fetch;
+  let stripeBody = "";
+  globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+    assert.equal(String(input), "https://api.stripe.com/v1/checkout/sessions");
+    stripeBody = String(init?.body);
+    return new Response(JSON.stringify({
+      id: "cs_preview_resume_checkout",
+      url: "https://checkout.stripe.com/c/pay/cs_preview_resume_checkout",
+    }), { status: 200, headers: { "Content-Type": "application/json" } });
+  }) as typeof fetch;
+  let response;
+  try {
+    response = await handleResumeBuilderRoute(
+      new Request("https://preview.tradehustl3.com/api/resume-builder/resumes/resume-1/checkout", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Cookie: sessionCookie,
+          Origin: "https://preview.tradehustl3.com",
+        },
+        body: JSON.stringify({ utm_source: "google", utm_campaign: "search-resume" }),
+      }),
+      {
+        DB: DB as unknown as D1Database,
+        STRIPE_SECRET_KEY: "sk_test_resume",
+        STRIPE_RESUME_PRICE_ID: "price_resume_999",
+      },
+    );
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+  assert.equal(response?.status, 200);
+  assert.deepEqual(await response?.json(), {
+    ok: true,
+    checkoutUrl: "https://checkout.stripe.com/c/pay/cs_preview_resume_checkout",
+    checkoutSessionId: "cs_preview_resume_checkout",
+    value: 9.99,
+    currency: "USD",
+  });
+  const stripeForm = new URLSearchParams(stripeBody);
+  assert.equal(stripeForm.get("success_url"), "https://preview.tradehustl3.com/resume-builder/payment-confirmed?resume_id=resume-1&session_id={CHECKOUT_SESSION_ID}");
+  assert.equal(stripeForm.get("metadata[utm_source]"), "google");
+  assert.equal(stripeForm.get("metadata[utm_campaign]"), "search-resume");
+});
+
 test("an unpaid owner can view only the protected preview file", async () => {
   const DB = {
     prepare(sql: string) {
@@ -399,6 +448,54 @@ test("a verified $9.99 Stripe event grants exactly four AI runs", async () => {
   assert.equal(entitlement.values.includes(4), true);
   assert.equal(entitlement.values.includes(1), true);
   assert.equal(entitlement.values.includes("resume_mvp_999"), true);
+  const expiry = entitlement.values.find((value) => typeof value === "number" && value > Math.floor(Date.now() / 1000) + 6 * 24 * 60 * 60);
+  assert.ok(expiry, "the correction entitlement should expire seven days after verified payment");
+});
+
+test("an expired correction window blocks corrections but keeps the paid entitlement", async () => {
+  const response = await handleResumeBuilderRoute(
+    new Request("https://tradehustl3.com/api/resume-builder/resumes/resume-1/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Cookie: sessionCookie },
+      body: JSON.stringify({ correctionRequest: "Update the summary." }),
+    }),
+    { DB: fakeDb({ generated: true, entitlement: { used: 1, total: 4, expiresAt: Math.floor(Date.now() / 1000) - 1 } }) as unknown as D1Database },
+  );
+  assert.equal(response?.status, 409);
+  assert.match(JSON.stringify(await response?.json()), /seven-day correction window has ended/i);
+});
+
+test("Resume Builder purchase status is verified against the authenticated order and entitlement", async () => {
+  const DB = {
+    prepare(sql: string) {
+      return {
+        bind() {
+          return {
+            async first() {
+              if (/FROM sessions s/i.test(sql)) return { user_id: "user-1", email: "member@example.com", full_name: "Member" };
+              if (/FROM resume_orders o/i.test(sql)) return { stripe_session_id: "cs_verified_resume" };
+              return null;
+            },
+          };
+        },
+      };
+    },
+  };
+  const response = await handleResumeBuilderRoute(
+    new Request("https://tradehustl3.com/api/resume-builder/resumes/resume-1/purchase-status?session_id=cs_verified_resume", {
+      headers: { Cookie: sessionCookie },
+    }),
+    { DB: DB as unknown as D1Database },
+  );
+  assert.equal(response?.status, 200);
+  assert.deepEqual(await response?.json(), {
+    ok: true,
+    verified: true,
+    transactionId: "cs_verified_resume",
+    contentName: "resume_builder",
+    value: 9.99,
+    currency: "USD",
+  });
 });
 
 type RefundHarnessOptions = {

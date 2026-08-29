@@ -153,6 +153,14 @@
 .rb-tracks ol { margin: 0; padding: 0; list-style: none; border-top: 4px solid var(--rb-red); }
 .rb-tracks li { display: grid; grid-template-columns: 54px 1fr; gap: 14px; padding: 17px 0; border-bottom: 1px solid var(--rb-line); font-size: 16px; font-weight: 700; }
 .rb-tracks li span { color: var(--rb-gold); font-size: 10px; letter-spacing: .16em; }
+.rb-faq { padding: 90px clamp(26px, 7vw, 112px); background: var(--rb-cream); color: var(--rb-navy); }
+.rb-faq h2 { margin: 12px 0 34px; font-size: clamp(46px, 5vw, 76px); }
+.rb-faq details { max-width: 900px; padding: 18px 0; border-top: 1px solid #071a2b28; }
+.rb-faq summary { cursor: pointer; font-weight: 900; text-transform: uppercase; }
+.rb-faq details p { max-width: 760px; color: var(--rb-ink-soft); line-height: 1.6; }
+.rb-faq a, .rb-support-note a, .rb-flow-support a, .rb-unpaid-card small a { color: var(--rb-red); font-weight: 900; text-decoration: underline; text-underline-offset: 3px; }
+.rb-support-note { margin-top: 18px; color: var(--rb-ink-soft); font-size: 11px; line-height: 1.5; }
+.rb-flow-support { margin: 18px clamp(22px, 6vw, 86px) 0; color: var(--rb-ink-soft); font-size: 12px; text-align: right; }
 .rb-footer { display: grid; grid-template-columns: 1fr auto; gap: 8px 24px; padding: 50px clamp(26px, 7vw, 112px); border-top: 1px solid var(--rb-line); background: var(--rb-navy-3); }
 .rb-footer strong { font-family: var(--font-display); font-size: 26px; letter-spacing: .05em; }
 .rb-footer p { margin: 0; color: var(--rb-gray); font-size: 12px; }
@@ -261,6 +269,7 @@
 .rb-download b { font-size: 22px; }
 .rb-first-build, .rb-unpaid-card { display: grid; grid-template-columns: .7fr 1.3fr; align-items: center; gap: clamp(40px, 8vw, 120px); min-height: 520px; padding: clamp(40px, 8vw, 100px); border-top: 5px solid var(--rb-red); background: var(--rb-surface-2); }
 .rb-unpaid-card { display: block; max-width: 780px; margin: 80px auto; min-height: 0; }
+.rb-unpaid-card > small { display: block; margin-top: 15px; color: var(--rb-ink-soft); }
 .rb-blueprint { aspect-ratio: 4 / 5; display: flex; flex-direction: column; gap: 18px; padding: 40px; border: 1px solid var(--rb-field-border); background: #fff; box-shadow: 20px 20px 0 #071a2b10; }
 .rb-blueprint span { color: var(--rb-red); font-family: var(--font-display); font-size: 66px; }
 .rb-blueprint i { height: 10px; display: block; background: var(--rb-field-border); }

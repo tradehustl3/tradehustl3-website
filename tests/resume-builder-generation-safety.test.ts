@@ -98,6 +98,7 @@ function harness(options: HarnessOptions = {}) {
             credits_total: state.creditsTotal,
             credits_used: state.creditsUsed,
             status: "active",
+            access_expires_at: null,
           };
         }
         if (/SELECT object_key FROM resume_files/i.test(sql)) {

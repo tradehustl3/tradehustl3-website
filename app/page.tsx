@@ -5,7 +5,7 @@ import { SocialLinks } from './social-links';
 import Image from 'next/image';
 
 const resumeBenefits = [
-  'One-time $9.99 payment', 'No subscription',
+  'One-time $9.99 payment', 'No subscription', 'No recurring charge',
 ];
 
 const trustPoints = [
@@ -145,6 +145,8 @@ export default function Home() {
                 buttonLabel="Send me the free PDF"
                 includeInterest
                 metaLeadContentName="top_10_trades"
+                nextStepHref="/resume-builder"
+                nextStepLabel="Turn your target trade into a job-ready resume"
               />
             </details>
             <div className="guide-benefits" aria-label="Guide career benefits">
@@ -200,9 +202,9 @@ export default function Home() {
             <Image src="/trade-hustl3-book-cover.jpg" alt="TRADE HUSTL3: Built by Hustle, Backed by Trades — book cover" width={300} height={450} />
           </div>
           <div className="sample-card-copy">
-            <p className="eyebrow"><span>04</span> Free 7-page book sample</p>
-            <h3 id="sample-cta-title">Get Inside TRADE HUSTL3 Before You Buy.</h3>
-            <p>Read the first seven pages of <em>TRADE HUSTL3: Built by Hustle, Backed by Trades</em> and see how the book approaches skilled trades, career opportunity, money, and building your next move.</p>
+          <p className="eyebrow"><span>04</span> Free 6-page trade guide preview</p>
+            <h3 id="sample-cta-title">See the TRADE HUSTL3 Approach Before You Buy.</h3>
+            <p>Preview <em>TRADE HUSTL3: 10 High-Opportunity Trades — 2026-2027 Edition</em> and see the source standard, two verified trade profiles, national pay context, and practical next steps.</p>
             <ul className="sample-gets" aria-label="What the sample covers">
               <li><strong>The approach</strong><span>How TRADE HUSTL3 frames a skilled-trades career.</span></li>
               <li><strong>Opportunity &amp; money</strong><span>Where the earning power and advancement really are.</span></li>
@@ -211,15 +213,17 @@ export default function Home() {
             <p className="sample-benefit">Free <span aria-hidden="true">•</span> Instant access <span aria-hidden="true">•</span> Email delivery</p>
             <div className="sample-signup-box">
               <ResourceForm
-                resourceName="free 7-page book sample"
-                buttonLabel="Email me the 7 pages"
+                resourceName="free 6-page trade guide preview"
+                buttonLabel="Email me the free preview"
                 includeFirstName={false}
                 ctaId="book-sample"
                 ctaLocation="sample-card"
                 metaLeadContentName="book_sample"
+                nextStepHref="/book"
+                nextStepLabel="Explore the full TRADE HUSTL3 book"
               />
             </div>
-            <p className="sample-support">No purchase required. Get the sample sent directly to your email.</p>
+            <p className="sample-support">No purchase required. Get the six-page preview sent directly to your email.</p>
             <a className="sample-secondary" href="/book" data-cta="the-book" data-cta-location="sample-card">Want the full roadmap? Explore the complete book <span aria-hidden="true">→</span></a>
           </div>
         </article>
@@ -295,6 +299,7 @@ export default function Home() {
           <a href="/book/refund-policy">eBook Policy</a>
           <a href="/data-deletion">Data Requests</a>
           <a href="/contact">Support</a>
+          <a href="mailto:support@tradehustl3.com">support@tradehustl3.com</a>
         </nav>
         <p>ENTER. EARN. ELEVATE.</p>
       </footer>

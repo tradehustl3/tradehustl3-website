@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Anton, Space_Grotesk } from "next/font/google";
 import "./globals.css";
+import { AttributionCapture } from "./attribution-capture";
 import { GoogleAnalytics } from "./google-analytics";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_TITLE, SITE_URL } from "./site";
 
@@ -216,6 +217,8 @@ export default function RootLayout({
             __html: JSON.stringify(structuredData),
           }}
         />
+
+        <AttributionCapture />
 
         {children}
 
