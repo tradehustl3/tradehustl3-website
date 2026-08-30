@@ -11,8 +11,7 @@ test("public marketing pages opt out of stale Cloudflare HTML caching", async ()
   assert.match(config, /X-TRADE-HUSTL3-Content-Revision/i);
 
   for (const route of ["/", "/book", "/book/sample", "/top-10-trades", "/resume-builder"]) {
-    const escaped = route.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    assert.match(config, new RegExp(`source: [\\\"']${escaped}[\\\"']`));
+    assert.ok(config.includes(`source: "${route}"`), `missing freshness headers for ${route}`);
   }
 });
 
@@ -22,6 +21,6 @@ test("sitemap advertises the latest public-content refresh", async () => {
   assert.match(sitemap, /2026-08-30T23:27:04\.000Z/);
   assert.match(sitemap, /changeFrequency: "daily"/);
   for (const route of ["/book", "/book/sample", "/top-10-trades", "/resume-builder"]) {
-    assert.match(sitemap, new RegExp(route.replaceAll("/", "\\/")));
+    assert.ok(sitemap.includes(route), `missing sitemap route ${route}`);
   }
 });
