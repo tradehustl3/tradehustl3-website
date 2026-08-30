@@ -36,7 +36,7 @@ export default function ReleaseCountdown() {
   }, []);
 
   if (remaining === null) {
-    return <p className="release-live">TRADE HUSTL3 is now available.</p>;
+    return <p className="release-live">The direct TRADE HUSTL3 eBook is now available.</p>;
   }
 
   const units = [
@@ -47,7 +47,7 @@ export default function ReleaseCountdown() {
   ] as const;
 
   return (
-    <div className="release-countdown" role="timer" aria-label="Time until the September 15, 2026 release">
+    <div className="release-countdown" role="timer" aria-label="Time until the September 15, 2026 direct eBook release">
       {units.map(([value, label]) => (
         <span key={label}>
           <strong>{value === undefined ? "--" : String(value).padStart(2, "0")}</strong>

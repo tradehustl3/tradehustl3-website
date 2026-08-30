@@ -46,7 +46,6 @@ const bookStructuredData = {
   description: BOOK_DESCRIPTION,
   isbn: "9798193043355",
   datePublished: "2026-09-15",
-  bookFormat: "https://schema.org/Paperback",
   inLanguage: "en-US",
   url: `${SITE_URL}/book`,
   image: `${SITE_URL}/trade-hustl3-book-cover.jpg`,
@@ -168,7 +167,7 @@ export default function BookPage() {
         </div>
         <div className="book-hero-copy">
           <p className="section-label">/ THE OFFICIAL BOOK</p>
-          <p className="book-release-badge">Amazon release · September 15, 2026</p>
+          <p className="book-release-badge">Direct eBook · September 15, 2026</p>
           <h1>TRADE<br />HUSTL<span>3</span></h1>
           <p className="book-subtitle">Built by Hustle, Backed by Trades.</p>
           <p className="book-byline">By Zachary Ellis</p>
@@ -185,14 +184,14 @@ export default function BookPage() {
             <Link className="button button-secondary" href="/#join">Get launch updates</Link>
           </div>
           <div className="countdown-wrap">
-            <p>Launch countdown · September 15, 2026</p>
+            <p>Direct eBook launch countdown · September 15, 2026</p>
             <ReleaseCountdown />
           </div>
         </div>
       </section>
 
       <section className="book-facts" aria-label="Book details">
-        <div><span>Release</span><strong>September 15, 2026</strong></div>
+        <div><span>Direct eBook</span><strong>September 15, 2026</strong></div>
         <div><span>Formats</span><strong>Paperback + eBook</strong></div>
         <div><span>Starting point</span><strong>No experience required</strong></div>
         <div><span>Current KDP ISBN</span><strong>9798193043355</strong></div>
@@ -314,14 +313,14 @@ export default function BookPage() {
 
       <section className="book-availability" id="availability">
         <p className="section-label">/ AVAILABILITY</p>
-        <h2>THE FIRST RELEASE.<br /><span>MORE PATHS COMING.</span></h2>
+        <h2>DIRECT FIRST.<br /><span>AMAZON NEXT.</span></h2>
         <p>
-          The first edition launches September 15, 2026. Purchase the secure direct eBook from TRADE HUSTL3 or choose the Amazon paperback and Kindle editions when their listings go live.
+          The direct eBook launches September 15, 2026. Amazon paperback and Kindle editions are scheduled for September 25, 2026.
         </p>
         <div className="availability-grid">
-          <article><span>AMAZON PAPERBACK</span><strong>$24.99</strong><small>Scheduled for September 15, 2026</small></article>
-          <article><span>DIRECT eBOOK</span><strong>$9.99</strong><small>Secure PDF delivered by email after payment</small></article>
-          <article><span>KINDLE eBOOK</span><strong>$9.99</strong><small>Amazon link will be added when the listing is live</small></article>
+          <article><span>AMAZON PAPERBACK</span><strong>$24.99</strong><small>Scheduled for September 25, 2026</small></article>
+          <article><span>DIRECT eBOOK</span><strong>$9.99</strong><small>Available September 15 · secure PDF delivered by email after payment</small></article>
+          <article><span>KINDLE eBOOK</span><strong>$9.99</strong><small>Scheduled for September 25, 2026 · Amazon link added when live</small></article>
         </div>
         <LaunchPurchaseButton />
         <p className="purchase-terms">By purchasing, you agree to the <Link href="/terms">Terms of Service</Link>, <Link href="/privacy">Privacy Policy</Link>, and <Link href="/book/refund-policy">eBook Delivery and Refund Policy</Link>.</p>
