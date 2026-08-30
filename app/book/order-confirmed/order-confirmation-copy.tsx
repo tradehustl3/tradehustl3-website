@@ -1,15 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 const RELEASE_TIME = new Date("2026-09-15T00:00:00-04:00").getTime();
 
 export function OrderConfirmationCopy() {
-  const [isReleased, setIsReleased] = useState(false);
-
-  useEffect(() => {
-    setIsReleased(Date.now() >= RELEASE_TIME);
-  }, []);
+  const [isReleased] = useState(() => Date.now() >= RELEASE_TIME);
 
   if (isReleased) {
     return (

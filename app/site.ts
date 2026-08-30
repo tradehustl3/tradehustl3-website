@@ -1,8 +1,8 @@
 export const SITE_URL = "https://tradehustl3.com";
 
-export const SITE_TITLE = "TRADE HUSTL3 | Skilled Trades Career Guide & Resources";
+export const SITE_TITLE = "Skilled Trades Resume Builder | TRADE HUSTL3";
 
 export const SITE_DESCRIPTION =
-  "Explore skilled-trade career paths, training, certifications, resume tools, and the TRADE HUSTL3 book by Zachary Ellis.";
+  "Build an ATS-ready skilled-trades resume for HVAC, electrical, plumbing, welding, facilities, and maintenance work. $9.99 one-time, with PDF and DOCX files.";
 
 export const SITE_NAME = "TRADE HUSTL3";

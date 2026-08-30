@@ -101,7 +101,15 @@ const structuredData = {
         "@id": `${SITE_URL}/#zachary-ellis`,
       },
 
-      sameAs: ["https://github.com/tradehustl3"],
+      sameAs: [
+        "https://www.facebook.com/profile.php?id=61593457675674",
+        "https://www.instagram.com/tradehustl3/",
+        "https://www.youtube.com/@tradehustl3",
+        "https://x.com/maintenancmt1k",
+        "https://www.linkedin.com/in/zachary-ellis-a797193ab",
+        "https://www.tiktok.com/@da.maintenance.ma5",
+        "https://github.com/tradehustl3",
+      ],
     },
 
     {
@@ -127,6 +135,17 @@ const structuredData = {
         "@id": `${SITE_URL}/#organization`,
       },
 
+      inLanguage: "en-US",
+    },
+
+    {
+      "@type": "WebPage",
+      "@id": `${SITE_URL}/#webpage`,
+      url: SITE_URL,
+      name: SITE_TITLE,
+      description: SITE_DESCRIPTION,
+      isPartOf: { "@id": `${SITE_URL}/#website` },
+      about: { "@id": `${SITE_URL}/#organization` },
       inLanguage: "en-US",
     },
 
