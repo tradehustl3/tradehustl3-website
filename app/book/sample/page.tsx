@@ -8,7 +8,7 @@ import styles from './page.module.css';
 
 const PAGE_TITLE = 'Free 7-Page TRADE HUSTL3 Book Sample';
 const PAGE_DESCRIPTION =
-  'Get the free 7-page sample of TRADE HUSTL3: Built by Hustle, Backed by Trades. Enter your email and receive the reading link.';
+  'Get the free 7-page sample of TRADE HUSTL3: Built by Hustle, Backed by Trades. Enter your email and download the 7-page sample PDF.';
 
 export const metadata: Metadata = {
   title: PAGE_TITLE,
@@ -100,7 +100,7 @@ export default function BookSamplePage() {
               ctaLocation="book-sample-campaign"
               metaLeadContentName="book_sample"
               signupInterest="Book 7-Page Sample"
-              successLinkLabel="Read my 7-page sample"
+              successLinkLabel="Download my 7-page sample (PDF)"
             />
             <p className={styles.consent}>
               No purchase required. By requesting the sample, you agree to receive TRADE HUSTL3 book and career updates. Unsubscribe anytime.
@@ -114,7 +114,7 @@ export default function BookSamplePage() {
           <p className={styles.eyebrow}>WHAT HAPPENS NEXT</p>
           <h2>CHECK YOUR EMAIL. THEN START READING.</h2>
           <p>
-            After you submit your email, you will get a direct link to the seven-page reader. The sample itself is no longer displayed on this campaign landing page.
+            After you submit your email, you&rsquo;ll get a direct link to download the seven-page sample PDF, plus a browser reading option. The sample itself is no longer displayed on this campaign landing page.
           </p>
         </div>
         <Link className={styles.primaryButton} href="/book" data-cta="the-book" data-cta-location="book-sample-landing">
