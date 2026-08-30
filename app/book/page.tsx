@@ -45,8 +45,7 @@ const bookStructuredData = {
   name: BOOK_TITLE,
   description: BOOK_DESCRIPTION,
   isbn: "9798193043355",
-  datePublished: "2026-09-25",
-  bookFormat: "https://schema.org/Paperback",
+  datePublished: "2026-09-15",
   inLanguage: "en-US",
   url: `${SITE_URL}/book`,
   image: `${SITE_URL}/trade-hustl3-book-cover.jpg`,
@@ -185,7 +184,7 @@ export default function BookPage() {
             <Link className="button button-secondary" href="/#join">Get launch updates</Link>
           </div>
           <div className="countdown-wrap">
-            <p>Direct eBook countdown · September 15, 2026</p>
+            <p>Direct eBook launch countdown · September 15, 2026</p>
             <ReleaseCountdown />
           </div>
         </div>
@@ -193,8 +192,8 @@ export default function BookPage() {
 
       <section className="book-facts" aria-label="Book details">
         <div><span>Direct eBook</span><strong>September 15, 2026</strong></div>
-        <div><span>Amazon + Kindle</span><strong>September 25, 2026</strong></div>
         <div><span>Formats</span><strong>Paperback + eBook</strong></div>
+        <div><span>Starting point</span><strong>No experience required</strong></div>
         <div><span>Current KDP ISBN</span><strong>9798193043355</strong></div>
       </section>
 
