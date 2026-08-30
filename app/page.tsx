@@ -15,7 +15,7 @@ const processSteps = [
 const proofPoints = [
   ['Trade-specific wording', 'Built around field experience, certifications, tools, safety, and measurable work—not generic office language.'],
   ['Guided intake', 'A clear step-by-step process helps you capture what you actually do without staring at a blank page.'],
-  ['ATS-friendly structure', 'Professional formatting and keyword-aware organization designed for modern hiring systems.'],
+  ['ATS-focused structure', 'Professional formatting and keyword-aware organization designed for modern hiring systems.'],
   ['Multiple trade categories', 'Useful for HVAC, electrical, plumbing, welding, facilities, maintenance, construction, and related work.'],
   ['HUSTL3 BOT assistance', 'Intelligent guidance helps turn rough notes into stronger resume material while keeping your experience honest.'],
   ['Built from the field', 'Created from real skilled-trades experience and practical lessons earned on the job.'],
