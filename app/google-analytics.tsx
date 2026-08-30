@@ -14,6 +14,22 @@ export function GoogleAnalytics() {
         window.dataLayer = window.dataLayer || [];
         function gtag(){dataLayer.push(arguments);}
         window.gtag = window.gtag || gtag;
+
+        (function captureCampaignAttribution() {
+          try {
+            var search = new URLSearchParams(window.location.search);
+            var keys = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'];
+            var attribution = {};
+            keys.forEach(function(key) {
+              var value = search.get(key);
+              if (value) attribution[key] = value.slice(0, 120);
+            });
+            if (Object.keys(attribution).length) {
+              window.localStorage.setItem('tradehustl3_campaign_attribution', JSON.stringify(attribution));
+            }
+          } catch (_) {}
+        })();
+
         gtag('js', new Date());
         gtag('config', '${measurementId}', { page_path: window.location.pathname + window.location.search });
       `}</Script>
