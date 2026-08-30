@@ -30,6 +30,20 @@ Brevo must contain the text attributes `INTEREST`, `SIGNUP_SOURCE`, `UTM_SOURCE`
 
 Book-interest signups receive the gated seven-page preview (cover included) of *TRADE HUSTL3: 10 High-Opportunity Trades — 2026-2027 Edition*. The Worker serves the PDF from `worker/assets/trade-hustl3-free-sample.pdf` through `/api/free-sample`; direct public asset requests continue to redirect to the email gate.
 
+## Production Brevo nurture automations
+
+As of August 29, 2026, the two primary lead-magnet nurture paths are live in Brevo and tested before activation. Both start when a contact is added to the website subscriber list (`identified_contacts`, list #4), then use the `INTEREST` contact attribute to keep the funnels separated.
+
+- **Top 10 Trades follow-up:** `INTEREST = Top 10 Trades` → wait 1 day → send the branded Top 10 Trades follow-up email → exit. The message links back to the free guide experience and presents the TRADE HUSTL3 Resume Builder as the next-step offer.
+- **Book 7-Page Sample follow-up:** `INTEREST = Book 7-Page Sample` → wait 1 day → send the branded book-sample follow-up email → exit. The message links to `https://tradehustl3.com/book/sample/read` for the reader and `https://tradehustl3.com/book` for the full-book offer.
+- Contacts that do not match the target `INTEREST` value exit the corresponding automation without receiving the wrong nurture message.
+- Re-entry after exit is disabled for the book-sample automation to prevent repeat delivery of the same follow-up.
+- Immediate resource delivery remains handled by the website flow; these Brevo workflows are the one-day nurture follow-ups, not the initial delivery mechanism.
+
+Sender identity for these automations is `TRADE HUSTL3 <updates@tradehustl3.com>`.
+
+Next measurement milestone: connect email-link clicks and downstream purchases to the originating funnel so guide-to-resume and sample-to-book conversion rates can be compared directly.
+
 ## Secure eBook preorder fulfillment
 
 The $9.99 direct eBook preorder is charged at checkout and delivered on September 15, 2026. Stripe fulfillment is handled by the Cloudflare Worker, and the full book is never exposed through public site assets.
