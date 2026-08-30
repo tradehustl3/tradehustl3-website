@@ -43,7 +43,7 @@ export default function Home() {
 
       <header className={styles.header}>
         <Link className={styles.brand} href="#top" aria-label="TRADE HUSTL3 home">
-          <Image src="/trade-hustl3-logo.png" alt="TRADE HUSTL3 logo" width={48} height={48} priority />
+          <Image src="/optimized/trade-hustl3-logo.webp" alt="TRADE HUSTL3 logo" width={48} height={48} priority />
           <span>TRADE HUSTL<span>3</span></span>
         </Link>
         <nav className={styles.nav} aria-label="Primary navigation">
@@ -66,7 +66,7 @@ export default function Home() {
           <ul className={styles.chips} aria-label="Resume Builder features">{tradeChips.map((chip) => <li key={chip}>{chip}</li>)}</ul>
         </div>
         <div className={styles.heroVisual}>
-          <div className={styles.heroImageWrap}><Image src="/trade-hustl3-resume-workspace.png" alt="Skilled-trades workspace with safety gear and a laptop" fill sizes="(max-width: 900px) 92vw, 46vw" priority /></div>
+          <div className={styles.heroImageWrap}><Image src="/optimized/resume-workspace.webp" alt="Skilled-trades workspace with safety gear and a laptop" fill sizes="(max-width: 900px) 92vw, 46vw" priority /></div>
           <div className={styles.heroStatus}><span>HUSTL3 BOT</span><strong>Trade experience in. Stronger resume out.</strong></div>
         </div>
       </section>
@@ -96,23 +96,23 @@ export default function Home() {
       </section>
 
       <section className={styles.difference} aria-labelledby="difference-title">
-        <div className={styles.differenceIntro}><p className={styles.eyebrow}>WHY IT&apos;S DIFFERENT</p><h2 id="difference-title">Built around the work you actually do.</h2><p>TRADE HUSTL3 combines guided technology with credibility earned in the field. The result is practical, focused, and made for skilled-trades careers.</p><Image src="/hustl3-bot-branded.png" alt="HUSTL3 BOT in branded skilled-trades safety gear" width={330} height={495} sizes="(max-width: 760px) 70vw, 330px" /></div>
+        <div className={styles.differenceIntro}><p className={styles.eyebrow}>WHY IT&apos;S DIFFERENT</p><h2 id="difference-title">Built around the work you actually do.</h2><p>TRADE HUSTL3 combines guided technology with credibility earned in the field. The result is practical, focused, and made for skilled-trades careers.</p><Image src="/optimized/hustl3-bot.webp" alt="HUSTL3 BOT in branded skilled-trades safety gear" width={330} height={495} sizes="(max-width: 760px) 70vw, 330px" /></div>
         <div className={styles.proofGrid}>{proofPoints.map(([title, copy], index) => <article key={title}><span>0{index + 1}</span><h3>{title}</h3><p>{copy}</p></article>)}</div>
       </section>
 
       <section className={styles.mission} id="mission" aria-labelledby="mission-title">
-        <div className={styles.bookCover}><Image src="/trade-hustl3-book-cover.jpg" alt="TRADE HUSTL3: Built by Hustle, Backed by Trades book cover" fill sizes="(max-width: 760px) 70vw, 330px" /></div>
+        <div className={styles.bookCover}><Image src="/optimized/book-cover.webp" alt="TRADE HUSTL3: Built by Hustle, Backed by Trades book cover" fill sizes="(max-width: 760px) 70vw, 330px" /></div>
         <div><p className={styles.eyebrow}>BOOK &amp; MISSION</p><h2 id="mission-title">A career tool is one move. The mission is bigger.</h2><p>TRADE HUSTL3 is about entering the skilled trades, building earning power, and creating more options through real skills. The book carries that mission from choosing a path to building a long-term plan.</p><p className={styles.releaseNote}>Direct eBook available September 15, 2026.</p><AnalyticsLink href="/book" location="book_teaser" className={styles.secondaryButton}>Explore the Book <span aria-hidden="true">→</span></AnalyticsLink></div>
       </section>
 
       <section className={styles.founder} aria-labelledby="founder-title">
-        <div className={styles.founderPhoto}><Image src="/zachary-ellis.png" alt="Zachary Ellis, Da Maintenance Mane, founder of TRADE HUSTL3" fill sizes="(max-width: 760px) 88vw, 430px" /></div>
+        <div className={styles.founderPhoto}><Image src="/optimized/zachary-ellis.webp" alt="Zachary Ellis, Da Maintenance Mane, founder of TRADE HUSTL3" fill sizes="(max-width: 760px) 88vw, 430px" /></div>
         <div className={styles.founderCopy}><p className={styles.eyebrow}>BUILT IN THE FIELD</p><h2 id="founder-title">Real work built the knowledge. The mission passes it forward.</h2><p>TRADE HUSTL3 was created by Zachary Ellis—Da Maintenance Mane—after more than a decade inside the skilled trades: rooftops, mechanical rooms, service calls, work orders, leadership, and lessons earned the hard way.</p><blockquote>“Enter with a skill. Earn with purpose. Elevate with options.”</blockquote><div className={styles.trustRow}><span>Built from real skilled-trades experience</span><span>Clear pricing</span><span>No Resume Builder subscription</span></div><SocialLinks /></div>
       </section>
 
       <section className={styles.finalCta} aria-labelledby="final-cta-title"><p className={styles.eyebrow}>READY WHEN YOU ARE</p><h2 id="final-cta-title">Build a resume that speaks the language of your trade.</h2><p>Guided intake. ATS-ready structure. Clean PDF and editable DOCX. One-time $9.99 payment.</p><AnalyticsLink href="/resume-builder" location="footer_cta" className={styles.primaryButton}>Build My Resume — $9.99 <span aria-hidden="true">→</span></AnalyticsLink></section>
 
-      <footer className={styles.footer}><div className={styles.footerBrand}><Image src="/trade-hustl3-logo.png" alt="TRADE HUSTL3 logo" width={44} height={44} /><strong>TRADE HUSTL3 LLC</strong></div><p>Built by Hustle, Backed by Trades.</p><nav aria-label="Footer links"><Link href="/resume-builder">Resume Builder</Link><Link href="/top-10-trades">Top 10 Trades</Link><Link href="/book/sample">Book Sample</Link><Link href="/book">The Book</Link><Link href="/privacy">Privacy</Link><Link href="/terms">Terms</Link><Link href="/contact">Support</Link></nav></footer>
+      <footer className={styles.footer}><div className={styles.footerBrand}><Image src="/optimized/trade-hustl3-logo.webp" alt="TRADE HUSTL3 logo" width={44} height={44} /><strong>TRADE HUSTL3 LLC</strong></div><p>Built by Hustle, Backed by Trades.</p><nav aria-label="Footer links"><Link href="/resume-builder">Resume Builder</Link><Link href="/top-10-trades">Top 10 Trades</Link><Link href="/book/sample">Book Sample</Link><Link href="/book">The Book</Link><Link href="/privacy">Privacy</Link><Link href="/terms">Terms</Link><Link href="/contact">Support</Link></nav></footer>
     </main>
   );
 }

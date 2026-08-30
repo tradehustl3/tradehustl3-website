@@ -60,12 +60,13 @@ test("server-renders the corrected TRADE HUSTL3 brand and metadata", async () =>
   assert.match(html, /name="twitter:title" content="Skilled Trades Resume Builder \| TRADE HUSTL3"/i);
   assert.match(html, /<link rel="canonical" href="https:\/\/tradehustl3\.com\/?"/i);
   assert.match(html, /property="og:url" content="https:\/\/tradehustl3\.com\/?"/i);
-  assert.match(html, /property="og:image" content="https:\/\/tradehustl3\.com\/og\.png"/i);
+  assert.match(html, /property="og:image" content="https:\/\/tradehustl3\.com\/optimized\/og\.webp"/i);
   assert.equal(html.includes("localhost:3000"), false);
   for (const schemaType of ["Organization", "Person", "WebSite", "WebPage", "Book"]) assert.match(html, new RegExp(`"@type":"${schemaType}"`, "i"));
   assert.match(html, /aria-label="TRADE HUSTL3 home"/i);
   assert.equal(html.toUpperCase().includes("TRA" + "D3"), false);
-  assert.match(html, /trade-hustl3-logo\.png/i);
+  assert.match(html, /optimized\/trade-hustl3-logo\.webp/i);
+  assert.match(html, /favicon\.svg/i);
   assert.match(html, /alt="TRADE HUSTL3 logo"/i);
   assert.match(html, /Built by Hustle, Backed by Trades\./i);
   assert.match(html, /Skilled-Trades[\s\S]*Resume Builder/i);

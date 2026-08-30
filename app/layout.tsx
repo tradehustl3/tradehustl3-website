@@ -49,9 +49,9 @@ export const metadata: Metadata = {
   },
 
   icons: {
-    icon: "/trade-hustl3-logo.png",
-    shortcut: "/trade-hustl3-logo.png",
-    apple: "/trade-hustl3-logo.png",
+    icon: "/favicon.svg",
+    shortcut: "/favicon.svg",
+    apple: "/optimized/trade-hustl3-logo.webp",
   },
 
   openGraph: {
@@ -63,9 +63,9 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: "/og.png",
-        width: 1731,
-        height: 909,
+        url: "/optimized/og.webp",
+        width: 1200,
+        height: 630,
         alt: "TRADE HUSTL3 — Built by Hustle, Backed by Trades",
       },
     ],
@@ -75,7 +75,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: SITE_TITLE,
     description: SITE_DESCRIPTION,
-    images: ["/og.png"],
+    images: ["/optimized/og.webp"],
   },
 };
 
