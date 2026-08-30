@@ -13,6 +13,9 @@ interface Env extends ResumeBuilderEnv, EbookStripeEnv {
   BREVO_API_KEY?: string;
   BREVO_LIST_ID?: string;
   BREVO_SAMPLE_SENDER_EMAIL?: string;
+  /** Dedicated HMAC secret for guide sample links. Falls back to BREVO_API_KEY
+   * so links minted before secret provisioning remain valid. */
+  SAMPLE_TOKEN_SECRET?: string;
   /** Dedicated HMAC secret for the gated 7-page book-sample link. Falls back to
    * BREVO_API_KEY when unset so the funnel works before a dedicated secret is
    * provisioned. Never a Stripe / payment secret. */
@@ -68,6 +71,30 @@ function jsonResponse(body: Record<string, unknown>, status = 200): Response {
     status,
     headers: { "Cache-Control": "no-store" },
   });
+}
+
+const CONTENT_SECURITY_POLICY = [
+  "default-src 'self'",
+  "base-uri 'self'",
+  "object-src 'none'",
+  "frame-ancestors 'none'",
+  "form-action 'self' https://checkout.stripe.com",
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://connect.facebook.net https://www.googletagmanager.com https://www.google-analytics.com",
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+  "font-src 'self' https://fonts.gstatic.com data:",
+  "img-src 'self' data: https://www.facebook.com https://connect.facebook.net https://*.google-analytics.com",
+  "connect-src 'self' https://api.brevo.com https://www.google-analytics.com https://region1.google-analytics.com https://www.facebook.com",
+  "frame-src 'self' https://checkout.stripe.com https://js.stripe.com",
+].join("; ");
+
+function withSecurityHeaders(response: Response): Response {
+  const headers = new Headers(response.headers);
+  headers.set("X-Content-Type-Options", "nosniff");
+  headers.set("X-Frame-Options", "DENY");
+  headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+  headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=(self)");
+  headers.set("Content-Security-Policy-Report-Only", CONTENT_SECURITY_POLICY);
+  return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
 }
 
 function isValidEmail(email: string): boolean {
@@ -138,6 +165,10 @@ async function isValidSampleToken(token: string, secret: string): Promise<boolea
  */
 function bookSampleTokenSecret(env: Env): string {
   return env.BOOK_SAMPLE_TOKEN_SECRET?.trim() || env.BREVO_API_KEY?.trim() || "";
+}
+
+function sampleTokenSecrets(env: Env): string[] {
+  return [env.SAMPLE_TOKEN_SECRET?.trim(), env.BREVO_API_KEY?.trim()].filter((secret): secret is string => Boolean(secret));
 }
 
 async function createBookSampleToken(email: string, secret: string): Promise<string> {
@@ -301,6 +332,17 @@ async function subscribe(request: Request, env: Env): Promise<Response> {
     return jsonResponse({ ok: false, message: "Signup is temporarily unavailable. Please try again soon." }, 503);
   }
 
+  const origin = request.headers.get("Origin");
+  if (origin) {
+    try {
+      if (new URL(origin).origin !== SITE_URL) return jsonResponse({ ok: false, message: "Invalid signup origin." }, 403);
+    } catch {
+      return jsonResponse({ ok: false, message: "Invalid signup origin." }, 403);
+    }
+  }
+  const contentLength = Number(request.headers.get("Content-Length") || "0");
+  if (contentLength > 32_000) return jsonResponse({ ok: false, message: "Signup request is too large." }, 413);
+
   try {
     const body = await request.json() as {
       email?: unknown;
@@ -327,19 +369,25 @@ async function subscribe(request: Request, env: Env): Promise<Response> {
          status = 'active'`,
     ).bind(email, interest, source).run();
 
-    await syncBrevoContact(env, {
-      email,
-      interest,
-      source,
-      utmSource: trackingValue(body.utm_source),
-      utmMedium: trackingValue(body.utm_medium),
-      utmCampaign: trackingValue(body.utm_campaign),
-    });
+    try {
+      await syncBrevoContact(env, {
+        email,
+        interest,
+        source,
+        utmSource: trackingValue(body.utm_source),
+        utmMedium: trackingValue(body.utm_medium),
+        utmCampaign: trackingValue(body.utm_campaign),
+      });
+    } catch (error) {
+      // D1 is the source of truth. A transient Brevo outage must not turn a
+      // successful signup into a false failure or prevent resource delivery.
+      console.error("Brevo contact sync unavailable; signup retained in D1", error);
+    }
 
     if (interest === "Top 10 Trades" || interest === "The TRADE HUSTL3 Book") {
-      const apiKey = env.BREVO_API_KEY?.trim();
-      if (!apiKey) throw new Error("Guide delivery is not configured.");
-      const token = await createSampleToken(email, apiKey);
+      const secret = sampleTokenSecrets(env)[0];
+      if (!secret) throw new Error("Guide delivery is not configured.");
+      const token = await createSampleToken(email, secret);
       const emailedSampleUrl = `${SITE_URL}${FREE_SAMPLE_ROUTE}?token=${encodeURIComponent(token)}`;
       try {
         await sendTopTradesDeliveryEmail(env, email, emailedSampleUrl);
@@ -398,8 +446,7 @@ async function serveFreeSample(request: Request, env: Env): Promise<Response> {
   const url = new URL(request.url);
   const cookieGranted = request.headers.get("Cookie")?.split(";").some((cookie) => cookie.trim() === SAMPLE_COOKIE) ?? false;
   const token = url.searchParams.get("token") || "";
-  const secret = env.BREVO_API_KEY?.trim() || "";
-  const tokenGranted = Boolean(token && secret && await isValidSampleToken(token, secret));
+  const tokenGranted = Boolean(token && (await Promise.any(sampleTokenSecrets(env).map((secret) => isValidSampleToken(token, secret))).catch(() => false)));
 
   if (!cookieGranted && !tokenGranted) {
     return Response.redirect(`${SITE_URL}/top-10-trades#get-guide`, 302);
@@ -420,8 +467,8 @@ async function serveBookSample(request: Request, env: Env): Promise<Response> {
   const url = new URL(request.url);
   const cookieGranted = request.headers.get("Cookie")?.split(";").some((cookie) => cookie.trim() === BOOK_SAMPLE_COOKIE) ?? false;
   const token = url.searchParams.get("token") || "";
-  const secret = bookSampleTokenSecret(env);
-  const tokenGranted = Boolean(token && secret && await isValidBookSampleToken(token, secret));
+  const secrets = [env.BOOK_SAMPLE_TOKEN_SECRET?.trim(), env.BREVO_API_KEY?.trim()].filter((secret): secret is string => Boolean(secret));
+  const tokenGranted = Boolean(token && (await Promise.any(secrets.map((secret) => isValidBookSampleToken(token, secret))).catch(() => false)));
 
   if (!cookieGranted && !tokenGranted) {
     return Response.redirect(`${SITE_URL}${BOOK_SAMPLE_PAGE}`, 302);
@@ -455,47 +502,47 @@ const worker = {
 
     if (url.hostname === "www.tradehustl3.com") {
       url.hostname = "tradehustl3.com";
-      return Response.redirect(url.toString(), 308);
+      return withSecurityHeaders(Response.redirect(url.toString(), 308));
     }
 
     if (url.pathname === "/resume") {
-      return Response.redirect(new URL("/resume-builder", request.url).toString(), 308);
+      return withSecurityHeaders(Response.redirect(new URL("/resume-builder", request.url).toString(), 308));
     }
 
     const resumeBuilderResponse = await handleResumeBuilderRoute(request, env);
-    if (resumeBuilderResponse) return resumeBuilderResponse;
+    if (resumeBuilderResponse) return withSecurityHeaders(resumeBuilderResponse);
 
     const ebookStripeResponse = await handleEbookStripeRoute(request, env);
-    if (ebookStripeResponse) return ebookStripeResponse;
+    if (ebookStripeResponse) return withSecurityHeaders(ebookStripeResponse);
 
     if (url.pathname === "/api/subscribe") {
-      return subscribe(request, env);
+      return withSecurityHeaders(await subscribe(request, env));
     }
 
     if (url.pathname === FREE_SAMPLE_ROUTE) {
-      return serveFreeSample(request, env);
+      return withSecurityHeaders(await serveFreeSample(request, env));
     }
 
     if (url.pathname === BOOK_SAMPLE_ROUTE) {
-      return serveBookSample(request, env);
+      return withSecurityHeaders(await serveBookSample(request, env));
     }
 
     if (url.pathname === FREE_SAMPLE_PUBLIC_PATH) {
-      return Response.redirect(`${SITE_URL}/book#sample`, 302);
+      return withSecurityHeaders(Response.redirect(`${SITE_URL}/book#sample`, 302));
     }
 
     if (url.pathname === "/_vinext/image") {
       const allowedWidths = [...DEFAULT_DEVICE_SIZES, ...DEFAULT_IMAGE_SIZES];
-      return handleImageOptimization(request, {
+      return withSecurityHeaders(await handleImageOptimization(request, {
         fetchAsset: (path) => env.ASSETS.fetch(new Request(new URL(path, request.url))),
         transformImage: async (body, { width, format, quality }) => {
           const result = await env.IMAGES.input(body).transform(width > 0 ? { width } : {}).output({ format, quality });
           return result.response();
         },
-      }, allowedWidths);
+      }, allowedWidths));
     }
 
-    const response = await handler.fetch(request, env, ctx);
+    const response = withSecurityHeaders(await handler.fetch(request, env, ctx));
     if (request.method === "GET" && (url.pathname.startsWith("/optimized/") || url.pathname === "/favicon.svg")) {
       const headers = new Headers(response.headers);
       headers.set("Cache-Control", "public, max-age=31536000, immutable");

@@ -53,6 +53,10 @@ test("server-renders the corrected TRADE HUSTL3 brand and metadata", async () =>
   const response = await render();
   assert.equal(response.status, 200);
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
+  assert.equal(response.headers.get("x-content-type-options"), "nosniff");
+  assert.equal(response.headers.get("x-frame-options"), "DENY");
+  assert.equal(response.headers.get("referrer-policy"), "strict-origin-when-cross-origin");
+  assert.match(response.headers.get("content-security-policy-report-only") ?? "", /default-src 'self'/i);
   const html = await response.text();
 
   assert.match(html, /<title>Skilled Trades Resume Builder \| TRADE HUSTL3<\/title>/i);
@@ -277,6 +281,29 @@ test("subscriber endpoint rejects invalid submissions", async () => {
 
   assert.equal(response.status, 400);
   assert.equal(prepared, false);
+});
+
+test("subscriber endpoint keeps the signup successful when Brevo is unavailable", async () => {
+  const worker = await loadWorker();
+  let writes = 0;
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => { throw new Error("simulated Brevo outage"); };
+  try {
+    const response = await worker.fetch(
+      new Request("https://tradehustl3.com/api/subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Origin: "https://tradehustl3.com" },
+        body: JSON.stringify({ email: "resilient@example.com", interest: "HUSTL3 PRO" }),
+      }),
+      { DB: { prepare() { return { bind() { return { async run() { writes += 1; return { success: true }; } }; } }; } } },
+      { waitUntil() {}, passThroughOnException() {} },
+    );
+    assert.equal(response.status, 200);
+    assert.deepEqual(await response.json(), { ok: true, message: "You're on the TRADE HUSTL3 list." });
+    assert.equal(writes, 1);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
 });
 
 test("book signup unlocks and emails the gated 2026-2027 guide preview", async () => {
