@@ -55,30 +55,30 @@ test("server-renders the corrected TRADE HUSTL3 brand and metadata", async () =>
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
   const html = await response.text();
 
-  assert.match(html, /<title>TRADE HUSTL3 \| Skilled Trades Career Guide &amp; Resources<\/title>/i);
-  assert.match(html, /property="og:title" content="TRADE HUSTL3 \| Skilled Trades Career Guide &amp; Resources"/i);
-  assert.match(html, /name="twitter:title" content="TRADE HUSTL3 \| Skilled Trades Career Guide &amp; Resources"/i);
+  assert.match(html, /<title>Skilled Trades Resume Builder \| TRADE HUSTL3<\/title>/i);
+  assert.match(html, /property="og:title" content="Skilled Trades Resume Builder \| TRADE HUSTL3"/i);
+  assert.match(html, /name="twitter:title" content="Skilled Trades Resume Builder \| TRADE HUSTL3"/i);
   assert.match(html, /<link rel="canonical" href="https:\/\/tradehustl3\.com\/?"/i);
   assert.match(html, /property="og:url" content="https:\/\/tradehustl3\.com\/?"/i);
   assert.match(html, /property="og:image" content="https:\/\/tradehustl3\.com\/og\.png"/i);
   assert.equal(html.includes("localhost:3000"), false);
-  for (const schemaType of ["Organization", "Person", "WebSite", "Book"]) assert.match(html, new RegExp(`"@type":"${schemaType}"`, "i"));
+  for (const schemaType of ["Organization", "Person", "WebSite", "WebPage", "Book"]) assert.match(html, new RegExp(`"@type":"${schemaType}"`, "i"));
   assert.match(html, /aria-label="TRADE HUSTL3 home"/i);
   assert.equal(html.toUpperCase().includes("TRA" + "D3"), false);
   assert.match(html, /trade-hustl3-logo\.png/i);
   assert.match(html, /alt="TRADE HUSTL3 logo"/i);
   assert.match(html, /Built by Hustle, Backed by Trades\./i);
-  assert.match(html, /aria-label="Enter\. Earn\. Elevate\."/i);
+  assert.match(html, /Skilled-Trades[\s\S]*Resume Builder/i);
 });
 
 test("server-renders credibility and audience content", async () => {
   const html = await (await render()).text();
-  assert.match(html, /BUILT FROM[\s\S]*THE[\s\S]*FIELD\./i);
+  assert.match(html, /BUILT IN THE FIELD/i);
   assert.match(html, /Built from real skilled-trades experience/i);
   assert.match(html, /Zachary Ellis/i);
   assert.match(html, /9798193043355/i);
-  assert.match(html, /Built for the people who keep America working/i);
-  for (const trustPoint of ["Built from real skilled-trades experience", "Designed specifically for tradespeople", "Clear pricing", "No Resume Builder subscription", "Secure checkout", "Practical guidance without empty promises"]) assert.match(html, new RegExp(trustPoint, "i"));
+  for (const proofPoint of ["Trade-specific wording", "Guided intake", "ATS-focused structure", "Multiple trade categories", "HUSTL3 BOT assistance", "Built from the field"]) assert.match(html, new RegExp(proofPoint, "i"));
+  for (const trustPoint of ["Built from real skilled-trades experience", "Clear pricing", "No Resume Builder subscription"]) assert.match(html, new RegExp(trustPoint, "i"));
 });
 
 test("publishes a canonical XML sitemap and robots discovery hints", async () => {
@@ -184,12 +184,15 @@ test("redirects the duplicate www hostname to the canonical domain", async () =>
   assert.equal(response.headers.get("location"), "https://tradehustl3.com/resources?from=www");
 });
 
-test("server-renders the required segmented signup", async () => {
+test("homepage is a traffic director with no signup form", async () => {
   const html = await (await render()).text();
-  assert.match(html, /Career interest/i);
-  assert.match(html, /name="careerInterest"/i);
-  for (const interest of ["HVAC", "Electrical", "Plumbing", "Welding", "Facilities maintenance", "Still exploring"]) assert.match(html, new RegExp(interest.replace("/", "\\/"), "i"));
-  assert.match(html, /type="email"/i);
+  assert.doesNotMatch(html, /type="email"/i);
+  assert.doesNotMatch(html, /<form\b/i);
+  assert.match(html, /THREE WAYS IN/i);
+  assert.match(html, /href="\/top-10-trades"/i);
+  assert.match(html, /href="\/book\/sample"/i);
+  const resumeLinks = html.match(/href="\/resume-builder"/gi) ?? [];
+  assert.ok(resumeLinks.length >= 5);
 });
 
 test("subscriber endpoint validates and stores normalized signups", async () => {
@@ -819,11 +822,14 @@ test("launch sweep delivers a pending preorder once after release", async () => 
   assert.equal(calls.filter((call) => /SET launch_emailed_at = CURRENT_TIMESTAMP/i.test(call.sql)).length, 1);
 });
 
-test("server-renders every part of the TRADE HUSTL3 ecosystem", async () => {
+test("server-renders the focused homepage paths and social trust links", async () => {
   const html = await (await render()).text();
-  for (const title of ["TRADE HUSTL3 Gear", "TRADE HUSTL3 Resources"]) assert.match(html, new RegExp(`<h3>${title}<\\/h3>`, "i"));
-  for (const title of ["Resume Builder", "Top 10 Trades", "The Book"]) assert.match(html, new RegExp(`>${title}\\s*<`, "i"));
+  assert.doesNotMatch(html, /TRADE HUSTL3 Gear/i);
+  assert.doesNotMatch(html, /TRADE HUSTL3 Resources/i);
+  for (const title of ["Resume Builder", "Top 10 Trades for 2026–2027", "Read 7 Pages Free"]) assert.match(html, new RegExp(title, "i"));
   assert.match(html, /href="\/resume-builder"/i);
+  for (const location of ["sticky_header", "hero", "process", "three_doors", "book_teaser", "footer_cta"]) assert.match(html, new RegExp(`data-location="${location}"`, "i"));
+  assert.match(html, /data-analytics-event="select_content"/i);
   assert.match(html, /href="https:\/\/www\.facebook\.com\/profile\.php\?id=61593457675674"/i);
   assert.match(html, /aria-label="Follow TRADE HUSTL3 on Facebook"/i);
   assert.match(html, /href="https:\/\/www\.instagram\.com\/tradehustl3\/"/i);

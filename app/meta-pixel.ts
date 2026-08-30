@@ -1,14 +1,14 @@
 export type MetaLeadContentName = "top_10_trades" | "book_sample";
 export type MetaViewContentName = MetaLeadContentName | "book_sample_reader";
-
-type MetaContentName = MetaLeadContentName | MetaViewContentName;
+type AnalyticsEventName = "generate_lead" | "form_start" | "cta_click" | "select_content";
 
 type MetaPixelWindow = Window & {
   fbq?: (
-    command: "track",
-    eventName: "Lead" | "ViewContent",
-    parameters: { content_name: MetaContentName },
+    command: "track" | "trackCustom",
+    eventName: "Lead" | "ViewContent" | "form_start" | "cta_click" | "select_content",
+    parameters: Record<string, string>,
   ) => void;
+  gtag?: (command: "event", eventName: string, parameters?: Record<string, string>) => void;
   __tradeHustl3LastViewContent?: {
     key: string;
     firedAt: number;
@@ -16,6 +16,49 @@ type MetaPixelWindow = Window & {
 };
 
 export type MetaLeadTracker = () => boolean;
+
+function safelyTrack(eventName: AnalyticsEventName, parameters: Record<string, string>, standardMetaEvent?: "Lead" | "ViewContent"): boolean {
+  const analyticsWindow = window as MetaPixelWindow;
+  let tracked = false;
+
+  try {
+    if (typeof analyticsWindow.gtag === "function") {
+      analyticsWindow.gtag("event", eventName, parameters);
+      tracked = true;
+    }
+  } catch {
+    // A blocked analytics library must never break a user journey.
+  }
+
+  try {
+    if (typeof analyticsWindow.fbq === "function") {
+      if (standardMetaEvent) analyticsWindow.fbq("track", standardMetaEvent, parameters);
+      else if (eventName !== "generate_lead") analyticsWindow.fbq("trackCustom", eventName, parameters);
+      tracked = true;
+    }
+  } catch {
+    // A blocked analytics library must never break a user journey.
+  }
+
+  return tracked;
+}
+
+export function trackNavigationEvent(
+  eventName: "cta_click" | "select_content",
+  parameters: { location: string; destination: string; item?: string } & Record<string, string | undefined>,
+): boolean {
+  return safelyTrack(eventName, Object.fromEntries(Object.entries(parameters).filter((entry): entry is [string, string] => typeof entry[1] === "string")));
+}
+
+export function createFormStartTracker(contentName: MetaLeadContentName): () => boolean {
+  let hasTracked = false;
+  return () => {
+    if (hasTracked) return false;
+    const tracked = safelyTrack("form_start", { content_name: contentName, signup_source: contentName });
+    if (tracked) hasTracked = true;
+    return tracked;
+  };
+}
 
 /**
  * Creates a tracker that can emit one successful Meta Lead event during a
@@ -28,18 +71,9 @@ export function createMetaLeadTracker(contentName: MetaLeadContentName): MetaLea
 
   return () => {
     if (hasTracked) return false;
-
-    const fbq = (window as MetaPixelWindow).fbq;
-    if (typeof fbq !== "function") return false;
-
-    try {
-      fbq("track", "Lead", { content_name: contentName });
-      hasTracked = true;
-      return true;
-    } catch {
-      // Analytics must never turn a confirmed signup into a form error.
-      return false;
-    }
+    const tracked = safelyTrack("generate_lead", { content_name: contentName, signup_source: contentName }, "Lead");
+    if (tracked) hasTracked = true;
+    return tracked;
   };
 }
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { FormEvent, useId, useRef, useState } from 'react';
-import { createMetaLeadTracker, type MetaLeadContentName } from './meta-pixel';
+import { createFormStartTracker, createMetaLeadTracker, type MetaLeadContentName } from './meta-pixel';
 import { submitSignup } from './signup-request';
 
 type ResourceFormProps = {
@@ -57,6 +57,9 @@ export function ResourceForm({
   const [trackMetaLead] = useState(() => (
     metaLeadContentName ? createMetaLeadTracker(metaLeadContentName) : undefined
   ));
+  const [trackFormStart] = useState(() => (
+    metaLeadContentName ? createFormStartTracker(metaLeadContentName) : undefined
+  ));
   const resolvedSignupInterest = metaLeadContentName === 'book_sample'
     ? BOOK_SAMPLE_INTEREST
     : (signupInterest || TOP_TRADES_INTEREST);
@@ -93,7 +96,7 @@ export function ResourceForm({
   }
 
   return (
-    <form className="resource-form" onSubmit={handleSubmit} aria-describedby={`${id}-status`}>
+    <form className="resource-form" onSubmit={handleSubmit} onFocusCapture={() => trackFormStart?.()} aria-describedby={`${id}-status`}>
       {includeFirstName ? (
         <div className="field-row">
           <label htmlFor={`${id}-name`}>First name</label>
