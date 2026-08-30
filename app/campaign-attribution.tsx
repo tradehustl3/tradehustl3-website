@@ -20,13 +20,14 @@ export function CampaignAttributionTracker() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const next: CampaignAttribution = {};
+
     for (const key of KEYS) {
       const value = params.get(key)?.trim();
       if (value) next[key] = value.slice(0, 120);
     }
+
     if (Object.keys(next).length) {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-      window.gtag?.("event", "campaign_attribution_captured", next);
     }
   }, []);
 
