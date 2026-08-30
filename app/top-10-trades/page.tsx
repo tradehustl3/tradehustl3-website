@@ -151,7 +151,7 @@ export default function TopTenTradesPage() {
           <p className={styles.eyebrow}>AFTER YOU PICK A DIRECTION</p>
           <h2 id="next-step-title">TURN THAT TARGET TRADE INTO A STRONGER RESUME.</h2>
           <p>
-            The TRADE HUSTL3 Resume Builder is built for skilled trades and turns your real experience, certifications, tools, and field value into an ATS-ready resume.
+            The TRADE HUSTL3 Resume Builder is built for skilled trades and turns your real experience, certifications, tools, and field value into an ATS-friendly resume.
           </p>
         </div>
         <Link
