@@ -49,7 +49,9 @@ export const metadata: Metadata = {
   },
 
   icons: {
-    icon: "/favicon.svg",
+    icon: "/trade-hustl3-logo.png",
+    shortcut: "/trade-hustl3-logo.png",
+    apple: "/trade-hustl3-logo.png",
   },
 
   openGraph: {
