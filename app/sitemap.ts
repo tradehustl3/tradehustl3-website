@@ -1,36 +1,38 @@
 import type { MetadataRoute } from "next";
 import { SITE_URL } from "./site";
 
+const CONTENT_REFRESHED_AT = new Date("2026-08-30T23:27:04.000Z");
+
 export default function sitemap(): MetadataRoute.Sitemap {
   const publicPages: MetadataRoute.Sitemap = [
     {
       url: SITE_URL,
-      lastModified: new Date("2026-08-21T00:00:00.000Z"),
-      changeFrequency: "weekly",
+      lastModified: CONTENT_REFRESHED_AT,
+      changeFrequency: "daily",
       priority: 1,
     },
     {
       url: `${SITE_URL}/book`,
-      lastModified: new Date("2026-08-21T00:00:00.000Z"),
-      changeFrequency: "weekly",
+      lastModified: CONTENT_REFRESHED_AT,
+      changeFrequency: "daily",
       priority: 0.9,
     },
     {
       url: `${SITE_URL}/book/sample`,
-      lastModified: new Date("2026-08-29T00:00:00.000Z"),
-      changeFrequency: "monthly",
+      lastModified: CONTENT_REFRESHED_AT,
+      changeFrequency: "daily",
       priority: 0.8,
     },
     {
       url: `${SITE_URL}/top-10-trades`,
-      lastModified: new Date("2026-08-29T00:00:00.000Z"),
-      changeFrequency: "monthly",
+      lastModified: CONTENT_REFRESHED_AT,
+      changeFrequency: "daily",
       priority: 0.9,
     },
     {
       url: `${SITE_URL}/resume-builder`,
-      lastModified: new Date("2026-08-24T00:00:00.000Z"),
-      changeFrequency: "monthly",
+      lastModified: CONTENT_REFRESHED_AT,
+      changeFrequency: "daily",
       priority: 0.9,
     },
   ];
