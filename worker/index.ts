@@ -2,6 +2,7 @@
 import { handleImageOptimization, DEFAULT_DEVICE_SIZES, DEFAULT_IMAGE_SIZES } from "vinext/server/image-optimization";
 import handler from "vinext/server/app-router-entry";
 import freeSampleDataUrl from "./assets/trade-hustl3-free-sample.pdf?inline";
+import bookSampleDataUrl from "./assets/trade-hustl3-seven-page-book-sample.pdf?inline";
 import { handleResumeBuilderRoute, ResumeBuilderEnv } from "./resume-builder";
 import { handleEbookStripeRoute, runEbookLaunchDelivery, EbookStripeEnv, EBOOK_RELEASE_AT } from "./ebook-stripe";
 
@@ -12,6 +13,10 @@ interface Env extends ResumeBuilderEnv, EbookStripeEnv {
   BREVO_API_KEY?: string;
   BREVO_LIST_ID?: string;
   BREVO_SAMPLE_SENDER_EMAIL?: string;
+  /** Dedicated HMAC secret for the gated 7-page book-sample link. Falls back to
+   * BREVO_API_KEY when unset so the funnel works before a dedicated secret is
+   * provisioned. Never a Stripe / payment secret. */
+  BOOK_SAMPLE_TOKEN_SECRET?: string;
   IMAGES: {
     input(stream: ReadableStream): {
       transform(options: Record<string, unknown>): {
@@ -37,9 +42,24 @@ const allowedInterests = new Set([
   "General TRADE HUSTL3 Updates",
 ]);
 
+/** Per-funnel value persisted to D1 `subscribers.source` and sent to Brevo as
+ * SIGNUP_SOURCE. Only the two dedicated free-resource funnels get a specific
+ * source; everything else keeps the historical "website". */
+function signupSourceForInterest(interest: string): string {
+  if (interest === "Book 7-Page Sample") return "book_sample";
+  if (interest === "Top 10 Trades" || interest === "The TRADE HUSTL3 Book") return "top_10_trades";
+  return "website";
+}
+
 const FREE_SAMPLE_PUBLIC_PATH = "/trade-hustl3-free-sample.pdf";
 const FREE_SAMPLE_ROUTE = "/api/free-sample";
 const SAMPLE_COOKIE = "tradehustl3_sample_access=granted";
+// The 7-page book sample is a separate lead magnet from the Top 10 Trades guide:
+// its own page, its own gated PDF, its own route, and — critically — its own
+// cookie and token namespace so neither credential can unlock the other.
+const BOOK_SAMPLE_ROUTE = "/api/book-sample";
+const BOOK_SAMPLE_COOKIE = "tradehustl3_book_sample_access=granted";
+const BOOK_SAMPLE_PAGE = "/book/sample";
 const SITE_URL = "https://tradehustl3.com";
 const encoder = new TextEncoder();
 
@@ -107,11 +127,56 @@ async function isValidSampleToken(token: string, secret: string): Promise<boolea
   }
 }
 
+/**
+ * Book-sample link signing — deliberately separate from the guide token
+ * functions above. The guide's tokens are 3-part (`expires.fingerprint.sig`)
+ * and are already sitting in customers' inboxes, so that format is frozen.
+ * A book-sample token is 4-part with the literal "book_sample" folded into the
+ * signed payload: the guide verifier rejects it (extra segment, non-hex
+ * fingerprint slot) and this verifier rejects a guide token (missing the
+ * "book_sample" segment). Distinct cookie names complete the isolation.
+ */
+function bookSampleTokenSecret(env: Env): string {
+  return env.BOOK_SAMPLE_TOKEN_SECRET?.trim() || env.BREVO_API_KEY?.trim() || "";
+}
+
+async function createBookSampleToken(email: string, secret: string): Promise<string> {
+  const emailDigest = new Uint8Array(await crypto.subtle.digest("SHA-256", encoder.encode(email)));
+  const fingerprint = Array.from(emailDigest.slice(0, 12), (byte) => byte.toString(16).padStart(2, "0")).join("");
+  const expires = Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7;
+  const payload = `${expires}.book_sample.${fingerprint}`;
+  const signature = await crypto.subtle.sign("HMAC", await sampleSigningKey(secret), encoder.encode(payload));
+  return `${payload}.${toBase64Url(signature)}`;
+}
+
+async function isValidBookSampleToken(token: string, secret: string): Promise<boolean> {
+  const [expiresValue, resource, fingerprint, signatureValue, ...rest] = token.split(".");
+  const expires = Number(expiresValue);
+  if (
+    rest.length || resource !== "book_sample" || !Number.isSafeInteger(expires) ||
+    expires < Math.floor(Date.now() / 1000) || !/^[a-f0-9]{24}$/.test(fingerprint) || !signatureValue
+  ) {
+    return false;
+  }
+
+  try {
+    return crypto.subtle.verify(
+      "HMAC",
+      await sampleSigningKey(secret),
+      new Uint8Array(fromBase64Url(signatureValue)).buffer,
+      encoder.encode(`${expiresValue}.book_sample.${fingerprint}`),
+    );
+  } catch {
+    return false;
+  }
+}
+
 async function syncBrevoContact(
   env: Env,
   contact: {
     email: string;
     interest: string;
+    source: string;
     utmSource: string;
     utmMedium: string;
     utmCampaign: string;
@@ -126,7 +191,7 @@ async function syncBrevoContact(
 
   const attributes: Record<string, string> = {
     INTEREST: contact.interest,
-    SIGNUP_SOURCE: "website",
+    SIGNUP_SOURCE: contact.source,
   };
   if (contact.utmSource) attributes.UTM_SOURCE = contact.utmSource;
   if (contact.utmMedium) attributes.UTM_MEDIUM = contact.utmMedium;
@@ -188,11 +253,11 @@ async function sendTopTradesDeliveryEmail(env: Env, email: string, sampleUrl: st
   if (!response.ok) throw new Error(`Brevo guide delivery failed with status ${response.status}.`);
 }
 
-async function sendBookSampleDeliveryEmail(env: Env, email: string): Promise<void> {
+async function sendBookSampleDeliveryEmail(env: Env, email: string, downloadUrl: string): Promise<void> {
   const apiKey = env.BREVO_API_KEY?.trim();
   if (!apiKey) throw new Error("Brevo book-sample delivery is not configured.");
 
-  const sampleUrl = `${SITE_URL}/book/sample/read`;
+  const readerUrl = `${SITE_URL}/book/sample/read`;
   const response = await fetch("https://api.brevo.com/v3/smtp/email", {
     method: "POST",
     headers: {
@@ -212,8 +277,9 @@ async function sendBookSampleDeliveryEmail(env: Env, email: string): Promise<voi
           <div style="max-width:620px;margin:auto">
             <p style="color:#d6a52a;font-weight:700;letter-spacing:2px">BUILT BY HUSTLE. BACKED BY TRADES.</p>
             <h1 style="margin:16px 0;color:#ffffff">Your 7-page book sample is ready.</h1>
-            <p style="font-size:16px;line-height:1.6;color:#c5ced5">Read the cover, opening pages, table of contents, and the beginning of Chapter 1 from TRADE HUSTL3.</p>
-            <p style="margin:28px 0"><a href="${sampleUrl}" style="display:inline-block;background:#d71920;color:#ffffff;padding:16px 22px;text-decoration:none;font-weight:700">READ THE 7-PAGE SAMPLE</a></p>
+            <p style="font-size:16px;line-height:1.6;color:#c5ced5">This is the free seven-page sample of TRADE HUSTL3 &mdash; the cover, opening pages, table of contents, and the beginning of Chapter 1.</p>
+            <p style="margin:28px 0"><a href="${downloadUrl}" style="display:inline-block;background:#d71920;color:#ffffff;padding:16px 22px;text-decoration:none;font-weight:700">DOWNLOAD THE 7-PAGE SAMPLE (PDF)</a></p>
+            <p style="font-size:14px;line-height:1.6;color:#9fb0bd">Prefer to read in your browser? <a href="${readerUrl}" style="color:#d6a52a;font-weight:700">Open the online reader</a>.</p>
             <p style="color:#d6a52a;font-weight:700">ENTER. EARN. ELEVATE.</p>
           </div>
         </div>`,
@@ -250,18 +316,21 @@ async function subscribe(request: Request, env: Env): Promise<Response> {
       return jsonResponse({ ok: false, message: "Enter a valid email and select an interest." }, 400);
     }
 
+    const source = signupSourceForInterest(interest);
+
     await env.DB.prepare(
       `INSERT INTO subscribers (email, interest, source, status)
-       VALUES (?, ?, 'website', 'active')
+       VALUES (?, ?, ?, 'active')
        ON CONFLICT(email) DO UPDATE SET
          interest = excluded.interest,
          source = excluded.source,
          status = 'active'`,
-    ).bind(email, interest).run();
+    ).bind(email, interest, source).run();
 
     await syncBrevoContact(env, {
       email,
       interest,
+      source,
       utmSource: trackingValue(body.utm_source),
       utmMedium: trackingValue(body.utm_medium),
       utmCampaign: trackingValue(body.utm_campaign),
@@ -294,16 +363,28 @@ async function subscribe(request: Request, env: Env): Promise<Response> {
     }
 
     if (interest === "Book 7-Page Sample") {
+      const secret = bookSampleTokenSecret(env);
+      if (!secret) throw new Error("Book sample delivery is not configured.");
+      const token = await createBookSampleToken(email, secret);
+      const downloadUrl = `${SITE_URL}${BOOK_SAMPLE_ROUTE}?token=${encodeURIComponent(token)}`;
       try {
-        await sendBookSampleDeliveryEmail(env, email);
+        await sendBookSampleDeliveryEmail(env, email, downloadUrl);
       } catch (error) {
         console.error("Book sample delivery email failed", error);
       }
-      return jsonResponse({
-        ok: true,
-        message: "Your free 7-page TRADE HUSTL3 book sample is ready, and the reading link is on its way to your inbox.",
-        sampleUrl: "/book/sample/read",
-      });
+      return Response.json(
+        {
+          ok: true,
+          message: "You're in. Your free 7-page TRADE HUSTL3 book sample is ready to download, and a copy is on its way to your inbox.",
+          sampleUrl: BOOK_SAMPLE_ROUTE,
+        },
+        {
+          headers: {
+            "Cache-Control": "no-store",
+            "Set-Cookie": `${BOOK_SAMPLE_COOKIE}; Max-Age=604800; Path=/; HttpOnly; Secure; SameSite=Lax`,
+          },
+        },
+      );
     }
 
     return jsonResponse({ ok: true, message: "You're on the TRADE HUSTL3 list." });
@@ -332,6 +413,28 @@ async function serveFreeSample(request: Request, env: Env): Promise<Response> {
   headers.set("Cache-Control", "private, no-store");
   headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
   if (tokenGranted) headers.set("Set-Cookie", `${SAMPLE_COOKIE}; Max-Age=604800; Path=/; HttpOnly; Secure; SameSite=Lax`);
+  return new Response(sample, { status: 200, headers });
+}
+
+async function serveBookSample(request: Request, env: Env): Promise<Response> {
+  const url = new URL(request.url);
+  const cookieGranted = request.headers.get("Cookie")?.split(";").some((cookie) => cookie.trim() === BOOK_SAMPLE_COOKIE) ?? false;
+  const token = url.searchParams.get("token") || "";
+  const secret = bookSampleTokenSecret(env);
+  const tokenGranted = Boolean(token && secret && await isValidBookSampleToken(token, secret));
+
+  if (!cookieGranted && !tokenGranted) {
+    return Response.redirect(`${SITE_URL}${BOOK_SAMPLE_PAGE}`, 302);
+  }
+
+  const encoded = bookSampleDataUrl.slice(bookSampleDataUrl.indexOf(",") + 1);
+  const sample = Uint8Array.from(atob(encoded), (character) => character.charCodeAt(0));
+  const headers = new Headers();
+  headers.set("Content-Type", "application/pdf");
+  headers.set("Content-Disposition", 'inline; filename="TRADE-HUSTL3-7-Page-Book-Sample.pdf"');
+  headers.set("Cache-Control", "private, no-store");
+  headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
+  if (tokenGranted) headers.set("Set-Cookie", `${BOOK_SAMPLE_COOKIE}; Max-Age=604800; Path=/; HttpOnly; Secure; SameSite=Lax`);
   return new Response(sample, { status: 200, headers });
 }
 
@@ -371,6 +474,10 @@ const worker = {
 
     if (url.pathname === FREE_SAMPLE_ROUTE) {
       return serveFreeSample(request, env);
+    }
+
+    if (url.pathname === BOOK_SAMPLE_ROUTE) {
+      return serveBookSample(request, env);
     }
 
     if (url.pathname === FREE_SAMPLE_PUBLIC_PATH) {
