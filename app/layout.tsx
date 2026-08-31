@@ -52,6 +52,13 @@ export const metadata: Metadata = {
     icon: "/trade-hustl3-logo.png",
     shortcut: "/trade-hustl3-logo.png",
     apple: "/optimized/trade-hustl3-logo.webp",
+    other: [
+      {
+        rel: "mask-icon",
+        url: "/favicon.svg",
+        color: "#071A2B",
+      },
+    ],
   },
 
   openGraph: {
