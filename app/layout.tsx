@@ -49,8 +49,8 @@ export const metadata: Metadata = {
   },
 
   icons: {
-    icon: "/favicon.svg",
-    shortcut: "/favicon.svg",
+    icon: "/trade-hustl3-logo.png",
+    shortcut: "/trade-hustl3-logo.png",
     apple: "/optimized/trade-hustl3-logo.webp",
   },
 
