@@ -35,6 +35,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "daily",
       priority: 0.9,
     },
+    {
+      url: `${SITE_URL}/resume-builder/hvac`,
+      lastModified: CONTENT_REFRESHED_AT,
+      changeFrequency: "daily",
+      priority: 0.8,
+    },
   ];
   const policyPages = [
     "/privacy",

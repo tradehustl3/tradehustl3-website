@@ -13,6 +13,12 @@ import {
   WIZARD_STEPS,
   isTradeTrack,
 } from "../trade-content";
+import {
+  clearIntakeTrade,
+  recallIntakeTrade,
+  resolveTradeParam,
+  slugForTradeTrack,
+} from "../trade-preselect";
 import { ChipField } from "./chip-field";
 import {
   emptyRole,
@@ -72,9 +78,12 @@ export function ResumeWizard() {
       try {
         const params = new URLSearchParams(window.location.search);
         const existingId = params.get("resume_id") ?? "";
+        const requestedTrade = resolveTradeParam(params.get("trade"));
         const meResponse = await fetch("/api/resume-builder/me", { credentials: "same-origin", cache: "no-store" });
         if (meResponse.status === 401) {
-          window.location.assign("/resume-builder");
+          // Send unverified visitors to the account step, keeping the trade they picked.
+          const handoff = requestedTrade ? `?trade=${slugForTradeTrack(requestedTrade)}` : "";
+          window.location.assign(`/resume-builder${handoff}`);
           return;
         }
         const account = (await meResponse.json()) as { user?: User; message?: string };
@@ -84,6 +93,12 @@ export function ResumeWizard() {
 
         let nextData = emptyWizardData();
         nextData.contact.fullName = account.user.fullName ?? "";
+        // Preselect the trade from a trade landing page (?trade=) or the magic-link bridge.
+        const preselectTrade = requestedTrade ?? recallIntakeTrade();
+        if (preselectTrade) {
+          nextData.trade = preselectTrade;
+          clearIntakeTrade();
+        }
 
         if (existingId) {
           const resumeResponse = await fetch(
