@@ -528,8 +528,8 @@ export const FACILITIES_MAINTENANCE_LANDING: TradeLandingContent = {
 
   hero: {
     kicker: "/ FACILITIES MAINTENANCE RESUME BUILDER",
-    heading: "A MAINTENANCE RESUME THAT COVERS",
-    headingAccent: "THE WHOLE BUILDING.",
+    heading: "A FACILITIES RESUME BUILT",
+    headingAccent: "FOR THE WHOLE BUILDING.",
     lead:
       "You close work orders across HVAC, plumbing, electrical, and mechanical, run PM routes, handle turnovers, and keep the CMMS current. A generic resume buries all of that under “general maintenance.” TRADE HUSTL3 turns the systems you service, the tools you run, and the work you’ve completed into an ATS-ready facilities maintenance resume.",
     ctaLabel: "Build my maintenance resume",
@@ -836,7 +836,7 @@ export const ELECTRICIAN_LANDING: TradeLandingContent = {
 
   hero: {
     kicker: "/ ELECTRICIAN RESUME BUILDER",
-    heading: "AN ELECTRICIAN RESUME",
+    heading: "ELECTRICIAN RESUME,",
     headingAccent: "WIRED FOR THE JOB YOU WANT.",
     lead:
       "You troubleshoot with a meter, bend conduit, pull and terminate, wire panels and controls, and work to code. A generic resume flattens that into “electrical work.” TRADE HUSTL3 turns your diagnostics, installs, and the systems you know into an ATS-ready electrician resume — apprentice, journeyman, or maintenance electrician.",
