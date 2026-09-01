@@ -91,6 +91,7 @@
 }
 .rb-entry-copy > :not(.rb-hero-texture) { position: relative; z-index: 2; }
 .rb-entry-copy .rb-lead { color: #f1f6fa; }
+.rb-entry .rb-entry-copy h1 span { color: #ff938c; }
 .rb-hero-texture { position: absolute; z-index: 0; inset: 0; overflow: hidden; color: #fff; pointer-events: none; }
 .rb-hero-glow {
   position: absolute;
