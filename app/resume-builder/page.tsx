@@ -72,9 +72,16 @@ export default function ResumeBuilderPage() {
           <p className="rb-kicker">/ SEVEN TRADE TRACKS</p>
           <h2 id="tracks-title">YOUR WORK HAS A LANGUAGE. WE KNOW IT.</h2>
         </div>
-        <ol>
-          {tradeTracks.map((track, index) => <li key={track}><span>{String(index + 1).padStart(2, "0")}</span>{track}</li>)}
-        </ol>
+        <div>
+          <ol>
+            {tradeTracks.map((track, index) => <li key={track}><span>{String(index + 1).padStart(2, "0")}</span>{track}</li>)}
+          </ol>
+          <p className="rb-tracks-note">
+            Building for one trade? Start with the{" "}
+            <a href="/resume-builder/hvac">HVAC resume builder guide</a> — HVAC-specific skills,
+            certifications, tools, and example resume bullets, then the same guided intake and $9.99 package.
+          </p>
+        </div>
       </section>
 
       <footer className="rb-footer">

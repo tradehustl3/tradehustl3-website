@@ -1,8 +1,28 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
+import {
+  recallIntakeTrade,
+  rememberIntakeTrade,
+  resolveTradeParam,
+  slugForTradeTrack,
+} from "./trade-preselect";
 
 type User = { email: string; fullName: string | null };
+
+/**
+ * Where "Continue to experience" points. A trade landing page (e.g.
+ * /resume-builder/hvac) sends visitors here with ?trade=<slug>; carry that
+ * straight into the wizard, falling back to the magic-link bridge value. This
+ * link only ever renders after the account check resolves on the client, so
+ * reading `window` here is safe.
+ */
+function intakeHref(): string {
+  if (typeof window === "undefined") return "/resume-builder/intake";
+  const track =
+    resolveTradeParam(new URLSearchParams(window.location.search).get("trade")) ?? recallIntakeTrade();
+  return track ? `/resume-builder/intake?trade=${slugForTradeTrack(track)}` : "/resume-builder/intake";
+}
 
 export function AccountStart() {
   const [user, setUser] = useState<User | null>(null);
@@ -10,6 +30,12 @@ export function AccountStart() {
   const [submitting, setSubmitting] = useState(false);
   const [sentTo, setSentTo] = useState("");
   const [message, setMessage] = useState("");
+
+  // Persist a landing-page trade choice so it survives the magic-link email round trip.
+  useEffect(() => {
+    const fromParam = resolveTradeParam(new URLSearchParams(window.location.search).get("trade"));
+    if (fromParam) rememberIntakeTrade(fromParam);
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -66,7 +92,7 @@ export function AccountStart() {
           <strong>{user.fullName || user.email}</strong>
           <small>{user.email}</small>
         </div>
-        <a className="rb-button rb-button-primary" href="/resume-builder/intake">Continue to experience <span>→</span></a>
+        <a className="rb-button rb-button-primary" href={intakeHref()}>Continue to experience <span>→</span></a>
       </div>
     );
   }
