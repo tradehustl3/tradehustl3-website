@@ -2,13 +2,19 @@ import type { Metadata } from "next";
 import { AccountStart } from "./account-start";
 import { FlowSteps } from "./flow-steps";
 import { ResumeBuilderHeader } from "./resume-builder-header";
+import type { TradeTrack } from "./trade-content";
+import {
+  TRADE_LANDING_PAGES,
+  tradeLandingForTrack,
+  tradeLandingPath,
+} from "./trade-landing-content";
 
 export const metadata: Metadata = {
   title: "Skilled Trades Resume Builder",
   alternates: { canonical: "/resume-builder" },
 };
 
-const tradeTracks = [
+const tradeTracks: TradeTrack[] = [
   "HVAC & Refrigeration",
   "Electrical",
   "Plumbing",
@@ -74,12 +80,30 @@ export default function ResumeBuilderPage() {
         </div>
         <div>
           <ol>
-            {tradeTracks.map((track, index) => <li key={track}><span>{String(index + 1).padStart(2, "0")}</span>{track}</li>)}
+            {tradeTracks.map((track, index) => {
+              const landing = tradeLandingForTrack(track);
+              return (
+                <li key={track}>
+                  <span>{String(index + 1).padStart(2, "0")}</span>
+                  {landing ? <a href={tradeLandingPath(landing)}>{track}</a> : track}
+                </li>
+              );
+            })}
           </ol>
           <p className="rb-tracks-note">
-            Building for one trade? Start with the{" "}
-            <a href="/resume-builder/hvac">HVAC resume builder guide</a> — HVAC-specific skills,
-            certifications, tools, and example resume bullets, then the same guided intake and $9.99 package.
+            Building for one trade? Start with a trade-specific guide —{" "}
+            {TRADE_LANDING_PAGES.map((page, index) => (
+              <span key={page.slug}>
+                <a href={tradeLandingPath(page)}>{page.shortName}</a>
+                {index < TRADE_LANDING_PAGES.length - 1
+                  ? index === TRADE_LANDING_PAGES.length - 2
+                    ? ", or "
+                    : ", "
+                  : "."}
+              </span>
+            ))}{" "}
+            Each covers the skills, certifications, tools, and example bullets for that trade, then the same
+            guided intake and $9.99 package.
           </p>
         </div>
       </section>

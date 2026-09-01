@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { TRADE_LANDING_PAGES, tradeLandingPath } from "./resume-builder/trade-landing-content";
 import { SITE_URL } from "./site";
 
 const CONTENT_REFRESHED_AT = new Date("2026-08-30T23:27:04.000Z");
@@ -35,12 +36,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "daily",
       priority: 0.9,
     },
-    {
-      url: `${SITE_URL}/resume-builder/hvac`,
+    ...TRADE_LANDING_PAGES.map((page) => ({
+      url: `${SITE_URL}${tradeLandingPath(page)}`,
       lastModified: CONTENT_REFRESHED_AT,
-      changeFrequency: "daily",
+      changeFrequency: "daily" as const,
       priority: 0.8,
-    },
+    })),
   ];
   const policyPages = [
     "/privacy",

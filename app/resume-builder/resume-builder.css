@@ -83,7 +83,7 @@
 .rb-entry::before { content: "RESUME"; position: absolute; left: -22px; bottom: -70px; color: #fff; opacity: .025; font-family: var(--font-display); font-size: clamp(180px, 23vw, 360px); line-height: 1; pointer-events: none; }
 .rb-entry-copy { z-index: 1; padding: clamp(66px, 8vw, 116px) clamp(26px, 7vw, 112px); }
 .rb-kicker { margin: 0 0 18px; color: var(--rb-gold); font-size: 10px; font-weight: 900; letter-spacing: .21em; text-transform: uppercase; }
-.rb-entry h1, .rb-flow-intro h1, .rb-confirm-card h1, .rb-payment-card h1, .rb-review-empty h1 { font-size: clamp(56px, 6.8vw, 106px); line-height: .9; letter-spacing: -.015em; }
+.rb-entry h1, .rb-flow-intro h1, .rb-confirm-card h1, .rb-payment-card h1, .rb-review-empty h1 { font-size: clamp(56px, 6.8vw, 106px); line-height: .9; letter-spacing: -.015em; text-wrap: balance; }
 .rb-entry h1 span, .rb-flow-intro h1 span, .rb-confirm-card h1 span, .rb-payment-card h1 span, .rb-review-empty h1 span { color: var(--rb-red); }
 .rb-lead { max-width: 680px; margin: 30px 0 36px; color: var(--rb-gray); font-size: clamp(16px, 1.6vw, 20px); line-height: 1.65; }
 .rb-proof-row { display: grid; grid-template-columns: repeat(3, 1fr); max-width: 660px; border-block: 1px solid var(--rb-line); }
@@ -155,7 +155,9 @@
 .rb-tracks ol { margin: 0; padding: 0; list-style: none; border-top: 4px solid var(--rb-red); }
 .rb-tracks li { display: grid; grid-template-columns: 54px 1fr; gap: 14px; padding: 17px 0; border-bottom: 1px solid var(--rb-line); font-size: 16px; font-weight: 700; }
 .rb-tracks li span { color: var(--rb-gold); font-size: 10px; letter-spacing: .16em; }
-.rb-tracks-note { max-width: 620px; margin: 22px 0 0; color: var(--rb-gray); font-size: 13px; line-height: 1.6; }
+.rb-tracks li a { color: var(--rb-cream); text-decoration: underline; text-decoration-color: #d6a52a80; text-underline-offset: 3px; }
+.rb-tracks li a:hover { color: var(--rb-gold); text-decoration-color: currentColor; }
+.rb-tracks-note { max-width: 640px; margin: 22px 0 0; color: var(--rb-gray); font-size: 13px; line-height: 1.6; }
 .rb-tracks-note a { color: var(--rb-gold); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
 .rb-tracks-note a:hover { color: var(--rb-white); }
 .rb-footer { display: grid; grid-template-columns: 1fr auto; gap: 8px 24px; padding: 50px clamp(26px, 7vw, 112px); border-top: 1px solid var(--rb-line); background: var(--rb-navy-3); }
@@ -307,7 +309,9 @@
   .rb-step strong, .rb-step::after { display: none; }
   .rb-entry { min-height: 0; }
   .rb-entry-copy, .rb-entry-panel { padding: 58px 22px; }
-  .rb-entry h1 { font-size: clamp(52px, 15vw, 76px); }
+  /* Long single trade words (MAINTENANCE, ELECTRICIAN) must not clip inside the
+     overflow:hidden hero on narrow phones. */
+  .rb-entry h1 { font-size: clamp(36px, 11.5vw, 72px); overflow-wrap: break-word; }
   .rb-proof-row { grid-template-columns: 1fr; }
   .rb-proof-row div { display: grid; grid-template-columns: 70px 1fr; align-items: center; border-bottom: 1px solid var(--rb-line); }
   .rb-package, .rb-tracks { padding: 72px 22px; }
