@@ -9,6 +9,34 @@ const R2_BUCKET_NAME = "tradehustl3books";
 
 const { d1, r2 } = hostingConfig;
 
+// Work around a vinext production client-chunk cycle that can leave SSR pages
+// visible but completely inert (no hydration, navigation, or event handlers).
+// Keep vinext shims together in one client chunk until the upstream fix is
+// included in the pinned vinext version.
+const vinextShimsSingleChunk = {
+  name: "vinext-shims-single-chunk",
+  configEnvironment(name: string) {
+    if (name !== "client") return;
+
+    return {
+      build: {
+        rolldownOptions: {
+          output: {
+            codeSplitting: {
+              groups: [
+                {
+                  name: "vinext-shims",
+                  test: /[\\/]node_modules[\\/]vinext[\\/]dist[\\/]shims[\\/]/,
+                },
+              ],
+            },
+          },
+        },
+      },
+    };
+  },
+};
+
 // macOS Seatbelt blocks FSEvents, so Codex previews need polling for HMR.
 const isCodexSeatbeltSandbox = process.env.CODEX_SANDBOX === "seatbelt";
 
@@ -62,6 +90,7 @@ export default defineConfig(async () => {
     },
     plugins: [
       vinext(),
+      vinextShimsSingleChunk,
       sites(),
       cloudflare({
         viteEnvironment: { name: "rsc", childEnvironments: ["ssr"] },
