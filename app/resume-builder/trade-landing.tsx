@@ -5,9 +5,13 @@ import { intakeEntryHref } from "./trade-preselect";
 import {
   buildTradeLandingJsonLd,
   tradeLandingPath,
+  TRADE_LANDING_PAGES,
+  type LabeledGroup,
   type TradeLandingContent,
 } from "./trade-landing-content";
 import styles from "./trade-landing.module.css";
+
+const HUB_HREF = "/resume-builder";
 
 /** One conversion link into the existing intake flow, wired for the global CtaAnalytics delegate. */
 function BuildCta({
@@ -31,7 +35,7 @@ function BuildCta({
       data-analytics-event="cta_click"
       data-location={location}
       data-destination={href}
-      data-item="resume_builder_hvac"
+      data-item={content.analyticsItem}
     >
       {label}
       {withArrow ? <span aria-hidden="true"> →</span> : null}
@@ -39,7 +43,7 @@ function BuildCta({
   );
 }
 
-function SkillGroups({ groups }: { groups: TradeLandingContent["skills"]["groups"] }) {
+function ChipCards({ groups }: { groups: LabeledGroup[] }) {
   return (
     <div className={styles.groupGrid}>
       {groups.map((group) => (
@@ -58,8 +62,27 @@ function SkillGroups({ groups }: { groups: TradeLandingContent["skills"]["groups
   );
 }
 
+/** Crawlable links to the other trade landing pages — cross-linking without
+ *  burying the main conversion path. */
+function SiblingGuides({ content }: { content: TradeLandingContent }) {
+  const siblings = TRADE_LANDING_PAGES.filter((page) => page.slug !== content.slug);
+  if (siblings.length === 0) return null;
+  return (
+    <p className={styles.sectionLead}>
+      Building for a different trade? See the{" "}
+      {siblings.map((sibling, index) => (
+        <span key={sibling.slug}>
+          <a className={styles.inlineLink} href={tradeLandingPath(sibling)}>
+            {sibling.shortName}
+          </a>
+          {index < siblings.length - 1 ? (index === siblings.length - 2 ? " and " : ", ") : "."}
+        </span>
+      ))}
+    </p>
+  );
+}
+
 export function TradeLandingPage({ content }: { content: TradeLandingContent }) {
-  const hubHref = "/resume-builder";
   const jsonLd = buildTradeLandingJsonLd(content);
   const panelIndex = content.pricing.kicker.replace(/^\/\s*/, "");
 
@@ -75,7 +98,7 @@ export function TradeLandingPage({ content }: { content: TradeLandingContent }) 
         action={
           <BuildCta
             content={content}
-            location="hvac_header"
+            location={content.ctaLocations.header}
             label="Build my resume"
             className="rb-button rb-button-primary rb-header-cta"
             withArrow={false}
@@ -95,11 +118,11 @@ export function TradeLandingPage({ content }: { content: TradeLandingContent }) 
           <div className={styles.heroActions}>
             <BuildCta
               content={content}
-              location="hvac_hero"
+              location={content.ctaLocations.hero}
               label={content.hero.ctaLabel}
               className="rb-button rb-button-primary"
             />
-            <a className={styles.textLink} href={hubHref}>
+            <a className={styles.textLink} href={HUB_HREF}>
               or see all seven trade tracks
             </a>
           </div>
@@ -131,7 +154,7 @@ export function TradeLandingPage({ content }: { content: TradeLandingContent }) 
           </ul>
           <BuildCta
             content={content}
-            location="hvac_pricing_card"
+            location={content.ctaLocations.pricing}
             label={content.pricing.ctaLabel}
             className="rb-button rb-button-primary rb-button-full"
           />
@@ -141,11 +164,11 @@ export function TradeLandingPage({ content }: { content: TradeLandingContent }) 
       {/* ------------------------------------------------------- value props */}
       <section className={styles.lpSection} aria-labelledby="why-title">
         <div>
-          <p className="rb-kicker">/ WHY THIS ONE</p>
-          <h2 id="why-title">AN HVAC RESUME, NOT A GENERIC ONE</h2>
+          <p className="rb-kicker">{content.valueProps.kicker}</p>
+          <h2 id="why-title">{content.valueProps.heading}</h2>
         </div>
         <div className={styles.valueGrid}>
-          {content.valueProps.map((prop) => (
+          {content.valueProps.items.map((prop) => (
             <article key={prop.label} className={styles.valueCard}>
               <h3>{prop.label}</h3>
               {prop.items.map((item) => (
@@ -159,11 +182,11 @@ export function TradeLandingPage({ content }: { content: TradeLandingContent }) 
       {/* --------------------------------------------------------- who it's for */}
       <section className={styles.lpSection} aria-labelledby="who-title">
         <div>
-          <p className="rb-kicker">/ WHO THIS IS FOR</p>
-          <h2 id="who-title">BUILT FOR HVAC FIELD WORKERS AT EVERY STAGE</h2>
+          <p className="rb-kicker">{content.whoItIsFor.kicker}</p>
+          <h2 id="who-title">{content.whoItIsFor.heading}</h2>
         </div>
         <ul className={styles.plainList}>
-          {content.whoItIsFor.map((who) => (
+          {content.whoItIsFor.items.map((who) => (
             <li key={who}>{who}</li>
           ))}
         </ul>
@@ -172,18 +195,18 @@ export function TradeLandingPage({ content }: { content: TradeLandingContent }) 
       {/* ------------------------------------------------------------- skills */}
       <section className={styles.lpSection} aria-labelledby="skills-title">
         <div>
-          <p className="rb-kicker">/ HVAC RESUME SKILLS</p>
-          <h2 id="skills-title">THE HVAC SKILLS EMPLOYERS SCAN FOR</h2>
+          <p className="rb-kicker">{content.skills.kicker}</p>
+          <h2 id="skills-title">{content.skills.heading}</h2>
           <p className={styles.sectionLead}>{content.skills.intro}</p>
         </div>
-        <SkillGroups groups={content.skills.groups} />
+        <ChipCards groups={content.skills.groups} />
       </section>
 
       {/* ------------------------------------------------------- certifications */}
       <section className={styles.lpSection} aria-labelledby="certs-title">
         <div>
-          <p className="rb-kicker">/ HVAC CERTIFICATIONS</p>
-          <h2 id="certs-title">EPA 608 FIRST, THEN THE REST</h2>
+          <p className="rb-kicker">{content.certifications.kicker}</p>
+          <h2 id="certs-title">{content.certifications.heading}</h2>
           <p className={styles.sectionLead}>{content.certifications.intro}</p>
         </div>
         <div>
@@ -199,18 +222,18 @@ export function TradeLandingPage({ content }: { content: TradeLandingContent }) 
       {/* ---------------------------------------------------- tools & equipment */}
       <section className={styles.lpSection} aria-labelledby="tools-title">
         <div>
-          <p className="rb-kicker">/ HVAC TOOLS &amp; EQUIPMENT</p>
-          <h2 id="tools-title">NAME THE TOOLS THAT SHOW WHAT YOU RUN SOLO</h2>
+          <p className="rb-kicker">{content.tools.kicker}</p>
+          <h2 id="tools-title">{content.tools.heading}</h2>
           <p className={styles.sectionLead}>{content.tools.intro}</p>
         </div>
-        <SkillGroups groups={content.tools.groups} />
+        <ChipCards groups={content.tools.groups} />
       </section>
 
       {/* ------------------------------------------------- example accomplishments */}
       <section className={styles.lpSection} aria-labelledby="examples-title">
         <div>
-          <p className="rb-kicker">/ HVAC RESUME EXAMPLES</p>
-          <h2 id="examples-title">EXAMPLE HVAC ACCOMPLISHMENT BULLETS</h2>
+          <p className="rb-kicker">{content.accomplishments.kicker}</p>
+          <h2 id="examples-title">{content.accomplishments.heading}</h2>
           <p className={styles.sectionLead}>{content.accomplishments.intro}</p>
         </div>
         <div>
@@ -230,11 +253,12 @@ export function TradeLandingPage({ content }: { content: TradeLandingContent }) 
           <h2 id="how-title">HOW THE TRADE HUSTL3 RESUME BUILDER WORKS</h2>
           <p className={styles.sectionLead}>
             Prefer the overview first? The{" "}
-            <a className={styles.inlineLink} href={hubHref}>
+            <a className={styles.inlineLink} href={HUB_HREF}>
               main Resume Builder
             </a>{" "}
             covers all seven skilled-trade tracks and the same $9.99 package.
           </p>
+          <SiblingGuides content={content} />
         </div>
         <ol className={styles.steps}>
           {content.howItWorks.map((step, index) => (
@@ -263,11 +287,11 @@ export function TradeLandingPage({ content }: { content: TradeLandingContent }) 
       {/* --------------------------------------------------------------- FAQ */}
       <section className={styles.lpSection} aria-labelledby="faq-title">
         <div>
-          <p className="rb-kicker">/ HVAC RESUME FAQ</p>
-          <h2 id="faq-title">HVAC RESUME QUESTIONS, ANSWERED</h2>
+          <p className="rb-kicker">{content.faq.kicker}</p>
+          <h2 id="faq-title">{content.faq.heading}</h2>
         </div>
         <div className={styles.faqList}>
-          {content.faqs.map((faq) => (
+          {content.faq.items.map((faq) => (
             <details key={faq.question} className={styles.faq}>
               <summary>{faq.question}</summary>
               <p>{faq.answer}</p>
@@ -286,11 +310,11 @@ export function TradeLandingPage({ content }: { content: TradeLandingContent }) 
           <p>{content.closingCta.body}</p>
           <BuildCta
             content={content}
-            location="hvac_footer_cta"
+            location={content.ctaLocations.closing}
             label={content.closingCta.ctaLabel}
             className="rb-button rb-button-primary rb-button-full"
           />
-          <a className={styles.closingLink} href={hubHref}>
+          <a className={styles.closingLink} href={HUB_HREF}>
             or browse all seven trade tracks
           </a>
         </div>
@@ -302,8 +326,12 @@ export function TradeLandingPage({ content }: { content: TradeLandingContent }) 
         </strong>
         <p>Built by Hustle. Backed by Trades.</p>
         <div className="rb-footer-links">
-          <a href={hubHref}>Resume Builder</a>
-          <a href={tradeLandingPath(content)}>HVAC Resume Builder</a>
+          <a href={HUB_HREF}>Resume Builder</a>
+          {TRADE_LANDING_PAGES.map((page) => (
+            <a key={page.slug} href={tradeLandingPath(page)} aria-current={page.slug === content.slug ? "page" : undefined}>
+              {page.shortName}
+            </a>
+          ))}
           <a href="/top-10-trades">Top 10 Trades</a>
           <a href="/privacy">Privacy</a>
           <a href="/terms">Terms</a>

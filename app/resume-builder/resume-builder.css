@@ -155,7 +155,9 @@
 .rb-tracks ol { margin: 0; padding: 0; list-style: none; border-top: 4px solid var(--rb-red); }
 .rb-tracks li { display: grid; grid-template-columns: 54px 1fr; gap: 14px; padding: 17px 0; border-bottom: 1px solid var(--rb-line); font-size: 16px; font-weight: 700; }
 .rb-tracks li span { color: var(--rb-gold); font-size: 10px; letter-spacing: .16em; }
-.rb-tracks-note { max-width: 620px; margin: 22px 0 0; color: var(--rb-gray); font-size: 13px; line-height: 1.6; }
+.rb-tracks li a { color: var(--rb-cream); text-decoration: underline; text-decoration-color: #d6a52a80; text-underline-offset: 3px; }
+.rb-tracks li a:hover { color: var(--rb-gold); text-decoration-color: currentColor; }
+.rb-tracks-note { max-width: 640px; margin: 22px 0 0; color: var(--rb-gray); font-size: 13px; line-height: 1.6; }
 .rb-tracks-note a { color: var(--rb-gold); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
 .rb-tracks-note a:hover { color: var(--rb-white); }
 .rb-footer { display: grid; grid-template-columns: 1fr auto; gap: 8px 24px; padding: 50px clamp(26px, 7vw, 112px); border-top: 1px solid var(--rb-line); background: var(--rb-navy-3); }

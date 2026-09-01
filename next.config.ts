@@ -19,6 +19,8 @@ const nextConfig: NextConfig = {
       { source: "/top-10-trades", headers: crawlerFreshnessHeaders },
       { source: "/resume-builder", headers: crawlerFreshnessHeaders },
       { source: "/resume-builder/hvac", headers: crawlerFreshnessHeaders },
+      { source: "/resume-builder/facilities-maintenance", headers: crawlerFreshnessHeaders },
+      { source: "/resume-builder/electrician", headers: crawlerFreshnessHeaders },
     ];
   },
 };
