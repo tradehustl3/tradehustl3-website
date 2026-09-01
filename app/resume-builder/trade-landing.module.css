@@ -59,6 +59,34 @@
   text-underline-offset: 3px;
 }
 
+.siblingGuides {
+  margin-top: 22px;
+}
+
+.siblingGuides ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 10px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.siblingGuides a {
+  display: inline-block;
+  padding: 6px 11px;
+  border: 1px solid var(--rb-line);
+  background: var(--rb-navy-2);
+  color: var(--rb-gray);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.siblingGuides a:hover {
+  border-color: var(--rb-gold);
+  color: var(--rb-gold);
+}
+
 .inlineLink:hover {
   color: #f0c256;
 }

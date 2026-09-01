@@ -1116,12 +1116,1263 @@ export const ELECTRICIAN_LANDING: TradeLandingContent = {
   },
 };
 
+// ===========================================================================
+// Plumbing
+// ===========================================================================
+
+export const PLUMBING_LANDING: TradeLandingContent = {
+  slug: slugForTradeTrack("Plumbing"),
+  trade: "Plumbing",
+  shortName: "Plumbing Resume Builder",
+  breadcrumbName: "Plumbing",
+  analyticsItem: "resume_builder_plumbing",
+  ctaLocations: {
+    header: "plumbing_header",
+    hero: "plumbing_hero",
+    pricing: "plumbing_pricing",
+    closing: "plumbing_footer_cta",
+  },
+  seoTitle: "Plumbing Resume Builder | Plumber Resume | TRADE HUSTL3",
+  seoDescription:
+    "Turn your service calls, rough-in, fixture sets, and drain and water-heater work into an ATS-ready plumber resume. $9.99 one-time, no subscription. TRADE HUSTL3.",
+  ogImage: "/optimized/og.webp",
+  targetQueries: [
+    "plumbing resume builder",
+    "plumber resume builder",
+    "plumber resume",
+    "plumbing technician resume",
+    "plumber resume examples",
+    "plumber resume skills",
+    "service plumber resume",
+    "plumbing maintenance resume",
+  ],
+
+  hero: {
+    kicker: "/ PLUMBING RESUME BUILDER",
+    heading: "A PLUMBER RESUME BUILT",
+    headingAccent: "FROM THE MAIN TO THE FIXTURE.",
+    lead:
+      "You run service calls, rough in DWV and water lines, set fixtures, clear drains, and swap water heaters — often to code and under pressure. A generic resume flattens that into “plumbing work.” TRADE HUSTL3 turns your systems, tools, and completed jobs into an ATS-ready plumber resume.",
+    ctaLabel: "Build my plumber resume",
+    proofStats: [
+      { value: "$9.99", label: "One-time · no subscription" },
+      { value: "Any level", label: "Apprentice to master" },
+      { value: "3", label: "Corrections within 7 days" },
+    ],
+  },
+
+  pricing: {
+    kicker: "/ ONE STRAIGHTFORWARD PACKAGE",
+    heading: "PREVIEW FIRST. PAY ONCE.",
+    subhead:
+      "Your plumber resume is built before checkout. Review the watermarked preview, then pay once to remove the watermark.",
+    bullets: [
+      "One completed plumber resume · watermarked preview before payment",
+      "Licenses, apprenticeship hours, and certs placed where ATS looks first",
+      "ATS-friendly structure across the Plumbing track",
+      "Up to 3 corrections within 7 days",
+      "Clean PDF + editable DOCX after payment",
+      "No subscription · no auto-renewal",
+    ],
+    ctaLabel: "Build my plumber resume",
+  },
+
+  valueProps: {
+    kicker: "/ WHY THIS ONE",
+    heading: "A PLUMBER RESUME, NOT A GENERIC ONE",
+    items: [
+      {
+        label: "Speaks plumbing",
+        items: [
+          "DWV, supply, fixtures, drains, water heaters, backflow, and code — the language service managers and applicant tracking systems expect, not “handyman.”",
+        ],
+      },
+      {
+        label: "Built on your facts",
+        items: [
+          "Your license or apprenticeship hours, the systems you can run solo, the callbacks you’ve avoided. Nothing is added that you didn’t enter.",
+        ],
+      },
+      {
+        label: "Right for your level",
+        items: [
+          "Apprentice, journeyman, or master — the intake builds around the hours and work you actually have.",
+        ],
+      },
+      {
+        label: "$9.99 once",
+        items: [
+          "Preview the watermarked resume before you pay. No subscription. Up to 3 corrections within 7 days, then a clean PDF and editable DOCX.",
+        ],
+      },
+    ],
+  },
+
+  whoItIsFor: {
+    kicker: "/ WHO THIS IS FOR",
+    heading: "BUILT FOR PLUMBERS AT EVERY LEVEL",
+    items: [
+      "Apprentice plumbers applying for the next program or shop",
+      "Journeyman and master plumbers moving to a better company",
+      "Service and repair plumbers, residential and commercial",
+      "New-construction and remodel plumbers (rough-in and trim)",
+      "Maintenance plumbers at hospitals, schools, plants, and property groups",
+      "Drain, sewer, and hydro-jetting technicians",
+      "Plumbers relocating to a new state or returning to the trade",
+      "Helpers and pre-apprentices with school or field hours",
+    ],
+  },
+
+  skills: {
+    kicker: "/ PLUMBING RESUME SKILLS",
+    heading: "THE PLUMBING SKILLS EMPLOYERS SCAN FOR",
+    intro:
+      "Pick what you can back up on a service call — the builder never claims a skill you didn’t enter. Grouped the way a plumber’s resume reads.",
+    groups: [
+      {
+        label: "Rough-in & piping",
+        items: [
+          "DWV (drain, waste, vent) rough-in",
+          "Water distribution — copper, PEX, CPVC, PVC",
+          "Soldering, brazing, press & solvent-weld joints",
+          "Pipe threading & cutting",
+          "Slab, underground & main-line work",
+          "Pressure testing & inspection prep",
+          "Gas piping (where licensed)",
+        ],
+      },
+      {
+        label: "Service & repair",
+        items: [
+          "Fixture install & trim — toilets, faucets, sinks, tubs",
+          "Faucet & valve rebuilds, cartridge swaps",
+          "Water heater & tankless install and repair",
+          "Leak detection & diagnosis",
+          "Drain cleaning, augering & hydro-jetting",
+          "Shutoffs, supply lines & angle stops",
+          "Sump, sewage & booster pumps",
+        ],
+      },
+      {
+        label: "Systems & equipment",
+        items: [
+          "Backflow preventers & testing (where certified)",
+          "Recirculation & hydronic lines",
+          "Grease traps & interceptors",
+          "Water softeners & filtration",
+          "Well & pressure-tank systems",
+          "Sewer camera & line locating",
+          "Fixture carriers & specialty valves",
+        ],
+      },
+      {
+        label: "Code, safety & site",
+        items: [
+          "Local plumbing / IPC / UPC code familiarity",
+          "Permit & inspection support",
+          "Isometric & plumbing-plan reading",
+          "Confined space & trench safety awareness",
+          "Lockout/tagout & PPE",
+          "Service calls, dispatch & work orders",
+          "Customer communication & write-ups",
+        ],
+      },
+    ],
+  },
+
+  certifications: {
+    kicker: "/ LICENSES & CREDENTIALS",
+    heading: "LIST ONLY WHAT YOU HOLD",
+    intro:
+      "Plumbing postings screen hard on licensing, and it’s state- and city-specific. List exactly what you hold, with the jurisdiction and year. Not every plumber is a journeyman or master — registered apprenticeship hours count on their own. The builder never adds a license you didn’t enter.",
+    items: [
+      "Registered plumbing apprentice / hours logged",
+      "Journeyman plumber license (state or municipal)",
+      "Master plumber license",
+      "Plumbing contractor license",
+      "Backflow prevention assembly tester certification",
+      "Medical gas installer / brazer (NITC) — where applicable",
+      "Gas fitter license (where separate)",
+      "OSHA 10 / OSHA 30",
+      "Confined space entry",
+      "First aid / CPR / AED",
+    ],
+    note:
+      "Still an apprentice? That’s a strong resume on its own — list your registered hours, the program, and the work you’ve done under a licensed plumber. The builder builds around your real level.",
+  },
+
+  tools: {
+    kicker: "/ TOOLS & EQUIPMENT",
+    heading: "NAME THE TOOLS YOU RUN",
+    intro:
+      "The tools you name tell a service manager what you can be sent out to handle alone. Add the ones you use — in your own words.",
+    groups: [
+      {
+        label: "Pipe & joining",
+        items: [
+          "Pipe wrenches & basin wrench",
+          "Tubing & PVC cutters",
+          "Press tool (ProPress / MegaPress)",
+          "Torch & soldering kit",
+          "PEX crimp / expansion tools",
+          "Pipe threader & reamer",
+          "Deburring & flaring tools",
+        ],
+      },
+      {
+        label: "Drain & diagnostics",
+        items: [
+          "Hand & drum augers (closet / sink)",
+          "Sectional / drum machine",
+          "Hydro-jetter",
+          "Sewer inspection camera & locator",
+          "Manometer & test gauges",
+          "Leak & moisture detector",
+          "Borescope",
+        ],
+      },
+      {
+        label: "Hand & site",
+        items: [
+          "Channel locks & adjustable wrenches",
+          "Cordless drill / impact & SDS hammer",
+          "Reciprocating saw & hole saws",
+          "Levels & measuring tools",
+          "Shop vac & pump-out",
+          "Ladders & basic shoring",
+        ],
+      },
+    ],
+  },
+
+  accomplishments: {
+    kicker: "/ PLUMBER RESUME EXAMPLES",
+    heading: "EXAMPLE PLUMBER ACCOMPLISHMENT BULLETS",
+    intro:
+      "Plumbing work becomes stronger resume bullets when it names the system, the volume, and a result. Examples of the shape a good plumber bullet takes:",
+    examples: [
+      "Ran 6–10 residential service calls per day — fixture repairs, water heaters, drain stoppages, and leak diagnosis — with a first-visit fix rate above 85%.",
+      "Roughed in DWV and PEX water lines for 20+ units on a multifamily new-construction crew, passing rough inspection on the first walk.",
+      "Replaced 40-, 50-, and 75-gallon tank and tankless water heaters, including gas and venting, to local code.",
+      "Cleared main-line stoppages with sectional and jetting equipment; camera-located breaks and marked them for excavation.",
+      "Set and trimmed toilets, faucets, tubs, and shower valves on a finish crew, holding punch callbacks under 3%.",
+      "Tested backflow assemblies and submitted reports to the water authority (certification held).",
+      "Entry level: completed a plumbing certificate with DWV, water-distribution, and soldering lab hours; registered as a state plumbing apprentice; earned OSHA 10.",
+    ],
+    disclaimer:
+      "These are examples of how plumbing work turns into resume language. Your resume is built only from the details you enter — TRADE HUSTL3 matches wording, it does not invent experience, hours, or licenses.",
+  },
+
+  howItWorks: HOW_IT_WORKS("plumber", "Plumbing", "systems, fixtures, and code"),
+
+  ats: {
+    heading: "BUILT TO CLEAR PLUMBING ATS SCREENS",
+    body: [
+      "Most plumbing applications are parsed by an applicant tracking system (ATS) before a person sees them. TRADE HUSTL3 uses standard section headings — Summary, Licenses & Certifications, Skills, Experience, Education — and avoids the tables, columns, and graphics that trip parsers up.",
+      "Paste the job posting into the intake and the builder prioritizes the language you already have that matches it: service calls, rough-in, fixtures, drain cleaning, water heaters, code compliance, pressure testing.",
+      "No resume tool can promise an interview or an “ATS pass rate.” A clean, keyword-aligned plumber resume simply removes the reasons an automated screen filters you out.",
+    ],
+  },
+
+  faq: {
+    kicker: "/ PLUMBING RESUME FAQ",
+    heading: "PLUMBER RESUME QUESTIONS, ANSWERED",
+    items: [
+      {
+        question: "What should a plumber resume include?",
+        answer:
+          "Contact details and a target title, a short summary, your license or registered apprenticeship hours, certifications (OSHA, backflow) with years, a skills section grouped by type of work, work history that names the systems you piped and the code you worked to, and measurable results such as calls per day, units roughed in, or callback rate. The TRADE HUSTL3 builder walks you through each one.",
+      },
+      {
+        question: "What skills should I put on a plumbing resume?",
+        answer:
+          "List only skills you can back up: DWV and water-distribution rough-in, soldering and press joints, fixture install and trim, water heater install, drain cleaning and jetting, leak diagnosis, and code compliance. Add the pipe materials you work in (copper, PEX, CPVC, PVC) and any backflow or gas certification. Group them so a service manager can scan them fast.",
+      },
+      {
+        question: "How do I list my plumbing license on a resume?",
+        answer:
+          "State the exact credential, the issuing state or city, and the year — for example “Journeyman Plumber, Texas, 2021.” If you’re an apprentice, list your registered hours and program. Don’t imply a journeyman or master license you don’t hold; the builder only includes what you enter.",
+      },
+      {
+        question: "How do I write an apprentice plumber resume?",
+        answer:
+          "Lead with your registered apprenticeship hours and program, then the work you’ve done under a licensed plumber — rough-in, fixture sets, drain work, service support — plus school lab hours, OSHA 10, and the tools you own. The intake has an entry-level path built for apprentices and helpers.",
+      },
+      {
+        question: "What is the difference between a service plumber and a new-construction plumber resume?",
+        answer:
+          "A service resume emphasizes diagnostics, repairs, water heaters, drains, callback rate, and customer communication. A new-construction resume emphasizes rough-in volume, materials, inspections passed, and blueprint reading. Paste your target posting and the builder prioritizes the language that matches that role.",
+      },
+      {
+        question: "Can I use this for a maintenance plumber job?",
+        answer:
+          "Yes. The Plumbing track covers institutional and facilities plumbing — fixtures, water heaters, pumps, backflow, and PM work — alongside service and construction. Add the buildings and systems you’ve maintained and any CMMS you’ve used.",
+      },
+      {
+        question: "Are there plumber resume examples I can follow?",
+        answer:
+          "This page lists example accomplishment bullets that show the shape of a strong plumbing line — system, volume, result. Instead of copying a sample, you answer a guided intake and the builder turns your own work into that format, then shows a free preview before payment.",
+      },
+      {
+        question: "What do I get, and what does it cost?",
+        answer:
+          "A one-time $9.99 payment unlocks a clean PDF and an editable DOCX. The preview is watermarked and free, and you review it before you pay. You get up to 3 corrections within 7 days. There is no subscription and no auto-renewal.",
+      },
+    ],
+  },
+
+  closingCta: {
+    kicker: "/ READY WHEN YOU ARE",
+    heading: "YOUR PLUMBER RESUME, BUILT RIGHT.",
+    body: "Guided plumbing intake. License and apprenticeship hours up top. ATS-friendly structure. Clean PDF and editable DOCX. One-time $9.99 — preview before you pay.",
+    ctaLabel: "Build my plumber resume",
+  },
+};
+
+// ===========================================================================
+// Welding & Fabrication
+// ===========================================================================
+
+export const WELDING_FABRICATION_LANDING: TradeLandingContent = {
+  slug: slugForTradeTrack("Welding & Fabrication"),
+  trade: "Welding & Fabrication",
+  shortName: "Welding & Fabrication Resume Builder",
+  breadcrumbName: "Welding & Fabrication",
+  analyticsItem: "resume_builder_welding_fabrication",
+  ctaLocations: {
+    header: "welding_header",
+    hero: "welding_hero",
+    pricing: "welding_pricing",
+    closing: "welding_footer_cta",
+  },
+  seoTitle: "Welding Resume Builder | Welder & Fabricator Resume | TRADE HUSTL3",
+  seoDescription:
+    "Turn your processes, positions, materials, and fit-up into an ATS-ready welder and fabricator resume. $9.99 one-time, no subscription. TRADE HUSTL3.",
+  ogImage: "/optimized/og.webp",
+  targetQueries: [
+    "welding resume builder",
+    "welder resume",
+    "welder resume builder",
+    "welding resume examples",
+    "welding resume skills",
+    "fabrication resume",
+    "welder fabricator resume",
+    "mig welder resume",
+    "tig welder resume",
+  ],
+
+  hero: {
+    kicker: "/ WELDING & FABRICATION RESUME BUILDER",
+    heading: "A WELDER RESUME",
+    headingAccent: "READ IN EVERY POSITION.",
+    lead:
+      "You run bead in every position, read prints and weld symbols, fit up and tack, cut with plasma and oxy-fuel, and hold to code. A generic resume flattens that into “welding.” TRADE HUSTL3 turns your processes, positions, materials, and the code you’ve qualified to into an ATS-ready welder and fabricator resume.",
+    ctaLabel: "Build my welding resume",
+    proofStats: [
+      { value: "$9.99", label: "One-time · no subscription" },
+      { value: "All processes", label: "MIG · TIG · stick · flux-core" },
+      { value: "3", label: "Corrections within 7 days" },
+    ],
+  },
+
+  pricing: {
+    kicker: "/ ONE STRAIGHTFORWARD PACKAGE",
+    heading: "PREVIEW FIRST. PAY ONCE.",
+    subhead:
+      "Your welder resume is built before checkout. Review the watermarked preview, then pay once to remove the watermark.",
+    bullets: [
+      "One completed welder resume · watermarked preview before payment",
+      "AWS and code qualifications placed where ATS looks first",
+      "ATS-friendly structure across the Welding & Fabrication track",
+      "Up to 3 corrections within 7 days",
+      "Clean PDF + editable DOCX after payment",
+      "No subscription · no auto-renewal",
+    ],
+    ctaLabel: "Build my welding resume",
+  },
+
+  valueProps: {
+    kicker: "/ WHY THIS ONE",
+    heading: "A WELDER RESUME, NOT A GENERIC ONE",
+    items: [
+      {
+        label: "Speaks the trade",
+        items: [
+          "Processes, positions, joint types, materials, fit-up, and code — the language shop foremen and applicant tracking systems expect, not “metal work.”",
+        ],
+      },
+      {
+        label: "Built on your facts",
+        items: [
+          "The positions you’re tested in, the processes you run daily, the material you know cold. Nothing is added that you didn’t enter.",
+        ],
+      },
+      {
+        label: "Certs stated precisely",
+        items: [
+          "AWS D1.1, ASME Section IX, API 1104, 6G — listed exactly as you hold them, with the process, position, and date.",
+        ],
+      },
+      {
+        label: "$9.99 once",
+        items: [
+          "Preview the watermarked resume before you pay. No subscription. Up to 3 corrections within 7 days, then a clean PDF and editable DOCX.",
+        ],
+      },
+    ],
+  },
+
+  whoItIsFor: {
+    kicker: "/ WHO THIS IS FOR",
+    heading: "BUILT FOR WELDERS AND FABRICATORS",
+    items: [
+      "Structural and combo welders moving to a better shop",
+      "Pipe welders (6G, ASME Section IX, API 1104)",
+      "Sheet-metal and stainless fabricators",
+      "Welder-fitters and layout hands",
+      "Production welders — robotic cell tending, jigs, fixtures",
+      "Maintenance and millwright welders (repair, hard-facing)",
+      "Apprentices and welding-school grads testing for a first job",
+      "Welders relocating or returning to the trade",
+    ],
+  },
+
+  skills: {
+    kicker: "/ WELDING RESUME SKILLS",
+    heading: "THE WELDING SKILLS EMPLOYERS SCAN FOR",
+    intro:
+      "Pick what you can run and pass a test on — the builder never claims a process or position you didn’t enter. Grouped the way a welder’s resume reads.",
+    groups: [
+      {
+        label: "Processes",
+        items: [
+          "GMAW / MIG (short-circuit, spray, pulse)",
+          "FCAW (gas-shielded & self-shielded)",
+          "GTAW / TIG (steel, stainless, aluminum)",
+          "SMAW / stick (6010, 7018, low-hydrogen)",
+          "SAW (submerged arc) — where applicable",
+          "Oxy-fuel & carbon-arc gouging",
+          "Robotic / hard-automation tending",
+        ],
+      },
+      {
+        label: "Positions & joints",
+        items: [
+          "Flat, horizontal, vertical, overhead (1G–4G / 1F–4F)",
+          "Pipe positions 2G, 5G, 6G",
+          "Fillet, groove, lap & corner joints",
+          "Open-root & backing-bar",
+          "Multi-pass, stringer & weave",
+          "Out-of-position production welding",
+        ],
+      },
+      {
+        label: "Fabrication & layout",
+        items: [
+          "Blueprint & weld-symbol reading",
+          "Tape, square & layout",
+          "Fit-up, tacking & clamping",
+          "Jigs, fixtures & positioners",
+          "Plasma & track-torch cutting",
+          "Grinding, blending & finishing",
+          "Bandsaw, ironworker & press brake (as applicable)",
+        ],
+      },
+      {
+        label: "Materials, code & QC",
+        items: [
+          "Carbon steel, stainless, aluminum, chrome-moly",
+          "Sheet, plate, structural shapes & pipe",
+          "AWS D1.1 / D1.2 / D1.6 familiarity",
+          "ASME Section IX, API 1104 (where qualified)",
+          "Visual inspection & support for NDT (UT, RT, MT, PT)",
+          "WPS / procedure adherence",
+          "Hot-work permits & fire watch",
+        ],
+      },
+    ],
+  },
+
+  certifications: {
+    kicker: "/ CERTIFICATIONS & QUALIFICATIONS",
+    heading: "LIST ONLY WHAT YOU’RE CURRENTLY QUALIFIED IN",
+    intro:
+      "Welding certs are specific — a process, a position, a material, a thickness, and a date. List exactly what you currently hold and can retest on. Continuity matters; note if a cert has lapsed. The builder never adds a qualification you didn’t enter.",
+    items: [
+      "AWS D1.1 structural (process / position)",
+      "AWS D1.2 aluminum, D1.5 bridge, D1.6 stainless (as held)",
+      "ASME Section IX (process / position / thickness)",
+      "API 1104 pipeline",
+      "6G pipe qualification",
+      "AWS Certified Welder (national registry)",
+      "Certified Welding Inspector (CWI) or CAWI",
+      "OSHA 10 / OSHA 30",
+      "Overhead crane / rigging, forklift",
+      "Confined space & hexavalent-chromium awareness",
+    ],
+    note:
+      "Testing soon or between certs? Say so plainly — “D1.1 3G/4G, tested 2024” or “ASME IX pending retest.” The builder reflects exactly what you enter.",
+  },
+
+  tools: {
+    kicker: "/ EQUIPMENT & TOOLS",
+    heading: "NAME THE EQUIPMENT YOU RUN",
+    intro:
+      "The machines and tools you name tell a foreman what cell or bay you can step into. Add the ones you use — in your own words.",
+    groups: [
+      {
+        label: "Welding machines",
+        items: [
+          "MIG / wire feeders (CV)",
+          "TIG / high-frequency (AC/DC)",
+          "Stick / engine-drive (CC)",
+          "Multiprocess inverters",
+          "Submerged-arc setups",
+          "Spool guns & push-pull",
+        ],
+      },
+      {
+        label: "Cutting & prep",
+        items: [
+          "Plasma cutter & CNC table",
+          "Oxy-fuel & track torch",
+          "Carbon-arc gouging",
+          "Angle & die grinders",
+          "Bandsaw & cold saw",
+          "Bevelers & pipe stands",
+        ],
+      },
+      {
+        label: "Layout, fit-up & measure",
+        items: [
+          "Squares, levels & tape",
+          "Fit-up clamps, wedges & dogs",
+          "Magnetic squares & pipe jacks",
+          "Positioners & turning rolls",
+          "Fillet & undercut gauges",
+          "Bridge cams & digital calipers",
+        ],
+      },
+    ],
+  },
+
+  accomplishments: {
+    kicker: "/ WELDING RESUME EXAMPLES",
+    heading: "EXAMPLE WELDER ACCOMPLISHMENT BULLETS",
+    intro:
+      "Welding work becomes stronger resume bullets when it names the process, the position, the material, and a result. Examples of the shape a good welder bullet takes:",
+    examples: [
+      "Ran FCAW and SMAW on structural beams and columns in all positions, passing AWS D1.1 3G/4G and holding weld reject rate under 2%.",
+      "TIG-welded stainless and aluminum sheet and tube for food-grade fabrication, meeting cosmetic and pressure requirements.",
+      "Fit up and welded carbon-steel pipe spools 2″–12″, open-root GTAW with FCAW fill and cap, to ASME Section IX.",
+      "Cut and beveled plate on a CNC plasma table and prepped fit-up for a two-welder production cell, keeping the line supplied.",
+      "Hard-faced and rebuilt worn bucket teeth and conveyor components in a maintenance shop, extending service life.",
+      "Read shop drawings and weld symbols to lay out and tack weldments from jigs, reducing rework on repeat assemblies.",
+      "Entry level: completed a welding program with SMAW, GMAW, FCAW, and GTAW lab hours; tested AWS D1.1 3G; earned OSHA 10 and hot-work training.",
+    ],
+    disclaimer:
+      "These are examples of how welding work turns into resume language. Your resume is built only from the details you enter — TRADE HUSTL3 matches wording, it does not invent processes, positions, or certifications.",
+  },
+
+  howItWorks: HOW_IT_WORKS("welder", "Welding & Fabrication", "processes, positions, and code"),
+
+  ats: {
+    heading: "BUILT TO CLEAR WELDING ATS SCREENS",
+    body: [
+      "Most welding and fabrication applications are parsed by an applicant tracking system (ATS) before a person sees them. TRADE HUSTL3 uses standard section headings — Summary, Certifications & Qualifications, Skills, Experience, Education — and avoids the tables, columns, and graphics that trip parsers up.",
+      "Paste the job posting into the intake and the builder prioritizes the language you already have that matches it: MIG, TIG, flux-core, structural, pipe, 6G, blueprint reading, fit-up, AWS D1.1.",
+      "No resume tool can promise an interview or a weld-test pass. A clean, keyword-aligned welder resume simply removes the reasons an automated screen filters you out.",
+    ],
+  },
+
+  faq: {
+    kicker: "/ WELDING RESUME FAQ",
+    heading: "WELDER RESUME QUESTIONS, ANSWERED",
+    items: [
+      {
+        question: "What should a welder resume include?",
+        answer:
+          "Contact details and a target title, a short summary, your current certifications and qualifications (process, position, material, date), a skills section grouped by process and position, work history that names what you welded and the code you worked to, and measurable results such as reject/repair rate, footage, or joints per shift. The TRADE HUSTL3 builder walks you through each one.",
+      },
+      {
+        question: "What skills should I put on a welding resume?",
+        answer:
+          "List only processes and positions you can run and retest on: MIG, TIG, stick, flux-core; flat through overhead and pipe positions (2G, 5G, 6G); fit-up, tacking, and layout; blueprint and weld-symbol reading; plasma and oxy-fuel cutting; and the materials you know (carbon steel, stainless, aluminum). Group them so a foreman can scan them fast.",
+      },
+      {
+        question: "How do I list AWS or ASME certifications on a resume?",
+        answer:
+          "Be specific: the code, the process, the position, and the date — for example “AWS D1.1, FCAW, 3G/4G, 2024” or “ASME Section IX, GTAW, 6G, 2023.” If a cert has lapsed or you’re due to retest, say so. The builder only lists what you enter.",
+      },
+      {
+        question: "How do I write a welding resume with no experience?",
+        answer:
+          "Lead with your welding program or apprenticeship, the processes and positions you trained and tested in, any AWS test you’ve passed, OSHA 10, hot-work training, and the equipment you’ve run. The intake has an entry-level path built for welding-school grads and helpers.",
+      },
+      {
+        question: "What is the difference between a structural welder and a pipe welder resume?",
+        answer:
+          "A structural resume emphasizes FCAW/SMAW in all positions, AWS D1.1, and steel shapes and plate. A pipe resume emphasizes GTAW open-root, 5G/6G, ASME Section IX or API 1104, and spool fabrication. Paste your target posting and the builder prioritizes the language that matches that role.",
+      },
+      {
+        question: "Can I use this for a fabricator or welder-fitter job?",
+        answer:
+          "Yes. The Welding & Fabrication track covers layout, fit-up, jigs and fixtures, cutting, and drawing reading alongside welding. Add the fabrication work and equipment you’ve run in your own words.",
+      },
+      {
+        question: "Are there welder resume examples I can follow?",
+        answer:
+          "This page lists example accomplishment bullets that show the shape of a strong welding line — process, position, material, result. Instead of copying a sample, you answer a guided intake and the builder turns your own work into that format, then shows a free preview before payment.",
+      },
+      {
+        question: "What do I get, and what does it cost?",
+        answer:
+          "A one-time $9.99 payment unlocks a clean PDF and an editable DOCX. The preview is watermarked and free, and you review it before you pay. You get up to 3 corrections within 7 days. There is no subscription and no auto-renewal.",
+      },
+    ],
+  },
+
+  closingCta: {
+    kicker: "/ READY WHEN YOU ARE",
+    heading: "YOUR WELDER RESUME, BUILT RIGHT.",
+    body: "Guided welding intake. Certifications and qualifications up top. ATS-friendly structure. Clean PDF and editable DOCX. One-time $9.99 — preview before you pay.",
+    ctaLabel: "Build my welding resume",
+  },
+};
+
+// ===========================================================================
+// Construction & Carpentry
+// ===========================================================================
+
+export const CONSTRUCTION_CARPENTRY_LANDING: TradeLandingContent = {
+  slug: slugForTradeTrack("Construction & Carpentry"),
+  trade: "Construction & Carpentry",
+  shortName: "Construction & Carpentry Resume Builder",
+  breadcrumbName: "Construction & Carpentry",
+  analyticsItem: "resume_builder_construction_carpentry",
+  ctaLocations: {
+    header: "construction_header",
+    hero: "construction_hero",
+    pricing: "construction_pricing",
+    closing: "construction_footer_cta",
+  },
+  seoTitle: "Carpenter & Construction Resume Builder | TRADE HUSTL3",
+  seoDescription:
+    "Turn your framing, finish, layout, and jobsite work into an ATS-ready carpenter and construction resume. $9.99 one-time, no subscription. TRADE HUSTL3.",
+  ogImage: "/optimized/og.webp",
+  targetQueries: [
+    "construction resume builder",
+    "carpenter resume builder",
+    "carpenter resume",
+    "construction worker resume",
+    "construction resume examples",
+    "carpenter resume skills",
+    "framing carpenter resume",
+    "finish carpenter resume",
+  ],
+
+  hero: {
+    kicker: "/ CONSTRUCTION & CARPENTRY RESUME BUILDER",
+    heading: "A CARPENTER RESUME,",
+    headingAccent: "FRAMED AND FINISHED RIGHT.",
+    lead:
+      "You frame walls and roofs off the prints, form and pour, hang doors and set trim, and keep the schedule. A generic resume flattens that into “construction.” TRADE HUSTL3 turns your scopes, tools, and completed work into an ATS-ready carpenter and construction resume.",
+    ctaLabel: "Build my construction resume",
+    proofStats: [
+      { value: "$9.99", label: "One-time · no subscription" },
+      { value: "Rough → finish", label: "Framing to trim" },
+      { value: "3", label: "Corrections within 7 days" },
+    ],
+  },
+
+  pricing: {
+    kicker: "/ ONE STRAIGHTFORWARD PACKAGE",
+    heading: "PREVIEW FIRST. PAY ONCE.",
+    subhead:
+      "Your construction resume is built before checkout. Review the watermarked preview, then pay once to remove the watermark.",
+    bullets: [
+      "One completed construction resume · watermarked preview before payment",
+      "OSHA cards and equipment certs placed where ATS looks first",
+      "ATS-friendly structure across the Construction & Carpentry track",
+      "Up to 3 corrections within 7 days",
+      "Clean PDF + editable DOCX after payment",
+      "No subscription · no auto-renewal",
+    ],
+    ctaLabel: "Build my construction resume",
+  },
+
+  valueProps: {
+    kicker: "/ WHY THIS ONE",
+    heading: "A CARPENTER RESUME, NOT A GENERIC ONE",
+    items: [
+      {
+        label: "Speaks the trade",
+        items: [
+          "Framing, layout, formwork, finish, and punch — the language superintendents and applicant tracking systems expect, not “general construction.”",
+        ],
+      },
+      {
+        label: "Built on your facts",
+        items: [
+          "The scopes you can run, the crew you’ve led, the schedule you’ve kept. Nothing is added that you didn’t enter.",
+        ],
+      },
+      {
+        label: "Rough or finish, or both",
+        items: [
+          "The intake builds around the carpentry you actually do — wall and roof framing, concrete forms, doors and trim, cabinets, decks.",
+        ],
+      },
+      {
+        label: "$9.99 once",
+        items: [
+          "Preview the watermarked resume before you pay. No subscription. Up to 3 corrections within 7 days, then a clean PDF and editable DOCX.",
+        ],
+      },
+    ],
+  },
+
+  whoItIsFor: {
+    kicker: "/ WHO THIS IS FOR",
+    heading: "BUILT FOR CONSTRUCTION AND CARPENTRY WORK",
+    items: [
+      "Framing and rough carpenters moving up to lead or foreman",
+      "Finish and trim carpenters — doors, base, casing, stairs, cabinets",
+      "Form carpenters and concrete crews",
+      "Remodel and residential carpenters",
+      "Commercial and multifamily carpenters",
+      "Construction laborers building toward a carpentry role",
+      "Apprentices and trade-school grads applying for a first crew",
+      "Carpenters relocating or returning to the trade",
+    ],
+  },
+
+  skills: {
+    kicker: "/ CARPENTRY RESUME SKILLS",
+    heading: "THE CARPENTRY SKILLS EMPLOYERS SCAN FOR",
+    intro:
+      "Pick what you can run on a crew — the builder never claims a skill you didn’t enter. Grouped the way a carpenter’s resume reads.",
+    groups: [
+      {
+        label: "Rough carpentry & framing",
+        items: [
+          "Wall, floor & roof framing",
+          "Layout from plans — lines, grade, elevations",
+          "Sheathing, blocking & bracing",
+          "Stairs & rough openings",
+          "Truss & joist setting",
+          "Steel-stud framing",
+          "Structural repairs & shoring",
+        ],
+      },
+      {
+        label: "Finish carpentry",
+        items: [
+          "Door hanging & hardware",
+          "Base, casing, crown & build-ups",
+          "Window & trim install",
+          "Cabinet & countertop set",
+          "Stair treads, risers & railing",
+          "Paneling, wainscot & closet systems",
+          "Caulk, fill & punch-out",
+        ],
+      },
+      {
+        label: "Concrete, exterior & systems",
+        items: [
+          "Formwork — footings, walls, flatwork",
+          "Rebar tie & embeds",
+          "Deck & railing framing",
+          "Siding, soffit & fascia",
+          "Drywall hang & patch",
+          "Insulation & vapor barrier",
+          "Weather barrier & flashing",
+        ],
+      },
+      {
+        label: "Layout, safety & site",
+        items: [
+          "Blueprint & spec reading",
+          "Tape, square, laser & transit",
+          "Material takeoff & staging",
+          "Demolition & site prep",
+          "Ladder, scaffold & fall protection",
+          "OSHA 10 / 30 & jobsite safety",
+          "Punch lists, QC & cleanup",
+        ],
+      },
+    ],
+  },
+
+  certifications: {
+    kicker: "/ CARDS & CREDENTIALS",
+    heading: "LIST WHAT YOU ACTUALLY HOLD",
+    intro:
+      "Carpentry rarely requires a license, so cards and training carry weight. List the ones you hold, with the year — the builder never adds one you didn’t enter.",
+    items: [
+      "OSHA 10 / OSHA 30 construction",
+      "Carpentry apprenticeship (union or non-union) — year / hours",
+      "NCCER core / carpentry",
+      "Scaffold user / competent-person",
+      "Forklift / telehandler",
+      "Aerial & scissor lift",
+      "Fall protection / competent-person",
+      "Silica (respirable crystalline) awareness",
+      "First aid / CPR",
+      "Powder-actuated tool operator",
+    ],
+    note:
+      "No cards yet? List your hands-on scopes and any trade-school or apprenticeship hours. The builder builds around the work you can actually do.",
+  },
+
+  tools: {
+    kicker: "/ TOOLS & EQUIPMENT",
+    heading: "NAME THE TOOLS YOU RUN",
+    intro:
+      "The tools you name tell a foreman what you can be handed on day one. Add the ones you use — in your own words.",
+    groups: [
+      {
+        label: "Framing & cutting",
+        items: [
+          "Framing & finish nailers",
+          "Circular saw & track saw",
+          "Miter & table saw",
+          "Reciprocating saw",
+          "Rotary hammer & powder-actuated tool",
+          "Chalk line, speed square & framing square",
+        ],
+      },
+      {
+        label: "Finish & layout",
+        items: [
+          "Trim router & jigs",
+          "Laser level & transit / builder’s level",
+          "Pocket-hole jig",
+          "Doweling & biscuit joiner",
+          "Levels, blocks & shims",
+          "Tape, marking & scribe tools",
+        ],
+      },
+      {
+        label: "Concrete & site",
+        items: [
+          "Concrete vibrator & screed",
+          "Bull float & hand tools",
+          "Form ties & wedge tools",
+          "Skid steer / mini-ex (as applicable)",
+          "Scaffold & pump jacks",
+          "Generators, compressors & site power",
+        ],
+      },
+    ],
+  },
+
+  accomplishments: {
+    kicker: "/ CONSTRUCTION RESUME EXAMPLES",
+    heading: "EXAMPLE CARPENTRY ACCOMPLISHMENT BULLETS",
+    intro:
+      "Construction work becomes stronger resume bullets when it names the scope, the volume, and a result. Examples of the shape a good carpentry bullet takes:",
+    examples: [
+      "Framed walls, floors, and roofs for 15+ single-family homes from prints, keeping the crew ahead of the framing schedule.",
+      "Ran layout for a commercial tenant build-out — grid lines, partitions, and door openings — with rework held under 2%.",
+      "Hung 60+ pre-hung and slab doors per project and set base, casing, and crown on a finish crew.",
+      "Built and stripped wall and footing forms for a foundation package, tying rebar and setting embeds to plan.",
+      "Set kitchen and bath cabinets and countertops on a remodel crew, holding punch callbacks low.",
+      "Led a 3-person crew on framing scopes, handling layout, cut lists, and daily QC walks.",
+      "Entry level: completed a carpentry certificate with framing, layout, and finish lab hours; earned OSHA 10 and scaffold-user training.",
+    ],
+    disclaimer:
+      "These are examples of how construction work turns into resume language. Your resume is built only from the details you enter — TRADE HUSTL3 matches wording, it does not invent experience or numbers.",
+  },
+
+  howItWorks: HOW_IT_WORKS("construction", "Construction & Carpentry", "scopes, tools, and layout"),
+
+  ats: {
+    heading: "BUILT TO CLEAR CONSTRUCTION ATS SCREENS",
+    body: [
+      "Most construction and carpentry applications are parsed by an applicant tracking system (ATS) before a person sees them. TRADE HUSTL3 uses standard section headings — Summary, Certifications, Skills, Experience, Education — and avoids the tables, columns, and graphics that trip parsers up.",
+      "Paste the job posting into the intake and the builder prioritizes the language you already have that matches it: framing, finish carpentry, layout, blueprint reading, formwork, punch list, OSHA.",
+      "No resume tool can promise an interview or an “ATS pass rate.” A clean, keyword-aligned construction resume simply removes the reasons an automated screen filters you out.",
+    ],
+  },
+
+  faq: {
+    kicker: "/ CONSTRUCTION RESUME FAQ",
+    heading: "CARPENTRY RESUME QUESTIONS, ANSWERED",
+    items: [
+      {
+        question: "What should a carpenter resume include?",
+        answer:
+          "Contact details and a target title, a short summary, your OSHA cards and any apprenticeship hours, a skills section grouped by rough and finish work, work history that names the scopes you ran and the plans you worked from, and measurable results such as homes framed, doors hung, crew size, or schedule kept. The TRADE HUSTL3 builder walks you through each one.",
+      },
+      {
+        question: "What skills should I put on a construction resume?",
+        answer:
+          "List only skills you can run on a crew: wall and roof framing, layout from prints, formwork, door hanging and trim, cabinet setting, drywall, decks, and punch-out. Add blueprint reading, the power and layout tools you use, and OSHA training. Group them by rough and finish so a superintendent can scan them fast.",
+      },
+      {
+        question: "Do I need a license or certification for construction or carpentry?",
+        answer:
+          "Carpentry usually doesn’t require a license. OSHA 10 or 30, an apprenticeship, scaffold and lift cards, and fall-protection training all help. List what you hold with the year. The builder never adds a card you didn’t enter.",
+      },
+      {
+        question: "How do I write a construction resume with no experience?",
+        answer:
+          "Lead with a carpentry or construction certificate, apprenticeship hours, OSHA 10, the tools you own, and any related work — labor, landscaping, warehouse, or demolition. The intake has an entry-level path that builds around training and hands-on scopes instead of years.",
+      },
+      {
+        question: "What is the difference between a framing carpenter and a finish carpenter resume?",
+        answer:
+          "A framing resume emphasizes layout, walls and roofs, sheathing, and production pace. A finish resume emphasizes doors, trim, cabinets, stairs, and callback rate. Paste your target posting and the builder prioritizes the language that matches that role.",
+      },
+      {
+        question: "Can I use this for a general construction laborer role?",
+        answer:
+          "Yes — though the General Labor guide may fit better if your work is mostly material handling, demolition, and site support. This page leans toward carpentry scopes. Add the work you actually do and the builder emphasizes it.",
+      },
+      {
+        question: "Are there carpenter resume examples I can follow?",
+        answer:
+          "This page lists example accomplishment bullets that show the shape of a strong carpentry line — scope, volume, result. Instead of copying a sample, you answer a guided intake and the builder turns your own work into that format, then shows a free preview before payment.",
+      },
+      {
+        question: "What do I get, and what does it cost?",
+        answer:
+          "A one-time $9.99 payment unlocks a clean PDF and an editable DOCX. The preview is watermarked and free, and you review it before you pay. You get up to 3 corrections within 7 days. There is no subscription and no auto-renewal.",
+      },
+    ],
+  },
+
+  closingCta: {
+    kicker: "/ READY WHEN YOU ARE",
+    heading: "YOUR CARPENTER RESUME, BUILT RIGHT.",
+    body: "Guided construction intake. OSHA cards and apprenticeship hours up top. ATS-friendly structure. Clean PDF and editable DOCX. One-time $9.99 — preview before you pay.",
+    ctaLabel: "Build my construction resume",
+  },
+};
+
+// ===========================================================================
+// General Labor / Maintenance (General Labor / Trade Helper track)
+// ===========================================================================
+
+export const GENERAL_LABOR_LANDING: TradeLandingContent = {
+  slug: slugForTradeTrack("General Labor / Trade Helper"),
+  trade: "General Labor / Trade Helper",
+  shortName: "General Labor Resume Builder",
+  breadcrumbName: "General Labor / Maintenance",
+  analyticsItem: "resume_builder_general_labor",
+  ctaLocations: {
+    header: "general_labor_header",
+    hero: "general_labor_hero",
+    pricing: "general_labor_pricing",
+    closing: "general_labor_footer_cta",
+  },
+  seoTitle: "General Labor Resume Builder | Laborer & Maintenance | TRADE HUSTL3",
+  seoDescription:
+    "Turn your material handling, basic repairs, and work-order support into an ATS-ready general labor and maintenance resume. $9.99 one-time, no subscription. TRADE HUSTL3.",
+  ogImage: "/optimized/og.webp",
+  targetQueries: [
+    "general labor resume builder",
+    "general labor resume",
+    "laborer resume",
+    "maintenance worker resume",
+    "maintenance technician resume builder",
+    "maintenance technician resume",
+    "skilled labor resume",
+    "maintenance tech resume",
+  ],
+
+  hero: {
+    kicker: "/ GENERAL LABOR & MAINTENANCE RESUME BUILDER",
+    heading: "A GENERAL LABOR RESUME",
+    headingAccent: "THAT SHOWS YOUR RANGE.",
+    lead:
+      "You move and stage material, run basic repairs, cover work orders, set up and tear down, and jump between departments. A generic resume flattens that into “general labor.” TRADE HUSTL3 turns the tasks you handle, the tools you run, and the results you get into an ATS-ready general labor and maintenance resume.",
+    ctaLabel: "Build my resume",
+    proofStats: [
+      { value: "$9.99", label: "One-time · no subscription" },
+      { value: "Cross-trade", label: "Labor + light maintenance" },
+      { value: "3", label: "Corrections within 7 days" },
+    ],
+  },
+
+  pricing: {
+    kicker: "/ ONE STRAIGHTFORWARD PACKAGE",
+    heading: "PREVIEW FIRST. PAY ONCE.",
+    subhead:
+      "Your resume is built before checkout. Review the watermarked preview, then pay once to remove the watermark.",
+    bullets: [
+      "One completed resume · watermarked preview before payment",
+      "Certifications, safety training, and equipment cards placed where ATS looks first",
+      "ATS-friendly structure across the General Labor & Maintenance track",
+      "Up to 3 corrections within 7 days",
+      "Clean PDF + editable DOCX after payment",
+      "No subscription · no auto-renewal",
+    ],
+    ctaLabel: "Build my resume",
+  },
+
+  valueProps: {
+    kicker: "/ WHY THIS ONE",
+    heading: "A LABOR RESUME, NOT A VAGUE ONE",
+    items: [
+      {
+        label: "Shows range, not filler",
+        items: [
+          "Material handling, basic repairs, PMs, work orders, and safety — named specifically, the way supervisors and applicant tracking systems read them.",
+        ],
+      },
+      {
+        label: "Built on your facts",
+        items: [
+          "The tasks you actually cover, the equipment you run, the training you hold. Nothing is added that you didn’t enter.",
+        ],
+      },
+      {
+        label: "Bridges labor and maintenance",
+        items: [
+          "Written for workers whose duties cross departments — grounds, warehouse, basic trades support, and facility upkeep.",
+        ],
+      },
+      {
+        label: "$9.99 once",
+        items: [
+          "Preview the watermarked resume before you pay. No subscription. Up to 3 corrections within 7 days, then a clean PDF and editable DOCX.",
+        ],
+      },
+    ],
+  },
+
+  whoItIsFor: {
+    kicker: "/ WHO THIS IS FOR",
+    heading: "BUILT FOR CROSS-FUNCTIONAL LABOR AND MAINTENANCE",
+    items: [
+      "General laborers and warehouse / production associates",
+      "Maintenance helpers and building-service workers",
+      "Groundskeepers and custodial crews moving into maintenance",
+      "Trade helpers and pre-apprentices — HVAC, electrical, plumbing support",
+      "Facility and warehouse support techs who cover a bit of everything",
+      "Movers, material handlers, and equipment-setup crews",
+      "Entry-level maintenance techs building toward a specialized trade",
+      "Workers relocating or returning to steady labor work",
+    ],
+  },
+
+  skills: {
+    kicker: "/ GENERAL LABOR RESUME SKILLS",
+    heading: "THE LABOR & MAINTENANCE SKILLS EMPLOYERS SCAN FOR",
+    intro:
+      "Pick what you actually do on shift — the builder never claims a skill you didn’t enter. Grouped the way a labor-and-maintenance resume reads.",
+    groups: [
+      {
+        label: "Maintenance & repairs",
+        items: [
+          "Preventive maintenance — filters, belts, lubrication",
+          "Basic repairs — fixtures, hardware, hinges, locks",
+          "Light electrical — outlets, switches, lamps, breaker resets",
+          "Light plumbing — faucets, flush valves, supply lines, clogs",
+          "Basic HVAC support — filter changes, coil cleaning, assist",
+          "Painting, patching & drywall repair",
+          "Door, window & hardware adjustment",
+        ],
+      },
+      {
+        label: "Work orders & documentation",
+        items: [
+          "Work-order intake, updates & close-out",
+          "CMMS / mobile work-order apps",
+          "Inspections, rounds & checklists",
+          "Parts pickup & inventory stocking",
+          "Photo documentation & completion notes",
+          "Reporting issues to the right trade",
+          "After-hours / emergency response support",
+        ],
+      },
+      {
+        label: "Material handling & site",
+        items: [
+          "Loading, unloading & staging material",
+          "Pallet jack & hand truck",
+          "Forklift / lift operation (if certified)",
+          "Equipment and event setup / teardown",
+          "Demolition & debris removal",
+          "Grounds — mowing, trimming, snow, salt",
+          "Facility & warehouse cleanup",
+        ],
+      },
+      {
+        label: "Safety & reliability",
+        items: [
+          "Lifting technique & team lifts",
+          "PPE and hazard awareness",
+          "Lockout/tagout (basic)",
+          "Ladder & scaffold safety",
+          "Spill and slip/trip response",
+          "Dependable attendance & punctuality",
+          "Following instructions & jobsite communication",
+        ],
+      },
+    ],
+  },
+
+  certifications: {
+    kicker: "/ TRAINING & CARDS",
+    heading: "LIST WHAT YOU ACTUALLY HOLD",
+    intro:
+      "Most general-labor roles don’t require a certification. The ones that help are safety and equipment cards. List what you hold, with the year — the builder never adds one you didn’t enter.",
+    items: [
+      "OSHA 10 / OSHA 30",
+      "Forklift / powered-industrial-truck operator",
+      "Aerial & scissor lift",
+      "Certified Apartment Maintenance Technician (CAMT) — if held",
+      "EPA Section 608 — if held",
+      "Certified Pool/Spa Operator (CPO) — if held",
+      "First aid / CPR / AED",
+      "Flagger / traffic control",
+      "Confined space entry (awareness)",
+      "CDL (any class) — if held",
+    ],
+    note:
+      "No cards yet? That’s common for this work. List the tasks you can do reliably and any safety training, and the builder builds around those.",
+  },
+
+  tools: {
+    kicker: "/ TOOLS & EQUIPMENT",
+    heading: "NAME THE TOOLS AND EQUIPMENT YOU RUN",
+    intro:
+      "The tools and equipment you name show a supervisor you can be put to work without hand-holding. Add the ones you use — in your own words.",
+    groups: [
+      {
+        label: "Hand & power tools",
+        items: [
+          "Cordless drill / impact driver",
+          "Screwdrivers, wrenches & pliers",
+          "Reciprocating & circular saw",
+          "Basic multimeter / voltage tester",
+          "Caulk gun & putty tools",
+          "Shop vac & blower",
+        ],
+      },
+      {
+        label: "Material handling",
+        items: [
+          "Pallet jack & hand truck",
+          "Forklift / order picker (if certified)",
+          "Dolly, cart & moving straps",
+          "Floor scrubber / buffer",
+          "Pressure washer",
+          "Compactor / baler",
+        ],
+      },
+      {
+        label: "Grounds & site",
+        items: [
+          "Mower, trimmer & blower",
+          "Snow blower & spreader",
+          "Wheelbarrow & concrete hand tools",
+          "Ladders & step platforms",
+          "Generators & extension cords",
+          "Debris carts & bins",
+        ],
+      },
+    ],
+  },
+
+  accomplishments: {
+    kicker: "/ LABOR RESUME EXAMPLES",
+    heading: "EXAMPLE GENERAL LABOR & MAINTENANCE BULLETS",
+    intro:
+      "General labor and maintenance work becomes stronger resume bullets when it names the task, the volume, and a result. Examples of the shape a good bullet takes:",
+    examples: [
+      "Completed 15–25 work orders per week — light plumbing, hardware, lamp and filter changes, and painting — across a 250,000 sq ft facility.",
+      "Loaded, unloaded, and staged material for three crews, keeping the jobsite stocked and clear.",
+      "Ran quarterly PM checklists on exhaust fans, filters, and door hardware, logging completions in the CMMS.",
+      "Supported HVAC and electrical techs on service calls — pulling wire, changing filters, and handling parts runs.",
+      "Handled setup and teardown for 40+ events, including tables, staging, and equipment, on schedule.",
+      "Ran demolition and debris removal on renovation projects, then handled final cleanup for handover.",
+      "Maintained building grounds — mowing, trimming, and snow and ice removal — across a multi-building campus.",
+      "Entry level: completed OSHA 10 and forklift certification; two years of warehouse and grounds work with a strong attendance record.",
+    ],
+    disclaimer:
+      "These are examples of how labor and maintenance work turns into resume language. Your resume is built only from the details you enter — TRADE HUSTL3 matches wording, it does not invent experience or numbers.",
+  },
+
+  howItWorks: HOW_IT_WORKS("general labor", "General Labor / Trade Helper", "tasks, tools, and safety training"),
+
+  ats: {
+    heading: "BUILT TO CLEAR LABOR & MAINTENANCE ATS SCREENS",
+    body: [
+      "Most general-labor and maintenance applications are parsed by an applicant tracking system (ATS) before a person sees them. TRADE HUSTL3 uses standard section headings — Summary, Certifications, Skills, Experience, Education — and avoids the tables, columns, and graphics that trip parsers up.",
+      "Paste the job posting into the intake and the builder prioritizes the language you already have that matches it: preventive maintenance, work orders, material handling, basic electrical, basic plumbing, forklift, safety.",
+      "No resume tool can promise an interview or an “ATS pass rate.” A clean, keyword-aligned resume simply removes the reasons an automated screen filters you out.",
+    ],
+  },
+
+  faq: {
+    kicker: "/ GENERAL LABOR RESUME FAQ",
+    heading: "LABOR & MAINTENANCE RESUME QUESTIONS, ANSWERED",
+    items: [
+      {
+        question: "What should a general labor resume include?",
+        answer:
+          "Contact details and a target title, a short summary, any safety or equipment training, a skills section grouped by task type, work history that names what you did and where, and measurable results such as work orders completed, loads moved, PMs done, or attendance. The TRADE HUSTL3 builder walks you through each one so “general labor” turns into something specific.",
+      },
+      {
+        question: "How do I make a general labor resume not sound generic?",
+        answer:
+          "Name the tasks and the numbers. Instead of “general labor,” list the repairs you can do, the equipment you run, the work orders you close, and the departments you support. The intake prompts you for those specifics so the resume shows range instead of filler.",
+      },
+      {
+        question: "Can this work for a maintenance technician job?",
+        answer:
+          "It can, if your work is entry-level or cross-department. If you run a full maintenance program with CMMS, PMs, and multi-trade repairs, the Facilities Maintenance guide is the better fit. This page is built for workers who bridge labor and light maintenance.",
+      },
+      {
+        question: "How do I write a labor resume with no experience?",
+        answer:
+          "Lead with any safety training (OSHA 10), a forklift or lift card, physical-work history — warehouse, moving, landscaping, food service — and a reliable attendance record. The intake has an entry-level path that builds around dependability and the tasks you can do.",
+      },
+      {
+        question: "What skills should I put on a maintenance helper resume?",
+        answer:
+          "List what you can do reliably: preventive maintenance basics, light plumbing and electrical, painting and patching, hardware and door work, material handling, work-order updates, and safety practices. Add the tools you run. Group them so a supervisor can scan them fast.",
+      },
+      {
+        question: "Should I list forklift or OSHA cards?",
+        answer:
+          "Yes — near the top. Forklift certification, OSHA 10 or 30, and lift cards are among the first things a warehouse or facilities supervisor looks for. List each with the year. The builder only includes what you enter.",
+      },
+      {
+        question: "Are there general labor resume examples I can follow?",
+        answer:
+          "This page lists example accomplishment bullets that show the shape of a strong labor-and-maintenance line — task, volume, result. Instead of copying a sample, you answer a guided intake and the builder turns your own work into that format, then shows a free preview before payment.",
+      },
+      {
+        question: "What do I get, and what does it cost?",
+        answer:
+          "A one-time $9.99 payment unlocks a clean PDF and an editable DOCX. The preview is watermarked and free, and you review it before you pay. You get up to 3 corrections within 7 days. There is no subscription and no auto-renewal.",
+      },
+    ],
+  },
+
+  closingCta: {
+    kicker: "/ READY WHEN YOU ARE",
+    heading: "YOUR LABOR RESUME, BUILT RIGHT.",
+    body: "Guided intake for cross-functional labor and maintenance work. Safety and equipment cards up top. ATS-friendly structure. Clean PDF and editable DOCX. One-time $9.99 — preview before you pay.",
+    ctaLabel: "Build my resume",
+  },
+};
+
 /** Every trade landing page in the site — drives the sitemap, the hub's trade
  *  links, and the sibling cross-links on each page. Order = display order. */
 export const TRADE_LANDING_PAGES: TradeLandingContent[] = [
   HVAC_LANDING,
   FACILITIES_MAINTENANCE_LANDING,
   ELECTRICIAN_LANDING,
+  PLUMBING_LANDING,
+  WELDING_FABRICATION_LANDING,
+  CONSTRUCTION_CARPENTRY_LANDING,
+  GENERAL_LABOR_LANDING,
 ];
 
 /** Landing page for a given intake trade, if one exists (used by the hub). */

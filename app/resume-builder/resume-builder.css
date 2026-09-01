@@ -160,6 +160,10 @@
 .rb-tracks-note { max-width: 640px; margin: 22px 0 0; color: var(--rb-gray); font-size: 13px; line-height: 1.6; }
 .rb-tracks-note a { color: var(--rb-gold); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
 .rb-tracks-note a:hover { color: var(--rb-white); }
+.rb-tracks-guides { display: flex; flex-wrap: wrap; gap: 10px 14px; margin: 14px 0 0; padding: 0; list-style: none; }
+.rb-tracks-guides li { display: flex; }
+.rb-tracks-guides a { padding: 8px 12px; border: 1px solid var(--rb-line); background: var(--rb-navy-2); color: var(--rb-cream); font-size: 12px; font-weight: 700; }
+.rb-tracks-guides a:hover { border-color: var(--rb-gold); color: var(--rb-gold); }
 .rb-footer { display: grid; grid-template-columns: 1fr auto; gap: 8px 24px; padding: 50px clamp(26px, 7vw, 112px); border-top: 1px solid var(--rb-line); background: var(--rb-navy-3); }
 .rb-footer strong { font-family: var(--font-display); font-size: 26px; letter-spacing: .05em; }
 .rb-footer p { margin: 0; color: var(--rb-gray); font-size: 12px; }

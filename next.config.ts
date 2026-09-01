@@ -21,6 +21,10 @@ const nextConfig: NextConfig = {
       { source: "/resume-builder/hvac", headers: crawlerFreshnessHeaders },
       { source: "/resume-builder/facilities-maintenance", headers: crawlerFreshnessHeaders },
       { source: "/resume-builder/electrician", headers: crawlerFreshnessHeaders },
+      { source: "/resume-builder/plumbing", headers: crawlerFreshnessHeaders },
+      { source: "/resume-builder/welding-fabrication", headers: crawlerFreshnessHeaders },
+      { source: "/resume-builder/construction-carpentry", headers: crawlerFreshnessHeaders },
+      { source: "/resume-builder/general-labor", headers: crawlerFreshnessHeaders },
     ];
   },
 };
