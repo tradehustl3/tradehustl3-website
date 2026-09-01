@@ -87,19 +87,19 @@
   isolation: isolate;
   overflow: hidden;
   padding: clamp(66px, 8vw, 116px) clamp(26px, 7vw, 112px);
-  background: #12527c;
+  background: #0b3f64;
 }
 .rb-entry-copy > :not(.rb-hero-texture) { position: relative; z-index: 2; }
 .rb-entry-copy .rb-lead { color: #f1f6fa; }
-.rb-entry .rb-entry-copy h1 span { color: #ff938c; }
-.rb-hero-texture { position: absolute; z-index: 0; inset: 0; overflow: hidden; color: #fff; pointer-events: none; }
+.rb-entry .rb-entry-copy h1 span { color: #ff3b30; }
+.rb-hero-texture { position: absolute; z-index: 0; inset: 0; overflow: hidden; color: #bfe9ff; pointer-events: none; }
 .rb-hero-glow {
   position: absolute;
   top: -150px;
   right: -130px;
   width: 400px;
   height: 400px;
-  background: radial-gradient(circle, rgba(58, 166, 232, .18) 0%, rgba(58, 166, 232, .12) 34%, rgba(58, 166, 232, 0) 70%);
+  background: radial-gradient(circle, rgba(58, 166, 232, .30) 0%, rgba(58, 166, 232, .18) 34%, rgba(58, 166, 232, 0) 70%);
 }
 .rb-hero-icon { position: absolute; display: block; }
 .rb-hero-icon-primary { top: 32px; right: 32px; width: 44px; height: 44px; opacity: .33; }
