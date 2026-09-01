@@ -88,9 +88,22 @@
   color: var(--rb-white);
 }
 
-/* --- pricing panel list (inside cream .rb-entry-panel) ------------------- */
+/* --- pricing panel (inside cream .rb-entry-panel) ----------------------- */
+/* .rb-package-price uses line-height:.8, so the giant "9" overflows its box —
+   give it room below the panel heading and above the subhead. */
+.panelPrice {
+  margin: 18px 0 14px;
+}
+
+.panelSubhead {
+  margin: 0 0 4px;
+  max-width: 520px;
+  color: var(--rb-ink-soft);
+  line-height: 1.6;
+}
+
 .pricingList {
-  margin: 22px 0 6px;
+  margin: 20px 0 6px;
   padding: 0;
   list-style: none;
 }

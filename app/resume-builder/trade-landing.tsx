@@ -116,12 +116,12 @@ export function TradeLandingPage({ content }: { content: TradeLandingContent }) 
         <aside className="rb-entry-panel" aria-labelledby="pricing-title">
           <p className="rb-panel-index">{panelIndex}</p>
           <h2 id="pricing-title">{content.pricing.heading}</h2>
-          <p>{content.pricing.subhead}</p>
-          <div className="rb-package-price" aria-hidden="true">
+          <div className={`rb-package-price ${styles.panelPrice}`} aria-hidden="true">
             <span>$</span>
             <strong>9</strong>
             <sup>99</sup>
           </div>
+          <p className={styles.panelSubhead}>{content.pricing.subhead}</p>
           <ul className={styles.pricingList}>
             {content.pricing.bullets.map((bullet) => (
               <li key={bullet}>
