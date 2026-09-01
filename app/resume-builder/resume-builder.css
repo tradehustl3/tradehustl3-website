@@ -342,6 +342,11 @@
   .rb-step strong, .rb-step::after { display: none; }
   .rb-entry { min-height: 0; }
   .rb-entry-copy, .rb-entry-panel { padding: 58px 22px; }
+  .rb-hero-glow { top: -125px; right: -135px; width: 340px; height: 340px; }
+  .rb-hero-icon-primary { top: 24px; right: 18px; width: 42px; height: 42px; }
+  .rb-hero-icon-left { bottom: -14px; left: -16px; width: 78px; height: 78px; }
+  .rb-hero-icon-right { right: -14px; bottom: 16px; width: 76px; height: 76px; }
+  .rb-proof-row { box-shadow: 0 0 0 12px #0b2438; }
   /* Long single trade words (MAINTENANCE, ELECTRICIAN) must not clip inside the
      overflow:hidden hero on narrow phones. */
   .rb-entry h1 { font-size: clamp(36px, 11.5vw, 72px); overflow-wrap: break-word; }
