@@ -1,6 +1,7 @@
 import { CtaAnalytics } from "../cta-analytics";
 import { FlowSteps } from "./flow-steps";
 import { ResumeBuilderHeader } from "./resume-builder-header";
+import { ResumeHeroTexture } from "./resume-hero-texture";
 import { intakeEntryHref } from "./trade-preselect";
 import {
   buildTradeLandingJsonLd,
@@ -109,6 +110,7 @@ export function TradeLandingPage({ content }: { content: TradeLandingContent }) 
       {/* -------------------------------------------------------------- hero */}
       <section className="rb-entry">
         <div className="rb-entry-copy">
+          <ResumeHeroTexture trade={content.trade} />
           <p className="rb-kicker">{content.hero.kicker}</p>
           <h1>
             {content.hero.heading} <span>{content.hero.headingAccent}</span>

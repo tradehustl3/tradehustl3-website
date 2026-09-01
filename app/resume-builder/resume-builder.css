@@ -78,15 +78,45 @@
   display: grid;
   grid-template-columns: minmax(0, 1.1fr) minmax(420px, .72fr);
   min-height: 650px;
-  background: linear-gradient(118deg, #071a2b 50%, #0b2b42);
+  background: #0b2438;
 }
 .rb-entry::before { content: "RESUME"; position: absolute; left: -22px; bottom: -70px; color: #fff; opacity: .025; font-family: var(--font-display); font-size: clamp(180px, 23vw, 360px); line-height: 1; pointer-events: none; }
-.rb-entry-copy { z-index: 1; padding: clamp(66px, 8vw, 116px) clamp(26px, 7vw, 112px); }
+.rb-entry-copy {
+  position: relative;
+  z-index: 1;
+  isolation: isolate;
+  overflow: hidden;
+  padding: clamp(66px, 8vw, 116px) clamp(26px, 7vw, 112px);
+  background: #12527c;
+}
+.rb-entry-copy > :not(.rb-hero-texture) { position: relative; z-index: 2; }
+.rb-entry-copy .rb-lead { color: #f1f6fa; }
+.rb-entry .rb-entry-copy h1 span { color: #ff938c; }
+.rb-hero-texture { position: absolute; z-index: 0; inset: 0; overflow: hidden; color: #fff; pointer-events: none; }
+.rb-hero-glow {
+  position: absolute;
+  top: -150px;
+  right: -130px;
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, rgba(58, 166, 232, .18) 0%, rgba(58, 166, 232, .12) 34%, rgba(58, 166, 232, 0) 70%);
+}
+.rb-hero-icon { position: absolute; display: block; }
+.rb-hero-icon-primary { top: 32px; right: 32px; width: 44px; height: 44px; opacity: .33; }
+.rb-hero-icon-left { bottom: -20px; left: -18px; width: 88px; height: 88px; opacity: .06; }
+.rb-hero-icon-right { right: -18px; bottom: 22px; width: 84px; height: 84px; opacity: .06; }
 .rb-kicker { margin: 0 0 18px; color: var(--rb-gold); font-size: 10px; font-weight: 900; letter-spacing: .21em; text-transform: uppercase; }
 .rb-entry h1, .rb-flow-intro h1, .rb-confirm-card h1, .rb-payment-card h1, .rb-review-empty h1 { font-size: clamp(56px, 6.8vw, 106px); line-height: .9; letter-spacing: -.015em; text-wrap: balance; }
 .rb-entry h1 span, .rb-flow-intro h1 span, .rb-confirm-card h1 span, .rb-payment-card h1 span, .rb-review-empty h1 span { color: var(--rb-red); }
 .rb-lead { max-width: 680px; margin: 30px 0 36px; color: var(--rb-gray); font-size: clamp(16px, 1.6vw, 20px); line-height: 1.65; }
-.rb-proof-row { display: grid; grid-template-columns: repeat(3, 1fr); max-width: 660px; border-block: 1px solid var(--rb-line); }
+.rb-proof-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  max-width: 660px;
+  border-block: 1px solid var(--rb-line);
+  background: #0b2438;
+  box-shadow: 0 0 0 18px #0b2438;
+}
 .rb-proof-row div { padding: 18px 18px 18px 0; }
 .rb-proof-row strong, .rb-proof-row span { display: block; }
 .rb-proof-row strong { color: var(--rb-gold); font-family: var(--font-display); font-size: 35px; font-weight: 400; }
@@ -313,6 +343,11 @@
   .rb-step strong, .rb-step::after { display: none; }
   .rb-entry { min-height: 0; }
   .rb-entry-copy, .rb-entry-panel { padding: 58px 22px; }
+  .rb-hero-glow { top: -125px; right: -135px; width: 340px; height: 340px; }
+  .rb-hero-icon-primary { top: 24px; right: 18px; width: 42px; height: 42px; }
+  .rb-hero-icon-left { bottom: -14px; left: -16px; width: 78px; height: 78px; }
+  .rb-hero-icon-right { right: -14px; bottom: 16px; width: 76px; height: 76px; }
+  .rb-proof-row { box-shadow: 0 0 0 12px #0b2438; }
   /* Long single trade words (MAINTENANCE, ELECTRICIAN) must not clip inside the
      overflow:hidden hero on narrow phones. */
   .rb-entry h1 { font-size: clamp(36px, 11.5vw, 72px); overflow-wrap: break-word; }

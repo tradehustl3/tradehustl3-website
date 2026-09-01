@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { AccountStart } from "./account-start";
 import { FlowSteps } from "./flow-steps";
 import { ResumeBuilderHeader } from "./resume-builder-header";
+import { ResumeHeroTexture } from "./resume-hero-texture";
 import type { TradeTrack } from "./trade-content";
 import {
   TRADE_LANDING_PAGES,
@@ -32,6 +33,7 @@ export default function ResumeBuilderPage() {
 
       <section className="rb-entry">
         <div className="rb-entry-copy">
+          <ResumeHeroTexture />
           <p className="rb-kicker">/ BUILT FOR SKILLED WORK</p>
           <h1>TURN YOUR FIELD EXPERIENCE INTO A <span>JOB-READY RESUME.</span></h1>
           <p className="rb-lead">
