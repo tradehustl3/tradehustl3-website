@@ -316,8 +316,18 @@
   /* Long single trade words (MAINTENANCE, ELECTRICIAN) must not clip inside the
      overflow:hidden hero on narrow phones. */
   .rb-entry h1 { font-size: clamp(36px, 11.5vw, 72px); overflow-wrap: break-word; }
-  .rb-proof-row { grid-template-columns: 1fr; }
-  .rb-proof-row div { display: grid; grid-template-columns: 70px 1fr; align-items: center; border-bottom: 1px solid var(--rb-line); }
+  .rb-proof-row { grid-template-columns: 1fr; width: 100%; }
+  .rb-proof-row div {
+    display: grid;
+    grid-template-columns: minmax(108px, max-content) minmax(0, 1fr);
+    align-items: center;
+    gap: 18px;
+    min-height: 96px;
+    padding: 18px 0;
+    border-bottom: 1px solid var(--rb-line);
+  }
+  .rb-proof-row strong { line-height: 1; white-space: nowrap; }
+  .rb-proof-row span { line-height: 1.45; }
   .rb-package, .rb-tracks { padding: 72px 22px; }
   .rb-footer { grid-template-columns: 1fr; }.rb-footer small { grid-column: 1; grid-row: auto; }
   .rb-centered-stage { padding: 34px 14px; }
