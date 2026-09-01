@@ -1,7 +1,16 @@
 /* eslint-disable @next/next/no-html-link-for-pages -- Resume Builder exits must work without the client router */
+import type { ReactNode } from "react";
 import Image from "next/image";
 
-export function ResumeBuilderHeader() {
+/**
+ * Shared Resume Builder header. Every Resume Builder route renders this so the
+ * approved TRADE HUSTL3 Resume Builder logo, wordmark, and product label stay
+ * identical across the journey and the trade landing pages.
+ *
+ * `action` replaces the default "Exit builder" link in the trailing slot — the
+ * trade landing pages pass a "Build my resume" CTA there instead.
+ */
+export function ResumeBuilderHeader({ action }: { action?: ReactNode } = {}) {
   return (
     <header className="rb-header">
       <a className="rb-brand" href="/" aria-label="TRADE HUSTL3 home">
@@ -12,7 +21,7 @@ export function ResumeBuilderHeader() {
         <span>Career tools</span>
         <strong>Resume Builder</strong>
       </div>
-      <a className="rb-exit" href="/">Exit builder</a>
+      {action ?? <a className="rb-exit" href="/">Exit builder</a>}
     </header>
   );
 }

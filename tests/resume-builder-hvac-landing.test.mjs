@@ -40,17 +40,25 @@ test("HVAC landing page server-renders trade-specific content", async () => {
     assert.ok(html.includes(term), `missing HVAC term: ${term}`);
   }
 
-  // Required structural sections.
+  // Required structural sections (case-insensitive — the page uses the
+  // Resume Builder system's uppercase display headings).
   for (const heading of [
-    "Built for HVAC field workers at every stage",
-    "The HVAC skills employers scan for",
-    "EPA 608 first, then the rest",
-    "Name the tools that show what you run solo",
-    "Example HVAC accomplishment bullets",
-    "How the TRADE HUSTL3 Resume Builder works",
-    "HVAC resume questions, answered",
+    /who this is for/i,
+    /built for HVAC field workers at every stage/i,
+    /HVAC resume skills/i,
+    /the HVAC skills employers scan for/i,
+    /HVAC certifications/i,
+    /EPA 608 first, then the rest/i,
+    /HVAC tools &(amp;)? equipment/i,
+    /name the tools that show what you run solo/i,
+    /HVAC resume examples/i,
+    /example HVAC accomplishment bullets/i,
+    /how it works/i,
+    /how the TRADE HUSTL3 Resume Builder works/i,
+    /ATS &(amp;)? job keywords/i,
+    /HVAC resume questions, answered/i,
   ]) {
-    assert.ok(html.includes(heading), `missing section heading: ${heading}`);
+    assert.match(html, heading, `missing section heading: ${heading}`);
   }
 
   // No unsupported guarantees.
@@ -93,6 +101,20 @@ test("HVAC landing CTAs enter the existing intake flow with HVAC preselected", a
   assert.match(html, /data-location="hvac_hero"/);
   // Internal link back to the hub.
   assert.match(html, /href="\/resume-builder"/);
+});
+
+test("HVAC landing page uses the shared Resume Builder chrome and approved logo", async () => {
+  const html = await (await renderPath("/resume-builder/hvac")).text();
+
+  // Native Resume Builder shell, not a bespoke SEO template.
+  assert.match(html, /class="rb-page"/);
+  assert.match(html, /class="rb-header"/);
+  assert.match(html, /class="rb-footer"/);
+  assert.match(html, /class="rb-entry"/);
+
+  // Approved TRADE HUSTL3 Resume Builder logo only — never the standalone mark.
+  assert.match(html, /\/resume-builder-logo-llc\.png/);
+  assert.doesNotMatch(html, /src="[^"]*\/trade-hustl3-logo\.png/);
 });
 
 test("the Resume Builder hub links to the HVAC landing page", async () => {

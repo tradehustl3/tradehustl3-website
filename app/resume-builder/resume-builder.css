@@ -50,6 +50,8 @@
 .rb-header-product strong { padding-left: 12px; border-left: 1px solid var(--rb-gold); font-size: 12px; letter-spacing: .12em; }
 .rb-exit { justify-self: end; color: var(--rb-gray); font-size: 10px; font-weight: 800; letter-spacing: .15em; text-transform: uppercase; }
 .rb-exit:hover { color: var(--rb-gold); }
+/* Compact primary CTA that replaces "Exit builder" in the header on trade landing pages. */
+.rb-button.rb-header-cta { justify-self: end; min-height: 42px; gap: 10px; padding: 0 16px; font-size: 9px; }
 
 .rb-steps {
   display: grid;

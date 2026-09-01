@@ -3,11 +3,12 @@
  *
  * Each trade page (`/resume-builder/hvac`, and later electrician, plumbing,
  * facilities maintenance, …) is the same server-rendered <TradeLandingPage />
- * shell filled by one `TradeLandingContent` object. The shell guarantees a
- * consistent, crawlable structure and schema; the content object carries the
- * genuine trade-specific terminology that earns topical relevance. Keep the
- * copy real — specific certifications, tools, systems, and example bullets for
- * the trade — never a template with the trade name swapped in.
+ * shell — which is built from the shared `.rb-*` Resume Builder design system —
+ * filled by one `TradeLandingContent` object. The shell guarantees consistent
+ * structure, typography, and schema; the content object carries the genuine
+ * trade-specific terminology. Keep the copy real: specific certifications,
+ * tools, systems, and example bullets for the trade, never a template with the
+ * trade name swapped in.
  */
 
 import type { Metadata } from "next";
@@ -17,9 +18,10 @@ import { slugForTradeTrack } from "./trade-preselect";
 
 export type LabeledGroup = { label: string; items: string[] };
 export type FaqItem = { question: string; answer: string };
+export type StatItem = { value: string; label: string };
 
 export type TradeLandingContent = {
-  /** Route slug, e.g. "hvac" for /resume-builder/hvac. Must be a canonical trade slug. */
+  /** Route slug, e.g. "hvac" for /resume-builder/hvac. A canonical trade slug. */
   slug: string;
   /** The intake trade this page preselects. */
   trade: TradeTrack;
@@ -29,47 +31,36 @@ export type TradeLandingContent = {
   seoDescription: string;
   /** Absolute-path OG/Twitter image. */
   ogImage: string;
-  /** Search intents this page targets, shown nowhere on the page — for docs/review only. */
+  /** Search intents this page targets — for docs/review only, not shown on the page. */
   targetQueries: string[];
+  /** Short human label for breadcrumbs / nav (e.g. "HVAC Resume Builder"). */
+  shortName: string;
 
   hero: {
-    eyebrow: string;
+    kicker: string;
     heading: string;
     headingAccent: string;
     lead: string;
     ctaLabel: string;
+    proofStats: [StatItem, StatItem, StatItem];
+  };
+  pricing: {
+    kicker: string;
+    heading: string;
+    subhead: string;
+    bullets: string[];
+    ctaLabel: string;
   };
   valueProps: LabeledGroup[];
   whoItIsFor: string[];
-  skills: {
-    intro: string;
-    groups: LabeledGroup[];
-  };
-  certifications: {
-    intro: string;
-    items: string[];
-    note: string;
-  };
-  tools: {
-    intro: string;
-    groups: LabeledGroup[];
-  };
-  accomplishments: {
-    intro: string;
-    examples: string[];
-    disclaimer: string;
-  };
+  skills: { intro: string; groups: LabeledGroup[] };
+  certifications: { intro: string; items: string[]; note: string };
+  tools: { intro: string; groups: LabeledGroup[] };
+  accomplishments: { intro: string; examples: string[]; disclaimer: string };
   howItWorks: { title: string; body: string }[];
-  ats: {
-    heading: string;
-    body: string[];
-  };
+  ats: { heading: string; body: string[] };
   faqs: FaqItem[];
-  closingCta: {
-    heading: string;
-    body: string;
-    ctaLabel: string;
-  };
+  closingCta: { kicker: string; heading: string; body: string; ctaLabel: string };
 };
 
 export function tradeLandingPath(content: TradeLandingContent): string {
@@ -125,7 +116,7 @@ export function buildTradeLandingJsonLd(content: TradeLandingContent) {
         itemListElement: [
           { "@type": "ListItem", position: 1, name: "Home", item: SITE_URL },
           { "@type": "ListItem", position: 2, name: "Resume Builder", item: `${SITE_URL}/resume-builder` },
-          { "@type": "ListItem", position: 3, name: content.hero.heading, item: url },
+          { "@type": "ListItem", position: 3, name: content.shortName, item: url },
         ],
       },
       {
@@ -148,6 +139,7 @@ export function buildTradeLandingJsonLd(content: TradeLandingContent) {
 export const HVAC_LANDING: TradeLandingContent = {
   slug: slugForTradeTrack("HVAC & Refrigeration"),
   trade: "HVAC & Refrigeration",
+  shortName: "HVAC Resume Builder",
   seoTitle: "HVAC Resume Builder | HVAC Technician Resume | TRADE HUSTL3",
   seoDescription:
     "TRADE HUSTL3's HVAC Resume Builder turns your EPA 608, tools, and field experience into an ATS-ready HVAC technician resume. $9.99 one-time, no subscription.",
@@ -164,11 +156,32 @@ export const HVAC_LANDING: TradeLandingContent = {
   ],
 
   hero: {
-    eyebrow: "/ HVAC & REFRIGERATION RESUME BUILDER",
-    heading: "AN HVAC RESUME",
-    headingAccent: "BUILT FROM THE ROOFTOP DOWN.",
+    kicker: "/ HVAC & REFRIGERATION RESUME BUILDER",
+    heading: "AN HVAC RESUME BUILT",
+    headingAccent: "FROM THE ROOFTOP DOWN.",
     lead:
       "You diagnose refrigerant faults, troubleshoot contactors and capacitors, run PM routes, and braze line sets. Most resume tools flatten all of that into “performed HVAC maintenance.” TRADE HUSTL3 turns your EPA 608, the systems you’ve serviced, and your real field results into an ATS-ready HVAC technician resume.",
+    ctaLabel: "Build my HVAC resume",
+    proofStats: [
+      { value: "$9.99", label: "One-time · no subscription" },
+      { value: "EPA 608", label: "Certifications up top" },
+      { value: "3", label: "Corrections within 7 days" },
+    ],
+  },
+
+  pricing: {
+    kicker: "/ ONE STRAIGHTFORWARD PACKAGE",
+    heading: "PREVIEW FIRST. PAY ONCE.",
+    subhead:
+      "Your HVAC resume is built before checkout. Review the watermarked preview, then pay once to remove the watermark.",
+    bullets: [
+      "One completed HVAC resume · watermarked preview before payment",
+      "EPA 608 and certifications placed where ATS looks first",
+      "ATS-friendly structure across the HVAC & Refrigeration track",
+      "Up to 3 corrections within 7 days",
+      "Clean PDF + editable DOCX after payment",
+      "No subscription · no auto-renewal",
+    ],
     ctaLabel: "Build my HVAC resume",
   },
 
@@ -360,7 +373,7 @@ export const HVAC_LANDING: TradeLandingContent = {
   ],
 
   ats: {
-    heading: "Written to get through HVAC applicant tracking systems",
+    heading: "BUILT TO CLEAR HVAC ATS SCREENS",
     body: [
       "Most HVAC applications are parsed by an applicant tracking system (ATS) before a person sees them. TRADE HUSTL3 uses standard section headings — Summary, Certifications, Skills, Experience, Education — and avoids the tables, columns, and graphics that trip parsers up.",
       "Paste the job posting into the intake and the builder prioritizes the language you already have that matches it: EPA 608, preventive maintenance, RTU, split system, heat pump, refrigerant, electrical troubleshooting, diagnostics.",
@@ -412,7 +425,8 @@ export const HVAC_LANDING: TradeLandingContent = {
   ],
 
   closingCta: {
-    heading: "Turn your HVAC field experience into a job-ready resume",
+    kicker: "/ READY WHEN YOU ARE",
+    heading: "YOUR HVAC RESUME, BUILT RIGHT.",
     body: "Guided HVAC intake. EPA 608 and certifications up top. ATS-friendly structure. Clean PDF and editable DOCX. One-time $9.99 — preview before you pay.",
     ctaLabel: "Build my HVAC resume",
   },
