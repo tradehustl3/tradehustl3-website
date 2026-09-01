@@ -91,20 +91,16 @@ export default function ResumeBuilderPage() {
             })}
           </ol>
           <p className="rb-tracks-note">
-            Building for one trade? Start with a trade-specific guide —{" "}
-            {TRADE_LANDING_PAGES.map((page, index) => (
-              <span key={page.slug}>
-                <a href={tradeLandingPath(page)}>{page.shortName}</a>
-                {index < TRADE_LANDING_PAGES.length - 1
-                  ? index === TRADE_LANDING_PAGES.length - 2
-                    ? ", or "
-                    : ", "
-                  : "."}
-              </span>
-            ))}{" "}
-            Each covers the skills, certifications, tools, and example bullets for that trade, then the same
-            guided intake and $9.99 package.
+            Building for one trade? Each guide below has the skills, certifications, tools, and example
+            resume bullets for that trade — then the same guided intake and $9.99 package.
           </p>
+          <ul className="rb-tracks-guides" aria-label="Trade-specific Resume Builder guides">
+            {TRADE_LANDING_PAGES.map((page) => (
+              <li key={page.slug}>
+                <a href={tradeLandingPath(page)}>{page.shortName}</a>
+              </li>
+            ))}
+          </ul>
         </div>
       </section>
 

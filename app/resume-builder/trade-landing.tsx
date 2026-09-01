@@ -63,22 +63,21 @@ function ChipCards({ groups }: { groups: LabeledGroup[] }) {
 }
 
 /** Crawlable links to the other trade landing pages — cross-linking without
- *  burying the main conversion path. */
+ *  burying the main conversion path or repeating "Resume Builder" seven times. */
 function SiblingGuides({ content }: { content: TradeLandingContent }) {
   const siblings = TRADE_LANDING_PAGES.filter((page) => page.slug !== content.slug);
   if (siblings.length === 0) return null;
   return (
-    <p className={styles.sectionLead}>
-      Building for a different trade? See the{" "}
-      {siblings.map((sibling, index) => (
-        <span key={sibling.slug}>
-          <a className={styles.inlineLink} href={tradeLandingPath(sibling)}>
-            {sibling.shortName}
-          </a>
-          {index < siblings.length - 1 ? (index === siblings.length - 2 ? " and " : ", ") : "."}
-        </span>
-      ))}
-    </p>
+    <div className={styles.siblingGuides}>
+      <p className={styles.sectionLead}>Building for a different trade? See the other guides:</p>
+      <ul aria-label="Other trade Resume Builder guides">
+        {siblings.map((sibling) => (
+          <li key={sibling.slug}>
+            <a href={tradeLandingPath(sibling)}>{sibling.breadcrumbName}</a>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
 

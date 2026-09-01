@@ -48,7 +48,18 @@ test("intake hrefs carry the preselected trade slug", () => {
 
 test("every published trade landing page preselects a real, resolvable trade", () => {
   const slugs = TRADE_LANDING_PAGES.map((page) => page.slug);
-  assert.deepEqual(slugs, ["hvac", "facilities-maintenance", "electrician"]);
+  assert.deepEqual(slugs, [
+    "hvac",
+    "facilities-maintenance",
+    "electrician",
+    "plumbing",
+    "welding-fabrication",
+    "construction-carpentry",
+    "general-labor",
+  ]);
+  // The seven-page cluster is complete: one landing page per intake trade.
+  assert.equal(TRADE_LANDING_PAGES.length, TRADE_TRACKS.length);
+  assert.equal(new Set(slugs).size, slugs.length);
 
   for (const page of TRADE_LANDING_PAGES) {
     // slug <-> track are consistent

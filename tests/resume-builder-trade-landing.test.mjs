@@ -22,7 +22,7 @@ const PAGES = [
   {
     slug: "hvac",
     title: "HVAC Resume Builder | HVAC Technician Resume | TRADE HUSTL3",
-    descPrefix: "TRADE HUSTL3&#x27;s HVAC Resume Builder turns your EPA 608, tools, and field experience into an ATS-ready HVAC technician resume.",
+    descPrefix: "TRADE HUSTL3's HVAC Resume Builder turns your EPA 608, tools, and field experience into an ATS-ready HVAC technician resume.",
     breadcrumb: "HVAC",
     heroLocation: "hvac_hero",
     analyticsItem: "resume_builder_hvac",
@@ -79,6 +79,86 @@ const PAGES = [
       "State electrical apprentice registration",
     ],
   },
+  {
+    slug: "plumbing",
+    title: "Plumbing Resume Builder | Plumber Resume | TRADE HUSTL3",
+    descPrefix: "Turn your service calls, rough-in, fixture sets, and drain and water-heater work into an ATS-ready plumber resume.",
+    breadcrumb: "Plumbing",
+    heroLocation: "plumbing_hero",
+    analyticsItem: "resume_builder_plumbing",
+    terms: [
+      "DWV (drain, waste, vent) rough-in",
+      "Water distribution — copper, PEX, CPVC, PVC",
+      "Soldering, brazing, press &amp; solvent-weld joints",
+      "Water heater &amp; tankless install and repair",
+      "Drain cleaning, augering &amp; hydro-jetting",
+      "Backflow preventers &amp; testing",
+      "Sewer camera &amp; line locating",
+      "Journeyman plumber license (state or municipal)",
+      "Registered plumbing apprentice",
+      "Pipe wrenches &amp; basin wrench",
+    ],
+  },
+  {
+    slug: "welding-fabrication",
+    title: "Welding Resume Builder | Welder & Fabricator Resume | TRADE HUSTL3",
+    descPrefix: "Turn your processes, positions, materials, and fit-up into an ATS-ready welder and fabricator resume.",
+    breadcrumb: "Welding & Fabrication",
+    heroLocation: "welding_hero",
+    analyticsItem: "resume_builder_welding_fabrication",
+    terms: [
+      "GMAW / MIG (short-circuit, spray, pulse)",
+      "FCAW (gas-shielded &amp; self-shielded)",
+      "GTAW / TIG (steel, stainless, aluminum)",
+      "Pipe positions 2G, 5G, 6G",
+      "Blueprint &amp; weld-symbol reading",
+      "Fit-up, tacking &amp; clamping",
+      "Plasma &amp; track-torch cutting",
+      "AWS D1.1 structural (process / position)",
+      "ASME Section IX (process / position / thickness)",
+      "6G pipe qualification",
+    ],
+  },
+  {
+    slug: "construction-carpentry",
+    title: "Carpenter & Construction Resume Builder | TRADE HUSTL3",
+    descPrefix: "Turn your framing, finish, layout, and jobsite work into an ATS-ready carpenter and construction resume.",
+    breadcrumb: "Construction & Carpentry",
+    heroLocation: "construction_hero",
+    analyticsItem: "resume_builder_construction_carpentry",
+    terms: [
+      "Wall, floor &amp; roof framing",
+      "Layout from plans — lines, grade, elevations",
+      "Door hanging &amp; hardware",
+      "Base, casing, crown &amp; build-ups",
+      "Formwork — footings, walls, flatwork",
+      "Blueprint &amp; spec reading",
+      "Punch lists, QC &amp; cleanup",
+      "Carpentry apprenticeship (union or non-union)",
+      "Framing &amp; finish nailers",
+      "Laser level &amp; transit / builder’s level",
+    ],
+  },
+  {
+    slug: "general-labor",
+    title: "General Labor Resume Builder | Laborer & Maintenance | TRADE HUSTL3",
+    descPrefix: "Turn your material handling, basic repairs, and work-order support into an ATS-ready general labor and maintenance resume.",
+    breadcrumb: "General Labor / Maintenance",
+    heroLocation: "general_labor_hero",
+    analyticsItem: "resume_builder_general_labor",
+    terms: [
+      "Preventive maintenance — filters, belts, lubrication",
+      "Light electrical — outlets, switches, lamps, breaker resets",
+      "Light plumbing — faucets, flush valves, supply lines, clogs",
+      "Work-order intake, updates &amp; close-out",
+      "CMMS / mobile work-order apps",
+      "Loading, unloading &amp; staging material",
+      "Forklift / powered-industrial-truck operator",
+      "Grounds — mowing, trimming, snow, salt",
+      "Lockout/tagout (basic)",
+      "Pallet jack &amp; hand truck",
+    ],
+  },
 ];
 
 for (const page of PAGES) {
@@ -106,15 +186,22 @@ for (const page of PAGES) {
     assert.doesNotMatch(html, /guarantee[ds]?\s+(an?\s+)?(interview|job|hire|placement)/i);
     assert.doesNotMatch(html, /(beat|game|trick|hack)\s+the\s+(ats|bots?|system)/i);
     assert.match(html, /these are examples of how/i, `${page.slug} accomplishment disclaimer`);
-    assert.match(html, /it does not invent experience/i, `${page.slug} fabrication disclaimer`);
+    assert.match(
+      html,
+      /it does not invent (experience|processes|hours)/i,
+      `${page.slug} "does not invent" disclaimer`,
+    );
   });
 
   test(`${page.slug}: exact SEO title/description, production canonical, OG + Twitter`, async () => {
     const html = await (await renderPath(path)).text();
 
-    assert.ok(html.includes(`<title>${page.title}</title>`), `${page.slug} <title>`);
+    // Titles/descriptions are HTML-attribute-escaped in the rendered markup.
+    const esc = (s) => s.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/'/g, "&#x27;");
+
+    assert.ok(html.includes(`<title>${esc(page.title)}</title>`), `${page.slug} <title>`);
     assert.ok(
-      html.includes(`<meta name="description" content="${page.descPrefix}`),
+      html.includes(`<meta name="description" content="${esc(page.descPrefix)}`),
       `${page.slug} meta description prefix`,
     );
     assert.match(
@@ -123,7 +210,7 @@ for (const page of PAGES) {
       `${page.slug} canonical`,
     );
     assert.match(html, new RegExp(`property="og:url" content="https://tradehustl3\\.com${path}"`));
-    assert.ok(html.includes(`property="og:title" content="${page.title}"`), `${page.slug} og:title`);
+    assert.ok(html.includes(`property="og:title" content="${esc(page.title)}"`), `${page.slug} og:title`);
     assert.match(html, /name="twitter:card" content="summary_large_image"/);
     // Canonical must never point at a Cloudflare preview host.
     assert.doesNotMatch(html, /rel="canonical"[^>]*workers\.dev/);
@@ -156,21 +243,41 @@ for (const page of PAGES) {
   });
 }
 
-test("the Resume Builder hub is a crawlable trade hub linking every trade page", async () => {
+test("the Resume Builder hub is a crawlable trade hub linking all seven trade pages", async () => {
   const html = await (await renderPath("/resume-builder")).text();
+  assert.equal(PAGES.length, 7, "expected the full seven-page trade cluster");
   for (const page of PAGES) {
     assert.match(html, new RegExp(`href="/resume-builder/${page.slug}"`), `hub missing link to ${page.slug}`);
   }
-  for (const label of ["HVAC Resume Builder", "Facilities Maintenance Resume Builder", "Electrician Resume Builder"]) {
+  for (const label of [
+    "HVAC Resume Builder",
+    "Facilities Maintenance Resume Builder",
+    "Electrician Resume Builder",
+    "Plumbing Resume Builder",
+    "Welding &amp; Fabrication Resume Builder",
+    "Construction &amp; Carpentry Resume Builder",
+    "General Labor Resume Builder",
+  ]) {
     assert.ok(html.includes(label), `hub missing descriptive anchor text: ${label}`);
   }
 });
 
-test("each trade page cross-links to its sibling trade guides", async () => {
-  const html = await (await renderPath("/resume-builder/hvac")).text();
-  assert.match(html, /href="\/resume-builder\/facilities-maintenance"/);
-  assert.match(html, /href="\/resume-builder\/electrician"/);
+test("each trade page cross-links to its six sibling trade guides", async () => {
+  const html = await (await renderPath("/resume-builder/plumbing")).text();
   assert.match(html, /building for a different trade\?/i);
+  for (const slug of [
+    "hvac",
+    "facilities-maintenance",
+    "electrician",
+    "welding-fabrication",
+    "construction-carpentry",
+    "general-labor",
+  ]) {
+    assert.match(html, new RegExp(`href="/resume-builder/${slug}"`), `plumbing missing sibling link ${slug}`);
+  }
+  // never lists itself as a sibling
+  const guideBlock = html.slice(html.indexOf("Other trade Resume Builder guides"));
+  assert.doesNotMatch(guideBlock.slice(0, 600), /href="\/resume-builder\/plumbing"/);
 });
 
 test("regression: /resume-builder and /resume-builder/hvac still render on the shared header", async () => {
