@@ -69,6 +69,20 @@ FROM ebook_orders
 WHERE stripe_payment_intent_id IS NULL;
 ```
 
+## Resume generation with Gemini
+
+The Resume Builder uses Gemini through Google Cloud's Agent Platform API. Generation stays server-side and is deliberately bounded to one structured response per run: one candidate, low thinking, a 2,200-token output ceiling, and a JSON schema matching the resume document renderer. The existing deterministic validation rejects incomplete output and numeric claims that are not present in the customer's intake or correction request.
+
+Configure these Cloudflare Worker runtime values:
+
+- `RESUME_AI_PROVIDER=gemini` as a regular variable.
+- `GOOGLE_CLOUD_PROJECT_ID=trade-hustl3-resume-ai` as a regular variable.
+- `GOOGLE_CLOUD_LOCATION=global` as a regular variable.
+- `GEMINI_MODEL=gemini-3.8-flash` as a regular variable.
+- `GOOGLE_CLOUD_API_KEY` as an encrypted secret with its API restriction limited to the Agent Platform API. Never create a `NEXT_PUBLIC` version of this value or place it in browser code.
+
+`ANTHROPIC_API_KEY` and `CLAUDE_MODEL` remain available as a temporary rollback path. Set `RESUME_AI_PROVIDER=anthropic` only if a staged rollback is required.
+
 ## Production build
 
 ```bash

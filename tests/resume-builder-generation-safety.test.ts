@@ -203,6 +203,75 @@ test("entry-level candidate with no employment history generates successfully", 
   assert.equal(h.objects.size, 3);
 });
 
+test("Gemini generation uses structured output, bounded thinking, and a server-side API key", async () => {
+  const h = harness();
+  let calledUrl = "";
+  let calledInit: RequestInit | undefined;
+  const googleApiKey = "google-test-key-never-send-to-browser";
+  const dependencies: ResumeBuilderDependencies = {
+    geminiFetch: (async (input, init) => {
+      calledUrl = String(input);
+      calledInit = init;
+      return new Response(JSON.stringify({
+        candidates: [{
+          finishReason: "STOP",
+          content: { parts: [{ text: JSON.stringify(entryLevelResume) }] },
+        }],
+        usageMetadata: {
+          promptTokenCount: 11,
+          candidatesTokenCount: 22,
+          thoughtsTokenCount: 3,
+        },
+      }), { status: 200, headers: { "Content-Type": "application/json" } });
+    }) as typeof fetch,
+    createDocx: async (generated) => encoder.encode(`DOCX:${JSON.stringify(generated)}`),
+    createPdf: async (generated, watermarked) => encoder.encode(`${watermarked ? "PREVIEW" : "PDF"}:${JSON.stringify(generated)}`),
+  };
+
+  const response = await handleResumeBuilderRoute(
+    request(),
+    {
+      DB: h.DB as unknown as D1Database,
+      BOOKS: h.BOOKS as unknown as R2Bucket,
+      RESUME_AI_PROVIDER: "gemini",
+      GOOGLE_CLOUD_API_KEY: googleApiKey,
+      GOOGLE_CLOUD_PROJECT_ID: "trade-hustl3-resume-ai",
+    },
+    dependencies,
+  );
+
+  assert.ok(response);
+  assert.equal(response.status, 200);
+  assert.match(calledUrl, /projects\/trade-hustl3-resume-ai\/locations\/global\/publishers\/google\/models\/gemini-3\.8-flash:generateContent$/);
+  assert.doesNotMatch(calledUrl, new RegExp(googleApiKey));
+  const headers = new Headers(calledInit?.headers);
+  assert.equal(headers.get("x-goog-api-key"), googleApiKey);
+  const bodyText = String(calledInit?.body);
+  assert.doesNotMatch(bodyText, new RegExp(googleApiKey));
+  const body = JSON.parse(bodyText) as {
+    systemInstruction: { parts: Array<{ text: string }> };
+    generationConfig: {
+      maxOutputTokens: number;
+      candidateCount: number;
+      responseMimeType: string;
+      responseSchema: { type: string };
+      thinkingConfig: { thinkingLevel: string; includeThoughts: boolean };
+    };
+  };
+  assert.equal(body.generationConfig.maxOutputTokens, 2_200);
+  assert.equal(body.generationConfig.candidateCount, 1);
+  assert.equal(body.generationConfig.responseMimeType, "application/json");
+  assert.equal(body.generationConfig.responseSchema.type, "OBJECT");
+  assert.deepEqual(body.generationConfig.thinkingConfig, { thinkingLevel: "LOW", includeThoughts: false });
+  assert.match(body.systemInstruction.parts[0].text, /desired target title does not prove/i);
+  assert.match(body.systemInstruction.parts[0].text, /Salesforce/i);
+  const generation = h.batched.find((item) => /INSERT INTO resume_generations/i.test(item.sql));
+  assert.ok(generation);
+  assert.equal(generation.values[4], "gemini-3.8-flash");
+  assert.equal(generation.values[5], 11);
+  assert.equal(generation.values[6], 25);
+});
+
 test("self-employed candidate with no named employer generates successfully", async () => {
   const h = harness({ intake: {
     contact: { fullName: "Rosa Delgado" },
