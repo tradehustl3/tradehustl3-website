@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import "./resume-builder.css";
-import "./ats-score.css";
 
 export const metadata: Metadata = {
   title: {
