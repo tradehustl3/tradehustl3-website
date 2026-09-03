@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
+import { scoreAtsReadiness, scoreCompletedResume, type AtsScore } from "../ats-score";
 
 type ResumeTheme = "plain" | "navy";
 
@@ -16,6 +17,8 @@ type Resume = {
   correctionsRemaining: number;
   previewUrl: string | null;
   downloads: { pdf: string; docx: string } | null;
+  intake: unknown;
+  targetJobPosting: string | null;
 };
 
 const THEME_OPTIONS: { value: ResumeTheme; label: string; note: string }[] = [
@@ -33,6 +36,33 @@ type GenerationFailure = {
   intakeUrl?: string | null;
   message?: string;
 };
+
+function AtsScoreCard({ score, completed = false, compact = false }: { score: AtsScore; completed?: boolean; compact?: boolean }) {
+  return (
+    <section className={`rb-ats-card${compact ? " rb-ats-card-compact" : ""}`} aria-label={`${completed ? "Resume ATS" : "ATS readiness"} grade ${score.grade}`}>
+      <div className="rb-ats-head">
+        <div>
+          <p>/ {completed ? "HUSTL3 RESUME ATS GRADE" : "HUSTL3 ATS READINESS GRADE"}</p>
+          <h2>{completed ? "HOW THE FINISHED RESUME STACKS UP." : "HOW STRONG IS YOUR SOURCE INFO?"}</h2>
+        </div>
+        <div className="rb-ats-grade"><strong>{score.grade}</strong><span>{score.score} / 100</span></div>
+      </div>
+      <div className="rb-ats-meter" aria-hidden="true" style={{ "--ats-score": `${score.score}%` } as React.CSSProperties}><span /></div>
+      <p className="rb-ats-label">{score.label}</p>
+      <div className="rb-ats-columns">
+        <div>
+          <h4>What is working</h4>
+          <ul>{score.strengths.map((item) => <li key={item}>{item}</li>)}</ul>
+        </div>
+        <div>
+          <h4>What can raise the grade</h4>
+          <ul>{score.improvements.length ? score.improvements.map((item) => <li key={item}>{item}</li>) : <li>No major readiness gaps detected from the information supplied.</li>}</ul>
+        </div>
+      </div>
+      <small className="rb-ats-disclaimer">TRADE HUSTL3 ATS scores are guidance based on resume completeness, structure, trade relevance, and job-posting alignment. They do not guarantee acceptance by any employer or applicant tracking system.</small>
+    </section>
+  );
+}
 
 export function ResumeReview() {
   const [resumeId] = useState(() => typeof window === "undefined"
@@ -107,12 +137,12 @@ export function ResumeReview() {
           setIntakeNotice(result);
           return;
         }
-        throw new Error(result.message || "We could not complete this AI run.");
+        throw new Error(result.message || "We could not complete this HUSTL3 BOT run.");
       }
       await load(resumeId);
       setMessage(correctionRequest ? "Correction applied. Review the updated watermarked copy." : "Your first resume is ready for review.");
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "We could not complete this AI run.");
+      setMessage(error instanceof Error ? error.message : "We could not complete this HUSTL3 BOT run.");
     } finally {
       setWorking(false);
     }
@@ -209,17 +239,28 @@ export function ResumeReview() {
   }
 
   const hasDraft = Boolean(resume.previewUrl);
+  const scoreInput = {
+    intake: resume.intake,
+    trade: resume.trade,
+    title: resume.title,
+    targetJobPosting: resume.targetJobPosting,
+  };
+  const atsScore = hasDraft
+    ? scoreCompletedResume({ ...scoreInput, theme: resume.theme, hasPreview: true })
+    : scoreAtsReadiness(scoreInput);
 
   return (
     <div className="rb-review-workspace">
       <section className="rb-review-topbar">
         <div><p className="rb-kicker">/ YOUR RESUME WORKSPACE</p><h1>{resume.title}</h1><span>{resume.trade}</span></div>
-        <div className="rb-run-meter" aria-label={`${resume.runsUsed} of ${resume.runsTotal} AI runs used`}>
-          <div><span>AI runs</span><strong>{resume.runsUsed} / {resume.runsTotal}</strong></div>
+        <div className="rb-run-meter" aria-label={`${resume.runsUsed} of ${resume.runsTotal} HUSTL3 BOT runs used`}>
+          <div><span>HUSTL3 BOT runs</span><strong>{resume.runsUsed} / {resume.runsTotal}</strong></div>
           <ol>{Array.from({ length: resume.runsTotal }, (_, index) => <li className={index < resume.runsUsed ? "used" : ""} key={index} />)}</ol>
           <small>Initial build + 3 corrections</small>
         </div>
       </section>
+
+      <AtsScoreCard score={atsScore} completed={hasDraft} />
 
       {intakeNotice ? (
         <section className="rb-intake-notice" role="alert">
@@ -232,7 +273,7 @@ export function ResumeReview() {
               <ul>{intakeNotice.missing.map((item) => <li key={item}>{item}</li>)}</ul>
             </div>
           ) : null}
-          <p className="rb-intake-reassurance">This failed attempt used no AI run, and any previous resume files are unchanged.</p>
+          <p className="rb-intake-reassurance">This failed attempt used no HUSTL3 BOT run, and any previous resume files are unchanged.</p>
           <a className="rb-button rb-button-primary" href={intakeNotice.intakeUrl ?? "/resume-builder/intake"}>Return to intake <span>→</span></a>
         </section>
       ) : null}
@@ -240,7 +281,7 @@ export function ResumeReview() {
       {!hasDraft ? (
         <section className="rb-first-build">
           <div className="rb-blueprint" aria-hidden="true"><span>ATS</span><i /><i /><i /><i /></div>
-          <div><p className="rb-kicker">/ PREVIEW BEFORE YOU PAY</p><h2>READY FOR THE FIRST BUILD.</h2><p>Claude Sonnet will organize only the experience and facts you provided—no invented licenses, employers, or results. You will review a protected, logo-watermarked copy before checkout.</p>
+          <div><p className="rb-kicker">/ PREVIEW BEFORE YOU PAY</p><h2>READY FOR THE FIRST BUILD.</h2><p>HUSTL3 BOT will organize only the experience and facts you provided—no invented licenses, employers, or results. You will review a protected, logo-watermarked copy before checkout.</p>
           <span className="rb-theme-label">Choose your template</span>
           {renderThemePicker()}
           <button className="rb-button rb-button-primary" type="button" disabled={working} onClick={() => void runGeneration()}>{working ? "Building your resume…" : "Build my watermarked preview"} <span>→</span></button></div>
@@ -253,6 +294,7 @@ export function ResumeReview() {
           </div>
 
           <aside className="rb-review-sidebar">
+            <AtsScoreCard score={atsScore} completed compact />
             <div className="rb-review-status"><p className="rb-kicker">/ {resume.paid ? "REVIEW + REFINE" : "PREVIEW BEFORE YOU PAY"}</p><h2>{resume.paid ? "MAKE IT SOUND LIKE YOU." : "LIKE WHAT YOU SEE?"}</h2><p className="rb-review-desc">{resume.paid ? "Check names, dates, certifications, job duties, and contact information before downloading." : "Your first resume is ready. Pay once to remove the watermark, unlock the clean PDF and DOCX, and receive up to three corrections."}</p>
               <span className="rb-theme-label">Template</span>
               {renderThemePicker()}
@@ -260,7 +302,7 @@ export function ResumeReview() {
             </div>
 
             {resume.paid ? <form className="rb-correction-form" onSubmit={submitCorrection}>
-              <div className="rb-correction-count"><strong>{resume.correctionsRemaining}</strong><span>AI corrections remaining</span></div>
+              <div className="rb-correction-count"><strong>{resume.correctionsRemaining}</strong><span>HUSTL3 BOT corrections remaining</span></div>
               <label htmlFor="correctionRequest">What needs to change?</label>
               <textarea id="correctionRequest" name="correctionRequest" rows={6} maxLength={2000} required disabled={working || resume.correctionsRemaining < 1} placeholder="Example: Change the end date at Apex Mechanical to June 2025 and emphasize my rooftop-unit diagnostics." />
               <button className="rb-button rb-button-secondary-dark rb-button-full" type="submit" disabled={working || resume.correctionsRemaining < 1}>{working ? "Applying correction…" : resume.correctionsRemaining > 0 ? "Apply one correction" : "All corrections used"} <span>↻</span></button>
@@ -286,7 +328,7 @@ export function ResumeReview() {
       )}
 
       {message ? <p className="rb-workspace-message" role="status">{message}</p> : null}
-      {working ? <div className="rb-working-overlay" role="status"><span /><strong>CLAUDE SONNET IS BUILDING</strong><small>This can take a minute. Keep this page open.</small></div> : null}
+      {working ? <div className="rb-working-overlay" role="status"><span /><strong>HUSTL3 BOT IS BUILDING</strong><small>This can take a minute. Keep this page open.</small></div> : null}
     </div>
   );
 }
