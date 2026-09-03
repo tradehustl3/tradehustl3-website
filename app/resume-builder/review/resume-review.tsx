@@ -77,9 +77,6 @@ export function ResumeReview() {
     queueMicrotask(() => void load(resumeId));
   }, [load, resumeId]);
 
-  // The guided wizard sends the user here with ?build=1 to start the first
-  // protected preview automatically. This still routes through the same
-  // /generate endpoint, entitlement checks, and intake-correction handling.
   useEffect(() => {
     if (!autoBuild || autoBuildFired.current) return;
     if (loading || working || !resume) return;
@@ -107,12 +104,12 @@ export function ResumeReview() {
           setIntakeNotice(result);
           return;
         }
-        throw new Error(result.message || "We could not complete this AI run.");
+        throw new Error(result.message || "HUSTL3 BOT could not complete this build. Please try again.");
       }
       await load(resumeId);
       setMessage(correctionRequest ? "Correction applied. Review the updated watermarked copy." : "Your first resume is ready for review.");
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "We could not complete this AI run.");
+      setMessage(error instanceof Error ? error.message : "HUSTL3 BOT could not complete this build. Please try again.");
     } finally {
       setWorking(false);
     }
@@ -240,10 +237,10 @@ export function ResumeReview() {
       {!hasDraft ? (
         <section className="rb-first-build">
           <div className="rb-blueprint" aria-hidden="true"><span>ATS</span><i /><i /><i /><i /></div>
-          <div><p className="rb-kicker">/ PREVIEW BEFORE YOU PAY</p><h2>READY FOR THE FIRST BUILD.</h2><p>Claude Sonnet will organize only the experience and facts you provided—no invented licenses, employers, or results. You will review a protected, logo-watermarked copy before checkout.</p>
+          <div><p className="rb-kicker">/ PREVIEW BEFORE YOU PAY</p><h2>READY FOR THE FIRST BUILD.</h2><p>HUSTL3 BOT will organize only the experience and facts you provided—no invented licenses, employers, or results. You will review a protected, logo-watermarked copy before checkout.</p>
           <span className="rb-theme-label">Choose your template</span>
           {renderThemePicker()}
-          <button className="rb-button rb-button-primary" type="button" disabled={working} onClick={() => void runGeneration()}>{working ? "Building your resume…" : "Build my watermarked preview"} <span>→</span></button></div>
+          <button className="rb-button rb-button-primary" type="button" disabled={working} onClick={() => void runGeneration()}>{working ? "HUSTL3 BOT is building…" : "Build my watermarked preview"} <span>→</span></button></div>
         </section>
       ) : (
         <section className="rb-review-grid">
@@ -263,7 +260,7 @@ export function ResumeReview() {
               <div className="rb-correction-count"><strong>{resume.correctionsRemaining}</strong><span>AI corrections remaining</span></div>
               <label htmlFor="correctionRequest">What needs to change?</label>
               <textarea id="correctionRequest" name="correctionRequest" rows={6} maxLength={2000} required disabled={working || resume.correctionsRemaining < 1} placeholder="Example: Change the end date at Apex Mechanical to June 2025 and emphasize my rooftop-unit diagnostics." />
-              <button className="rb-button rb-button-secondary-dark rb-button-full" type="submit" disabled={working || resume.correctionsRemaining < 1}>{working ? "Applying correction…" : resume.correctionsRemaining > 0 ? "Apply one correction" : "All corrections used"} <span>↻</span></button>
+              <button className="rb-button rb-button-secondary-dark rb-button-full" type="submit" disabled={working || resume.correctionsRemaining < 1}>{working ? "HUSTL3 BOT is updating…" : resume.correctionsRemaining > 0 ? "Apply one correction" : "All corrections used"} <span>↻</span></button>
               <small>One submitted correction uses one run. Failed generations are restored automatically.</small>
             </form> : (
               <div className="rb-unpaid-card">
@@ -286,7 +283,7 @@ export function ResumeReview() {
       )}
 
       {message ? <p className="rb-workspace-message" role="status">{message}</p> : null}
-      {working ? <div className="rb-working-overlay" role="status"><span /><strong>CLAUDE SONNET IS BUILDING</strong><small>This can take a minute. Keep this page open.</small></div> : null}
+      {working ? <div className="rb-working-overlay" role="status"><span /><strong>HUSTL3 BOT IS BUILDING</strong><small>This can take a minute. Keep this page open.</small></div> : null}
     </div>
   );
 }
