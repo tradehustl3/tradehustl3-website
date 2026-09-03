@@ -11,9 +11,8 @@ export interface ResumeBuilderEnv {
   STRIPE_RESUME_WEBHOOK_SECRET?: string;
   ANTHROPIC_API_KEY?: string;
   CLAUDE_MODEL?: string;
-  GOOGLE_CLOUD_API_KEY?: string;
-  GOOGLE_CLOUD_PROJECT_ID?: string;
-  GOOGLE_CLOUD_LOCATION?: string;
+  RESUME_AI_BRIDGE_URL?: string;
+  RESUME_AI_BRIDGE_SECRET?: string;
   GEMINI_MODEL?: string;
   RESUME_AI_PROVIDER?: string;
 }
@@ -71,7 +70,6 @@ const RESUME_TOTAL_AI_RUNS = 4;
 const INITIAL_PREVIEW_RUNS = 1;
 const DEFAULT_CLAUDE_MODEL = "claude-sonnet-5";
 const DEFAULT_GEMINI_MODEL = "gemini-3.8-flash";
-const DEFAULT_GOOGLE_CLOUD_LOCATION = "global";
 const GEMINI_MAX_OUTPUT_TOKENS = 2_200;
 const INTAKE_PATH = "/resume-builder/intake";
 // The guided intake collects an unbounded number of work-history roles plus
@@ -1289,7 +1287,7 @@ function resumeAiProvider(env: ResumeBuilderEnv): ResumeAiProvider {
   const configured = env.RESUME_AI_PROVIDER?.trim().toLowerCase();
   if (configured === "gemini") return "gemini";
   if (configured === "anthropic" || configured === "claude") return "anthropic";
-  return env.GOOGLE_CLOUD_API_KEY?.trim() && env.GOOGLE_CLOUD_PROJECT_ID?.trim() ? "gemini" : "anthropic";
+  return env.RESUME_AI_BRIDGE_URL?.trim() && env.RESUME_AI_BRIDGE_SECRET?.trim() ? "gemini" : "anthropic";
 }
 
 function resumeAiModel(env: ResumeBuilderEnv): string {
@@ -1379,24 +1377,23 @@ async function callGemini(
   correctionRequest: string | null,
   dependencies: ResumeBuilderDependencies,
 ): Promise<ResumeModelResult> {
-  const apiKey = env.GOOGLE_CLOUD_API_KEY?.trim();
-  const projectId = env.GOOGLE_CLOUD_PROJECT_ID?.trim();
-  if (!apiKey || !projectId) throw new Error("Gemini is not configured.");
+  const bridgeUrl = env.RESUME_AI_BRIDGE_URL?.trim().replace(/\/$/, "");
+  const bridgeSecret = env.RESUME_AI_BRIDGE_SECRET?.trim();
+  if (!bridgeUrl || !bridgeSecret) throw new Error("Gemini is not configured.");
   const model = env.GEMINI_MODEL?.trim() || DEFAULT_GEMINI_MODEL;
-  const location = env.GOOGLE_CLOUD_LOCATION?.trim() || DEFAULT_GOOGLE_CLOUD_LOCATION;
   const intake = JSON.parse(resume.intake_json) as unknown;
   const prior = resume.generated_json ? JSON.parse(resume.generated_json) as unknown : null;
   const userPrompt = resumeUserPrompt(resume, intake, prior, correctionRequest);
   const geminiFetch = dependencies.geminiFetch ?? fetch;
-  const endpoint = `https://aiplatform.googleapis.com/v1/projects/${encodeURIComponent(projectId)}`
-    + `/locations/${encodeURIComponent(location)}/publishers/google/models/${encodeURIComponent(model)}:generateContent`;
+  const endpoint = `${bridgeUrl}/generate`;
   const response = await geminiFetch(endpoint, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "x-goog-api-key": apiKey,
+      Authorization: `Bearer ${bridgeSecret}`,
     },
     body: JSON.stringify({
+      model,
       systemInstruction: { parts: [{ text: resumeSystemPrompt() }] },
       contents: [{ role: "user", parts: [{ text: userPrompt }] }],
       generationConfig: {

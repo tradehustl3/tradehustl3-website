@@ -203,11 +203,11 @@ test("entry-level candidate with no employment history generates successfully", 
   assert.equal(h.objects.size, 3);
 });
 
-test("Gemini generation uses structured output, bounded thinking, and a server-side API key", async () => {
+test("Gemini generation uses structured output, bounded thinking, and the authenticated bridge", async () => {
   const h = harness();
   let calledUrl = "";
   let calledInit: RequestInit | undefined;
-  const googleApiKey = "google-test-key-never-send-to-browser";
+  const bridgeSecret = "bridge-test-secret-never-send-to-browser";
   const dependencies: ResumeBuilderDependencies = {
     geminiFetch: (async (input, init) => {
       calledUrl = String(input);
@@ -234,21 +234,22 @@ test("Gemini generation uses structured output, bounded thinking, and a server-s
       DB: h.DB as unknown as D1Database,
       BOOKS: h.BOOKS as unknown as R2Bucket,
       RESUME_AI_PROVIDER: "gemini",
-      GOOGLE_CLOUD_API_KEY: googleApiKey,
-      GOOGLE_CLOUD_PROJECT_ID: "trade-hustl3-resume-ai",
+      RESUME_AI_BRIDGE_URL: "https://resume-ai-bridge.example.run.app/",
+      RESUME_AI_BRIDGE_SECRET: bridgeSecret,
     },
     dependencies,
   );
 
   assert.ok(response);
   assert.equal(response.status, 200);
-  assert.match(calledUrl, /projects\/trade-hustl3-resume-ai\/locations\/global\/publishers\/google\/models\/gemini-3\.8-flash:generateContent$/);
-  assert.doesNotMatch(calledUrl, new RegExp(googleApiKey));
+  assert.equal(calledUrl, "https://resume-ai-bridge.example.run.app/generate");
+  assert.doesNotMatch(calledUrl, new RegExp(bridgeSecret));
   const headers = new Headers(calledInit?.headers);
-  assert.equal(headers.get("x-goog-api-key"), googleApiKey);
+  assert.equal(headers.get("authorization"), `Bearer ${bridgeSecret}`);
   const bodyText = String(calledInit?.body);
-  assert.doesNotMatch(bodyText, new RegExp(googleApiKey));
+  assert.doesNotMatch(bodyText, new RegExp(bridgeSecret));
   const body = JSON.parse(bodyText) as {
+    model: string;
     systemInstruction: { parts: Array<{ text: string }> };
     generationConfig: {
       maxOutputTokens: number;
@@ -258,6 +259,7 @@ test("Gemini generation uses structured output, bounded thinking, and a server-s
       thinkingConfig: { thinkingLevel: string; includeThoughts: boolean };
     };
   };
+  assert.equal(body.model, "gemini-3.8-flash");
   assert.equal(body.generationConfig.maxOutputTokens, 2_200);
   assert.equal(body.generationConfig.candidateCount, 1);
   assert.equal(body.generationConfig.responseMimeType, "application/json");
