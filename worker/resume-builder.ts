@@ -11,10 +11,15 @@ export interface ResumeBuilderEnv {
   STRIPE_RESUME_WEBHOOK_SECRET?: string;
   ANTHROPIC_API_KEY?: string;
   CLAUDE_MODEL?: string;
+  RESUME_AI_BRIDGE_URL?: string;
+  RESUME_AI_BRIDGE_SECRET?: string;
+  GEMINI_MODEL?: string;
+  RESUME_AI_PROVIDER?: string;
 }
 
 export interface ResumeBuilderDependencies {
   anthropicFetch?: typeof fetch;
+  geminiFetch?: typeof fetch;
   createDocx?: typeof createResumeDocx;
   createPdf?: typeof createResumePdf;
 }
@@ -64,6 +69,8 @@ const RESUME_PLAN = "resume_mvp_999";
 const RESUME_TOTAL_AI_RUNS = 4;
 const INITIAL_PREVIEW_RUNS = 1;
 const DEFAULT_CLAUDE_MODEL = "claude-sonnet-5";
+const DEFAULT_GEMINI_MODEL = "gemini-3.8-flash";
+const GEMINI_MAX_OUTPUT_TOKENS = 2_200;
 const INTAKE_PATH = "/resume-builder/intake";
 // The guided intake collects an unbounded number of work-history roles plus
 // structured field-value groups. These bounds stay well within Worker limits
@@ -1179,15 +1186,25 @@ export function unsupportedNumbers(
 }
 
 function resumeSystemPrompt(): string {
-  return `You are the TRADE HUSTL3 skilled-trades resume engine. Build an ATS-friendly resume for one of the seven supported trade tracks.
+  return `You are the TRADE HUSTL3 skilled-trades resume engine. Build a competitive, ATS-friendly resume for one of seven supported trade tracks.
 
-Truth and safety rules:
+Evidence rules:
 - Candidate facts may come only from the customer's intake.
 - Use the target job posting only to prioritize relevant wording and keywords. Never treat its requirements as facts about the customer.
-- Never invent employers, dates, certifications, licenses, tools, metrics, education, job duties, leadership, or years of experience.
-- You may improve wording and organize facts, but you may not add factual claims.
+- Never invent or infer employers, dates, historical titles, certifications, licenses, tools, metrics, education, duties, leadership, results, scope, or years of experience.
+- A desired target title does not prove the candidate previously held that title.
+- Do not attach overall years of experience to a specific employer, role, or duty unless the intake dates prove it.
+- Preserve official credential names. Put verified certifications and licenses in certifications. Put safety training such as OSHA 10 in additionalInformation unless the intake explicitly identifies it as a certification.
+- Do not add classifications to named software or equipment. For example, write "managed work orders in Salesforce" unless the intake explicitly calls it a CMMS.
+- Every number in the resume must appear in the intake or customer correction.
+
+Writing rules:
+- Improve organization and wording without adding facts.
 - Do not use first-person pronouns.
-- Use concise, natural trade language and strong action verbs.
+- Use concise, specific trade language and strong action verbs. Avoid "offers," "background includes," "responsible for," filler, and keyword stuffing.
+- Avoid repeating the same wording in the summary and experience bullets.
+- Build the strongest truthful version possible; never manufacture impact to make sparse intake sound stronger.
+- Keep the finished content suitable for a one-to-two-page resume.
 - Return valid JSON only. No markdown and no commentary.
 
 Required JSON shape:
@@ -1196,25 +1213,250 @@ Required JSON shape:
 Use empty arrays for unsupported optional sections. Every experience bullet must be supported by the intake.`;
 }
 
-async function callClaude(
-  env: ResumeBuilderEnv,
-  resume: ResumeRecord,
-  correctionRequest: string | null,
-  dependencies: ResumeBuilderDependencies,
-): Promise<{
+type ResumeAiProvider = "gemini" | "anthropic";
+
+type ResumeModelResult = {
   resume: GeneratedResume;
   inputTokens: number;
   outputTokens: number;
   guardFlags: UnsupportedNumericClaim[];
-}> {
+};
+
+const GEMINI_RESUME_RESPONSE_SCHEMA = {
+  type: "OBJECT",
+  required: ["basics", "summary", "skills", "certifications", "experience", "education", "additionalInformation"],
+  properties: {
+    basics: {
+      type: "OBJECT",
+      required: ["fullName", "targetTitle"],
+      properties: {
+        fullName: { type: "STRING" },
+        targetTitle: { type: "STRING" },
+        location: { type: "STRING" },
+        phone: { type: "STRING" },
+        email: { type: "STRING" },
+      },
+    },
+    summary: { type: "STRING" },
+    skills: { type: "ARRAY", items: { type: "STRING" } },
+    certifications: {
+      type: "ARRAY",
+      items: {
+        type: "OBJECT",
+        required: ["name"],
+        properties: {
+          name: { type: "STRING" },
+          issuer: { type: "STRING" },
+          year: { type: "STRING" },
+        },
+      },
+    },
+    experience: {
+      type: "ARRAY",
+      items: {
+        type: "OBJECT",
+        required: ["jobTitle", "bullets"],
+        properties: {
+          jobTitle: { type: "STRING" },
+          employer: { type: "STRING" },
+          location: { type: "STRING" },
+          startDate: { type: "STRING" },
+          endDate: { type: "STRING" },
+          bullets: { type: "ARRAY", items: { type: "STRING" } },
+        },
+      },
+    },
+    education: {
+      type: "ARRAY",
+      items: {
+        type: "OBJECT",
+        required: ["credential", "institution"],
+        properties: {
+          credential: { type: "STRING" },
+          institution: { type: "STRING" },
+          location: { type: "STRING" },
+          year: { type: "STRING" },
+        },
+      },
+    },
+    additionalInformation: { type: "ARRAY", items: { type: "STRING" } },
+  },
+} as const;
+
+function resumeAiProvider(env: ResumeBuilderEnv): ResumeAiProvider {
+  const configured = env.RESUME_AI_PROVIDER?.trim().toLowerCase();
+  if (configured === "gemini") return "gemini";
+  if (configured === "anthropic" || configured === "claude") return "anthropic";
+  return env.RESUME_AI_BRIDGE_URL?.trim() && env.RESUME_AI_BRIDGE_SECRET?.trim() ? "gemini" : "anthropic";
+}
+
+function resumeAiModel(env: ResumeBuilderEnv): string {
+  return resumeAiProvider(env) === "gemini"
+    ? env.GEMINI_MODEL?.trim() || DEFAULT_GEMINI_MODEL
+    : env.CLAUDE_MODEL?.trim() || DEFAULT_CLAUDE_MODEL;
+}
+
+function compactModelValue(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map(compactModelValue).filter((item) => item !== undefined);
+  }
+  if (value && typeof value === "object") {
+    const entries = Object.entries(value as Record<string, unknown>).flatMap(([key, item]) => {
+      const compacted = compactModelValue(item);
+      if (compacted === undefined) return [];
+      if (Array.isArray(compacted) && compacted.length === 0) return [];
+      if (compacted && typeof compacted === "object" && Object.keys(compacted).length === 0) return [];
+      return [[key, compacted] as const];
+    });
+    return Object.fromEntries(entries);
+  }
+  if (typeof value === "string") return value.trim() || undefined;
+  return value ?? undefined;
+}
+
+function resumeUserPrompt(
+  resume: ResumeRecord,
+  intake: unknown,
+  prior: unknown,
+  correctionRequest: string | null,
+): string {
+  const compactIntake = JSON.stringify(compactModelValue(intake));
+  if (correctionRequest) {
+    return `Revise the current resume using only the requested correction and original intake. Preserve accurate content not affected by the correction.\n\nORIGINAL INTAKE:\n${compactIntake}\n\nTARGET JOB POSTING:\n${resume.target_job_posting ?? ""}\n\nCURRENT RESUME:\n${JSON.stringify(compactModelValue(prior))}\n\nCUSTOMER CORRECTION:\n${correctionRequest}`;
+  }
+  return `Create the resume from this verified intake.\n\nTRADE TRACK:\n${resume.trade}\n\nORIGINAL INTAKE:\n${compactIntake}\n\nTARGET JOB POSTING:\n${resume.target_job_posting ?? ""}`;
+}
+
+function parseModelResume(raw: string): unknown {
+  const trimmed = raw.trim();
+  try {
+    return JSON.parse(trimmed);
+  } catch {
+    const start = trimmed.indexOf("{");
+    const end = trimmed.lastIndexOf("}");
+    if (start < 0 || end <= start) throw new Error("Model returned an invalid resume format.");
+    try {
+      return JSON.parse(trimmed.slice(start, end + 1));
+    } catch {
+      throw new Error("Model returned invalid JSON.");
+    }
+  }
+}
+
+function validateModelResume(
+  parsed: unknown,
+  intake: unknown,
+  resume: ResumeRecord,
+  correctionRequest: string | null,
+): { resume: GeneratedResume; guardFlags: UnsupportedNumericClaim[] } {
+  const validation = validateGeneratedResume(parsed);
+  if (!validation.ok) {
+    throw new ResumeGenerationError(
+      "INTAKE_INFORMATION_REQUIRED",
+      "The generated resume did not contain enough supported information.",
+      validation.missing,
+    );
+  }
+  const generated = validation.resume;
+  const guardFlags = unsupportedNumbers(generated, intake, resume.title, correctionRequest);
+  if (guardFlags.length) {
+    const sections = Array.from(new Set(guardFlags.map((flag) => flag.section)));
+    throw new ResumeGenerationError(
+      "UNSUPPORTED_NUMERIC_CLAIM",
+      "The generated resume contained numeric claims the intake does not support.",
+      [INTAKE_SECTION.numbers],
+      { code: "unsupported_numeric_claim", count: guardFlags.length, sections },
+    );
+  }
+  return { resume: generated, guardFlags };
+}
+
+async function callGemini(
+  env: ResumeBuilderEnv,
+  resume: ResumeRecord,
+  correctionRequest: string | null,
+  dependencies: ResumeBuilderDependencies,
+): Promise<ResumeModelResult> {
+  const bridgeUrl = env.RESUME_AI_BRIDGE_URL?.trim().replace(/\/$/, "");
+  const bridgeSecret = env.RESUME_AI_BRIDGE_SECRET?.trim();
+  if (!bridgeUrl || !bridgeSecret) throw new Error("Gemini is not configured.");
+  const model = env.GEMINI_MODEL?.trim() || DEFAULT_GEMINI_MODEL;
+  const intake = JSON.parse(resume.intake_json) as unknown;
+  const prior = resume.generated_json ? JSON.parse(resume.generated_json) as unknown : null;
+  const userPrompt = resumeUserPrompt(resume, intake, prior, correctionRequest);
+  const geminiFetch = dependencies.geminiFetch ?? fetch;
+  const endpoint = `${bridgeUrl}/generate`;
+  const response = await geminiFetch(endpoint, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${bridgeSecret}`,
+    },
+    body: JSON.stringify({
+      model,
+      systemInstruction: { parts: [{ text: resumeSystemPrompt() }] },
+      contents: [{ role: "user", parts: [{ text: userPrompt }] }],
+      generationConfig: {
+        candidateCount: 1,
+        maxOutputTokens: GEMINI_MAX_OUTPUT_TOKENS,
+        temperature: 0.2,
+        seed: 17,
+        responseMimeType: "application/json",
+        responseSchema: GEMINI_RESUME_RESPONSE_SCHEMA,
+        thinkingConfig: { thinkingLevel: "LOW", includeThoughts: false },
+      },
+    }),
+    signal: AbortSignal.timeout(45_000),
+  });
+  const payload = await response.json() as {
+    candidates?: Array<{
+      content?: { parts?: Array<{ text?: unknown; thought?: unknown }> };
+      finishReason?: unknown;
+    }>;
+    usageMetadata?: {
+      promptTokenCount?: unknown;
+      candidatesTokenCount?: unknown;
+      thoughtsTokenCount?: unknown;
+    };
+    error?: { message?: unknown };
+  };
+  if (!response.ok) {
+    console.error("Gemini resume generation failed", response.status, cleanText(payload.error?.message, 240));
+    throw new Error("Gemini resume generation failed.");
+  }
+  const candidate = payload.candidates?.[0];
+  if (candidate?.finishReason === "MAX_TOKENS") throw new Error("Gemini resume output exceeded the token limit.");
+  const raw = candidate?.content?.parts
+    ?.filter((part) => part.thought !== true && typeof part.text === "string")
+    .map((part) => part.text as string).join("\n") ?? "";
+  const validated = validateModelResume(parseModelResume(raw), intake, resume, correctionRequest);
+  const visibleOutputTokens = typeof payload.usageMetadata?.candidatesTokenCount === "number"
+    ? payload.usageMetadata.candidatesTokenCount
+    : 0;
+  const thoughtTokens = typeof payload.usageMetadata?.thoughtsTokenCount === "number"
+    ? payload.usageMetadata.thoughtsTokenCount
+    : 0;
+  return {
+    ...validated,
+    inputTokens: typeof payload.usageMetadata?.promptTokenCount === "number"
+      ? payload.usageMetadata.promptTokenCount
+      : 0,
+    outputTokens: visibleOutputTokens + thoughtTokens,
+  };
+}
+
+async function callAnthropic(
+  env: ResumeBuilderEnv,
+  resume: ResumeRecord,
+  correctionRequest: string | null,
+  dependencies: ResumeBuilderDependencies,
+): Promise<ResumeModelResult> {
   const apiKey = env.ANTHROPIC_API_KEY?.trim();
   if (!apiKey) throw new Error("Claude is not configured.");
   const model = env.CLAUDE_MODEL?.trim() || DEFAULT_CLAUDE_MODEL;
   const intake = JSON.parse(resume.intake_json) as unknown;
   const prior = resume.generated_json ? JSON.parse(resume.generated_json) as unknown : null;
-  const userPrompt = correctionRequest
-    ? `Revise the current resume using only the requested correction and the original intake. Preserve all accurate content not affected by the correction.\n\nORIGINAL INTAKE:\n${JSON.stringify(intake)}\n\nTARGET JOB POSTING:\n${resume.target_job_posting ?? ""}\n\nCURRENT RESUME:\n${JSON.stringify(prior)}\n\nCUSTOMER CORRECTION:\n${correctionRequest}`
-    : `Create the paid resume from this intake.\n\nTRADE TRACK:\n${resume.trade}\n\nORIGINAL INTAKE:\n${JSON.stringify(intake)}\n\nTARGET JOB POSTING:\n${resume.target_job_posting ?? ""}`;
+  const userPrompt = resumeUserPrompt(resume, intake, prior, correctionRequest);
 
   const anthropicFetch = dependencies.anthropicFetch ?? fetch;
   const response = await anthropicFetch("https://api.anthropic.com/v1/messages", {
@@ -1243,40 +1485,23 @@ async function callClaude(
   }
   const raw = payload.content?.filter((item) => item.type === "text" && typeof item.text === "string")
     .map((item) => item.text as string).join("\n") ?? "";
-  const start = raw.indexOf("{");
-  const end = raw.lastIndexOf("}");
-  if (start < 0 || end <= start) throw new Error("Claude returned an invalid resume format.");
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(raw.slice(start, end + 1));
-  } catch {
-    throw new Error("Claude returned invalid JSON.");
-  }
-  const validation = validateGeneratedResume(parsed);
-  if (!validation.ok) {
-    throw new ResumeGenerationError(
-      "INTAKE_INFORMATION_REQUIRED",
-      "The generated resume did not contain enough supported information.",
-      validation.missing,
-    );
-  }
-  const generated = validation.resume;
-  const guardFlags = unsupportedNumbers(generated, intake, resume.title, correctionRequest);
-  if (guardFlags.length) {
-    const sections = Array.from(new Set(guardFlags.map((flag) => flag.section)));
-    throw new ResumeGenerationError(
-      "UNSUPPORTED_NUMERIC_CLAIM",
-      "The generated resume contained numeric claims the intake does not support.",
-      [INTAKE_SECTION.numbers],
-      { code: "unsupported_numeric_claim", count: guardFlags.length, sections },
-    );
-  }
+  const validated = validateModelResume(parseModelResume(raw), intake, resume, correctionRequest);
   return {
-    resume: generated,
+    ...validated,
     inputTokens: typeof payload.usage?.input_tokens === "number" ? payload.usage.input_tokens : 0,
     outputTokens: typeof payload.usage?.output_tokens === "number" ? payload.usage.output_tokens : 0,
-    guardFlags,
   };
+}
+
+async function callResumeModel(
+  env: ResumeBuilderEnv,
+  resume: ResumeRecord,
+  correctionRequest: string | null,
+  dependencies: ResumeBuilderDependencies,
+): Promise<ResumeModelResult> {
+  return resumeAiProvider(env) === "gemini"
+    ? callGemini(env, resume, correctionRequest, dependencies)
+    : callAnthropic(env, resume, correctionRequest, dependencies);
 }
 
 async function storeResumeFile(
@@ -1374,11 +1599,11 @@ async function generateResume(
 
   const generationId = crypto.randomUUID();
   const newObjectKeys = generationObjectKeys(user.userId, resumeId, generationId);
-  const model = env.CLAUDE_MODEL?.trim() || DEFAULT_CLAUDE_MODEL;
+  const model = resumeAiModel(env);
   try {
-    let generated: Awaited<ReturnType<typeof callClaude>>;
+    let generated: ResumeModelResult;
     try {
-      generated = await callClaude(env, resume, correctionRequest, dependencies);
+      generated = await callResumeModel(env, resume, correctionRequest, dependencies);
     } catch (error) {
       if (error instanceof ResumeGenerationError) throw error;
       throw new ResumeGenerationError("MODEL_OUTPUT_ERROR", "Model output error.");

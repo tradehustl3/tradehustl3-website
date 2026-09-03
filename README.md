@@ -69,6 +69,23 @@ FROM ebook_orders
 WHERE stripe_payment_intent_id IS NULL;
 ```
 
+## Resume generation with Gemini
+
+The Resume Builder uses Gemini through Google Cloud's Agent Platform API. Because production runs on Cloudflare and the Google Cloud organization disables long-lived Google API and service-account keys, the Worker calls the authenticated Cloud Run bridge in `services/resume-ai-bridge`. Cloud Run uses its attached service account through Application Default Credentials; no Google private key is stored in Cloudflare.
+
+Generation stays deliberately bounded to one structured response per run: one candidate, low thinking, a 2,200-token output ceiling, and a JSON schema matching the resume document renderer. The bridge re-enforces those limits before calling Agent Platform. The existing deterministic validation rejects incomplete output and numeric claims that are not present in the customer's intake or correction request.
+
+Configure these Cloudflare Worker runtime values:
+
+- `RESUME_AI_PROVIDER=gemini` as a regular variable.
+- `RESUME_AI_BRIDGE_URL` as a regular variable containing the deployed Cloud Run service URL.
+- `GEMINI_MODEL=gemini-3.8-flash` as a regular variable.
+- `RESUME_AI_BRIDGE_SECRET` as an encrypted secret containing the same high-entropy value configured on Cloud Run. Never create a `NEXT_PUBLIC` version or place it in browser code.
+
+Deploy the bridge with the dedicated `TRADE HUSTL3 Resume Worker` service account attached. Configure `GOOGLE_CLOUD_PROJECT_ID=trade-hustl3-resume-ai`, `GOOGLE_CLOUD_LOCATION=global`, `GEMINI_MODEL=gemini-3.8-flash`, and `RESUME_AI_BRIDGE_SECRET` on Cloud Run. The service must allow network invocation so Cloudflare can reach it; requests without the shared bearer secret are rejected before Cloud Run requests a Google access token or invokes Gemini. Keep the service account limited to the Agent Platform User role.
+
+`ANTHROPIC_API_KEY` and `CLAUDE_MODEL` remain available as a temporary rollback path. Set `RESUME_AI_PROVIDER=anthropic` only if a staged rollback is required.
+
 ## Production build
 
 ```bash
