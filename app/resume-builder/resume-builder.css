@@ -429,6 +429,28 @@
 .rb-wiz-lead { max-width: 640px; margin: 14px 0 26px; color: var(--rb-ink-soft); font-size: 15px; line-height: 1.62; }
 .rb-review-note { font-weight: 800; color: var(--rb-navy); }
 
+/* existing resume import ------------------------------------ */
+.rb-resume-import { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 14px 22px; align-items: center; margin: 0 0 26px; padding: 22px; border: 1px solid #d6a52a66; border-left: 4px solid var(--rb-gold); background: #fffaf0; }
+.rb-resume-import-kicker { margin: 0 0 5px; color: var(--rb-red); font-size: 9px; font-weight: 900; letter-spacing: .14em; }
+.rb-resume-import h2 { margin: 0 0 8px; font-family: var(--font-display), Impact, sans-serif; font-size: clamp(20px, 2.2vw, 28px); line-height: 1; }
+.rb-resume-import p { max-width: 650px; margin: 0; color: var(--rb-ink-soft); font-size: 13px; line-height: 1.55; }
+.rb-resume-import-button { position: relative; min-width: 210px; text-align: center; overflow: hidden; }
+.rb-resume-import-button input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.rb-resume-import-button:focus-within { outline: 3px solid var(--rb-gold); outline-offset: 3px; }
+.rb-resume-import-busy { cursor: wait; opacity: .72; }
+.rb-resume-import small { grid-column: 1 / -1; color: var(--rb-gray); font-size: 10px; font-weight: 700; letter-spacing: .04em; }
+.rb-resume-import .rb-resume-import-success,
+.rb-resume-import .rb-resume-import-error { grid-column: 1 / -1; padding: 10px 12px; font-size: 12px; font-weight: 800; }
+.rb-resume-import .rb-resume-import-success { border-left: 3px solid #287a45; background: #e9f5ed; color: #185d32; }
+.rb-resume-import .rb-resume-import-error { border-left: 3px solid var(--rb-red); background: var(--rb-red-tint); color: var(--rb-red-deep); }
+.rb-resume-import-actions { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 12px; align-items: center; padding-top: 4px; }
+.rb-resume-import-actions .rb-legal-consent { margin: 0; }
+.rb-resume-import-actions .rb-button { justify-content: center; white-space: nowrap; }
+.rb-resume-import-consent { padding: 12px; background: #fff; }
+.rb-resume-import-divider { display: flex; align-items: center; gap: 14px; margin: 0 0 24px; color: var(--rb-gray); font-size: 9px; font-weight: 900; letter-spacing: .14em; }
+.rb-resume-import-divider::before,
+.rb-resume-import-divider::after { content: ""; flex: 1; height: 1px; background: var(--rb-field-border); }
+
 /* trade + level cards ---------------------------------------- */
 .rb-trade-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; }
 .rb-trade-card { display: flex; flex-direction: column; gap: 8px; padding: 20px; border: 1px solid var(--rb-field-border); border-left: 4px solid var(--rb-field-border); background: var(--rb-field); text-align: left; cursor: pointer; transition: border-color .18s, transform .18s, box-shadow .18s; }
@@ -551,6 +573,10 @@
 }
 @media (max-width: 700px) {
   .rb-wiz { width: calc(100% - 24px); margin-bottom: 96px; }
+  .rb-resume-import { grid-template-columns: 1fr; }
+  .rb-resume-import-button { width: 100%; }
+  .rb-resume-import-actions { grid-template-columns: 1fr; }
+  .rb-resume-import-actions .rb-button { width: 100%; }
   .rb-wiz-dots { grid-template-columns: repeat(7, 1fr); gap: 3px; }
   .rb-wiz-dot small { display: none; }
   .rb-wiz-dot button { padding: 8px 2px; }
