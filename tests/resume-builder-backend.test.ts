@@ -122,7 +122,7 @@ test("magic-link confirmation cannot be consumed by an email scanner GET", async
   assert.equal(response?.headers.get("allow"), "POST");
 });
 
-test("magic-link email opens a confirmation page instead of consuming the token", async () => {
+test("magic-link email keeps a Cloudflare preview tester on the preview deployment", async () => {
   const batches: unknown[][] = [];
   const preparedSql: string[] = [];
   const DB = {
@@ -157,7 +157,7 @@ test("magic-link email opens a confirmation page instead of consuming the token"
   let response;
   try {
     response = await handleResumeBuilderRoute(
-      new Request("https://tradehustl3.com/api/resume-builder/auth/request", {
+      new Request("https://feature-resume-upload-prefill-v2-tradehustl3-website.tradehustl3.workers.dev/api/resume-builder/auth/request", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: "MEMBER@example.com", fullName: "Marcus Reed" }),
@@ -171,6 +171,7 @@ test("magic-link email opens a confirmation page instead of consuming the token"
   assert.equal(batches.length, 1);
   assert.equal(emailCalls.length, 1);
   assert.equal(emailCalls[0].url, "https://api.brevo.com/v3/smtp/email");
+  assert.match(emailCalls[0].body.htmlContent, /feature-resume-upload-prefill-v2-tradehustl3-website\.tradehustl3\.workers\.dev/i);
   assert.match(emailCalls[0].body.htmlContent, /\/resume-builder\/confirm\?token=/i);
   assert.doesNotMatch(emailCalls[0].body.htmlContent, /\/api\/resume-builder\/auth\/confirm\?token=/i);
   const userInsert = preparedSql.find((sql) => /INSERT INTO users/i.test(sql));

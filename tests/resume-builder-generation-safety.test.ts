@@ -276,6 +276,50 @@ test("Gemini generation uses structured output, bounded thinking, and the authen
   assert.equal(generation.values[6], 25);
 });
 
+test("Gemini bridge failure falls back to Claude and records the model that completed the build", async () => {
+  const h = harness();
+  let geminiCalls = 0;
+  let anthropicCalls = 0;
+  const anthropicFetch = anthropicReturning(entryLevelResume);
+  const response = await handleResumeBuilderRoute(
+    request(),
+    {
+      DB: h.DB as unknown as D1Database,
+      BOOKS: h.BOOKS as unknown as R2Bucket,
+      RESUME_AI_PROVIDER: "gemini",
+      RESUME_AI_BRIDGE_URL: "https://resume-ai-bridge.example.run.app",
+      RESUME_AI_BRIDGE_SECRET: "bridge-test-secret-never-send-to-browser",
+      ANTHROPIC_API_KEY: "test-key",
+      CLAUDE_MODEL: "claude-sonnet-5",
+    },
+    {
+      geminiFetch: (async () => {
+        geminiCalls += 1;
+        return new Response(JSON.stringify({ error: { message: "bridge unavailable" } }), {
+          status: 502,
+          headers: { "Content-Type": "application/json" },
+        });
+      }) as typeof fetch,
+      anthropicFetch: (async (...args) => {
+        anthropicCalls += 1;
+        return anthropicFetch!(...args);
+      }) as typeof fetch,
+      createDocx: async (generated) => encoder.encode(`DOCX:${JSON.stringify(generated)}`),
+      createPdf: async (generated, watermarked) => encoder.encode(`${watermarked ? "PREVIEW" : "PDF"}:${JSON.stringify(generated)}`),
+    },
+  );
+
+  assert.ok(response);
+  assert.equal(response.status, 200);
+  assert.equal(geminiCalls, 1);
+  assert.equal(anthropicCalls, 1);
+  assert.equal(h.state.creditsUsed, 1);
+  assert.equal(h.objects.size, 3);
+  const generation = h.batched.find((item) => /INSERT INTO resume_generations/i.test(item.sql));
+  assert.ok(generation);
+  assert.equal(generation.values[4], "claude-sonnet-5");
+});
+
 test("an unpaid correction returns an explicit payment action without calling the model or changing files", async () => {
   const h = harness({ generated: entryLevelResume, used: 1, entitled: false });
   let modelCalls = 0;

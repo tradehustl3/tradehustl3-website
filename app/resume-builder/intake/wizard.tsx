@@ -30,6 +30,12 @@ import {
   toIntake,
   type WizardData,
 } from "./wizard-data";
+import {
+  RESUME_UPLOAD_MAX_BYTES,
+  extractResumeText,
+  mergeResumePrefill,
+  resumeUploadKind,
+} from "./resume-upload";
 
 type User = { email: string; fullName: string | null };
 type ResumeStatus = {
@@ -42,6 +48,7 @@ type ResumeStatus = {
 };
 
 type SaveState = "idle" | "saving" | "saved" | "error";
+type ImportState = "idle" | "reading" | "analyzing" | "done" | "building" | "build-error" | "error";
 
 const LAST_STEP = WIZARD_STEPS.length - 1;
 
@@ -61,6 +68,9 @@ export function ResumeWizard() {
   const [attemptedNext, setAttemptedNext] = useState(false);
   const [legalConsent, setLegalConsent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [importState, setImportState] = useState<ImportState>("idle");
+  const [importMessage, setImportMessage] = useState("");
+  const [importConsent, setImportConsent] = useState(false);
 
   const headingRef = useRef<HTMLHeadingElement | null>(null);
   const saveInFlight = useRef(false);
@@ -193,9 +203,11 @@ export function ResumeWizard() {
 
   useEffect(() => {
     if (initializing || !user) return;
+    if (importState === "reading" || importState === "analyzing" || importState === "done"
+      || importState === "building" || importState === "build-error") return;
     const timer = setTimeout(() => void saveRef.current({ ...dataRef.current, lastStep: step }), 1500);
     return () => clearTimeout(timer);
-  }, [data, step, initializing, user]);
+  }, [data, step, importState, initializing, user]);
 
   // ---- step navigation ----------------------------------------------------
   useEffect(() => {
@@ -244,10 +256,88 @@ export function ResumeWizard() {
       setError("We could not save your intake. Check your connection and try again.");
       return;
     }
-    const target = paid
-      ? `/resume-builder/review?resume_id=${encodeURIComponent(id)}`
-      : `/resume-builder/review?resume_id=${encodeURIComponent(id)}&build=1`;
-    window.location.assign(target);
+    window.location.assign(`/resume-builder/review?resume_id=${encodeURIComponent(id)}`);
+  }
+
+  async function importResume(file: File | null) {
+    if (!file || importState === "reading" || importState === "analyzing" || importState === "building") return;
+    setImportMessage("");
+    const kind = resumeUploadKind(file);
+    if (!kind) {
+      setImportState("error");
+      setImportMessage("Choose a PDF or DOCX resume.");
+      return;
+    }
+    if (file.size > RESUME_UPLOAD_MAX_BYTES) {
+      setImportState("error");
+      setImportMessage("That file is larger than 4 MB. Choose a smaller resume file.");
+      return;
+    }
+    try {
+      setImportState("reading");
+      const text = await extractResumeText(file, kind);
+      if (text.length < 80) {
+        throw new Error("We could not read enough text from that resume. Try a text-based PDF or DOCX file.");
+      }
+      setImportState("analyzing");
+      const response = await fetch("/api/resume-builder/resume-import", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fileName: file.name, fileType: kind, text }),
+      });
+      const result = (await response.json()) as { prefill?: unknown; message?: string };
+      if (!response.ok || !result.prefill) {
+        throw new Error(result.message || "HUSTL3 BOT could not read that resume.");
+      }
+      const nextData = mergeResumePrefill(dataRef.current, result.prefill);
+      setData(nextData);
+      setImportState("done");
+      setImportMessage("Resume imported. Enhance it now, or review and add details first.");
+    } catch (importError) {
+      setImportState("error");
+      setImportMessage(importError instanceof Error ? importError.message : "HUSTL3 BOT could not read that resume.");
+    }
+  }
+
+  async function enhanceImportedResume() {
+    if (importState !== "done" && importState !== "build-error") return;
+    if (!importConsent) {
+      setImportState("build-error");
+      setImportMessage("Check the agreement box before HUSTL3 BOT builds your preview.");
+      return;
+    }
+    if (!isTradeTrack(data.trade)) {
+      setImportState("build-error");
+      setImportMessage("Choose the closest trade below, then tap Enhance My Uploaded Resume again.");
+      return;
+    }
+    setImportState("building");
+    setImportMessage("HUSTL3 BOT is enhancing your uploaded resume. Keep this page open.");
+    const savedId = await persist({ ...data, lastStep: LAST_STEP });
+    const id = savedId || resumeId;
+    if (!id) {
+      setImportState("build-error");
+      setImportMessage("We could not save the imported resume. Check your connection and try again.");
+      return;
+    }
+    try {
+      const response = await fetch(`/api/resume-builder/resumes/${encodeURIComponent(id)}/generate`, {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: "{}",
+      });
+      const result = await response.json() as { message?: string; missing?: string[] };
+      if (!response.ok) {
+        const missing = result.missing?.length ? ` Review: ${result.missing.join(", ")}.` : "";
+        throw new Error(`${result.message || "HUSTL3 BOT could not build the preview."}${missing}`);
+      }
+      window.location.assign(`/resume-builder/review?resume_id=${encodeURIComponent(id)}`);
+    } catch (buildError) {
+      setImportState("build-error");
+      setImportMessage(buildError instanceof Error ? buildError.message : "HUSTL3 BOT could not build the preview.");
+    }
   }
 
   if (initializing) {
@@ -359,10 +449,88 @@ export function ResumeWizard() {
 
   // ---------------------------------------------------------------- steps ---
   function renderTrade() {
+    const importBusy = importState === "reading" || importState === "analyzing" || importState === "building";
+    const imported = importState === "done" || importState === "build-error" || importState === "building";
     return (
       <>
         <h1 ref={headingRef} tabIndex={-1}>WHAT TRADE ARE WE BUILDING FOR?</h1>
         <p className="rb-wiz-lead">Choose the lane employers should notice first. Crossover experience still goes on the resume.</p>
+        <div className="rb-resume-import">
+          <div>
+            <p className="rb-resume-import-kicker">ALREADY HAVE A RESUME?</p>
+            <h2>UPLOAD IT. HUSTL3 BOT DOES THE HEAVY LIFTING.</h2>
+            <p>
+              Upload a PDF or DOCX and HUSTL3 BOT will pull in your contact details, work history,
+              skills, certifications, and education. You review every fact before anything is built.
+            </p>
+          </div>
+          <label className={classSet("rb-button", "rb-button-primary", "rb-resume-import-button", importBusy && "rb-resume-import-busy") }>
+            <input
+              type="file"
+              accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+              onChange={(event) => {
+                const file = event.target.files?.[0] ?? null;
+                event.target.value = "";
+                void importResume(file);
+              }}
+              disabled={importBusy}
+            />
+            {importState === "reading"
+              ? "READING FILE…"
+              : importState === "analyzing"
+                ? "HUSTL3 BOT IS WORKING…"
+                : imported
+                  ? "UPLOAD A DIFFERENT RESUME"
+                  : "UPLOAD EXISTING RESUME"}
+          </label>
+          <small>PDF or DOCX · 4 MB maximum · original file is not stored</small>
+          {importMessage ? (
+            <p className={importState === "done" ? "rb-resume-import-success" : "rb-resume-import-error"} role="status">
+              {importMessage}
+            </p>
+          ) : null}
+          {imported ? (
+            <div className="rb-resume-import-actions">
+              <label className="rb-legal-consent rb-resume-import-consent">
+                <input
+                  type="checkbox"
+                  checked={importConsent}
+                  onChange={(event) => setImportConsent(event.target.checked)}
+                  disabled={importState === "building"}
+                />
+                <span>
+                  I am at least 18 years old and agree to the <a href="/terms" target="_blank" rel="noreferrer">Terms</a>,{" "}
+                  <a href="/privacy" target="_blank" rel="noreferrer">Privacy Policy</a>, and{" "}
+                  <a href="/resume-builder/ai-disclosure" target="_blank" rel="noreferrer">AI Disclosure</a>.
+                </span>
+              </label>
+              <button
+                type="button"
+                className="rb-button rb-button-primary"
+                onClick={() => void enhanceImportedResume()}
+                disabled={importState === "building"}
+              >
+                {importState === "building" ? "HUSTL3 BOT IS ENHANCING…" : "ENHANCE MY UPLOADED RESUME"} <span aria-hidden="true">→</span>
+              </button>
+              <button
+                type="button"
+                className="rb-button rb-button-ghost"
+                onClick={() => {
+                  if (!isTradeTrack(data.trade)) {
+                    setImportState("build-error");
+                    setImportMessage("Choose the closest trade below before reviewing the imported details.");
+                    return;
+                  }
+                  void goNext();
+                }}
+                disabled={importState === "building"}
+              >
+                REVIEW & ADD DETAILS
+              </button>
+            </div>
+          ) : null}
+        </div>
+        <p className="rb-resume-import-divider"><span>OR START FROM SCRATCH</span></p>
         <div className="rb-trade-grid" role="radiogroup" aria-label="Trade track">
           {TRADE_TRACKS.map((trade) => {
             const selected = data.trade === trade;
