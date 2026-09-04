@@ -19,8 +19,30 @@ test("public marketing pages opt out of stale Cloudflare HTML caching", async ()
     "/resume-builder/hvac",
     "/resume-builder/facilities-maintenance",
     "/resume-builder/electrician",
+    "/resume-builder/plumbing",
+    "/resume-builder/welding-fabrication",
+    "/resume-builder/construction-carpentry",
+    "/resume-builder/general-labor",
   ]) {
     assert.ok(config.includes(`source: "${route}"`), `missing freshness headers for ${route}`);
+  }
+});
+
+test("policy pages are never stored by browsers or CDNs", async () => {
+  const config = await readFile(new URL("../next.config.ts", import.meta.url), "utf8");
+
+  assert.match(config, /const policyNoStoreHeaders[\s\S]*Cache-Control[^\n]*no-store, max-age=0/i);
+  assert.match(config, /const policyNoStoreHeaders[\s\S]*Cloudflare-CDN-Cache-Control[^\n]*no-store/i);
+  assert.match(config, /const policyNoStoreHeaders[\s\S]*CDN-Cache-Control[^\n]*no-store/i);
+  assert.match(config, /2026-09-04-policy-cache-hardening/);
+
+  for (const route of [
+    "/privacy",
+    "/terms",
+    "/data-deletion",
+    "/resume-builder/ai-disclosure",
+  ]) {
+    assert.ok(config.includes(`source: "${route}"`), `missing no-store headers for ${route}`);
   }
 });
 
