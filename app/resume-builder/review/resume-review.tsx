@@ -297,7 +297,7 @@ export function ResumeReview() {
       )}
 
       {message ? <p className="rb-workspace-message" role="status">{message}</p> : null}
-      {working ? <div className="rb-working-overlay" role="status"><span /><strong>BUILDING YOUR RESUME</strong><small>This can take a minute. Keep this page open.</small></div> : null}
+      {working ? <div className="rb-working-overlay" role="status"><span /><strong>HUSTL3 BOT IS BUILDING</strong><small>This can take a minute. Keep this page open.</small></div> : null}
     </div>
   );
 }
