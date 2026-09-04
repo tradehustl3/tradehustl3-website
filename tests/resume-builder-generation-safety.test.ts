@@ -57,6 +57,7 @@ type HarnessOptions = {
   used?: number;
   total?: number;
   intake?: unknown;
+  entitled?: boolean;
 };
 
 function harness(options: HarnessOptions = {}) {
@@ -93,6 +94,7 @@ function harness(options: HarnessOptions = {}) {
           };
         }
         if (/FROM entitlements/i.test(sql)) {
+          if (options.entitled === false) return null;
           return {
             entitlement_id: "entitlement-1",
             credits_total: state.creditsTotal,
@@ -201,6 +203,197 @@ test("entry-level candidate with no employment history generates successfully", 
   assert.equal(payload.ok, true);
   assert.equal(h.state.creditsUsed, 1);
   assert.equal(h.objects.size, 3);
+});
+
+test("Gemini generation uses structured output, bounded thinking, and the authenticated bridge", async () => {
+  const h = harness();
+  let calledUrl = "";
+  let calledInit: RequestInit | undefined;
+  const bridgeSecret = "bridge-test-secret-never-send-to-browser";
+  const dependencies: ResumeBuilderDependencies = {
+    geminiFetch: (async (input, init) => {
+      calledUrl = String(input);
+      calledInit = init;
+      return new Response(JSON.stringify({
+        candidates: [{
+          finishReason: "STOP",
+          content: { parts: [{ text: JSON.stringify(entryLevelResume) }] },
+        }],
+        usageMetadata: {
+          promptTokenCount: 11,
+          candidatesTokenCount: 22,
+          thoughtsTokenCount: 3,
+        },
+      }), { status: 200, headers: { "Content-Type": "application/json" } });
+    }) as typeof fetch,
+    createDocx: async (generated) => encoder.encode(`DOCX:${JSON.stringify(generated)}`),
+    createPdf: async (generated, watermarked) => encoder.encode(`${watermarked ? "PREVIEW" : "PDF"}:${JSON.stringify(generated)}`),
+  };
+
+  const response = await handleResumeBuilderRoute(
+    request(),
+    {
+      DB: h.DB as unknown as D1Database,
+      BOOKS: h.BOOKS as unknown as R2Bucket,
+      RESUME_AI_PROVIDER: "gemini",
+      RESUME_AI_BRIDGE_URL: "https://resume-ai-bridge.example.run.app/",
+      RESUME_AI_BRIDGE_SECRET: bridgeSecret,
+    },
+    dependencies,
+  );
+
+  assert.ok(response);
+  assert.equal(response.status, 200);
+  assert.equal(calledUrl, "https://resume-ai-bridge.example.run.app/generate");
+  assert.doesNotMatch(calledUrl, new RegExp(bridgeSecret));
+  const headers = new Headers(calledInit?.headers);
+  assert.equal(headers.get("authorization"), `Bearer ${bridgeSecret}`);
+  const bodyText = String(calledInit?.body);
+  assert.doesNotMatch(bodyText, new RegExp(bridgeSecret));
+  const body = JSON.parse(bodyText) as {
+    model: string;
+    systemInstruction: { parts: Array<{ text: string }> };
+    generationConfig: {
+      maxOutputTokens: number;
+      candidateCount: number;
+      responseMimeType: string;
+      responseSchema: { type: string };
+      thinkingConfig: { thinkingLevel: string; includeThoughts: boolean };
+    };
+  };
+  assert.equal(body.model, "gemini-3.8-flash");
+  assert.equal(body.generationConfig.maxOutputTokens, 2_200);
+  assert.equal(body.generationConfig.candidateCount, 1);
+  assert.equal(body.generationConfig.responseMimeType, "application/json");
+  assert.equal(body.generationConfig.responseSchema.type, "OBJECT");
+  assert.deepEqual(body.generationConfig.thinkingConfig, { thinkingLevel: "LOW", includeThoughts: false });
+  assert.match(body.systemInstruction.parts[0].text, /desired target title does not prove/i);
+  assert.match(body.systemInstruction.parts[0].text, /Salesforce/i);
+  const generation = h.batched.find((item) => /INSERT INTO resume_generations/i.test(item.sql));
+  assert.ok(generation);
+  assert.equal(generation.values[4], "gemini-3.8-flash");
+  assert.equal(generation.values[5], 11);
+  assert.equal(generation.values[6], 25);
+});
+
+test("an unpaid correction returns an explicit payment action without calling the model or changing files", async () => {
+  const h = harness({ generated: entryLevelResume, used: 1, entitled: false });
+  let modelCalls = 0;
+  const response = await handleResumeBuilderRoute(
+    request({ correctionRequest: "Change my end date to June 2025" }),
+    {
+      DB: h.DB as unknown as D1Database,
+      BOOKS: h.BOOKS as unknown as R2Bucket,
+      RESUME_AI_PROVIDER: "gemini",
+      RESUME_AI_BRIDGE_URL: "https://resume-ai-bridge.example.run.app",
+      RESUME_AI_BRIDGE_SECRET: "bridge-test-secret-never-send-to-browser",
+    },
+    {
+      geminiFetch: (async () => {
+        modelCalls += 1;
+        throw new Error("must not call Gemini");
+      }) as typeof fetch,
+    },
+  );
+
+  assert.ok(response);
+  assert.equal(response.status, 402);
+  const payload = await response.json() as Record<string, unknown>;
+  assert.equal(payload.code, "PAYMENT_REQUIRED");
+  assert.equal(payload.action, "complete_payment");
+  assert.equal(payload.runConsumed, false);
+  assert.equal(modelCalls, 0);
+  assert.equal(h.state.creditsUsed, 1);
+  assert.equal(h.objects.size, 0);
+  assert.equal(h.batched.length, 0);
+});
+
+test("a paid Gemini correction sends prior context, persists the revision, regenerates files, and leaves two corrections", async () => {
+  const priorResume: GeneratedResume = {
+    ...entryLevelResume,
+    experience: [{
+      jobTitle: "HVAC Apprentice",
+      employer: "Apex Mechanical",
+      startDate: "January 2024",
+      endDate: "Present",
+      bullets: ["Assisted with preventive maintenance"],
+    }],
+  };
+  const revisedResume: GeneratedResume = {
+    ...priorResume,
+    experience: [{
+      ...priorResume.experience[0],
+      endDate: "June 2025",
+      bullets: ["Assisted with rooftop-unit diagnostics and preventive maintenance"],
+    }],
+  };
+  const intake = {
+    contact: { fullName: "Devon Price" },
+    career: {
+      summaryNotes: "Trade-school graduate with hands-on lab training and a strong safety mindset",
+      skillsAndTools: "Brazing, multimeter, rooftop-unit diagnostics",
+      licensesAndCertifications: "OSHA ten",
+    },
+    experience: [{
+      jobTitle: "HVAC Apprentice",
+      employer: "Apex Mechanical",
+      startDate: "January 2024",
+      endDate: "Present",
+      responsibilitiesAndWins: "Assisted with preventive maintenance and rooftop-unit diagnostics",
+    }],
+    education: "HVAC Certificate, Akron Career Center",
+  };
+  const h = harness({ generated: priorResume, used: 1, total: 4, intake });
+  let requestBody = "";
+  const response = await handleResumeBuilderRoute(
+    request({ correctionRequest: "Change my end date to June 2025 and emphasize rooftop diagnostics" }),
+    {
+      DB: h.DB as unknown as D1Database,
+      BOOKS: h.BOOKS as unknown as R2Bucket,
+      RESUME_AI_PROVIDER: "gemini",
+      RESUME_AI_BRIDGE_URL: "https://resume-ai-bridge.example.run.app",
+      RESUME_AI_BRIDGE_SECRET: "bridge-test-secret-never-send-to-browser",
+      GEMINI_MODEL: "gemini-3.8-flash",
+    },
+    {
+      geminiFetch: (async (_input, init) => {
+        requestBody = String(init?.body);
+        return new Response(JSON.stringify({
+          candidates: [{
+            finishReason: "STOP",
+            content: { parts: [{ text: JSON.stringify(revisedResume) }] },
+          }],
+          usageMetadata: { promptTokenCount: 40, candidatesTokenCount: 60 },
+        }), { status: 200, headers: { "Content-Type": "application/json" } });
+      }) as typeof fetch,
+      createDocx: async (generated) => encoder.encode(`DOCX:${JSON.stringify(generated)}`),
+      createPdf: async (generated, watermarked) => encoder.encode(`${watermarked ? "PREVIEW" : "PDF"}:${JSON.stringify(generated)}`),
+    },
+  );
+
+  assert.ok(response);
+  assert.equal(response.status, 200);
+  const payload = await response.json() as Record<string, unknown>;
+  assert.equal(payload.runNumber, 2);
+  assert.equal(payload.correctionsRemaining, 2);
+  assert.equal(h.state.creditsUsed, 2);
+  assert.deepEqual(JSON.parse(h.state.generatedJson ?? "{}"), revisedResume);
+  assert.equal(h.objects.size, 3);
+  assert.equal(h.filePointers.size, 3);
+  assert.equal([...h.filePointers.values()].every((key) => key.includes("/generations/")), true);
+
+  const bridgePayload = JSON.parse(requestBody) as { contents: Array<{ parts: Array<{ text: string }> }> };
+  const prompt = bridgePayload.contents[0].parts[0].text;
+  assert.match(prompt, /ORIGINAL INTAKE:/);
+  assert.match(prompt, /CURRENT RESUME:/);
+  assert.match(prompt, /CUSTOMER CORRECTION:/);
+  assert.match(prompt, /Assisted with preventive maintenance/);
+  assert.match(prompt, /Change my end date to June 2025 and emphasize rooftop diagnostics/);
+
+  const generation = h.batched.find((item) => /INSERT INTO resume_generations/i.test(item.sql));
+  assert.ok(generation);
+  assert.equal(generation.values[3], "correction");
+  assert.equal(generation.values[4], "gemini-3.8-flash");
 });
 
 test("self-employed candidate with no named employer generates successfully", async () => {

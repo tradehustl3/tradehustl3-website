@@ -26,7 +26,7 @@ const THEME_OPTIONS: { value: ResumeTheme; label: string; note: string }[] = [
 type GenerationFailure = {
   code?: string;
   retryable?: boolean;
-  action?: "return_to_intake" | "retry_generation";
+  action?: "return_to_intake" | "retry_generation" | "complete_payment";
   paymentSafe?: boolean;
   runConsumed?: boolean;
   missing?: string[];
@@ -89,8 +89,8 @@ export function ResumeReview() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoBuild, loading, working, resume]);
 
-  async function runGeneration(correctionRequest?: string) {
-    if (!resumeId) return;
+  async function runGeneration(correctionRequest?: string): Promise<boolean> {
+    if (!resumeId) return false;
     setWorking(true);
     setMessage("");
     setIntakeNotice(null);
@@ -103,16 +103,27 @@ export function ResumeReview() {
       });
       const result = await response.json() as GenerationFailure;
       if (!response.ok) {
+        if (response.status === 401) {
+          window.location.assign("/resume-builder");
+          return false;
+        }
+        if (response.status === 402 || result.action === "complete_payment") {
+          setMessage(result.message || "Complete the $9.99 payment before requesting a correction.");
+          await load(resumeId);
+          return false;
+        }
         if (result.action === "return_to_intake" && result.intakeUrl) {
           setIntakeNotice(result);
-          return;
+          return false;
         }
         throw new Error(result.message || "We could not complete this AI run.");
       }
       await load(resumeId);
       setMessage(correctionRequest ? "Correction applied. Review the updated watermarked copy." : "Your first resume is ready for review.");
+      return true;
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "We could not complete this AI run.");
+      return false;
     } finally {
       setWorking(false);
     }
@@ -123,8 +134,8 @@ export function ResumeReview() {
     const form = new FormData(event.currentTarget);
     const correction = String(form.get("correctionRequest") ?? "").trim();
     if (!correction) return;
-    await runGeneration(correction);
-    event.currentTarget.reset();
+    const applied = await runGeneration(correction);
+    if (applied) event.currentTarget.reset();
   }
 
   async function updateTheme(theme: ResumeTheme) {
@@ -240,7 +251,7 @@ export function ResumeReview() {
       {!hasDraft ? (
         <section className="rb-first-build">
           <div className="rb-blueprint" aria-hidden="true"><span>ATS</span><i /><i /><i /><i /></div>
-          <div><p className="rb-kicker">/ PREVIEW BEFORE YOU PAY</p><h2>READY FOR THE FIRST BUILD.</h2><p>Claude Sonnet will organize only the experience and facts you provided—no invented licenses, employers, or results. You will review a protected, logo-watermarked copy before checkout.</p>
+          <div><p className="rb-kicker">/ PREVIEW BEFORE YOU PAY</p><h2>READY FOR THE FIRST BUILD.</h2><p>Our AI resume engine will organize only the experience and facts you provided—no invented licenses, employers, or results. You will review a protected, logo-watermarked copy before checkout.</p>
           <span className="rb-theme-label">Choose your template</span>
           {renderThemePicker()}
           <button className="rb-button rb-button-primary" type="button" disabled={working} onClick={() => void runGeneration()}>{working ? "Building your resume…" : "Build my watermarked preview"} <span>→</span></button></div>
@@ -286,7 +297,7 @@ export function ResumeReview() {
       )}
 
       {message ? <p className="rb-workspace-message" role="status">{message}</p> : null}
-      {working ? <div className="rb-working-overlay" role="status"><span /><strong>CLAUDE SONNET IS BUILDING</strong><small>This can take a minute. Keep this page open.</small></div> : null}
+      {working ? <div className="rb-working-overlay" role="status"><span /><strong>HUSTL3 BOT IS BUILDING</strong><small>This can take a minute. Keep this page open.</small></div> : null}
     </div>
   );
 }
