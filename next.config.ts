@@ -7,6 +7,13 @@ const crawlerFreshnessHeaders = [
   { key: "X-TRADE-HUSTL3-Content-Revision", value: "2026-08-30-crawler-freshness" },
 ];
 
+const policyNoStoreHeaders = [
+  { key: "Cache-Control", value: "no-store, max-age=0" },
+  { key: "Cloudflare-CDN-Cache-Control", value: "no-store" },
+  { key: "CDN-Cache-Control", value: "no-store" },
+  { key: "X-TRADE-HUSTL3-Content-Revision", value: "2026-09-04-policy-cache-hardening" },
+];
+
 const nextConfig: NextConfig = {
   images: {
     unoptimized: true,
@@ -25,6 +32,10 @@ const nextConfig: NextConfig = {
       { source: "/resume-builder/welding-fabrication", headers: crawlerFreshnessHeaders },
       { source: "/resume-builder/construction-carpentry", headers: crawlerFreshnessHeaders },
       { source: "/resume-builder/general-labor", headers: crawlerFreshnessHeaders },
+      { source: "/privacy", headers: policyNoStoreHeaders },
+      { source: "/terms", headers: policyNoStoreHeaders },
+      { source: "/data-deletion", headers: policyNoStoreHeaders },
+      { source: "/resume-builder/ai-disclosure", headers: policyNoStoreHeaders },
     ];
   },
 };
