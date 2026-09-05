@@ -6,6 +6,8 @@ import {
 
 export * from "./resume-builder-base";
 
+type BaseResumeRequest = Parameters<typeof handleBaseResumeBuilderRoute>[0];
+
 const IMPORT_PRESERVATION_INSTRUCTION = `Uploaded-resume preservation rule:
 Preserve every explicit employer, job title, location, date range, certification, education item, contact detail available in the source schema, and every substantive responsibility or accomplishment. Do not summarize away supported facts. Keep every number exactly grounded in the source. When a role has multiple bullets, retain their factual content in responsibilities instead of collapsing the role to a generic sentence. Never invent a missing fact.`;
 
@@ -162,7 +164,7 @@ export async function handleResumeBuilderRoute(
   const retryRequest = generatePath && shouldAutoRetryNumericGuard(env) ? request.clone() : null;
 
   const first = await handleBaseResumeBuilderRoute(
-    request,
+    request as unknown as BaseResumeRequest,
     env,
     preservationDependencies(dependencies, false),
   );
@@ -177,7 +179,7 @@ export async function handleResumeBuilderRoute(
   if (firstFailure?.code !== "UNSUPPORTED_NUMERIC_CLAIM") return first;
 
   const retry = await handleBaseResumeBuilderRoute(
-    retryRequest,
+    retryRequest as unknown as BaseResumeRequest,
     env,
     preservationDependencies(dependencies, true),
   );
