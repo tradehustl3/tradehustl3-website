@@ -15,6 +15,7 @@ const EBOOK_OBJECT_KEY = "TRADE-HUSTL3-COMPLETE-EBOOK.pdf";
 export const EBOOK_RELEASE_AT = Date.parse("2026-09-15T04:00:00Z");
 const EBOOK_LAUNCH_BATCH_SIZE = 25;
 const EBOOK_LAUNCH_LEASE_SECONDS = 10 * 60;
+const STRIPE_WEBHOOK_MAX_BYTES = 256 * 1024;
 const encoder = new TextEncoder();
 
 function jsonResponse(body: Record<string, unknown>, status = 200): Response {
@@ -22,6 +23,31 @@ function jsonResponse(body: Record<string, unknown>, status = 200): Response {
     status,
     headers: { "Cache-Control": "no-store" },
   });
+}
+
+async function readBodyText(request: Request, maxBytes: number): Promise<string | null> {
+  const declaredLength = Number(request.headers.get("Content-Length") ?? "0");
+  if (Number.isFinite(declaredLength) && declaredLength > maxBytes) return null;
+  if (!request.body) return "";
+  const reader = request.body.getReader();
+  const decoder = new TextDecoder();
+  let size = 0;
+  let text = "";
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      size += value.byteLength;
+      if (size > maxBytes) {
+        await reader.cancel();
+        return null;
+      }
+      text += decoder.decode(value, { stream: true });
+    }
+    return text + decoder.decode();
+  } catch {
+    return null;
+  }
 }
 
 function toBase64Url(value: ArrayBuffer): string {
@@ -390,7 +416,8 @@ async function handleStripeWebhook(request: Request, env: EbookStripeEnv): Promi
   const webhookSecret = env.STRIPE_WEBHOOK_SECRET?.trim() || "";
   const expectedPaymentLink = env.STRIPE_EBOOK_PAYMENT_LINK_ID?.trim() || "";
   const signatureHeader = request.headers.get("Stripe-Signature") || "";
-  const payload = await request.text();
+  const payload = await readBodyText(request, STRIPE_WEBHOOK_MAX_BYTES);
+  if (payload === null) return jsonResponse({ received: false }, 413);
 
   if (!webhookSecret || !expectedPaymentLink || !env.DB || !env.BOOKS) {
     console.error("Stripe eBook fulfillment is not configured.");

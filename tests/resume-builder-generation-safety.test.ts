@@ -78,6 +78,7 @@ function harness(options: HarnessOptions = {}) {
       sql,
       values,
       async first() {
+        if (/RETURNING count/i.test(sql)) return { count: 1 };
         if (/FROM sessions s/i.test(sql)) {
           return { user_id: "user-1", email: "member@example.com", full_name: "Member" };
         }

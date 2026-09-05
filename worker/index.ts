@@ -3,7 +3,7 @@ import { handleImageOptimization, DEFAULT_DEVICE_SIZES, DEFAULT_IMAGE_SIZES } fr
 import handler from "vinext/server/app-router-entry";
 import freeSampleDataUrl from "./assets/trade-hustl3-free-sample.pdf?inline";
 import bookSampleDataUrl from "./assets/trade-hustl3-seven-page-book-sample.pdf?inline";
-import { handleResumeBuilderRoute, ResumeBuilderEnv } from "./resume-builder";
+import { handleResumeBuilderRoute, ResumeBuilderEnv, runResumeBuilderRetention } from "./resume-builder";
 import { handleEbookStripeRoute, runEbookLaunchDelivery, EbookStripeEnv, EBOOK_RELEASE_AT } from "./ebook-stripe";
 
 interface Env extends ResumeBuilderEnv, EbookStripeEnv {
@@ -13,12 +13,9 @@ interface Env extends ResumeBuilderEnv, EbookStripeEnv {
   BREVO_API_KEY?: string;
   BREVO_LIST_ID?: string;
   BREVO_SAMPLE_SENDER_EMAIL?: string;
-  /** Dedicated HMAC secret for guide sample links. Falls back to BREVO_API_KEY
-   * so links minted before secret provisioning remain valid. */
+  /** Dedicated HMAC secret for guide sample links. */
   SAMPLE_TOKEN_SECRET?: string;
-  /** Dedicated HMAC secret for the gated 7-page book-sample link. Falls back to
-   * BREVO_API_KEY when unset so the funnel works before a dedicated secret is
-   * provisioned. Never a Stripe / payment secret. */
+  /** Dedicated HMAC secret for the gated 7-page book-sample link. */
   BOOK_SAMPLE_TOKEN_SECRET?: string;
   IMAGES: {
     input(stream: ReadableStream): {
@@ -56,12 +53,12 @@ function signupSourceForInterest(interest: string): string {
 
 const FREE_SAMPLE_PUBLIC_PATH = "/trade-hustl3-free-sample.pdf";
 const FREE_SAMPLE_ROUTE = "/api/free-sample";
-const SAMPLE_COOKIE = "tradehustl3_sample_access=granted";
+const SAMPLE_COOKIE_NAME = "tradehustl3_sample_access";
 // The 7-page book sample is a separate lead magnet from the Top 10 Trades guide:
 // its own page, its own gated PDF, its own route, and — critically — its own
 // cookie and token namespace so neither credential can unlock the other.
 const BOOK_SAMPLE_ROUTE = "/api/book-sample";
-const BOOK_SAMPLE_COOKIE = "tradehustl3_book_sample_access=granted";
+const BOOK_SAMPLE_COOKIE_NAME = "tradehustl3_book_sample_access";
 const BOOK_SAMPLE_PAGE = "/book/sample";
 const SITE_URL = "https://tradehustl3.com";
 const encoder = new TextEncoder();
@@ -79,21 +76,28 @@ const CONTENT_SECURITY_POLICY = [
   "object-src 'none'",
   "frame-ancestors 'none'",
   "form-action 'self' https://checkout.stripe.com",
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://connect.facebook.net https://www.googletagmanager.com https://www.google-analytics.com",
+  "script-src 'self' 'unsafe-inline' https://connect.facebook.net https://www.googletagmanager.com https://www.google-analytics.com",
+  "script-src-attr 'none'",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "font-src 'self' https://fonts.gstatic.com data:",
   "img-src 'self' data: https://www.facebook.com https://connect.facebook.net https://*.google-analytics.com",
   "connect-src 'self' https://api.brevo.com https://www.google-analytics.com https://region1.google-analytics.com https://www.facebook.com",
   "frame-src 'self' https://checkout.stripe.com https://js.stripe.com",
+  "upgrade-insecure-requests",
 ].join("; ");
 
-function withSecurityHeaders(response: Response): Response {
+function withSecurityHeaders(response: Response, pathname = ""): Response {
   const headers = new Headers(response.headers);
   headers.set("X-Content-Type-Options", "nosniff");
   headers.set("X-Frame-Options", "DENY");
   headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
   headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=(self)");
-  headers.set("Content-Security-Policy-Report-Only", CONTENT_SECURITY_POLICY);
+  headers.set("Strict-Transport-Security", "max-age=31536000");
+  headers.set("Content-Security-Policy", CONTENT_SECURITY_POLICY);
+  if (pathname === "/resume-builder/confirm") {
+    headers.set("Cache-Control", "no-store");
+    headers.set("Referrer-Policy", "no-referrer");
+  }
   return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
 }
 
@@ -103,6 +107,68 @@ function isValidEmail(email: string): boolean {
 
 function trackingValue(value: unknown): string {
   return typeof value === "string" ? value.trim().slice(0, 160) : "";
+}
+
+function requestIp(request: Request): string {
+  return request.headers.get("CF-Connecting-IP")?.trim() || "unknown";
+}
+
+async function sha256Hex(value: string): Promise<string> {
+  const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", encoder.encode(value)));
+  return Array.from(digest, (byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+async function checkRateLimit(env: Env, bucket: string, limit: number, windowSeconds: number): Promise<boolean> {
+  const windowStart = Math.floor(Date.now() / 1000 / windowSeconds) * windowSeconds;
+  const row = await env.DB.prepare(
+    `INSERT INTO rate_limits (bucket, window_start, count)
+     VALUES (?, ?, 1)
+     ON CONFLICT(bucket) DO UPDATE SET
+       count = CASE
+         WHEN rate_limits.window_start = excluded.window_start THEN rate_limits.count + 1
+         ELSE 1
+       END,
+       window_start = excluded.window_start
+     RETURNING count`,
+  ).bind(bucket, windowStart).first<{ count: number }>();
+  return Boolean(row && row.count <= limit);
+}
+
+async function readJsonBody(request: Request, maxBytes: number): Promise<Record<string, unknown> | null> {
+  const declaredLength = Number(request.headers.get("Content-Length") || "0");
+  if (Number.isFinite(declaredLength) && declaredLength > maxBytes) return null;
+  if (!request.body) return null;
+  const reader = request.body.getReader();
+  const decoder = new TextDecoder();
+  let size = 0;
+  let text = "";
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      size += value.byteLength;
+      if (size > maxBytes) {
+        await reader.cancel();
+        return null;
+      }
+      text += decoder.decode(value, { stream: true });
+    }
+    text += decoder.decode();
+    if (!text) return null;
+    const value = JSON.parse(text) as unknown;
+    return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : null;
+  } catch {
+    return null;
+  }
+}
+
+function cookieValue(request: Request, name: string): string {
+  const cookies = request.headers.get("Cookie")?.split(";") ?? [];
+  for (const cookie of cookies) {
+    const [key, ...parts] = cookie.trim().split("=");
+    if (key === name) return decodeURIComponent(parts.join("="));
+  }
+  return "";
 }
 
 function toBase64Url(value: ArrayBuffer): string {
@@ -164,10 +230,12 @@ async function isValidSampleToken(token: string, secret: string): Promise<boolea
  * "book_sample" segment). Distinct cookie names complete the isolation.
  */
 function bookSampleTokenSecret(env: Env): string {
-  return env.BOOK_SAMPLE_TOKEN_SECRET?.trim() || env.BREVO_API_KEY?.trim() || "";
+  return env.BOOK_SAMPLE_TOKEN_SECRET?.trim() || "";
 }
 
 function sampleTokenSecrets(env: Env): string[] {
+  // BREVO_API_KEY remains verification-only for the seven-day lifetime of
+  // legacy links. Newly minted credentials always use the dedicated secret.
   return [env.SAMPLE_TOKEN_SECRET?.trim(), env.BREVO_API_KEY?.trim()].filter((secret): secret is string => Boolean(secret));
 }
 
@@ -340,22 +408,22 @@ async function subscribe(request: Request, env: Env): Promise<Response> {
       return jsonResponse({ ok: false, message: "Invalid signup origin." }, 403);
     }
   }
-  const contentLength = Number(request.headers.get("Content-Length") || "0");
-  if (contentLength > 32_000) return jsonResponse({ ok: false, message: "Signup request is too large." }, 413);
-
   try {
-    const body = await request.json() as {
-      email?: unknown;
-      interest?: unknown;
-      utm_source?: unknown;
-      utm_medium?: unknown;
-      utm_campaign?: unknown;
-    };
+    const body = await readJsonBody(request, 32_000);
+    if (!body) return jsonResponse({ ok: false, message: "Signup request is invalid or too large." }, 413);
     const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
     const interest = typeof body.interest === "string" ? body.interest.trim() : "";
 
     if (!isValidEmail(email) || !allowedInterests.has(interest)) {
       return jsonResponse({ ok: false, message: "Enter a valid email and select an interest." }, 400);
+    }
+
+    const [emailAllowed, ipAllowed] = await Promise.all([
+      checkRateLimit(env, `subscribe-email:${await sha256Hex(email)}`, 3, 60 * 60),
+      checkRateLimit(env, `subscribe-ip:${await sha256Hex(requestIp(request))}`, 8, 15 * 60),
+    ]);
+    if (!emailAllowed || !ipAllowed) {
+      return jsonResponse({ ok: false, message: "Too many signup attempts. Try again later." }, 429);
     }
 
     const source = signupSourceForInterest(interest);
@@ -385,7 +453,7 @@ async function subscribe(request: Request, env: Env): Promise<Response> {
     }
 
     if (interest === "Top 10 Trades" || interest === "The TRADE HUSTL3 Book") {
-      const secret = sampleTokenSecrets(env)[0];
+      const secret = env.SAMPLE_TOKEN_SECRET?.trim() || "";
       if (!secret) throw new Error("Guide delivery is not configured.");
       const token = await createSampleToken(email, secret);
       const emailedSampleUrl = `${SITE_URL}${FREE_SAMPLE_ROUTE}?token=${encodeURIComponent(token)}`;
@@ -404,7 +472,7 @@ async function subscribe(request: Request, env: Env): Promise<Response> {
         {
           headers: {
             "Cache-Control": "no-store",
-            "Set-Cookie": `${SAMPLE_COOKIE}; Max-Age=604800; Path=/; HttpOnly; Secure; SameSite=Lax`,
+            "Set-Cookie": `${SAMPLE_COOKIE_NAME}=${encodeURIComponent(token)}; Max-Age=604800; Path=/; HttpOnly; Secure; SameSite=Lax`,
           },
         },
       );
@@ -429,7 +497,7 @@ async function subscribe(request: Request, env: Env): Promise<Response> {
         {
           headers: {
             "Cache-Control": "no-store",
-            "Set-Cookie": `${BOOK_SAMPLE_COOKIE}; Max-Age=604800; Path=/; HttpOnly; Secure; SameSite=Lax`,
+            "Set-Cookie": `${BOOK_SAMPLE_COOKIE_NAME}=${encodeURIComponent(token)}; Max-Age=604800; Path=/; HttpOnly; Secure; SameSite=Lax`,
           },
         },
       );
@@ -444,7 +512,8 @@ async function subscribe(request: Request, env: Env): Promise<Response> {
 
 async function serveFreeSample(request: Request, env: Env): Promise<Response> {
   const url = new URL(request.url);
-  const cookieGranted = request.headers.get("Cookie")?.split(";").some((cookie) => cookie.trim() === SAMPLE_COOKIE) ?? false;
+  const cookieToken = cookieValue(request, SAMPLE_COOKIE_NAME);
+  const cookieGranted = Boolean(cookieToken && (await Promise.any(sampleTokenSecrets(env).map((secret) => isValidSampleToken(cookieToken, secret))).catch(() => false)));
   const token = url.searchParams.get("token") || "";
   const tokenGranted = Boolean(token && (await Promise.any(sampleTokenSecrets(env).map((secret) => isValidSampleToken(token, secret))).catch(() => false)));
 
@@ -459,15 +528,16 @@ async function serveFreeSample(request: Request, env: Env): Promise<Response> {
   headers.set("Content-Disposition", 'inline; filename="TRADE-HUSTL3-2026-2027-Guide-Preview.pdf"');
   headers.set("Cache-Control", "private, no-store");
   headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
-  if (tokenGranted) headers.set("Set-Cookie", `${SAMPLE_COOKIE}; Max-Age=604800; Path=/; HttpOnly; Secure; SameSite=Lax`);
+  if (tokenGranted) headers.set("Set-Cookie", `${SAMPLE_COOKIE_NAME}=${encodeURIComponent(token)}; Max-Age=604800; Path=/; HttpOnly; Secure; SameSite=Lax`);
   return new Response(sample, { status: 200, headers });
 }
 
 async function serveBookSample(request: Request, env: Env): Promise<Response> {
   const url = new URL(request.url);
-  const cookieGranted = request.headers.get("Cookie")?.split(";").some((cookie) => cookie.trim() === BOOK_SAMPLE_COOKIE) ?? false;
+  const cookieToken = cookieValue(request, BOOK_SAMPLE_COOKIE_NAME);
   const token = url.searchParams.get("token") || "";
   const secrets = [env.BOOK_SAMPLE_TOKEN_SECRET?.trim(), env.BREVO_API_KEY?.trim()].filter((secret): secret is string => Boolean(secret));
+  const cookieGranted = Boolean(cookieToken && (await Promise.any(secrets.map((secret) => isValidBookSampleToken(cookieToken, secret))).catch(() => false)));
   const tokenGranted = Boolean(token && (await Promise.any(secrets.map((secret) => isValidBookSampleToken(token, secret))).catch(() => false)));
 
   if (!cookieGranted && !tokenGranted) {
@@ -481,7 +551,7 @@ async function serveBookSample(request: Request, env: Env): Promise<Response> {
   headers.set("Content-Disposition", 'inline; filename="TRADE-HUSTL3-7-Page-Book-Sample.pdf"');
   headers.set("Cache-Control", "private, no-store");
   headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
-  if (tokenGranted) headers.set("Set-Cookie", `${BOOK_SAMPLE_COOKIE}; Max-Age=604800; Path=/; HttpOnly; Secure; SameSite=Lax`);
+  if (tokenGranted) headers.set("Set-Cookie", `${BOOK_SAMPLE_COOKIE_NAME}=${encodeURIComponent(token)}; Max-Age=604800; Path=/; HttpOnly; Secure; SameSite=Lax`);
   return new Response(sample, { status: 200, headers });
 }
 
@@ -494,41 +564,49 @@ async function serveBookSample(request: Request, env: Env): Promise<Response> {
 const worker = {
   async scheduled(_controller: ScheduledController, env: Env, ctx: ExecutionContext): Promise<void> {
     console.log("eBook launch sweep invoked", new Date().toISOString());
-    if (Date.now() >= EBOOK_RELEASE_AT) ctx.waitUntil(runEbookLaunchDelivery(env));
+    const jobs = [runResumeBuilderRetention(env)];
+    if (Date.now() >= EBOOK_RELEASE_AT) jobs.push(runEbookLaunchDelivery(env));
+    ctx.waitUntil(Promise.all(jobs).then(() => undefined));
   },
 
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
 
+    if (url.protocol === "http:" && (url.hostname === "tradehustl3.com" || url.hostname === "www.tradehustl3.com")) {
+      url.protocol = "https:";
+      url.hostname = "tradehustl3.com";
+      return withSecurityHeaders(Response.redirect(url.toString(), 308), url.pathname);
+    }
+
     if (url.hostname === "www.tradehustl3.com") {
       url.hostname = "tradehustl3.com";
-      return withSecurityHeaders(Response.redirect(url.toString(), 308));
+      return withSecurityHeaders(Response.redirect(url.toString(), 308), url.pathname);
     }
 
     if (url.pathname === "/resume") {
-      return withSecurityHeaders(Response.redirect(new URL("/resume-builder", request.url).toString(), 308));
+      return withSecurityHeaders(Response.redirect(new URL("/resume-builder", request.url).toString(), 308), url.pathname);
     }
 
     const resumeBuilderResponse = await handleResumeBuilderRoute(request, env);
-    if (resumeBuilderResponse) return withSecurityHeaders(resumeBuilderResponse);
+    if (resumeBuilderResponse) return withSecurityHeaders(resumeBuilderResponse, url.pathname);
 
     const ebookStripeResponse = await handleEbookStripeRoute(request, env);
-    if (ebookStripeResponse) return withSecurityHeaders(ebookStripeResponse);
+    if (ebookStripeResponse) return withSecurityHeaders(ebookStripeResponse, url.pathname);
 
     if (url.pathname === "/api/subscribe") {
-      return withSecurityHeaders(await subscribe(request, env));
+      return withSecurityHeaders(await subscribe(request, env), url.pathname);
     }
 
     if (url.pathname === FREE_SAMPLE_ROUTE) {
-      return withSecurityHeaders(await serveFreeSample(request, env));
+      return withSecurityHeaders(await serveFreeSample(request, env), url.pathname);
     }
 
     if (url.pathname === BOOK_SAMPLE_ROUTE) {
-      return withSecurityHeaders(await serveBookSample(request, env));
+      return withSecurityHeaders(await serveBookSample(request, env), url.pathname);
     }
 
     if (url.pathname === FREE_SAMPLE_PUBLIC_PATH) {
-      return withSecurityHeaders(Response.redirect(`${SITE_URL}/book#sample`, 302));
+      return withSecurityHeaders(Response.redirect(`${SITE_URL}/book#sample`, 302), url.pathname);
     }
 
     if (url.pathname === "/_vinext/image") {
@@ -539,10 +617,10 @@ const worker = {
           const result = await env.IMAGES.input(body).transform(width > 0 ? { width } : {}).output({ format, quality });
           return result.response();
         },
-      }, allowedWidths));
+      }, allowedWidths), url.pathname);
     }
 
-    const response = withSecurityHeaders(await handler.fetch(request, env, ctx));
+    const response = withSecurityHeaders(await handler.fetch(request, env, ctx), url.pathname);
     if (request.method === "GET" && (url.pathname.startsWith("/optimized/") || url.pathname === "/favicon.svg")) {
       const headers = new Headers(response.headers);
       headers.set("Cache-Control", "public, max-age=31536000, immutable");

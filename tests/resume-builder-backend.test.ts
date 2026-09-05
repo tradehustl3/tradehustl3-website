@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { PDFDocument } from "pdf-lib";
-import { handleResumeBuilderRoute } from "../worker/resume-builder";
+import { handleResumeBuilderRoute, runResumeBuilderRetention } from "../worker/resume-builder";
 import { createResumeDocx, createResumePdf, GeneratedResume } from "../worker/resume-documents";
 
 const sampleResume: GeneratedResume = {
@@ -35,7 +35,11 @@ const sampleResume: GeneratedResume = {
   additionalInformation: ["Valid driver's license and reliable transportation"],
 };
 
-function fakeDb(options: { generated?: boolean; entitlement?: { used: number; total: number } | null } = {}) {
+function fakeDb(options: {
+  generated?: boolean;
+  entitlement?: { used: number; total: number } | null;
+  rateLimitCount?: number | ((sql: string, values: unknown[]) => number);
+} = {}) {
   const writes: Array<{ sql: string; values: unknown[] }> = [];
   return {
     writes,
@@ -44,6 +48,12 @@ function fakeDb(options: { generated?: boolean; entitlement?: { used: number; to
         bind(...values: unknown[]) {
           return {
             async first() {
+              if (/RETURNING count/i.test(sql)) {
+                const count = typeof options.rateLimitCount === "function"
+                  ? options.rateLimitCount(sql, values)
+                  : options.rateLimitCount ?? 1;
+                return { count };
+              }
               if (/FROM sessions s/i.test(sql)) {
                 return { user_id: "user-1", email: "member@example.com", full_name: "Member" };
               }
@@ -120,6 +130,45 @@ test("magic-link confirmation cannot be consumed by an email scanner GET", async
   );
   assert.equal(response?.status, 405);
   assert.equal(response?.headers.get("allow"), "POST");
+});
+
+test("magic-link confirmation revokes older sessions before issuing a new one", async () => {
+  const statements: Array<{ sql: string; values: unknown[] }> = [];
+  const DB = {
+    prepare(sql: string) {
+      return {
+        bind(...values: unknown[]) {
+          const statement = {
+            sql,
+            values,
+            async first() {
+              if (/FROM auth_tokens/i.test(sql)) return { user_id: "user-1" };
+              if (/SELECT email, full_name FROM users/i.test(sql)) {
+                return { email: "member@example.com", full_name: "Member" };
+              }
+              return null;
+            },
+            async run() { return { meta: { changes: 1 } }; },
+          };
+          statements.push(statement);
+          return statement;
+        },
+      };
+    },
+    async batch() { return []; },
+  };
+  const rawToken = "B".repeat(43);
+  const response = await handleResumeBuilderRoute(
+    new Request("https://tradehustl3.com/api/resume-builder/auth/confirm", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Origin: "https://tradehustl3.com" },
+      body: JSON.stringify({ token: rawToken }),
+    }),
+    { DB: DB as unknown as D1Database },
+  );
+  assert.equal(response?.status, 200);
+  assert.equal(statements.some(({ sql }) => /UPDATE sessions SET revoked_at.*WHERE user_id/i.test(sql)), true);
+  assert.equal(statements.some(({ sql }) => /INSERT INTO sessions/i.test(sql)), true);
 });
 
 test("magic-link email keeps a Cloudflare preview tester on the preview deployment", async () => {
@@ -259,6 +308,78 @@ test("one watermarked preview generation is allowed before payment", async () =>
   assert.equal(result.downloads, null);
   assert.equal(result.runNumber, 1);
   assert.equal(objects.size, 3);
+});
+
+test("unpaid AI generation is blocked by the daily attempt quota before the model is called", async () => {
+  let modelCalled = false;
+  const response = await handleResumeBuilderRoute(
+    new Request("https://tradehustl3.com/api/resume-builder/resumes/resume-1/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Cookie: sessionCookie },
+      body: "{}",
+    }),
+    {
+      DB: fakeDb({
+        entitlement: null,
+        rateLimitCount: (_sql, values) => String(values[0]).includes("resume-ai-unpaid-user") ? 4 : 1,
+      }) as unknown as D1Database,
+    },
+    {
+      anthropicFetch: async () => {
+        modelCalled = true;
+        return new Response("{}");
+      },
+    },
+  );
+  assert.equal(response?.status, 429);
+  assert.equal(response?.headers.get("retry-after"), "86400");
+  assert.equal(modelCalled, false);
+});
+
+test("oversized Resume Builder webhook payloads are rejected before signature work", async () => {
+  const response = await handleResumeBuilderRoute(
+    new Request("https://tradehustl3.com/api/resume-builder/stripe/webhook", {
+      method: "POST",
+      headers: { "Content-Length": String(300 * 1024), "Stripe-Signature": "invalid" },
+      body: "{}",
+    }),
+    { DB: fakeDb() as unknown as D1Database, STRIPE_RESUME_WEBHOOK_SECRET: "whsec_test" },
+  );
+  assert.equal(response?.status, 413);
+});
+
+test("retention removes stale unpaid resume records and R2 files while preserving paid records", async () => {
+  const sqlSeen: string[] = [];
+  const batchSql: string[] = [];
+  const deletedKeys: string[] = [];
+  const DB = {
+    prepare(sql: string) {
+      sqlSeen.push(sql);
+      return {
+        bind() {
+          return {
+            sql,
+            async all() {
+              return { results: [{ resume_id: "stale-unpaid", object_key: "resume-builder/stale/preview.pdf" }] };
+            },
+            async run() { return { meta: { changes: 1 } }; },
+          };
+        },
+      };
+    },
+    async batch(statements: Array<{ sql?: string }>) {
+      batchSql.push(...statements.flatMap((statement) => statement.sql ? [statement.sql] : []));
+      return [];
+    },
+  };
+  await runResumeBuilderRetention({
+    DB: DB as unknown as D1Database,
+    BOOKS: { async delete(key: string) { deletedKeys.push(key); } } as unknown as R2Bucket,
+  });
+  assert.equal(sqlSeen.some((sql) => /NOT EXISTS[\s\S]*entitlements[\s\S]*NOT EXISTS[\s\S]*resume_orders/i.test(sql)), true);
+  assert.equal(batchSql.some((sql) => /DELETE FROM resume_files/i.test(sql)), true);
+  assert.equal(batchSql.some((sql) => /DELETE FROM resume_generations/i.test(sql)), true);
+  assert.deepEqual(deletedKeys, ["resume-builder/stale/preview.pdf"]);
 });
 
 test("checkout is unavailable until the watermarked preview exists", async () => {

@@ -1,13 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export function ConfirmMagicLink() {
+  const [token] = useState(() => typeof window === "undefined"
+    ? ""
+    : new URLSearchParams(window.location.search).get("token") ?? "");
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState("");
 
+  useEffect(() => {
+    if (!token) return;
+    window.history.replaceState({}, "", `${window.location.pathname}${window.location.hash}`);
+  }, [token]);
+
   async function confirm() {
-    const token = new URLSearchParams(window.location.search).get("token") ?? "";
     if (!token) {
       setMessage("This link is missing its secure token. Request a new email to continue.");
       return;

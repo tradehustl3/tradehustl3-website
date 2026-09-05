@@ -56,7 +56,9 @@ test("server-renders the corrected TRADE HUSTL3 brand and metadata", async () =>
   assert.equal(response.headers.get("x-content-type-options"), "nosniff");
   assert.equal(response.headers.get("x-frame-options"), "DENY");
   assert.equal(response.headers.get("referrer-policy"), "strict-origin-when-cross-origin");
-  assert.match(response.headers.get("content-security-policy-report-only") ?? "", /default-src 'self'/i);
+  assert.equal(response.headers.get("strict-transport-security"), "max-age=31536000");
+  assert.match(response.headers.get("content-security-policy") ?? "", /default-src 'self'/i);
+  assert.doesNotMatch(response.headers.get("content-security-policy") ?? "", /unsafe-eval/i);
   const html = await response.text();
 
   assert.match(html, /<title>Skilled Trades Resume Builder \| TRADE HUSTL3<\/title>/i);
@@ -189,6 +191,18 @@ test("redirects the duplicate www hostname to the canonical domain", async () =>
   assert.equal(response.headers.get("location"), "https://tradehustl3.com/resources?from=www");
 });
 
+test("redirects the production HTTP origin to canonical HTTPS and sends HSTS", async () => {
+  const worker = await loadWorker();
+  const response = await worker.fetch(
+    new Request("http://tradehustl3.com/resume-builder?source=test"),
+    {},
+    { waitUntil() {}, passThroughOnException() {} },
+  );
+  assert.equal(response.status, 308);
+  assert.equal(response.headers.get("location"), "https://tradehustl3.com/resume-builder?source=test");
+  assert.equal(response.headers.get("strict-transport-security"), "max-age=31536000");
+});
+
 test("homepage is a traffic director with no signup form", async () => {
   const html = await (await render()).text();
   assert.doesNotMatch(html, /type="email"/i);
@@ -214,6 +228,9 @@ test("subscriber endpoint validates and stores normalized signups", async () => 
       return {
         bind(...values) {
           return {
+            async first() {
+              return /RETURNING count/i.test(sql) ? { count: 1 } : null;
+            },
             async run() {
               calls.push({ sql, values });
               return { success: true };
@@ -222,6 +239,7 @@ test("subscriber endpoint validates and stores normalized signups", async () => 
         },
       };
     },
+    async batch() { return []; },
   };
   let response;
   try {
@@ -283,6 +301,24 @@ test("subscriber endpoint rejects invalid submissions", async () => {
   assert.equal(prepared, false);
 });
 
+test("subscriber endpoint rejects an oversized body even without trusting Content-Length", async () => {
+  const worker = await loadWorker();
+  const response = await worker.fetch(
+    new Request("https://tradehustl3.com/api/subscribe", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: "reader@example.com",
+        interest: "HUSTL3 PRO",
+        padding: "x".repeat(33_000),
+      }),
+    }),
+    { DB: { prepare() { throw new Error("database should not be reached"); } } },
+    { waitUntil() {}, passThroughOnException() {} },
+  );
+  assert.equal(response.status, 413);
+});
+
 test("subscriber endpoint keeps the signup successful when Brevo is unavailable", async () => {
   const worker = await loadWorker();
   let writes = 0;
@@ -295,7 +331,10 @@ test("subscriber endpoint keeps the signup successful when Brevo is unavailable"
         headers: { "Content-Type": "application/json", Origin: "https://tradehustl3.com" },
         body: JSON.stringify({ email: "resilient@example.com", interest: "HUSTL3 PRO" }),
       }),
-      { DB: { prepare() { return { bind() { return { async run() { writes += 1; return { success: true }; } }; } }; } } },
+      { DB: { prepare(sql) { return { bind() { return {
+        async first() { return /RETURNING count/i.test(sql) ? { count: 1 } : null; },
+        async run() { writes += 1; return { success: true }; },
+      }; } }; } } },
       { waitUntil() {}, passThroughOnException() {} },
     );
     assert.equal(response.status, 200);
@@ -315,10 +354,13 @@ test("book signup unlocks and emails the gated 2026-2027 guide preview", async (
     return new Response(null, { status: 201 });
   };
   const DB = {
-    prepare() {
+    prepare(sql) {
       return {
         bind() {
-          return { async run() { return { success: true }; } };
+          return {
+            async first() { return /RETURNING count/i.test(sql) ? { count: 1 } : null; },
+            async run() { return { success: true }; },
+          };
         },
       };
     },
@@ -332,7 +374,7 @@ test("book signup unlocks and emails the gated 2026-2027 guide preview", async (
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: "reader@example.com", interest: "The TRADE HUSTL3 Book" }),
       }),
-      { DB, BREVO_API_KEY: "test-brevo-key", BREVO_LIST_ID: "3" },
+      { DB, BREVO_API_KEY: "test-brevo-key", BREVO_LIST_ID: "3", SAMPLE_TOKEN_SECRET: "guide-token-secret" },
       { waitUntil() {}, passThroughOnException() {} },
     );
   } finally {
@@ -344,7 +386,8 @@ test("book signup unlocks and emails the gated 2026-2027 guide preview", async (
   assert.equal(result.ok, true);
   assert.equal(result.sampleUrl, "/api/free-sample");
   assert.match(result.message, /free 2026-2027 trade guide preview/i);
-  assert.match(signupResponse.headers.get("set-cookie") ?? "", /tradehustl3_sample_access=granted/i);
+  assert.match(signupResponse.headers.get("set-cookie") ?? "", /tradehustl3_sample_access=\d+\.[a-f0-9]{24}\./i);
+  assert.doesNotMatch(signupResponse.headers.get("set-cookie") ?? "", /=granted/i);
   assert.deepEqual(brevoCalls.map((call) => call.input), [
     "https://api.brevo.com/v3/contacts",
     "https://api.brevo.com/v3/smtp/email",
@@ -357,6 +400,7 @@ test("book signup unlocks and emails the gated 2026-2027 guide preview", async (
     new Request("https://tradehustl3.com/api/free-sample", { headers: { Cookie: cookie } }),
     {
       BREVO_API_KEY: "test-brevo-key",
+      SAMPLE_TOKEN_SECRET: "guide-token-secret",
     },
     { waitUntil() {}, passThroughOnException() {} },
   );
@@ -388,7 +432,10 @@ test("book sample signup delivers a gated 7-page PDF with its own cookie and sou
   };
   const DB = {
     prepare(sql) {
-      return { bind(...values) { return { async run() { dbCalls.push({ sql, values }); return { success: true }; } }; } };
+      return { bind(...values) { return {
+        async first() { return /RETURNING count/i.test(sql) ? { count: 1 } : null; },
+        async run() { dbCalls.push({ sql, values }); return { success: true }; },
+      }; } };
     },
   };
 
@@ -400,7 +447,7 @@ test("book sample signup delivers a gated 7-page PDF with its own cookie and sou
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: "Reader@Example.com", interest: "Book 7-Page Sample" }),
       }),
-      { DB, BREVO_API_KEY: "test-brevo-key", BREVO_LIST_ID: "3" },
+      { DB, BREVO_API_KEY: "test-brevo-key", BREVO_LIST_ID: "3", BOOK_SAMPLE_TOKEN_SECRET: "book-token-secret" },
       { waitUntil() {}, passThroughOnException() {} },
     );
   } finally {
@@ -411,8 +458,8 @@ test("book sample signup delivers a gated 7-page PDF with its own cookie and sou
   const body = await res.json();
   assert.equal(body.ok, true);
   assert.equal(body.sampleUrl, "/api/book-sample");
-  assert.match(res.headers.get("set-cookie") ?? "", /tradehustl3_book_sample_access=granted/);
-  assert.doesNotMatch(res.headers.get("set-cookie") ?? "", /tradehustl3_sample_access=granted/);
+  assert.match(res.headers.get("set-cookie") ?? "", /tradehustl3_book_sample_access=\d+\.book_sample\.[a-f0-9]{24}\./);
+  assert.doesNotMatch(res.headers.get("set-cookie") ?? "", /=granted/);
 
   assert.deepEqual(dbCalls[0].values, ["reader@example.com", "Book 7-Page Sample", "book_sample"]);
   assert.equal(brevoCalls[0].input, "https://api.brevo.com/v3/contacts");
@@ -425,7 +472,7 @@ test("book sample signup delivers a gated 7-page PDF with its own cookie and sou
   const token = emailHtml.match(/\/api\/book-sample\?token=([^"]+)/)[1];
   const pdf = await worker.fetch(
     new Request(`https://tradehustl3.com/api/book-sample?token=${token}`),
-    { BREVO_API_KEY: "test-brevo-key" },
+    { BREVO_API_KEY: "test-brevo-key", BOOK_SAMPLE_TOKEN_SECRET: "book-token-secret" },
     { waitUntil() {}, passThroughOnException() {} },
   );
   assert.equal(pdf.status, 200);
@@ -447,7 +494,7 @@ test("unauthenticated /api/book-sample redirects back to the funnel page", async
   assert.equal(res.headers.get("location"), "https://tradehustl3.com/book/sample");
 });
 
-test("book sample and Top 10 guide are distinct gated assets", async () => {
+test("forged sample cookies cannot unlock either gated asset", async () => {
   const worker = await loadWorker();
   const env = { BREVO_API_KEY: "test-brevo-key" };
   const ctx = { waitUntil() {}, passThroughOnException() {} };
@@ -461,11 +508,8 @@ test("book sample and Top 10 guide are distinct gated assets", async () => {
     env, ctx,
   );
 
-  assert.equal(guide.status, 200);
-  assert.equal(book.status, 200);
-  assert.match(guide.headers.get("content-disposition") ?? "", /2026-2027-Guide-Preview/);
-  assert.match(book.headers.get("content-disposition") ?? "", /7-Page-Book-Sample/);
-  assert.notEqual((await guide.arrayBuffer()).byteLength, (await book.arrayBuffer()).byteLength);
+  assert.equal(guide.status, 302);
+  assert.equal(book.status, 302);
 });
 
 test("a Top 10 credential cannot unlock the book sample, and vice versa", async () => {
@@ -490,7 +534,10 @@ test("a Top 10 credential cannot unlock the book sample, and vice versa", async 
     brevoCalls.push({ input: String(input), body: JSON.parse(String(init.body)) });
     return new Response(null, { status: 201 });
   };
-  const DB = { prepare() { return { bind() { return { async run() { return { success: true }; } }; } }; } };
+  const DB = { prepare(sql) { return { bind() { return {
+    async first() { return /RETURNING count/i.test(sql) ? { count: 1 } : null; },
+    async run() { return { success: true }; },
+  }; } }; } };
   try {
     await worker.fetch(
       new Request("https://tradehustl3.com/api/subscribe", {
@@ -498,7 +545,7 @@ test("a Top 10 credential cannot unlock the book sample, and vice versa", async 
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: "cross@example.com", interest: "Top 10 Trades" }),
       }),
-      { DB, BREVO_API_KEY: "test-brevo-key", BREVO_LIST_ID: "3" },
+      { DB, BREVO_API_KEY: "test-brevo-key", BREVO_LIST_ID: "3", SAMPLE_TOKEN_SECRET: "guide-token-secret" },
       ctx,
     );
   } finally {
@@ -809,6 +856,7 @@ test("launch sweep delivers a pending preorder once after release", async () => 
         bind(...values) {
           return {
             async all() {
+              if (/FROM resumes r/i.test(sql)) return { results: [] };
               assert.match(sql, /launch_emailed_at IS NULL/i);
               assert.match(sql, /status = 'paid'/i);
               return { results: [{ stripe_session_id: "cs_preorder", email: "buyer@example.com", download_token: "a".repeat(43) }] };
@@ -826,6 +874,7 @@ test("launch sweep delivers a pending preorder once after release", async () => 
         },
       };
     },
+    async batch() { return []; },
   };
   globalThis.fetch = async (input, init) => {
     sent.push({ input: String(input), body: JSON.parse(String(init.body)) });

@@ -15,6 +15,7 @@ export interface ResumeBuilderEnv {
   RESUME_AI_BRIDGE_SECRET?: string;
   GEMINI_MODEL?: string;
   RESUME_AI_PROVIDER?: string;
+  RESUME_AI_DAILY_ATTEMPT_LIMIT?: string;
 }
 
 export interface ResumeBuilderDependencies {
@@ -79,6 +80,9 @@ const MAX_INTAKE_JSON_CHARS = 120_000;
 const MAX_RESUME_BODY_BYTES = 160_000;
 const MAX_IMPORT_TEXT_CHARS = 100_000;
 const MAX_IMPORT_BODY_BYTES = 130_000;
+const STRIPE_WEBHOOK_MAX_BYTES = 256 * 1024;
+const RESUME_RETENTION_DAYS = 37;
+const DEFAULT_GLOBAL_AI_DAILY_ATTEMPT_LIMIT = 250;
 const encoder = new TextEncoder();
 
 export type ResumeFailureCode =
@@ -296,12 +300,35 @@ function resumeBuilderPublicOrigin(request: Request): string {
   return SITE_URL;
 }
 
-async function parseJsonBody(request: Request, maxBytes = 50_000): Promise<Record<string, unknown> | null> {
+async function readBodyText(request: Request, maxBytes: number): Promise<string | null> {
   const declaredLength = Number(request.headers.get("Content-Length") ?? "0");
   if (Number.isFinite(declaredLength) && declaredLength > maxBytes) return null;
+  if (!request.body) return "";
+  const reader = request.body.getReader();
+  const decoder = new TextDecoder();
+  let size = 0;
+  let text = "";
   try {
-    const text = await request.text();
-    if (!text || text.length > maxBytes) return null;
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      size += value.byteLength;
+      if (size > maxBytes) {
+        await reader.cancel();
+        return null;
+      }
+      text += decoder.decode(value, { stream: true });
+    }
+    return text + decoder.decode();
+  } catch {
+    return null;
+  }
+}
+
+async function parseJsonBody(request: Request, maxBytes = 50_000): Promise<Record<string, unknown> | null> {
+  try {
+    const text = await readBodyText(request, maxBytes);
+    if (!text) return null;
     const value = JSON.parse(text) as unknown;
     return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : null;
   } catch {
@@ -466,6 +493,9 @@ async function confirmMagicLink(request: Request, env: ResumeBuilderEnv): Promis
   const sessionHash = await sha256Hex(rawSession);
   await env.DB.batch([
     env.DB.prepare(
+      "UPDATE sessions SET revoked_at = CURRENT_TIMESTAMP WHERE user_id = ? AND revoked_at IS NULL",
+    ).bind(token.user_id),
+    env.DB.prepare(
       "INSERT INTO sessions (session_hash, user_id, expires_at) VALUES (?, ?, ?)",
     ).bind(sessionHash, token.user_id, nowSeconds() + SESSION_TTL_SECONDS),
     env.DB.prepare("UPDATE users SET last_login_at = CURRENT_TIMESTAMP WHERE user_id = ?").bind(token.user_id),
@@ -536,6 +566,13 @@ async function createResume(request: Request, env: ResumeBuilderEnv): Promise<Re
   if (!hasTrustedOrigin(request)) return json({ ok: false, message: "Request origin rejected." }, 403);
   const user = await requireUser(request, env);
   if (!user) return json({ ok: false, message: "Sign in to continue." }, 401);
+  const [userAllowed, ipAllowed] = await Promise.all([
+    checkRateLimit(env, `resume-create-user:${user.userId}`, 10, 60 * 60),
+    checkRateLimit(env, `resume-create-ip:${await sha256Hex(requestIp(request))}`, 20, 60 * 60),
+  ]);
+  if (!userAllowed || !ipAllowed) {
+    return json({ ok: false, message: "Too many resume creation attempts. Try again later." }, 429, { "Retry-After": "3600" });
+  }
   const parsed = validateResumeInput(await parseJsonBody(request, MAX_RESUME_BODY_BYTES));
   if (!parsed.ok) return parsed.response;
   const { trade, title, targetJobPosting, intakeJson, theme } = parsed.value;
@@ -846,7 +883,8 @@ async function handleResumeStripeWebhook(request: Request, env: ResumeBuilderEnv
   if (request.method !== "POST") return methodNotAllowed("POST");
   const secret = env.STRIPE_RESUME_WEBHOOK_SECRET?.trim();
   if (!secret) return json({ received: false }, 503);
-  const payload = await request.text();
+  const payload = await readBodyText(request, STRIPE_WEBHOOK_MAX_BYTES);
+  if (payload === null) return json({ received: false }, 413);
   const signature = request.headers.get("Stripe-Signature") || "";
   if (!await verifyStripeSignature(payload, signature, secret)) return json({ received: false }, 400);
 
@@ -1836,6 +1874,31 @@ async function generateResume(
     return json({ ok: false, message: "Create the initial resume before requesting corrections." }, 400);
   }
 
+  const configuredGlobalLimit = Number.parseInt(env.RESUME_AI_DAILY_ATTEMPT_LIMIT ?? "", 10);
+  const globalLimit = Number.isSafeInteger(configuredGlobalLimit) && configuredGlobalLimit > 0
+    ? Math.min(configuredGlobalLimit, 10_000)
+    : DEFAULT_GLOBAL_AI_DAILY_ATTEMPT_LIMIT;
+  const ipHash = await sha256Hex(requestIp(request));
+  const attemptChecks = [
+    checkRateLimit(env, `resume-ai-user:${user.userId}`, 10, 24 * 60 * 60),
+    checkRateLimit(env, `resume-ai-ip:${ipHash}`, 20, 24 * 60 * 60),
+    checkRateLimit(env, "resume-ai-global", globalLimit, 24 * 60 * 60),
+  ];
+  if (!entitlement) {
+    attemptChecks.push(
+      checkRateLimit(env, `resume-ai-unpaid-user:${user.userId}`, 3, 24 * 60 * 60),
+      checkRateLimit(env, `resume-ai-unpaid-ip:${ipHash}`, 6, 24 * 60 * 60),
+    );
+  }
+  if (!(await Promise.all(attemptChecks)).every(Boolean)) {
+    return json({
+      ok: false,
+      code: "RATE_LIMITED",
+      retryable: true,
+      message: "The daily resume-generation limit has been reached. Try again tomorrow.",
+    }, 429, { "Retry-After": "86400" });
+  }
+
   const locked = await env.DB.prepare(
     `UPDATE resumes SET status = 'generating', updated_at = CURRENT_TIMESTAMP
      WHERE resume_id = ? AND user_id = ? AND deleted_at IS NULL
@@ -1982,6 +2045,61 @@ async function generateResume(
       message: failureMessage(failure.code),
     }, failureStatus(failure.code));
   }
+}
+
+export async function runResumeBuilderRetention(env: ResumeBuilderEnv): Promise<void> {
+  const stale = await env.DB.prepare(
+    `SELECT r.resume_id, rf.object_key
+     FROM resumes r
+     LEFT JOIN resume_files rf ON rf.resume_id = r.resume_id
+     WHERE r.updated_at < datetime('now', '-' || ? || ' days')
+       AND NOT EXISTS (
+         SELECT 1 FROM entitlements e
+         WHERE e.resume_id = r.resume_id AND e.status = 'active'
+       )
+       AND NOT EXISTS (
+         SELECT 1 FROM resume_orders ro
+         WHERE ro.resume_id = r.resume_id AND ro.status = 'paid'
+       )
+     LIMIT 1500`,
+  ).bind(RESUME_RETENTION_DAYS).all<{ resume_id: string; object_key: string | null }>();
+
+  const objectKeys = new Map<string, string[]>();
+  for (const row of stale.results ?? []) {
+    const keys = objectKeys.get(row.resume_id) ?? [];
+    if (row.object_key) keys.push(row.object_key);
+    objectKeys.set(row.resume_id, keys);
+  }
+
+  for (const [resumeId, keys] of objectKeys) {
+    const deleted = await env.DB.prepare(
+      `DELETE FROM resumes
+       WHERE resume_id = ?
+         AND updated_at < datetime('now', '-' || ? || ' days')
+         AND NOT EXISTS (
+           SELECT 1 FROM entitlements e
+           WHERE e.resume_id = resumes.resume_id AND e.status = 'active'
+         )
+         AND NOT EXISTS (
+           SELECT 1 FROM resume_orders ro
+           WHERE ro.resume_id = resumes.resume_id AND ro.status = 'paid'
+         )`,
+    ).bind(resumeId, RESUME_RETENTION_DAYS).run() as D1MutationResult;
+    if ((deleted.meta?.changes ?? 0) !== 1) continue;
+    await env.DB.batch([
+      env.DB.prepare("DELETE FROM resume_files WHERE resume_id = ?").bind(resumeId),
+      env.DB.prepare("DELETE FROM resume_generations WHERE resume_id = ?").bind(resumeId),
+    ]);
+    if (env.BOOKS) await Promise.allSettled(keys.map((key) => env.BOOKS!.delete(key)));
+  }
+
+  const now = nowSeconds();
+  await env.DB.batch([
+    env.DB.prepare("DELETE FROM auth_tokens WHERE expires_at < ?").bind(now - 7 * 24 * 60 * 60),
+    env.DB.prepare("DELETE FROM sessions WHERE expires_at < ?").bind(now - 30 * 24 * 60 * 60),
+    env.DB.prepare("DELETE FROM rate_limits WHERE window_start < ?").bind(now - 2 * 24 * 60 * 60),
+    env.DB.prepare("DELETE FROM resume_generations WHERE created_at < datetime('now', '-37 days')"),
+  ]);
 }
 
 async function serveResumeFile(
