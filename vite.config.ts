@@ -1,7 +1,7 @@
 import { sites } from "@openai/sites-vite-plugin";
 import vinext from "vinext";
 import { defineConfig } from "vite";
-import hostingConfig from "./.openai/hosting.json";
+import hostingConfig from "./.openai/hosting.json" with { type: "json" };
 
 const D1_DATABASE_NAME = "tradehustl3-db";
 const D1_DATABASE_ID = "a8f61038-9a87-49b2-b708-b14400422d1b";

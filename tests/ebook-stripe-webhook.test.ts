@@ -2,6 +2,23 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { handleEbookStripeRoute, EBOOK_RELEASE_AT } from "../worker/ebook-stripe";
 
+test("oversized eBook webhook payloads are rejected before signature work", async () => {
+  const response = await handleEbookStripeRoute(
+    new Request("https://tradehustl3.com/api/stripe/webhook", {
+      method: "POST",
+      headers: { "Content-Length": String(300 * 1024), "Stripe-Signature": "invalid" },
+      body: "{}",
+    }),
+    {
+      DB: {} as D1Database,
+      BOOKS: {} as R2Bucket,
+      STRIPE_WEBHOOK_SECRET: "whsec_test",
+      STRIPE_EBOOK_PAYMENT_LINK_ID: "plink_test",
+    },
+  );
+  assert.equal(response?.status, 413);
+});
+
 type OrderRow = {
   stripe_session_id: string;
   email: string;
