@@ -30,7 +30,7 @@ export type RoleEntry = {
 export type WizardData = {
   trade: TradeTrack | "";
   experienceLevel: ExperienceLevel | "";
-  contact: { fullName: string; phone: string; cityState: string };
+  contact: { fullName: string; email: string; phone: string; cityState: string };
   summaryNotes: string;
   roles: RoleEntry[];
   fieldValue: {
@@ -71,7 +71,7 @@ export function emptyWizardData(): WizardData {
   return {
     trade: "",
     experienceLevel: "",
-    contact: { fullName: "", phone: "", cityState: "" },
+    contact: { fullName: "", email: "", phone: "", cityState: "" },
     summaryNotes: "",
     roles: [emptyRole()],
     fieldValue: {
@@ -138,7 +138,7 @@ export function fieldValueHasContent(fieldValue: WizardData["fieldValue"]): bool
 }
 
 /** Build the intake JSON payload (legacy-compatible + structured). */
-export function toIntake(data: WizardData, email: string): Record<string, unknown> {
+export function toIntake(data: WizardData, accountEmail: string): Record<string, unknown> {
   const skillsAndTools = joinLines([
     labelledBlock("Tools", chips(data.fieldValue.tools)),
     labelledBlock("Equipment & systems", chips(data.fieldValue.equipmentSystems)),
@@ -173,7 +173,7 @@ export function toIntake(data: WizardData, email: string): Record<string, unknow
   return {
     contact: {
       fullName: data.contact.fullName.trim(),
-      email,
+      email: data.contact.email.trim() || accountEmail,
       phone: data.contact.phone.trim(),
       cityState: data.contact.cityState.trim(),
     },
@@ -216,7 +216,7 @@ function asStringArray(value: unknown): string[] {
 /** Hydrate wizard state from a persisted resume, tolerating the legacy shape. */
 export function fromIntake(
   intake: unknown,
-  fallback: { trade: string; title: string; posting: string; fullName: string | null },
+  fallback: { trade: string; title: string; posting: string; fullName: string | null; email?: string | null },
 ): WizardData {
   const data = emptyWizardData();
   const root = (intake && typeof intake === "object" ? intake : {}) as Record<string, unknown>;
@@ -230,6 +230,7 @@ export function fromIntake(
   data.experienceLevel = asString(career.yearsExperience) as WizardData["experienceLevel"];
   data.contact = {
     fullName: asString(contact.fullName) || fallback.fullName || "",
+    email: asString(contact.email) || fallback.email || "",
     phone: asString(contact.phone),
     cityState: asString(contact.cityState),
   };
