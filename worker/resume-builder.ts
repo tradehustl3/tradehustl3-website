@@ -7,6 +7,7 @@ import {
 export * from "./resume-builder-base";
 
 type BaseResumeRequest = Parameters<typeof handleBaseResumeBuilderRoute>[0];
+type JsonReadableRequest = { json(): Promise<unknown> };
 
 const IMPORT_PRESERVATION_INSTRUCTION = `Uploaded-resume preservation rule:
 Preserve every explicit employer, job title, location, date range, certification, education item, contact detail available in the source schema, and every substantive responsibility or accomplishment. Do not summarize away supported facts. Keep every number exactly grounded in the source. When a role has multiple bullets, retain their factual content in responsibilities instead of collapsing the role to a generic sentence. Never invent a missing fact.`;
@@ -86,9 +87,9 @@ function firstResumePhone(text: string): string {
   return text.match(/(?:\+?1[\s.()-]*)?(?:\(?\d{3}\)?[\s.-]*)\d{3}[\s.-]*\d{4}/)?.[0]?.replace(/\s+/g, " ").trim() ?? "";
 }
 
-async function jsonBody(request: Request): Promise<Record<string, unknown> | null> {
+async function jsonBody(request: JsonReadableRequest): Promise<Record<string, unknown> | null> {
   try {
-    const parsed = await request.json() as unknown;
+    const parsed = await request.json();
     return parsed && typeof parsed === "object" && !Array.isArray(parsed)
       ? parsed as Record<string, unknown>
       : null;
@@ -116,7 +117,7 @@ function rewrittenJson(response: Response, body: Record<string, unknown>, status
   return new Response(JSON.stringify(body), { status, headers });
 }
 
-async function preserveImportedContact(requestCopy: Request, response: Response): Promise<Response> {
+async function preserveImportedContact(requestCopy: JsonReadableRequest, response: Response): Promise<Response> {
   if (!response.ok) return response;
   const requestBody = await jsonBody(requestCopy);
   const payload = await responseJson(response);
