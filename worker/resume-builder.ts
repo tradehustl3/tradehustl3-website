@@ -139,11 +139,16 @@ function isGeneratePath(pathname: string): boolean {
   return /^\/api\/resume-builder\/resumes\/[^/]+\/generate$/.test(pathname);
 }
 
+function shouldAutoRetryNumericGuard(env: ResumeBuilderEnv): boolean {
+  return env.RESUME_AI_PROVIDER?.trim().toLowerCase() === "gemini"
+    || Boolean(env.RESUME_AI_BRIDGE_URL?.trim());
+}
+
 /**
  * Keeps the proven Resume Builder backend intact while adding two protections:
  * 1) uploaded resume facts are preserved more aggressively through import/generation prompts;
- * 2) an AI-created unsupported number is retried automatically instead of sending the customer
- *    back to intake to invent metrics that were never on the uploaded resume.
+ * 2) on the Gemini production path, an AI-created unsupported number is retried automatically
+ *    instead of sending the customer back to intake to invent metrics that were never supplied.
  */
 export async function handleResumeBuilderRoute(
   request: Request,
@@ -154,7 +159,7 @@ export async function handleResumeBuilderRoute(
   const importPath = pathname === "/api/resume-builder/resume-import";
   const generatePath = isGeneratePath(pathname);
   const importCopy = importPath ? request.clone() : null;
-  const retryRequest = generatePath ? request.clone() : null;
+  const retryRequest = generatePath && shouldAutoRetryNumericGuard(env) ? request.clone() : null;
 
   const first = await handleBaseResumeBuilderRoute(
     request,
