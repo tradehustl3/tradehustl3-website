@@ -30,7 +30,7 @@ export type RoleEntry = {
 export type WizardData = {
   trade: TradeTrack | "";
   experienceLevel: ExperienceLevel | "";
-  contact: { fullName: string; email: string; phone: string; cityState: string };
+  contact: { fullName: string; email?: string; phone: string; cityState: string };
   summaryNotes: string;
   roles: RoleEntry[];
   fieldValue: {
@@ -173,7 +173,7 @@ export function toIntake(data: WizardData, accountEmail: string): Record<string,
   return {
     contact: {
       fullName: data.contact.fullName.trim(),
-      email: data.contact.email.trim() || accountEmail,
+      email: data.contact.email?.trim() || accountEmail,
       phone: data.contact.phone.trim(),
       cityState: data.contact.cityState.trim(),
     },
