@@ -1,5 +1,5 @@
 import { EXPERIENCE_LEVELS, isTradeTrack } from "../trade-content";
-import { roleHasContent, type WizardData } from "./wizard-data";
+import { type WizardData } from "./wizard-data";
 
 export const RESUME_UPLOAD_MAX_BYTES = 4 * 1024 * 1024;
 export const RESUME_UPLOAD_MAX_TEXT_CHARS = 100_000;
@@ -63,7 +63,22 @@ function stringList(value: unknown, limit = 40): string[] {
     .slice(0, limit);
 }
 
-export function mergeResumePrefill(current: WizardData, prefill: unknown): WizardData {
+export function extractResumeEmail(text: string): string {
+  return text.match(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/i)?.[0]?.trim() ?? "";
+}
+
+export function extractResumePhone(text: string): string {
+  const match = text.match(/(?:\+?1[\s.()-]*)?(?:\(?\d{3}\)?[\s.-]*)\d{3}[\s.-]*\d{4}/);
+  return match?.[0]?.replace(/\s+/g, " ").trim() ?? "";
+}
+
+/**
+ * Merge an uploaded resume as the source of truth. Existing wizard values are
+ * used only when the uploaded resume did not provide that fact. This keeps an
+ * account default or stale draft from overwriting contact/work-history facts
+ * that are already present in the file the customer just chose to enhance.
+ */
+export function mergeResumePrefill(current: WizardData, prefill: unknown, sourceText = ""): WizardData {
   if (!prefill || typeof prefill !== "object") return current;
   const root = prefill as Record<string, unknown>;
   const contact = root.contact && typeof root.contact === "object"
@@ -91,38 +106,46 @@ export function mergeResumePrefill(current: WizardData, prefill: unknown): Wizar
     workOrders: stringValue(role.workOrders, 2000),
     measurable: stringValue(role.measurable, 2000),
   }));
-  const targetJobTitle = stringValue(root.targetJobTitle, 200) || roles[0]?.jobTitle || "";
+  const importedCertifications = stringList(field.certifications);
+  const importedTools = stringList(field.tools);
+  const importedEquipmentSystems = stringList(field.equipmentSystems);
+  const importedTechnicalSkills = stringList(field.technicalSkills);
+  const importedSoftware = stringList(field.software);
+  const importedSafety = stringList(field.safety);
+  const importedEmail = stringValue(contact.email, 254) || extractResumeEmail(sourceText);
+  const importedPhone = stringValue(contact.phone, 100) || extractResumePhone(sourceText);
+  const targetJobTitle = stringValue(root.targetJobTitle, 200) || roles[0]?.jobTitle || current.targetJob.title;
+  const importedTrade = stringValue(root.trade, 100);
+  const importedExperience = stringValue(root.experienceLevel, 40);
 
   return {
     ...current,
-    trade: !current.trade && isTradeTrack(stringValue(root.trade, 100))
-      ? stringValue(root.trade, 100) as WizardData["trade"]
-      : current.trade,
-    experienceLevel: !current.experienceLevel
-      && (EXPERIENCE_LEVELS as readonly string[]).includes(stringValue(root.experienceLevel, 40))
-      ? stringValue(root.experienceLevel, 40) as WizardData["experienceLevel"]
+    trade: isTradeTrack(importedTrade) ? importedTrade : current.trade,
+    experienceLevel: (EXPERIENCE_LEVELS as readonly string[]).includes(importedExperience)
+      ? importedExperience as WizardData["experienceLevel"]
       : current.experienceLevel,
     contact: {
-      fullName: current.contact.fullName || stringValue(contact.fullName, 200),
-      phone: current.contact.phone || stringValue(contact.phone, 100),
-      cityState: current.contact.cityState || stringValue(contact.cityState, 200),
+      fullName: stringValue(contact.fullName, 200) || current.contact.fullName,
+      email: importedEmail || current.contact.email,
+      phone: importedPhone || current.contact.phone,
+      cityState: stringValue(contact.cityState, 200) || current.contact.cityState,
     },
-    summaryNotes: current.summaryNotes || stringValue(root.summaryNotes, 3000),
-    roles: current.roles.some(roleHasContent) || !roles.length ? current.roles : roles,
+    summaryNotes: stringValue(root.summaryNotes, 3000) || current.summaryNotes,
+    roles: roles.length ? roles : current.roles,
     fieldValue: {
-      certifications: current.fieldValue.certifications.length ? current.fieldValue.certifications : stringList(field.certifications),
-      licenses: current.fieldValue.licenses || stringValue(field.licenses, 1500),
-      tools: current.fieldValue.tools.length ? current.fieldValue.tools : stringList(field.tools),
-      equipmentSystems: current.fieldValue.equipmentSystems.length ? current.fieldValue.equipmentSystems : stringList(field.equipmentSystems),
-      technicalSkills: current.fieldValue.technicalSkills.length ? current.fieldValue.technicalSkills : stringList(field.technicalSkills),
-      software: current.fieldValue.software.length ? current.fieldValue.software : stringList(field.software),
-      safety: current.fieldValue.safety.length ? current.fieldValue.safety : stringList(field.safety),
+      certifications: importedCertifications.length ? importedCertifications : current.fieldValue.certifications,
+      licenses: stringValue(field.licenses, 1500) || current.fieldValue.licenses,
+      tools: importedTools.length ? importedTools : current.fieldValue.tools,
+      equipmentSystems: importedEquipmentSystems.length ? importedEquipmentSystems : current.fieldValue.equipmentSystems,
+      technicalSkills: importedTechnicalSkills.length ? importedTechnicalSkills : current.fieldValue.technicalSkills,
+      software: importedSoftware.length ? importedSoftware : current.fieldValue.software,
+      safety: importedSafety.length ? importedSafety : current.fieldValue.safety,
     },
-    education: current.education || stringValue(root.education, 2500),
-    additionalDetails: current.additionalDetails || stringValue(root.additionalDetails, 2500),
+    education: stringValue(root.education, 2500) || current.education,
+    additionalDetails: stringValue(root.additionalDetails, 2500) || current.additionalDetails,
     targetJob: {
       ...current.targetJob,
-      title: current.targetJob.title || targetJobTitle,
+      title: targetJobTitle,
     },
   };
 }
