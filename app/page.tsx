@@ -83,7 +83,7 @@ export default function Home() {
         <div className={styles.sampleCopy}>
           <p className={styles.eyebrow}>SEE THE OUTPUT BEFORE YOU START</p>
           <h2 id="sample-title">Actual Resume Builder output—not a promise.</h2>
-          <p className={styles.sampleLead}>This fictional HVAC candidate shows the actual ATS-safe structure customers can receive. The example uses representative trade experience and was rendered by the same document system used by the Resume Builder.</p>
+          <p className={styles.sampleLead}>This fictional HVAC candidate shows the actual ATS-friendly structure customers can receive. The example uses representative trade experience and was rendered by the same document system used by the Resume Builder.</p>
           <div className={styles.beforeAfter}>
             <article>
               <span>ROUGH INPUT</span>
@@ -98,7 +98,7 @@ export default function Home() {
             <AnalyticsLink href="/sample-hvac-resume.pdf" location="sample_proof" item="hvac_sample_pdf" className={styles.secondaryButton}>View Full Sample PDF <span aria-hidden="true">→</span></AnalyticsLink>
             <AnalyticsLink href="/resume-builder" location="sample_proof" className={styles.primaryButton}>Build My Free Preview <span aria-hidden="true">→</span></AnalyticsLink>
           </div>
-          <p className={styles.sampleDisclosure}>Sample candidate name, employers, and contact details are fictional and shown for demonstration.</p>
+          <p className={styles.sampleDisclosure} style={{ color: '#526476', fontSize: '13px' }}>Sample candidate name, employers, and contact details are fictional and shown for demonstration.</p>
         </div>
         <AnalyticsLink className={styles.sampleSheet} href="/sample-hvac-resume.pdf" location="sample_proof_image" item="hvac_sample_pdf">
           <Image src="/sample-hvac-resume.webp" alt="First page of a sample HVAC and facilities maintenance resume" width={816} height={1056} sizes="(max-width: 900px) 88vw, 42vw" />
