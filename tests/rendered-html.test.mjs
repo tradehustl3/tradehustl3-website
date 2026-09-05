@@ -193,11 +193,23 @@ test("homepage is a traffic director with no signup form", async () => {
   const html = await (await render()).text();
   assert.doesNotMatch(html, /type="email"/i);
   assert.doesNotMatch(html, /<form\b/i);
-  assert.match(html, /THREE WAYS IN/i);
+  assert.match(html, /MORE WAYS IN/i);
   assert.match(html, /href="\/top-10-trades"/i);
   assert.match(html, /href="\/book\/sample"/i);
   const resumeLinks = html.match(/href="\/resume-builder"/gi) ?? [];
   assert.ok(resumeLinks.length >= 5);
+});
+
+test("homepage leads with preview-before-payment proof before free resources", async () => {
+  const html = await (await render()).text();
+  assert.match(html, /\$0 to preview/i);
+  assert.match(html, /Build My Free Preview/i);
+  assert.match(html, /Actual Resume Builder output—not a promise/i);
+  assert.match(html, /href="\/sample-hvac-resume\.pdf"/i);
+  assert.match(html, /src="\/sample-hvac-resume\.webp"/i);
+  assert.match(html, /3 corrections within 7 days/i);
+  assert.match(html, /Secure Stripe checkout/i);
+  assert.ok(html.indexOf('id="sample-resume"') < html.indexOf('id="three-ways"'));
 });
 
 test("subscriber endpoint validates and stores normalized signups", async () => {
