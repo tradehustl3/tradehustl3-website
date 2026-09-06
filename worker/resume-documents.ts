@@ -55,38 +55,35 @@ export type GeneratedResume = {
   additionalInformation: string[];
 };
 
-// Two selectable templates: "plain" is the strict ATS-safe layout (no
-// background, single color used only for divider rules). "navy" adds a
-// colored header band for a more designed look, trading some ATS caution
-// for visual polish — still real, selectable text throughout.
+// Two customer-facing styles share the exact same ATS-safe structure.
+// "plain" is Classic Black and remains the default. The persisted "navy"
+// key is retained for backward compatibility, but now renders the optional
+// TRADE HUSTL3 Red Accent style instead of the retired navy/gold treatment.
 export type ResumeTheme = "plain" | "navy";
 
-const BRAND_RED = "111111";
-const BRAND_RED_RGB = rgb(0x11 / 255, 0x11 / 255, 0x11 / 255);
-const BRAND_NAVY = "102F76";
-const BRAND_NAVY_RGB = rgb(0x10 / 255, 0x2f / 255, 0x76 / 255);
-const BRAND_GOLD = "F5B942";
-const BRAND_GOLD_RGB = rgb(0xf5 / 255, 0xb9 / 255, 0x42 / 255);
-
-const SECTION_BORDER = {
-  bottom: { color: BRAND_RED, size: 6, style: BorderStyle.SINGLE },
-};
+const BRAND_BLACK = "111111";
+const BRAND_BLACK_RGB = rgb(0x11 / 255, 0x11 / 255, 0x11 / 255);
+const BRAND_RED = "D71920";
+const BRAND_RED_RGB = rgb(0xd7 / 255, 0x19 / 255, 0x20 / 255);
 
 function clean(value: string | undefined): string {
   return (value ?? "").replace(/\s+/g, " ").trim();
 }
 
 function sectionHeading(text: string, theme: ResumeTheme): Paragraph {
+  const accent = theme === "navy" ? BRAND_RED : BRAND_BLACK;
   return new Paragraph({
     heading: HeadingLevel.HEADING_2,
-    border: SECTION_BORDER,
+    border: {
+      bottom: { color: accent, size: 6, style: BorderStyle.SINGLE },
+    },
     spacing: { before: 220, after: 80 },
     children: [new TextRun({
       text,
       bold: true,
       size: 24,
       font: "Arial",
-      color: theme === "navy" ? BRAND_NAVY : undefined,
+      color: theme === "navy" ? BRAND_RED : undefined,
     })],
   });
 }
@@ -111,43 +108,22 @@ function certificationBullet(certification: ResumeCertification): Paragraph {
   });
 }
 
-function headerParagraphs(resume: GeneratedResume, contactLine: string, theme: ResumeTheme): Paragraph[] {
-  if (theme !== "navy") {
-    return [
-      new Paragraph({
-        alignment: AlignmentType.CENTER,
-        spacing: { after: 20 },
-        children: [new TextRun({ text: clean(resume.basics.fullName), bold: true, size: 42, font: "Arial" })],
-      }),
-      new Paragraph({
-        alignment: AlignmentType.CENTER,
-        spacing: { after: 20 },
-        children: [new TextRun({ text: clean(resume.basics.targetTitle), size: 24, font: "Arial" })],
-      }),
-      new Paragraph({
-        alignment: AlignmentType.CENTER,
-        spacing: { after: 160 },
-        children: [new TextRun({ text: contactLine, size: 20, font: "Arial" })],
-      }),
-    ];
-  }
-  const navyBand = { fill: BRAND_NAVY, type: "clear" as const, color: "auto" };
+function headerParagraphs(resume: GeneratedResume, contactLine: string): Paragraph[] {
   return [
     new Paragraph({
-      shading: navyBand,
-      spacing: { before: 160, after: 40 },
-      children: [new TextRun({ text: clean(resume.basics.fullName), bold: true, size: 42, font: "Arial", color: "FFFFFF" })],
+      alignment: AlignmentType.CENTER,
+      spacing: { after: 20 },
+      children: [new TextRun({ text: clean(resume.basics.fullName), bold: true, size: 42, font: "Arial" })],
     }),
     new Paragraph({
-      shading: navyBand,
-      spacing: { after: 40 },
-      children: [new TextRun({ text: clean(resume.basics.targetTitle), size: 24, font: "Arial", color: BRAND_GOLD })],
+      alignment: AlignmentType.CENTER,
+      spacing: { after: 20 },
+      children: [new TextRun({ text: clean(resume.basics.targetTitle), size: 24, font: "Arial" })],
     }),
     new Paragraph({
-      shading: navyBand,
-      border: { bottom: { color: BRAND_GOLD, size: 12, style: BorderStyle.SINGLE, space: 10 } },
-      spacing: { after: 200 },
-      children: [new TextRun({ text: contactLine, size: 20, font: "Arial", color: "FFFFFF" })],
+      alignment: AlignmentType.CENTER,
+      spacing: { after: 160 },
+      children: [new TextRun({ text: contactLine, size: 20, font: "Arial" })],
     }),
   ];
 }
@@ -160,7 +136,7 @@ export async function createResumeDocx(resume: GeneratedResume, theme: ResumeThe
   ].filter(Boolean).join("  |  ");
 
   const children: Paragraph[] = [
-    ...headerParagraphs(resume, contactLine, theme),
+    ...headerParagraphs(resume, contactLine),
     sectionHeading("PROFESSIONAL SUMMARY", theme),
     new Paragraph({
       spacing: { after: 80 },
@@ -244,7 +220,7 @@ export async function createResumeDocx(resume: GeneratedResume, theme: ResumeThe
     styles: {
       default: {
         document: {
-          run: { font: "Arial", size: 21, color: "111111" },
+          run: { font: "Arial", size: 21, color: BRAND_BLACK },
           paragraph: { spacing: { line: 260 } },
         },
       },
@@ -276,23 +252,21 @@ type PdfWriter = {
 const PDF_MARGIN = 50;
 const PDF_WIDTH = 612;
 const PDF_HEIGHT = 792;
-const ACCENT_BAR_WIDTH = 7;
-const HEADER_BAND_HEIGHT = 108;
+
+function themeAccentColor(theme: ResumeTheme): ReturnType<typeof rgb> {
+  return theme === "navy" ? BRAND_RED_RGB : BRAND_BLACK_RGB;
+}
 
 function themeSectionTitleColor(theme: ResumeTheme): ReturnType<typeof rgb> {
-  return theme === "navy" ? BRAND_NAVY_RGB : rgb(0.03, 0.03, 0.03);
+  return theme === "navy" ? BRAND_RED_RGB : rgb(0.03, 0.03, 0.03);
 }
 
 function themeBulletColor(theme: ResumeTheme): ReturnType<typeof rgb> {
   return theme === "navy" ? BRAND_RED_RGB : rgb(0, 0, 0);
 }
 
-function newPdfPage(writer: Pick<PdfWriter, "document" | "theme">): PDFPage {
-  const page = writer.document.addPage([PDF_WIDTH, PDF_HEIGHT]);
-  if (writer.theme === "navy") {
-    page.drawRectangle({ x: 0, y: 0, width: ACCENT_BAR_WIDTH, height: PDF_HEIGHT, color: BRAND_RED_RGB });
-  }
-  return page;
+function newPdfPage(writer: Pick<PdfWriter, "document">): PDFPage {
+  return writer.document.addPage([PDF_WIDTH, PDF_HEIGHT]);
 }
 
 function addPage(writer: PdfWriter): void {
@@ -374,7 +348,7 @@ function writeSection(writer: PdfWriter, title: string): void {
     start: { x: PDF_MARGIN, y: writer.y },
     end: { x: PDF_WIDTH - PDF_MARGIN, y: writer.y },
     thickness: 0.9,
-    color: BRAND_RED_RGB,
+    color: themeAccentColor(writer.theme),
   });
   writer.y -= 6;
 }
@@ -438,36 +412,21 @@ function writeCertificationBullet(writer: PdfWriter, certification: ResumeCertif
   writer.y -= 1.5;
 }
 
-function drawHeaderBand(writer: PdfWriter, resume: GeneratedResume): void {
-  const contentLeft = PDF_MARGIN;
-  writer.page.drawRectangle({ x: 0, y: PDF_HEIGHT - HEADER_BAND_HEIGHT, width: PDF_WIDTH, height: HEADER_BAND_HEIGHT, color: BRAND_NAVY_RGB });
-  writer.page.drawRectangle({ x: 0, y: PDF_HEIGHT - HEADER_BAND_HEIGHT - 3, width: PDF_WIDTH, height: 3, color: BRAND_GOLD_RGB });
-  writer.page.drawText(clean(resume.basics.fullName), { x: contentLeft, y: PDF_HEIGHT - 42, size: 21, font: writer.bold, color: rgb(1, 1, 1) });
-  writer.page.drawText(clean(resume.basics.targetTitle), { x: contentLeft, y: PDF_HEIGHT - 62, size: 12, font: writer.regular, color: BRAND_GOLD_RGB });
-  const contact = [resume.basics.location, resume.basics.phone, resume.basics.email].map(clean).filter(Boolean).join("   |   ");
-  writer.page.drawText(contact, { x: contentLeft, y: PDF_HEIGHT - 86, size: 10, font: writer.regular, color: rgb(1, 1, 1) });
-  writer.y = PDF_HEIGHT - HEADER_BAND_HEIGHT - 26;
-}
-
 export async function createResumePdf(resume: GeneratedResume, watermarked = false, theme: ResumeTheme = "plain"): Promise<Uint8Array> {
   const document = await PDFDocument.create();
   document.registerFontkit(fontkit);
   const writer: PdfWriter = {
     document,
-    page: newPdfPage({ document, theme }),
+    page: newPdfPage({ document }),
     regular: await document.embedFont(decodeFont(ROBOTO_REGULAR_BASE64), { subset: true }),
     bold: await document.embedFont(decodeFont(ROBOTO_BOLD_BASE64), { subset: true }),
     italic: await document.embedFont(decodeFont(ROBOTO_ITALIC_BASE64), { subset: true }),
     y: PDF_HEIGHT - PDF_MARGIN,
     theme,
   };
-  if (theme === "navy") {
-    drawHeaderBand(writer, resume);
-  } else {
-    writeCentered(writer, resume.basics.fullName, writer.bold, 21, 0);
-    writeCentered(writer, resume.basics.targetTitle, writer.regular, 12, 0);
-    writeCentered(writer, [resume.basics.location, resume.basics.phone, resume.basics.email].map(clean).filter(Boolean).join("  |  "), writer.regular, 10, 10);
-  }
+  writeCentered(writer, resume.basics.fullName, writer.bold, 21, 0);
+  writeCentered(writer, resume.basics.targetTitle, writer.regular, 12, 0);
+  writeCentered(writer, [resume.basics.location, resume.basics.phone, resume.basics.email].map(clean).filter(Boolean).join("  |  "), writer.regular, 10, 10);
 
   writeSection(writer, "PROFESSIONAL SUMMARY");
   writeLines(writer, resume.summary, { after: 4 });
@@ -523,7 +482,7 @@ export async function createResumePdf(resume: GeneratedResume, watermarked = fal
         y: 82,
         size: 18,
         font: writer.bold,
-        color: BRAND_RED_RGB,
+        color: BRAND_BLACK_RGB,
         rotate: degrees(28),
         opacity: 0.34,
       });
