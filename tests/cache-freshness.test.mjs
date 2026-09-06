@@ -5,10 +5,10 @@ import test from "node:test";
 test("public marketing pages opt out of stale Cloudflare HTML caching", async () => {
   const config = await readFile(new URL("../next.config.ts", import.meta.url), "utf8");
 
-  assert.match(config, /Cache-Control[\s\S]*no-cache, max-age=0, must-revalidate/i);
+  assert.match(config, /Cache-Control[\s\S]*no-store, max-age=0/i);
   assert.match(config, /Cloudflare-CDN-Cache-Control[\s\S]*no-store/i);
-  assert.match(config, /CDN-Cache-Control[\s\S]*no-cache, max-age=0, must-revalidate/i);
-  assert.match(config, /X-TRADE-HUSTL3-Content-Revision/i);
+  assert.match(config, /CDN-Cache-Control[\s\S]*no-store/i);
+  assert.match(config, /2026-09-06-production-refresh/i);
 
   for (const route of [
     "/",
