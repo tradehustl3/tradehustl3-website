@@ -156,29 +156,6 @@ const structuredData = {
       inLanguage: "en-US",
     },
 
-    {
-      "@type": "Book",
-      "@id": `${SITE_URL}/book#book`,
-      name: "TRADE HUSTL3: Built by Hustle, Backed by Trades",
-      description:
-        "A practical career guide for entering, earning, and elevating in the skilled trades.",
-
-      isbn: "9798193043355",
-      datePublished: "2026-09-15",
-      numberOfPages: 586,
-      inLanguage: "en-US",
-
-      url: `${SITE_URL}/book`,
-      image: `${SITE_URL}/trade-hustl3-book-cover.jpg`,
-
-      author: {
-        "@id": `${SITE_URL}/#zachary-ellis`,
-      },
-
-      publisher: {
-        "@id": `${SITE_URL}/#organization`,
-      },
-    },
   ],
 };
 
