@@ -35,9 +35,11 @@ type Resume = {
   }>;
 };
 
+// Keep the persisted "navy" key for compatibility with existing drafts while
+// presenting the two customer-facing choices that matter: black or red accent.
 const THEME_OPTIONS: { value: ResumeTheme; label: string; note: string }[] = [
-  { value: "plain", label: "Plain — ATS Safe", note: "No background. Plain text throughout so applicant tracking systems parse it cleanly." },
-  { value: "navy", label: "Navy — Styled", note: "A navy header band and gold accent line for a more designed look. Still real, selectable text." },
+  { value: "plain", label: "Classic Black — Default", note: "White background, black text and black dividers. Simple, professional, and ATS-safe." },
+  { value: "navy", label: "TRADE HUSTL3 Red Accent", note: "The same ATS-safe structure with true TRADE HUSTL3 red used only for clean section accents." },
 ];
 
 type GenerationFailure = {
@@ -159,6 +161,7 @@ export function ResumeReview() {
     if (!resumeId || !resume || resume.theme === theme || themeSaving) return;
     const previous = resume.theme;
     setThemeSaving(true);
+    setMessage("");
     setResume({ ...resume, theme });
     try {
       const response = await fetch(`/api/resume-builder/resumes/${encodeURIComponent(resumeId)}`, {
@@ -167,7 +170,10 @@ export function ResumeReview() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ theme }),
       });
-      if (!response.ok) throw new Error("We could not save your template choice.");
+      const result = await response.json() as { message?: string };
+      if (!response.ok) throw new Error(result.message || "We could not save your template choice.");
+      await load(resumeId);
+      setMessage(result.message || "Resume style updated without using an AI run.");
     } catch (error) {
       setResume((current) => current ? { ...current, theme: previous } : current);
       setMessage(error instanceof Error ? error.message : "We could not save your template choice.");
@@ -298,7 +304,7 @@ export function ResumeReview() {
         <section className="rb-first-build">
           <div className="rb-blueprint" aria-hidden="true"><span>ATS</span><i /><i /><i /><i /></div>
           <div><p className="rb-kicker">/ PREVIEW BEFORE YOU PAY</p><h2>READY FOR THE FIRST BUILD.</h2><p>Our AI resume engine will organize only the experience and facts you provided—no invented licenses, employers, or results. You will review a protected, logo-watermarked copy before checkout.</p>
-          <span className="rb-theme-label">Choose your template</span>
+          <span className="rb-theme-label">Choose your resume style</span>
           {renderThemePicker()}
           <button className="rb-button rb-button-primary" type="button" disabled={working} onClick={() => void runGeneration()}>{working ? "Building your resume…" : "Build my watermarked preview"} <span>→</span></button></div>
         </section>
@@ -306,14 +312,14 @@ export function ResumeReview() {
         <section className="rb-review-grid">
           <div className="rb-preview-panel">
             <div className="rb-preview-toolbar"><div><span className="rb-status-dot" />{resume.paid ? "Clean paid resume" : "Protected watermarked preview"}</div><small>{resume.paid ? "Watermark removed · clean files below" : "Preview only · pay to remove watermark"}</small></div>
-            <iframe key={`${resume.previewUrl}-${resume.runsUsed}-${resume.paid}`} src={resume.paid && resume.downloads ? `${resume.downloads.pdf}?view=1&run=${resume.runsUsed}` : `${resume.previewUrl}?run=${resume.runsUsed}`} title={resume.paid ? "Clean paid resume" : "Watermarked resume preview"} />
+            <iframe key={`${resume.previewUrl}-${resume.runsUsed}-${resume.paid}-${resume.theme}`} src={resume.paid && resume.downloads ? `${resume.downloads.pdf}?view=1&run=${resume.runsUsed}&style=${resume.theme}` : `${resume.previewUrl}?run=${resume.runsUsed}&style=${resume.theme}`} title={resume.paid ? "Clean paid resume" : "Watermarked resume preview"} />
           </div>
 
           <aside className="rb-review-sidebar">
             <div className="rb-review-status"><p className="rb-kicker">/ {resume.paid ? "REVIEW + REFINE" : "PREVIEW BEFORE YOU PAY"}</p><h2>{resume.paid ? "MAKE IT SOUND LIKE YOU." : "LIKE WHAT YOU SEE?"}</h2><p className="rb-review-desc">{resume.paid ? "Check names, dates, certifications, job duties, and contact information before downloading." : "Your first resume is ready. Pay once to remove the watermark, unlock the clean PDF and DOCX, and receive up to three corrections."}</p>
-              <span className="rb-theme-label">Template</span>
+              <span className="rb-theme-label">Resume style</span>
               {renderThemePicker()}
-              <small className="rb-theme-note">Switching styles applies the next time you {resume.paid ? "submit a correction" : "build a preview"}.</small>
+              <small className="rb-theme-note">Switch between Classic Black and Red Accent without using an AI correction run. Your preview and final files keep the same resume content and structure.</small>
             </div>
 
             <section className="rb-quality-card" aria-labelledby="resume-quality-title">
