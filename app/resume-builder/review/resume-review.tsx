@@ -16,6 +16,23 @@ type Resume = {
   correctionsRemaining: number;
   previewUrl: string | null;
   downloads: { pdf: string; docx: string } | null;
+  qualityScore: {
+    total: number;
+    label: string;
+    issues: string[];
+    dimensions: Record<string, number>;
+  };
+  bulletEditor: Array<{
+    jobIndex: number;
+    employer: string;
+    jobTitle: string;
+    bullets: Array<{
+      bulletIndex: number;
+      original: string;
+      suggestion: string;
+      choice: "suggestion" | "original" | "edited";
+    }>;
+  }>;
 };
 
 const THEME_OPTIONS: { value: ResumeTheme; label: string; note: string }[] = [
@@ -46,6 +63,8 @@ export function ResumeReview() {
   const [message, setMessage] = useState("");
   const [intakeNotice, setIntakeNotice] = useState<GenerationFailure | null>(null);
   const [themeSaving, setThemeSaving] = useState(false);
+  const [bulletSaving, setBulletSaving] = useState("");
+  const [bulletDrafts, setBulletDrafts] = useState<Record<string, string>>({});
 
   const load = useCallback(async (id: string) => {
     try {
@@ -154,6 +173,35 @@ export function ResumeReview() {
       setMessage(error instanceof Error ? error.message : "We could not save your template choice.");
     } finally {
       setThemeSaving(false);
+    }
+  }
+
+  async function saveBullet(
+    jobIndex: number,
+    bulletIndex: number,
+    choice: "suggestion" | "original" | "edited",
+    suggestion: string,
+  ) {
+    if (!resumeId || bulletSaving) return;
+    const key = `${jobIndex}:${bulletIndex}`;
+    const editedText = bulletDrafts[key] ?? suggestion;
+    setBulletSaving(key);
+    setMessage("");
+    try {
+      const response = await fetch(`/api/resume-builder/resumes/${encodeURIComponent(resumeId)}/bullets`, {
+        method: "PATCH",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ jobIndex, bulletIndex, choice, ...(choice === "edited" ? { text: editedText } : {}) }),
+      });
+      const result = await response.json() as { message?: string };
+      if (!response.ok) throw new Error(result.message || "We could not save that bullet.");
+      await load(resumeId);
+      setMessage(result.message || "Bullet saved without using an AI run.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "We could not save that bullet.");
+    } finally {
+      setBulletSaving("");
     }
   }
 
@@ -267,6 +315,53 @@ export function ResumeReview() {
               {renderThemePicker()}
               <small className="rb-theme-note">Switching styles applies the next time you {resume.paid ? "submit a correction" : "build a preview"}.</small>
             </div>
+
+            <section className="rb-quality-card" aria-labelledby="resume-quality-title">
+              <div className="rb-quality-head">
+                <div><p className="rb-kicker">/ RESUME QUALITY SCORE</p><h2 id="resume-quality-title">{resume.qualityScore.total}<span>/100</span></h2></div>
+                <strong>{resume.qualityScore.label}</strong>
+              </div>
+              <p>Deterministic checks for complete work history, dates, credentials, ATS structure, and unsupported claims. Scoring uses no AI run.</p>
+              {resume.qualityScore.issues.length ? <ul>{resume.qualityScore.issues.map((issue) => <li key={issue}>{issue}</li>)}</ul> : <p className="rb-quality-pass">All verified jobs and protected facts passed the quality gate.</p>}
+            </section>
+
+            {resume.bulletEditor.length ? (
+              <section className="rb-bullet-editor" aria-labelledby="bullet-editor-title">
+                <p className="rb-kicker">/ HUSTL3 BOT BULLET WORKSHOP</p>
+                <h2 id="bullet-editor-title">IMPROVE ONE BULLET AT A TIME.</h2>
+                <p>We strengthen what you actually did. We never make up numbers, licenses, equipment experience, or certifications.</p>
+                {resume.bulletEditor.map((job) => (
+                  <div className="rb-bullet-job" key={job.jobIndex}>
+                    <h3>{job.jobTitle}</h3><small>{job.employer}</small>
+                    {job.bullets.map((bullet) => {
+                      const key = `${job.jobIndex}:${bullet.bulletIndex}`;
+                      const value = bulletDrafts[key] ?? bullet.suggestion;
+                      const saving = bulletSaving === key;
+                      return (
+                        <article className="rb-bullet-card" key={key}>
+                          <div className="rb-bullet-version"><strong>Original</strong><p>{bullet.original}</p></div>
+                          <label htmlFor={`bullet-${job.jobIndex}-${bullet.bulletIndex}`}>HUSTL3 BOT suggestion</label>
+                          <textarea
+                            id={`bullet-${job.jobIndex}-${bullet.bulletIndex}`}
+                            rows={4}
+                            maxLength={500}
+                            value={value}
+                            disabled={Boolean(bulletSaving)}
+                            onChange={(event) => setBulletDrafts((current) => ({ ...current, [key]: event.target.value }))}
+                          />
+                          <div className="rb-bullet-actions" aria-label={`Choose wording for bullet ${bullet.bulletIndex + 1}`}>
+                            <button type="button" className={bullet.choice === "suggestion" ? "selected" : ""} disabled={Boolean(bulletSaving)} onClick={() => void saveBullet(job.jobIndex, bullet.bulletIndex, "suggestion", bullet.suggestion)}>Accept</button>
+                            <button type="button" className={bullet.choice === "edited" ? "selected" : ""} disabled={Boolean(bulletSaving) || !value.trim()} onClick={() => void saveBullet(job.jobIndex, bullet.bulletIndex, "edited", bullet.suggestion)}>{saving ? "Saving…" : "Rewrite"}</button>
+                            <button type="button" className={bullet.choice === "original" ? "selected" : ""} disabled={Boolean(bulletSaving)} onClick={() => void saveBullet(job.jobIndex, bullet.bulletIndex, "original", bullet.suggestion)}>Keep Original</button>
+                          </div>
+                        </article>
+                      );
+                    })}
+                  </div>
+                ))}
+                <small className="rb-bullet-note">Each choice updates the protected preview and final PDF + DOCX without using a correction run.</small>
+              </section>
+            ) : null}
 
             {resume.paid ? <form className="rb-correction-form" onSubmit={submitCorrection}>
               <div className="rb-correction-count"><strong>{resume.correctionsRemaining}</strong><span>AI corrections remaining</span></div>

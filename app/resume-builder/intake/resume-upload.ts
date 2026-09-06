@@ -120,6 +120,7 @@ export function mergeResumePrefill(current: WizardData, prefill: unknown, source
 
   return {
     ...current,
+    sourceProvenance: "upload",
     trade: isTradeTrack(importedTrade) ? importedTrade : current.trade,
     experienceLevel: (EXPERIENCE_LEVELS as readonly string[]).includes(importedExperience)
       ? importedExperience as WizardData["experienceLevel"]

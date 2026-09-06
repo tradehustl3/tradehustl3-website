@@ -66,7 +66,7 @@ const safeResume: GeneratedResume = {
   additionalInformation: [],
 };
 
-function harness() {
+function harness(savedIntake: Record<string, unknown> = intake) {
   const state = { status: "draft", generatedJson: null as string | null };
   const objects = new Map<string, Uint8Array>();
 
@@ -85,7 +85,7 @@ function harness() {
             user_id: "user-1",
             trade: "Facilities Maintenance",
             title: "Maintenance Supervisor",
-            intake_json: JSON.stringify(intake),
+            intake_json: JSON.stringify(savedIntake),
             generated_json: state.generatedJson,
             target_job_posting: null,
             status: state.status,
@@ -187,4 +187,146 @@ test("Gemini uploaded-resume enhancement automatically retries an invented metri
   assert.match(systemPrompts[0], /If metrics are absent, write strong nonnumeric bullets/i);
   assert.match(systemPrompts[1], /Safety retry rule/i);
   assert.match(systemPrompts[1], /Do not create estimates, percentages, counts, quantities/i);
+});
+
+test("a multi-job uploaded HVAC resume cannot collapse into summary, certifications, and skills", async () => {
+  const multiJobIntake = {
+    ...intake,
+    experience: [
+      {
+        employer: "Campus Housing Company",
+        jobTitle: "Maintenance Supervisor",
+        location: "Marietta, GA",
+        startDate: "June 2026",
+        endDate: "July 2026",
+        responsibilities: "Supervised a five-person team and coordinated HVAC vendors.",
+        workOrders: "Managed 150–200 monthly work orders in Salesforce.",
+      },
+      {
+        employer: "Industrial Warehouse",
+        jobTitle: "Facility Maintenance Technician",
+        startDate: "January 2023",
+        endDate: "May 2026",
+        responsibilities: "Diagnosed HVAC, electrical, plumbing, and mechanical faults and completed PMs.",
+      },
+      {
+        employer: "Cooler Heating & Air",
+        jobTitle: "HVAC Technician",
+        startDate: "April 2017",
+        endDate: "December 2019",
+        responsibilities: "Serviced compressors, motors, contactors, capacitors, transformers, and control boards.",
+      },
+    ],
+    meta: { source: "upload", importedResume: true },
+  };
+  const h = harness(multiJobIntake);
+  let rendered: GeneratedResume | null = null;
+  const collapsed: GeneratedResume = {
+    basics: safeResume.basics,
+    summary: safeResume.summary,
+    skills: safeResume.skills,
+    certifications: safeResume.certifications,
+    experience: [],
+    education: [],
+    additionalInformation: [],
+  };
+  const response = await handleResumeBuilderRoute(
+    new Request("https://tradehustl3.com/api/resume-builder/resumes/resume-1/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Cookie: sessionCookie, Origin: "https://tradehustl3.com" },
+      body: "{}",
+    }),
+    {
+      DB: h.DB as unknown as D1Database,
+      BOOKS: h.BOOKS as unknown as R2Bucket,
+      RESUME_AI_PROVIDER: "gemini",
+      RESUME_AI_BRIDGE_URL: "https://resume-ai-bridge.example.run.app",
+      RESUME_AI_BRIDGE_SECRET: "bridge-secret",
+    },
+    {
+      geminiFetch: (async () => new Response(JSON.stringify({
+        candidates: [{ finishReason: "STOP", content: { parts: [{ text: JSON.stringify(collapsed) }] } }],
+        usageMetadata: { promptTokenCount: 10, candidatesTokenCount: 20 },
+      }), { status: 200, headers: { "Content-Type": "application/json" } })) as typeof fetch,
+      createDocx: async (generated) => {
+        rendered = generated;
+        return encoder.encode("DOCX");
+      },
+      createPdf: async (generated) => {
+        rendered = generated;
+        return encoder.encode("PDF");
+      },
+    },
+  );
+  assert.ok(response);
+  assert.equal(response.status, 200);
+  assert.ok(rendered);
+  const repaired = rendered as GeneratedResume;
+  assert.deepEqual(repaired.experience.map((job) => job.employer), ["Campus Housing Company", "Industrial Warehouse", "Cooler Heating & Air"]);
+  assert.deepEqual(repaired.experience.map((job) => job.startDate), ["June 2026", "January 2023", "April 2017"]);
+  assert.match(repaired.experience[0].bullets.join(" "), /150–200 monthly work orders/i);
+  assert.equal(JSON.parse(h.state.generatedJson ?? "{}").experience.length, 3);
+});
+
+test("bullet-level Rewrite persists to preview, PDF, and DOCX without consuming an AI run", async () => {
+  const h = harness();
+  h.state.generatedJson = JSON.stringify(safeResume);
+  h.state.status = "ready";
+  const rewritten = "Direct maintenance operations and coordinate HVAC replacements across the student housing community.";
+  let renderedDocx = "";
+  let renderedPdf = "";
+
+  const response = await handleResumeBuilderRoute(
+    new Request("https://tradehustl3.com/api/resume-builder/resumes/resume-1/bullets", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", Cookie: sessionCookie, Origin: "https://tradehustl3.com" },
+      body: JSON.stringify({ jobIndex: 0, bulletIndex: 0, choice: "edited", text: rewritten }),
+    }),
+    { DB: h.DB as unknown as D1Database, BOOKS: h.BOOKS as unknown as R2Bucket },
+    {
+      createDocx: async (generated) => {
+        renderedDocx = generated.experience[0].bullets[0];
+        return encoder.encode(`DOCX:${JSON.stringify(generated)}`);
+      },
+      createPdf: async (generated) => {
+        renderedPdf = generated.experience[0].bullets[0];
+        return encoder.encode(`PDF:${JSON.stringify(generated)}`);
+      },
+    },
+  );
+
+  assert.ok(response);
+  assert.equal(response.status, 200);
+  const payload = await response.json() as { runConsumed?: boolean; message?: string };
+  assert.equal(payload.runConsumed, false);
+  assert.match(payload.message ?? "", /preview, PDF, and DOCX/i);
+  const stored = JSON.parse(h.state.generatedJson ?? "{}") as GeneratedResume & {
+    editorial?: { selections?: Array<{ choice?: string }> };
+  };
+  assert.equal(stored.experience[0].bullets[0], rewritten);
+  assert.equal(stored.editorial?.selections?.[0]?.choice, "edited");
+  assert.equal(renderedDocx, rewritten);
+  assert.equal(renderedPdf, rewritten);
+  assert.equal(h.objects.size, 3);
+});
+
+test("bullet editor blocks a newly invented number and leaves existing files unchanged", async () => {
+  const h = harness();
+  h.state.generatedJson = JSON.stringify(safeResume);
+  h.state.status = "ready";
+  const response = await handleResumeBuilderRoute(
+    new Request("https://tradehustl3.com/api/resume-builder/resumes/resume-1/bullets", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", Cookie: sessionCookie, Origin: "https://tradehustl3.com" },
+      body: JSON.stringify({ jobIndex: 0, bulletIndex: 0, choice: "edited", text: "Reduced callbacks by 99 percent." }),
+    }),
+    { DB: h.DB as unknown as D1Database, BOOKS: h.BOOKS as unknown as R2Bucket },
+  );
+  assert.ok(response);
+  assert.equal(response.status, 422);
+  const payload = await response.json() as { code?: string; runConsumed?: boolean };
+  assert.equal(payload.code, "UNSUPPORTED_NUMERIC_CLAIM");
+  assert.equal(payload.runConsumed, false);
+  assert.equal(h.state.generatedJson, JSON.stringify(safeResume));
+  assert.equal(h.objects.size, 0);
 });

@@ -285,7 +285,7 @@
 .rb-preview-toolbar small { color: var(--rb-gray); font-size: 9px; }
 .rb-preview-panel iframe { width: calc(100% - 24px); height: 714px; display: block; margin: 0 12px 12px; border: 0; background: white; }
 .rb-review-sidebar { display: flex; flex-direction: column; gap: 16px; }
-.rb-review-status, .rb-correction-form, .rb-downloads { padding: 27px; background: var(--rb-surface-2); }
+.rb-review-status, .rb-correction-form, .rb-downloads, .rb-quality-card, .rb-bullet-editor { padding: 27px; background: var(--rb-surface-2); }
 .rb-review-status { border-top: 4px solid var(--rb-red); }
 .rb-review-status h2, .rb-unpaid-card h2, .rb-first-build h2 { font-size: clamp(40px, 4vw, 57px); line-height: .93; }
 .rb-review-status > p.rb-review-desc, .rb-unpaid-card > p:not(.rb-kicker), .rb-first-build p:not(.rb-kicker) { color: var(--rb-ink-soft); line-height: 1.55; }
@@ -295,6 +295,30 @@
 .rb-theme-picker .rb-trade-card-name { font-size: 14px; }
 .rb-theme-picker .rb-trade-card-note { font-size: 11px; }
 .rb-theme-note { display: block; margin-top: 10px; color: var(--rb-ink-soft); font-size: 10px; line-height: 1.5; }
+.rb-quality-card { border-top: 4px solid var(--rb-gold); }
+.rb-quality-head { display: flex; align-items: end; justify-content: space-between; gap: 18px; }
+.rb-quality-head h2 { margin: 4px 0 0; color: var(--rb-red); font-size: 48px; line-height: .9; }
+.rb-quality-head h2 span { color: var(--rb-ink-soft); font-family: var(--font-body); font-size: 13px; }
+.rb-quality-head > strong { padding: 7px 10px; background: var(--rb-navy); color: white; font-size: 9px; letter-spacing: .1em; text-transform: uppercase; }
+.rb-quality-card > p, .rb-bullet-editor > p { color: var(--rb-ink-soft); font-size: 12px; line-height: 1.55; }
+.rb-quality-card ul { margin: 14px 0 0; padding-left: 18px; color: var(--rb-red); font-size: 11px; line-height: 1.6; }
+.rb-quality-card .rb-quality-pass { margin: 14px 0 0; padding: 10px 12px; border-left: 3px solid #34794f; background: #34794f12; color: #285f3d; font-weight: 800; }
+.rb-bullet-editor { border-top: 4px solid var(--rb-red); }
+.rb-bullet-editor > h2 { margin: 8px 0 0; font-size: 38px; line-height: .95; }
+.rb-bullet-job { margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--rb-field-border); }
+.rb-bullet-job h3 { margin: 0; font-size: 16px; }
+.rb-bullet-job > small { color: var(--rb-ink-soft); }
+.rb-bullet-card { margin-top: 14px; padding: 14px; border: 1px solid var(--rb-field-border); background: #fff; }
+.rb-bullet-version strong, .rb-bullet-card > label { display: block; margin-bottom: 5px; color: var(--rb-red); font-size: 9px; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; }
+.rb-bullet-version p { margin: 0 0 13px; color: var(--rb-ink-soft); font-size: 11px; line-height: 1.55; }
+.rb-bullet-card textarea { width: 100%; resize: vertical; padding: 11px; border: 1px solid var(--rb-field-border); background: var(--rb-surface); color: var(--rb-navy); font: inherit; font-size: 12px; line-height: 1.5; }
+.rb-bullet-card textarea:focus { outline: 0; border-color: var(--rb-gold); box-shadow: 0 0 0 3px #d6a52a33; }
+.rb-bullet-actions { display: grid; grid-template-columns: .8fr .8fr 1.3fr; gap: 6px; margin-top: 9px; }
+.rb-bullet-actions button { min-height: 38px; padding: 7px; border: 1px solid var(--rb-navy); background: transparent; color: var(--rb-navy); cursor: pointer; font: inherit; font-size: 9px; font-weight: 900; text-transform: uppercase; }
+.rb-bullet-actions button:hover, .rb-bullet-actions button:focus-visible, .rb-bullet-actions button.selected { background: var(--rb-navy); color: white; }
+.rb-bullet-actions button:focus-visible { outline: 3px solid var(--rb-gold); outline-offset: 2px; }
+.rb-bullet-actions button:disabled { cursor: not-allowed; opacity: .55; }
+.rb-bullet-note { display: block; margin-top: 14px; color: var(--rb-ink-soft); line-height: 1.5; }
 .rb-correction-count { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
 .rb-correction-count strong { color: var(--rb-red); font-family: var(--font-display); font-size: 48px; font-weight: 400; line-height: .8; }
 .rb-correction-count span, .rb-correction-form label { font-size: 9px; font-weight: 900; letter-spacing: .11em; text-transform: uppercase; }
@@ -378,7 +402,7 @@
   .rb-run-meter { width: 100%; }
   .rb-preview-panel { min-height: 510px; }.rb-preview-panel iframe { width: calc(100% - 12px); height: 450px; margin-inline: 6px; }
   .rb-preview-toolbar small { display: none; }
-  .rb-review-status, .rb-correction-form, .rb-downloads { padding: 23px 20px; }
+  .rb-review-status, .rb-correction-form, .rb-downloads, .rb-quality-card, .rb-bullet-editor { padding: 23px 20px; }
   .rb-first-build { grid-template-columns: 1fr; padding: 34px 24px; }
   .rb-blueprint { width: min(100%, 280px); justify-self: center; }
   .rb-review-empty { width: calc(100% - 24px); padding: 40px 24px; }

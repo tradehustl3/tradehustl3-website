@@ -28,6 +28,7 @@ export type RoleEntry = {
 };
 
 export type WizardData = {
+  sourceProvenance: "guided_intake" | "upload";
   trade: TradeTrack | "";
   experienceLevel: ExperienceLevel | "";
   contact: { fullName: string; email?: string; phone: string; cityState: string };
@@ -69,6 +70,7 @@ export function emptyRole(): RoleEntry {
 
 export function emptyWizardData(): WizardData {
   return {
+    sourceProvenance: "guided_intake",
     trade: "",
     experienceLevel: "",
     contact: { fullName: "", email: "", phone: "", cityState: "" },
@@ -201,7 +203,12 @@ export function toIntake(data: WizardData, accountEmail: string): Record<string,
       company: data.targetJob.company.trim(),
       location: data.targetJob.location.trim(),
     },
-    meta: { wizardVersion: 2, lastStep: data.lastStep },
+    meta: {
+      wizardVersion: 3,
+      lastStep: data.lastStep,
+      source: data.sourceProvenance,
+      importedResume: data.sourceProvenance === "upload",
+    },
   };
 }
 
@@ -225,6 +232,10 @@ export function fromIntake(
   const fieldValue = (root.fieldValue ?? {}) as Record<string, unknown>;
   const targetJob = (root.targetJob ?? {}) as Record<string, unknown>;
   const meta = (root.meta ?? {}) as Record<string, unknown>;
+
+  data.sourceProvenance = meta.importedResume === true || asString(meta.source) === "upload"
+    ? "upload"
+    : "guided_intake";
 
   data.trade = (fallback.trade || "") as WizardData["trade"];
   data.experienceLevel = asString(career.yearsExperience) as WizardData["experienceLevel"];

@@ -714,8 +714,9 @@ export function ResumeWizard() {
           onChange={(next) => patchFieldValue({ equipmentSystems: next })}
         />
         <ChipField
-          label="Technical skills"
-          suggestions={guidance?.technicalSkills ?? []}
+          label="Which of these have you actually performed?"
+          hint="Select only work you have personally performed. Common trade duties are suggestions—not automatic claims."
+          suggestions={dedupe([...(guidance?.dutyCategories ?? []), ...(guidance?.technicalSkills ?? [])])}
           values={data.fieldValue.technicalSkills}
           onChange={(next) => patchFieldValue({ technicalSkills: next })}
         />
