@@ -1,10 +1,10 @@
 import type { NextConfig } from "next";
 
 const crawlerFreshnessHeaders = [
-  { key: "Cache-Control", value: "no-cache, max-age=0, must-revalidate" },
+  { key: "Cache-Control", value: "no-store, max-age=0" },
   { key: "Cloudflare-CDN-Cache-Control", value: "no-store" },
-  { key: "CDN-Cache-Control", value: "no-cache, max-age=0, must-revalidate" },
-  { key: "X-TRADE-HUSTL3-Content-Revision", value: "2026-08-30-crawler-freshness" },
+  { key: "CDN-Cache-Control", value: "no-store" },
+  { key: "X-TRADE-HUSTL3-Content-Revision", value: "2026-09-06-production-refresh" },
 ];
 
 const policyNoStoreHeaders = [
