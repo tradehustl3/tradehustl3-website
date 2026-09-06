@@ -9,6 +9,11 @@ import {
   type GeneratedResume,
   type ResumeTheme,
 } from "./resume-documents";
+import {
+  augmentResumeWithCoverLetter,
+  handleCoverLetterRoute,
+  rerenderCoverLetterTheme,
+} from "./cover-letter";
 
 export * from "./resume-builder-base";
 
@@ -244,7 +249,9 @@ function shouldAutoRetryNumericGuard(env: ResumeBuilderEnv): boolean {
  * 1) uploaded resume facts are preserved more aggressively through import/generation prompts;
  * 2) on the Gemini production path, an AI-created unsupported number is retried automatically;
  * 3) switching between Classic Black and Red Accent re-renders the existing PDF/DOCX/preview
- *    without spending an AI correction run or changing any resume content.
+ *    without spending an AI correction run or changing any resume content;
+ * 4) the paid $9.99 entitlement includes an on-demand matching cover letter that shares the
+ *    existing three-correction package limit instead of creating an unbounded AI-cost path.
  */
 export async function handleResumeBuilderRoute(
   request: Request,
@@ -252,6 +259,10 @@ export async function handleResumeBuilderRoute(
   dependencies: ResumeBuilderDependencies = {},
 ): Promise<Response | null> {
   const pathname = new URL(request.url).pathname;
+
+  const coverLetterResponse = await handleCoverLetterRoute(request, env, dependencies);
+  if (coverLetterResponse) return coverLetterResponse;
+
   const importPath = pathname === "/api/resume-builder/resume-import";
   const generatePath = isGeneratePath(pathname);
   const resumePathMatch = pathname.match(/^\/api\/resume-builder\/resumes\/([^/]+)$/);
@@ -291,11 +302,20 @@ export async function handleResumeBuilderRoute(
   }
 
   if (themeChange && resumePathMatch && first.ok) {
+    let coverLetterRefreshed = false;
     if (hadGeneratedResume) {
       try {
+        coverLetterRefreshed = await rerenderCoverLetterTheme(env, resumePathMatch[1], themeChange.theme);
         await rerenderResumeTheme(env, dependencies, resumePathMatch[1], themeChange.theme);
       } catch (error) {
-        console.error("Resume theme rerender failed", error);
+        console.error("Resume package theme rerender failed", error);
+        if (coverLetterRefreshed && previousTheme) {
+          try {
+            await rerenderCoverLetterTheme(env, resumePathMatch[1], previousTheme);
+          } catch (rollbackError) {
+            console.error("Cover letter theme rollback failed", rollbackError);
+          }
+        }
         if (previousTheme) {
           await env.DB.prepare(
             "UPDATE resumes SET theme = ?, updated_at = CURRENT_TIMESTAMP WHERE resume_id = ? AND deleted_at IS NULL",
@@ -303,7 +323,7 @@ export async function handleResumeBuilderRoute(
         }
         return rewrittenJson(first, {
           ok: false,
-          message: "We could not switch the resume style. Your existing files are unchanged.",
+          message: "We could not switch the resume package style. Your existing files are unchanged.",
         }, 500);
       }
     }
@@ -312,10 +332,17 @@ export async function handleResumeBuilderRoute(
       ...payload,
       runConsumed: false,
       filesRefreshed: hadGeneratedResume,
+      coverLetterRefreshed,
       message: hadGeneratedResume
-        ? "Resume style updated. Your preview, PDF, and DOCX were refreshed without using an AI run."
+        ? coverLetterRefreshed
+          ? "Style updated. Your resume and matching cover letter files were refreshed without using an AI run."
+          : "Resume style updated. Your preview, PDF, and DOCX were refreshed without using an AI run."
         : "Resume style selected. Classic Black remains the default unless you choose Red Accent.",
     });
+  }
+
+  if (request.method === "GET" && resumePathMatch && first.ok) {
+    return augmentResumeWithCoverLetter(first, env, resumePathMatch[1]);
   }
 
   if (!generatePath || !retryRequest || first.status !== 422) return first;
