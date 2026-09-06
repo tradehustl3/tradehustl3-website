@@ -61,8 +61,8 @@ export type GeneratedResume = {
 // for visual polish — still real, selectable text throughout.
 export type ResumeTheme = "plain" | "navy";
 
-const BRAND_RED = "D71920";
-const BRAND_RED_RGB = rgb(0xd7 / 255, 0x19 / 255, 0x20 / 255);
+const BRAND_RED = "111111";
+const BRAND_RED_RGB = rgb(0x11 / 255, 0x11 / 255, 0x11 / 255);
 const BRAND_NAVY = "102F76";
 const BRAND_NAVY_RGB = rgb(0x10 / 255, 0x2f / 255, 0x76 / 255);
 const BRAND_GOLD = "F5B942";
@@ -523,7 +523,7 @@ export async function createResumePdf(resume: GeneratedResume, watermarked = fal
         y: 82,
         size: 18,
         font: writer.bold,
-        color: rgb(0.84, 0.1, 0.12),
+        color: BRAND_RED_RGB,
         rotate: degrees(28),
         opacity: 0.34,
       });
