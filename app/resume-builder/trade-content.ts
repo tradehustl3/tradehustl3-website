@@ -60,6 +60,7 @@ type TradeGuidance = {
   equipmentSystems: string[];
   certifications: string[];
   technicalSkills: string[];
+  dutyCategories: string[];
 };
 
 export const TRADE_GUIDANCE: Record<TradeTrack, TradeGuidance> = {
@@ -76,6 +77,7 @@ export const TRADE_GUIDANCE: Record<TradeTrack, TradeGuidance> = {
     equipmentSystems: ["RTUs", "Split systems", "Heat pumps", "Mini-splits", "Walk-in coolers/freezers", "Chillers", "Cooling towers", "VRF/VRV", "Ice machines", "Reach-in refrigeration"],
     certifications: ["EPA 608 Universal", "EPA 608 Type II", "NATE", "OSHA 10", "OSHA 30", "HVAC Excellence", "R-410A safety", "Forklift", "State journeyman/mechanical license"],
     technicalSkills: ["Refrigerant charging", "Superheat / subcooling", "Brazing", "Electrical troubleshooting", "Airflow balancing", "Preventive maintenance", "Startup & commissioning", "Controls / thermostats", "Blueprint reading", "Load calculations"],
+    dutyCategories: ["Diagnostics", "Preventive maintenance", "Refrigerant work", "Electrical troubleshooting", "Compressor service", "Motors / blowers", "24V controls", "Work orders / CMMS", "Customer service", "Safety", "Installation / changeouts", "Leadership"],
   },
   Electrical: {
     tagline: "Residential, commercial, and industrial wiring, service, and controls.",
@@ -90,6 +92,7 @@ export const TRADE_GUIDANCE: Record<TradeTrack, TradeGuidance> = {
     equipmentSystems: ["Panelboards / load centers", "Switchgear", "Motor control centers", "VFDs", "Transformers", "Generators / ATS", "Lighting controls", "Fire alarm", "PLC I/O", "EV chargers"],
     certifications: ["State journeyman license", "State master license", "Apprenticeship (IBEW/IEC/ABC)", "OSHA 10", "OSHA 30", "NFPA 70E arc flash", "First aid / CPR", "Scissor / boom lift", "OSHA LOTO"],
     technicalSkills: ["Conduit bending", "Wire pulling", "Terminations", "Motor controls", "Troubleshooting", "NEC code compliance", "Blueprint / one-line reading", "Lighting retrofits", "Low-voltage / data", "Load calculations"],
+    dutyCategories: ["Electrical diagnostics", "Service calls", "Rough-in", "Trim-out", "Panels / breakers", "Conduit", "Motor controls", "Low voltage", "Preventive maintenance", "Code compliance", "Safety", "Leadership"],
   },
   Plumbing: {
     tagline: "Service, repair, new construction, and backflow across residential and commercial.",
@@ -104,6 +107,7 @@ export const TRADE_GUIDANCE: Record<TradeTrack, TradeGuidance> = {
     equipmentSystems: ["Tank water heaters", "Tankless water heaters", "Sump / sewage pumps", "Backflow preventers", "Grease traps", "Booster pumps", "Water softeners", "Gas piping", "Hydronic heating", "Lift stations"],
     certifications: ["State journeyman license", "State master license", "Backflow tester certification", "Medical gas (NITC)", "Gas fitter license", "OSHA 10", "OSHA 30", "Confined space", "First aid / CPR"],
     technicalSkills: ["DWV rough-in", "Water distribution", "Press / sweat / solvent joints", "Fixture setting", "Drain cleaning", "Water heater install", "Backflow testing", "Gas line install", "Blueprint / isometric reading", "Leak diagnostics"],
+    dutyCategories: ["Leak diagnostics", "Service calls", "DWV rough-in", "Water distribution", "Fixture installation", "Drain cleaning", "Water heaters", "Backflow", "Gas piping", "Blueprints / code", "Safety", "Leadership"],
   },
   "Construction & Carpentry": {
     tagline: "Framing, finish carpentry, concrete, remodels, and site work.",
@@ -118,6 +122,7 @@ export const TRADE_GUIDANCE: Record<TradeTrack, TradeGuidance> = {
     equipmentSystems: ["Wood / steel framing", "Concrete forms", "Roof systems", "Door & window units", "Cabinetry & millwork", "Stair systems", "Drywall systems", "Deck & railing", "Scaffold", "Skid steer / mini-ex"],
     certifications: ["OSHA 10", "OSHA 30", "Carpentry apprenticeship", "Scaffold user / builder", "Forklift / telehandler", "Aerial / scissor lift", "First aid / CPR", "Fall protection", "Silica awareness"],
     technicalSkills: ["Blueprint reading", "Layout", "Framing", "Finish carpentry", "Concrete flatwork", "Formwork", "Drywall hang & finish", "Cabinet install", "Punch-out", "Estimating / takeoff"],
+    dutyCategories: ["Layout", "Framing", "Finish carpentry", "Concrete / formwork", "Doors / windows", "Cabinets / millwork", "Drywall", "Punch-out", "Material takeoff", "Equipment operation", "Safety", "Crew leadership"],
   },
   "Facilities Maintenance": {
     tagline: "Multi-trade upkeep of buildings, grounds, and equipment.",
@@ -132,6 +137,7 @@ export const TRADE_GUIDANCE: Record<TradeTrack, TradeGuidance> = {
     equipmentSystems: ["Package / split HVAC", "Boilers", "Domestic water & pumps", "Electrical panels & lighting", "Fire / life safety", "Access control", "Elevators (vendor-managed)", "Pool / spa", "Roofing", "Landscape / irrigation"],
     certifications: ["EPA 608", "Certified Pool Operator (CPO)", "OSHA 10", "OSHA 30", "Boiler operator license", "CFC / apartment maintenance (CAMT/EPA)", "Backflow tester", "First aid / CPR", "Forklift / lift"],
     technicalSkills: ["Work-order management", "Preventive maintenance", "HVAC troubleshooting", "Plumbing repair", "Electrical troubleshooting", "Unit turnovers / make-ready", "Vendor management", "Inventory control", "Inspections", "Team leadership"],
+    dutyCategories: ["HVAC diagnostics", "Preventive maintenance", "Plumbing repair", "Electrical repair", "Mechanical systems", "Unit turnovers", "Work orders / CMMS", "Inspections", "Vendor coordination", "Inventory", "Emergency response", "Team leadership"],
   },
   "Welding & Fabrication": {
     tagline: "Structural, pipe, and sheet fabrication and repair.",
@@ -146,6 +152,7 @@ export const TRADE_GUIDANCE: Record<TradeTrack, TradeGuidance> = {
     equipmentSystems: ["Structural steel", "Carbon / stainless / aluminum pipe", "Pressure vessels", "Sheet metal", "Handrail & stair", "Trailers / equipment repair", "Jigs & fixtures", "Overhead crane / rigging", "CNC plasma table", "Weld positioners"],
     certifications: ["AWS D1.1 structural", "ASME Section IX", "API 1104", "6G pipe", "Certified Welding Inspector (CWI)", "OSHA 10", "OSHA 30", "Overhead crane / rigging", "Forklift", "Hot work / fire watch"],
     technicalSkills: ["SMAW", "GMAW / MIG", "FCAW", "GTAW / TIG", "Blueprint & symbol reading", "Fit-up", "Plasma / oxy-fuel cutting", "Grinding & finishing", "Layout", "Weld inspection / NDT support"],
+    dutyCategories: ["SMAW", "GMAW / MIG", "FCAW", "GTAW / TIG", "Fit-up", "Blueprints / weld symbols", "Structural welding", "Pipe welding", "Cutting / grinding", "Inspection / quality", "Rigging / safety", "Leadership"],
   },
   "General Labor / Trade Helper": {
     tagline: "Site support, material handling, demo, and helping a licensed trade.",
@@ -160,6 +167,7 @@ export const TRADE_GUIDANCE: Record<TradeTrack, TradeGuidance> = {
     equipmentSystems: ["Scaffold", "Skid steer", "Mini excavator", "Forklift / telehandler", "Scissor / boom lift", "Trench box", "Material hoist", "Generators & compressors", "Dumpsters / debris", "Traffic control"],
     certifications: ["OSHA 10", "OSHA 30", "Forklift", "Aerial / scissor lift", "Flagger / traffic control", "First aid / CPR", "Confined space entry", "CDL (any class)", "Scaffold user"],
     technicalSkills: ["Material handling", "Site setup & cleanup", "Demolition", "Measuring & layout support", "Blueprint reading (basic)", "Equipment operation", "Concrete prep & pour support", "Load / unload", "Jobsite safety", "Tool maintenance"],
+    dutyCategories: ["Material handling", "Site setup", "Demolition", "Trade assistance", "Measuring / layout", "Equipment operation", "Concrete support", "Loading / unloading", "Work-order support", "Basic repairs", "Jobsite safety", "Crew support"],
   },
 };
 
