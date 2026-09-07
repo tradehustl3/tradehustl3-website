@@ -165,8 +165,11 @@ async function probeResume(
   resumeId: string,
   dependencies: ResumeBuilderDependencies,
 ): Promise<ResumeProbe | Response> {
+  const probeUrl = new URL(request.url);
+  probeUrl.pathname = `/api/resume-builder/resumes/${encodeURIComponent(resumeId)}`;
+  probeUrl.search = "";
   const response = await handleBaseResumeBuilderRoute(
-    new Request(request.url.replace(/\/cover-letter(?:\/generate|\/files\/(?:pdf|docx))?$/, ""), {
+    new Request(probeUrl.toString(), {
       method: "GET",
       headers: request.headers,
     }),
