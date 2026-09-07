@@ -63,7 +63,7 @@ test("the bridge uses attached identity and re-enforces Gemini cost controls", a
   assert.match(calls[1].url, /projects\/trade-hustl3-resume-ai\/locations\/global\/publishers\/google\/models\/gemini-3\.8-flash:generateContent$/);
   assert.equal(new Headers(calls[1].init.headers).get("authorization"), "Bearer short-lived-token");
   const forwarded = JSON.parse(String(calls[1].init.body));
-  assert.equal(forwarded.generationConfig.maxOutputTokens, 2_200);
+  assert.equal(forwarded.generationConfig.maxOutputTokens, 4_000);
   assert.equal(forwarded.generationConfig.candidateCount, 1);
   assert.equal(forwarded.generationConfig.responseMimeType, "application/json");
   assert.deepEqual(forwarded.generationConfig.thinkingConfig, { thinkingLevel: "LOW", includeThoughts: false });

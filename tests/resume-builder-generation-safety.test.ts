@@ -258,18 +258,22 @@ test("Gemini generation uses structured output, bounded thinking, and the authen
       maxOutputTokens: number;
       candidateCount: number;
       responseMimeType: string;
-      responseSchema: { type: string };
+      responseSchema: { type: string; required: string[] };
       thinkingConfig: { thinkingLevel: string; includeThoughts: boolean };
     };
+    contents: Array<{ parts: Array<{ text: string }> }>;
   };
   assert.equal(body.model, "gemini-3.8-flash");
   assert.equal(body.generationConfig.maxOutputTokens, 4_000);
   assert.equal(body.generationConfig.candidateCount, 1);
   assert.equal(body.generationConfig.responseMimeType, "application/json");
   assert.equal(body.generationConfig.responseSchema.type, "OBJECT");
+  assert.equal(body.generationConfig.responseSchema.required.includes("claimSources"), true);
   assert.deepEqual(body.generationConfig.thinkingConfig, { thinkingLevel: "LOW", includeThoughts: false });
   assert.match(body.systemInstruction.parts[0].text, /desired target title does not prove/i);
   assert.match(body.systemInstruction.parts[0].text, /Salesforce/i);
+  assert.match(body.contents[0].parts[0].text, /VERIFIED FACT CATALOG:/);
+  assert.match(body.contents[0].parts[0].text, /technicalSkills\.0/);
   const generation = h.batched.find((item) => /INSERT INTO resume_generations/i.test(item.sql));
   assert.ok(generation);
   assert.equal(generation.values[4], "gemini-3.8-flash");
@@ -422,7 +426,12 @@ test("a paid Gemini correction sends prior context, persists the revision, regen
   assert.equal(payload.runNumber, 2);
   assert.equal(payload.correctionsRemaining, 2);
   assert.equal(h.state.creditsUsed, 2);
-  assert.deepEqual(JSON.parse(h.state.generatedJson ?? "{}"), revisedResume);
+  const storedRevision = JSON.parse(h.state.generatedJson ?? "{}") as typeof revisedResume & {
+    grounding?: { version?: number; repaired?: boolean };
+  };
+  assert.deepEqual({ ...storedRevision, grounding: undefined }, { ...revisedResume, grounding: undefined });
+  assert.equal(storedRevision.grounding?.version, 1);
+  assert.equal(storedRevision.grounding?.repaired, true);
   assert.equal(h.objects.size, 3);
   assert.equal(h.filePointers.size, 3);
   assert.equal([...h.filePointers.values()].every((key) => key.includes("/generations/")), true);

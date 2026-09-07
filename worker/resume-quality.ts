@@ -24,6 +24,7 @@ export type CanonicalSourceRecord = {
   technicalSkills: string[];
   software: string[];
   safety: string[];
+  narrativeFacts: string[];
   education: string;
   metrics: string[];
   provenance: FactProvenance;
@@ -36,6 +37,12 @@ export type QualityIssueCode =
   | "changed_job_dates"
   | "missing_source_duties"
   | "missing_credential"
+  | "unsupported_credential"
+  | "unsupported_skill"
+  | "unsupported_summary"
+  | "unsupported_duty"
+  | "unsupported_education"
+  | "unsupported_additional_information"
   | "unsupported_number"
   | "thin_work_history";
 
@@ -72,6 +79,24 @@ type EditorialSelection = {
 
 export type StoredGeneratedResume = GeneratedResume & {
   editorial?: { selections?: EditorialSelection[] };
+  grounding?: ResumeGroundingAudit;
+};
+
+export type SourceFact = {
+  id: string;
+  value: string;
+  roleIndex?: number;
+};
+
+export type ModelClaimSource = {
+  claimPath: string;
+  sourceFactIds: string[];
+};
+
+export type ResumeGroundingAudit = {
+  version: 1;
+  repaired: boolean;
+  claims: ModelClaimSource[];
 };
 
 function record(value: unknown): Record<string, unknown> {
@@ -197,6 +222,11 @@ export function canonicalSourceRecord(intake: unknown, targetTitle = ""): Canoni
     ])),
     software: textList(fieldValue.software),
     safety: textList(fieldValue.safety),
+    narrativeFacts: Array.from(new Set([
+      ...splitClaims(career.summaryNotes),
+      ...splitClaims(career.yearsExperience),
+      ...splitClaims(root.additionalDetails),
+    ])),
     education: text(root.education, 2_500),
     metrics: numericClaims(metricSource),
     provenance,
@@ -209,14 +239,38 @@ export function canonicalSourceRecord(intake: unknown, targetTitle = ""): Canoni
   mark("targetTitle", source.targetTitle);
   source.roles.forEach((role, index) => {
     for (const [key, value] of Object.entries(role)) {
-      if (key !== "provenance" && key !== "sourceIndex") mark(`roles.${index}.${key}`, value);
+      if (key !== "provenance" && key !== "sourceIndex" && key !== "bullets") mark(`roles.${index}.${key}`, value);
     }
+    role.bullets.forEach((value, bulletIndex) => mark(`roles.${index}.bullets.${bulletIndex}`, value));
   });
-  for (const group of ["certifications", "licenses", "tools", "equipmentSystems", "technicalSkills", "software", "safety", "metrics"] as const) {
+  for (const group of ["certifications", "licenses", "tools", "equipmentSystems", "technicalSkills", "software", "safety", "narrativeFacts", "metrics"] as const) {
     source[group].forEach((value, index) => mark(`${group}.${index}`, value));
   }
   mark("education", source.education);
   return { ...source, factProvenance };
+}
+
+export function sourceFactCatalog(source: CanonicalSourceRecord, correctionRequest: string | null = null): SourceFact[] {
+  const facts: SourceFact[] = [];
+  const add = (id: string, value: string, roleIndex?: number) => {
+    if (value) facts.push({ id, value, ...(roleIndex === undefined ? {} : { roleIndex }) });
+  };
+  for (const [key, value] of Object.entries(source.contact)) add(`contact.${key}`, value);
+  add("targetTitle", source.targetTitle);
+  source.roles.forEach((role, index) => {
+    add(`roles.${index}.jobTitle`, role.jobTitle, index);
+    add(`roles.${index}.employer`, role.employer, index);
+    add(`roles.${index}.location`, role.location, index);
+    add(`roles.${index}.startDate`, role.startDate, index);
+    add(`roles.${index}.endDate`, role.endDate, index);
+    role.bullets.forEach((value, bulletIndex) => add(`roles.${index}.bullets.${bulletIndex}`, value, index));
+  });
+  for (const group of ["certifications", "licenses", "tools", "equipmentSystems", "technicalSkills", "software", "safety", "narrativeFacts", "metrics"] as const) {
+    source[group].forEach((value, index) => add(`${group}.${index}`, value));
+  }
+  add("education", source.education);
+  add("customerCorrection", text(correctionRequest, 2_000));
+  return facts;
 }
 
 function findGeneratedRole(source: CanonicalSourceRole, generated: GeneratedResume): ResumeExperience | undefined {
@@ -242,6 +296,59 @@ function overlap(source: string, candidate: string): number {
   let shared = 0;
   for (const word of sourceWords) if (candidateWords.has(word)) shared += 1;
   return shared / sourceWords.size;
+}
+
+const GENERIC_CLAIM_WORDS = new Set([
+  "and", "the", "for", "with", "from", "into", "that", "this", "work", "worked", "performed",
+  "perform", "responsible", "using", "use", "used", "support", "supported", "professional", "experienced",
+  "skilled", "trades", "verified", "experience", "proficient", "maintain", "maintained", "manage", "managed", "complete", "completed", "ensure",
+  "ensured", "provide", "provided", "execute", "executed", "assist", "assisted", "coordinate", "coordinated",
+]);
+
+function significantWords(value: string): string[] {
+  return Array.from(new Set(normalized(value).split(" ")
+    .filter((word) => word.length > 3 && !GENERIC_CLAIM_WORDS.has(word))));
+}
+
+function claimSupported(candidate: string, sources: string[]): boolean {
+  const candidateWords = significantWords(candidate);
+  if (!candidateWords.length) return true;
+  const sourceWords = new Set(sources.flatMap(significantWords));
+  const shared = candidateWords.filter((word) => sourceWords.has(word)).length;
+  return shared / candidateWords.length >= 2 / 3;
+}
+
+function skillSupported(skill: string, source: CanonicalSourceRecord): boolean {
+  return [
+    ...source.tools,
+    ...source.equipmentSystems,
+    ...source.technicalSkills,
+    ...source.software,
+    ...source.safety,
+    ...source.roles.flatMap((role) => role.bullets),
+  ].some((claim) => normalized(claim).includes(normalized(skill))
+    || normalized(skill).includes(normalized(claim))
+    || (overlap(skill, claim) >= 0.5 && claimSupported(skill, [claim])));
+}
+
+function educationSupported(item: GeneratedResume["education"][number], source: CanonicalSourceRecord): boolean {
+  return Boolean(source.education) && claimSupported(Object.values(item).filter(Boolean).join(" "), [source.education]);
+}
+
+function summarySources(source: CanonicalSourceRecord): string[] {
+  return [
+    source.targetTitle,
+    ...source.roles.flatMap((role) => [role.jobTitle, ...role.bullets]),
+    ...source.tools,
+    ...source.equipmentSystems,
+    ...source.technicalSkills,
+    ...source.software,
+    ...source.safety,
+    ...source.certifications,
+    ...source.licenses,
+    ...source.narrativeFacts,
+    source.education,
+  ].filter(Boolean);
 }
 
 export function validateResumeAgainstSource(
@@ -270,11 +377,38 @@ export function validateResumeAgainstSource(
     if (role.bullets.length && role.bullets.filter((bullet) => overlap(bullet, generatedText) >= 0.25).length < role.bullets.length) {
       issues.push({ code: "missing_source_duties", sourceIndex: role.sourceIndex, message: `Supported duties were dropped from ${role.jobTitle}.` });
     }
+    const supportClaims = [
+      ...role.bullets,
+      ...source.tools,
+      ...source.equipmentSystems,
+      ...source.technicalSkills,
+      ...source.software,
+      ...source.safety,
+    ];
+    if (match.bullets.some((bullet) => !claimSupported(bullet, supportClaims))) {
+      issues.push({ code: "unsupported_duty", sourceIndex: role.sourceIndex, message: `An experience claim is not supported for ${role.jobTitle}.` });
+    }
   }
   for (const credential of [...source.certifications, ...source.licenses]) {
     if (!generated.certifications.some((item) => normalized(item.name).includes(normalized(credential)) || normalized(credential).includes(normalized(item.name)))) {
       issues.push({ code: "missing_credential", message: `Missing verified credential: ${credential}.` });
     }
+  }
+  if (generated.certifications.some((item) => !certSupported(item.name, source))) {
+    issues.push({ code: "unsupported_credential", message: "The draft contains an unverified credential." });
+  }
+  if (generated.skills.some((skill) => !skillSupported(skill, source))) {
+    issues.push({ code: "unsupported_skill", message: "The draft contains an unsupported skill." });
+  }
+  if (generated.summary && !claimSupported(generated.summary, summarySources(source))) {
+    issues.push({ code: "unsupported_summary", message: "The draft summary contains an unsupported claim." });
+  }
+  if (generated.education.some((item) => !educationSupported(item, source))) {
+    issues.push({ code: "unsupported_education", message: "The draft contains unsupported education." });
+  }
+  const additionalSources = [...source.safety, ...source.certifications, ...source.licenses, source.education].filter(Boolean);
+  if (generated.additionalInformation.some((item) => !claimSupported(item, additionalSources))) {
+    issues.push({ code: "unsupported_additional_information", message: "The draft contains unsupported additional information." });
   }
   if (source.roles.length >= 2 && generated.experience.length < source.roles.length) {
     issues.push({ code: "thin_work_history", message: "Substantial source work history collapsed into an incomplete resume." });
@@ -308,7 +442,7 @@ export function repairResumeFromSource(
     const supportedGeneratedBullets = existing?.bullets.filter((bullet) => {
       const generatedNumbers = numericClaims(bullet).map(normalized);
       const allowedNumbers = source.metrics.map(normalized);
-      const factSupported = !supportClaims.length || supportClaims.some((claim) => overlap(claim, bullet) >= 0.2);
+      const factSupported = !supportClaims.length || claimSupported(bullet, supportClaims);
       return factSupported && generatedNumbers.every((number) => allowedNumbers.includes(number));
     }) ?? [];
     const preserved = [...supportedGeneratedBullets];
@@ -330,17 +464,19 @@ export function repairResumeFromSource(
       supportedCertifications.push(sourceCertification(credential));
     }
   }
-  const supportedSkills = generated.skills.filter((skill) => [
-    ...source.tools,
-    ...source.equipmentSystems,
-    ...source.technicalSkills,
-    ...source.software,
-    ...source.safety,
-    ...source.roles.flatMap((role) => role.bullets),
-  ].some((claim) => normalized(claim).includes(normalized(skill)) || normalized(skill).includes(normalized(claim)) || overlap(skill, claim) >= 0.5));
+  const supportedSkills = generated.skills.filter((skill) => skillSupported(skill, source));
   for (const skill of [...source.technicalSkills, ...source.tools, ...source.equipmentSystems, ...source.software]) {
     if (!supportedSkills.some((item) => normalized(item) === normalized(skill))) supportedSkills.push(skill);
   }
+  const summaryFacts = [
+    ...source.technicalSkills,
+    ...source.tools,
+    ...source.equipmentSystems,
+    ...source.roles.map((role) => role.jobTitle),
+  ].filter(Boolean).slice(0, 4);
+  const safeSummary = summaryFacts.length
+    ? `Skilled trades professional with verified experience in ${summaryFacts.join(", ")}.`
+    : "Skilled trades professional with verified work experience.";
   return {
     ...generated,
     basics: {
@@ -354,7 +490,93 @@ export function repairResumeFromSource(
     certifications: supportedCertifications,
     skills: supportedSkills.slice(0, 24),
     experience: source.roles.length ? experience : generated.experience,
+    summary: generated.summary && claimSupported(generated.summary, summarySources(source)) ? generated.summary : safeSummary,
+    education: generated.education.filter((item) => educationSupported(item, source)),
+    additionalInformation: generated.additionalInformation.filter((item) => claimSupported(item, [
+      ...source.safety,
+      ...source.certifications,
+      ...source.licenses,
+      source.education,
+    ].filter(Boolean))),
   };
+}
+
+function generatedClaimPaths(generated: GeneratedResume): string[] {
+  return [
+    ...(generated.summary ? ["summary"] : []),
+    ...generated.skills.map((_, index) => `skills.${index}`),
+    ...generated.certifications.map((_, index) => `certifications.${index}`),
+    ...generated.experience.flatMap((role, roleIndex) => role.bullets.map((_, bulletIndex) => `experience.${roleIndex}.bullets.${bulletIndex}`)),
+    ...generated.education.map((_, index) => `education.${index}`),
+    ...generated.additionalInformation.map((_, index) => `additionalInformation.${index}`),
+  ];
+}
+
+function generatedClaimText(generated: GeneratedResume, path: string): string {
+  if (path === "summary") return generated.summary;
+  let match = /^skills\.(\d+)$/.exec(path);
+  if (match) return generated.skills[Number(match[1])] ?? "";
+  match = /^certifications\.(\d+)$/.exec(path);
+  if (match) return Object.values(generated.certifications[Number(match[1])] ?? {}).filter(Boolean).join(" ");
+  match = /^experience\.(\d+)\.bullets\.(\d+)$/.exec(path);
+  if (match) return generated.experience[Number(match[1])]?.bullets[Number(match[2])] ?? "";
+  match = /^education\.(\d+)$/.exec(path);
+  if (match) return Object.values(generated.education[Number(match[1])] ?? {}).filter(Boolean).join(" ");
+  match = /^additionalInformation\.(\d+)$/.exec(path);
+  return match ? generated.additionalInformation[Number(match[1])] ?? "" : "";
+}
+
+export function validateClaimSources(
+  generated: GeneratedResume,
+  source: CanonicalSourceRecord,
+  claims: ModelClaimSource[],
+  correctionRequest: string | null = null,
+): boolean {
+  const catalog = new Map(sourceFactCatalog(source, correctionRequest).map((fact) => [fact.id, fact]));
+  const byPath = new Map(claims.map((claim) => [claim.claimPath, claim.sourceFactIds]));
+  return generatedClaimPaths(generated).every((path) => {
+    const ids = byPath.get(path);
+    if (!ids?.length || ids.length > 8 || ids.some((id) => !catalog.has(id))) return false;
+    if (path.startsWith("experience.")) {
+      const roleIndex = Number(path.split(".")[1]);
+      if (!ids.some((id) => catalog.get(id)?.roleIndex === roleIndex)) return false;
+    }
+    const citedValues = ids.map((id) => catalog.get(id)?.value ?? "");
+    return claimSupported(generatedClaimText(generated, path), citedValues);
+  });
+}
+
+function evidenceIdsForClaim(path: string, generated: GeneratedResume, catalog: SourceFact[]): string[] {
+  const claim = generatedClaimText(generated, path);
+  const roleMatch = /^experience\.(\d+)\./.exec(path);
+  const eligible = roleMatch
+    ? catalog.filter((fact) => fact.roleIndex === Number(roleMatch[1]) || fact.roleIndex === undefined)
+    : catalog;
+  const direct = eligible.filter((fact) => claimSupported(claim, [fact.value]));
+  if (direct.length) return direct.slice(0, 8).map((fact) => fact.id);
+  const combined: SourceFact[] = [];
+  for (const fact of eligible) {
+    combined.push(fact);
+    if (claimSupported(claim, combined.map((item) => item.value))) break;
+  }
+  return combined.slice(-8).map((fact) => fact.id);
+}
+
+export function groundingAuditFromSource(
+  generated: GeneratedResume,
+  source: CanonicalSourceRecord,
+  claims: ModelClaimSource[],
+  repaired: boolean,
+  correctionRequest: string | null = null,
+): ResumeGroundingAudit {
+  const catalog = sourceFactCatalog(source, correctionRequest);
+  if (!repaired && validateClaimSources(generated, source, claims, correctionRequest)) {
+    return { version: 1, repaired: false, claims };
+  }
+  const safeClaims = generatedClaimPaths(generated).map((claimPath) => {
+    return { claimPath, sourceFactIds: evidenceIdsForClaim(claimPath, generated, catalog) };
+  });
+  return { version: 1, repaired: true, claims: safeClaims };
 }
 
 function actionVerbScore(bullets: string[]): number {
