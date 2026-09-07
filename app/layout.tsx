@@ -172,7 +172,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${display.variable} ${body.variable}`}>
+      <head>
         {/* Pinterest base tag for page-view attribution */}
         <script
           dangerouslySetInnerHTML={{
@@ -195,6 +195,9 @@ export default function RootLayout({
               '<img height="1" width="1" style="display:none" alt="" src="https://ct.pinterest.com/v3/?event=init&tid=2614218071063&noscript=1" />',
           }}
         />
+
+      </head>
+      <body className={`${display.variable} ${body.variable}`}>
 
         {/* Meta Pixel */}
         <script
