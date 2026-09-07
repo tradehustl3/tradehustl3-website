@@ -1,7 +1,7 @@
 import { timingSafeEqual } from "node:crypto";
 
 const MAX_REQUEST_BYTES = 128 * 1024;
-const MAX_OUTPUT_TOKENS = 2_200;
+const MAX_OUTPUT_TOKENS = 4_000;
 const DEFAULT_MODEL = "gemini-3.8-flash";
 const DEFAULT_LOCATION = "global";
 const METADATA_TOKEN_URL = "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token";

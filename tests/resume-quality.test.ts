@@ -3,8 +3,11 @@ import test from "node:test";
 import type { GeneratedResume } from "../worker/resume-documents";
 import {
   canonicalSourceRecord,
+  groundingAuditFromSource,
   repairResumeFromSource,
   scoreResume,
+  sourceFactCatalog,
+  validateClaimSources,
   validateResumeAgainstSource,
   withEditorialSelection,
   editorialSelection,
@@ -100,6 +103,52 @@ test("unsupported credentials are removed during source-only repair", () => {
     certifications: [{ name: "EPA 608 Universal" }, { name: "State Master Mechanical License" }],
   }, source);
   assert.equal(repaired.certifications.some((item) => /master mechanical/i.test(item.name)), false);
+});
+
+test("invented duties, skills, education, and additional claims are blocked and removed", () => {
+  const source = canonicalSourceRecord(experiencedHvacIntake, "HVAC Resume");
+  const baseline = repairResumeFromSource(collapsedResume, source);
+  const unsafe: GeneratedResume = {
+    ...baseline,
+    skills: ["Diagnostics", "Commercial refrigeration design"],
+    certifications: [{ name: "EPA 608 Universal" }, { name: "State Master Mechanical License" }],
+    experience: [{
+      ...baseline.experience[0],
+      bullets: ["Diagnosed HVAC faults and designed ammonia plants."],
+    }, ...baseline.experience.slice(1)],
+    education: [{ credential: "Bachelor of Engineering", institution: "Georgia Tech" }],
+    additionalInformation: ["Licensed master plumber"],
+  };
+  const issues = validateResumeAgainstSource(unsafe, source);
+  assert.equal(issues.some((issue) => issue.code === "unsupported_duty"), true);
+  assert.equal(issues.some((issue) => issue.code === "unsupported_skill"), true);
+  assert.equal(issues.some((issue) => issue.code === "unsupported_credential"), true);
+  assert.equal(issues.some((issue) => issue.code === "unsupported_education"), true);
+  assert.equal(issues.some((issue) => issue.code === "unsupported_additional_information"), true);
+
+  const repaired = repairResumeFromSource(unsafe, source);
+  assert.deepEqual(validateResumeAgainstSource(repaired, source), []);
+  assert.equal(JSON.stringify(repaired).includes("ammonia"), false);
+  assert.equal(JSON.stringify(repaired).includes("Georgia Tech"), false);
+  assert.equal(JSON.stringify(repaired).includes("master plumber"), false);
+});
+
+test("claim citations must exist, cover every claim, and stay with the cited role", () => {
+  const source = canonicalSourceRecord(experiencedHvacIntake, "HVAC Resume");
+  const repaired = repairResumeFromSource(collapsedResume, source);
+  const catalog = sourceFactCatalog(source);
+  assert.equal(catalog.some((fact) => fact.id === "roles.0.bullets.0"), true);
+  assert.equal(catalog.some((fact) => fact.id === "technicalSkills.0"), true);
+
+  const audit = groundingAuditFromSource(repaired, source, [], true);
+  assert.equal(audit.repaired, true);
+  assert.equal(validateClaimSources(repaired, source, audit.claims), true);
+
+  const invalid = audit.claims.map((claim) => ({ ...claim }));
+  const bullet = invalid.find((claim) => claim.claimPath === "experience.0.bullets.0");
+  assert.ok(bullet);
+  bullet.sourceFactIds = ["roles.1.bullets.0"];
+  assert.equal(validateClaimSources(repaired, source, invalid), false);
 });
 
 test("a high quality score is impossible while verified jobs are missing", () => {

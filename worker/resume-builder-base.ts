@@ -3,9 +3,13 @@ import {
   canonicalSourceRecord,
   editorialSelection,
   editorialSuggestion,
+  groundingAuditFromSource,
   repairResumeFromSource,
   scoreResume,
+  sourceFactCatalog,
+  type ModelClaimSource,
   type StoredGeneratedResume,
+  validateClaimSources,
   validateResumeAgainstSource,
   withEditorialSelection,
 } from "./resume-quality";
@@ -1363,15 +1367,16 @@ Writing rules:
 - Return valid JSON only. No markdown and no commentary.
 
 Required JSON shape:
-{"basics":{"fullName":"","targetTitle":"","location":"","phone":"","email":""},"summary":"","skills":[""],"certifications":[{"name":"","issuer":"","year":""}],"experience":[{"jobTitle":"","employer":"","location":"","startDate":"","endDate":"","bullets":[""]}],"education":[{"credential":"","institution":"","location":"","year":""}],"additionalInformation":[""]}
+{"basics":{"fullName":"","targetTitle":"","location":"","phone":"","email":""},"summary":"","skills":[""],"certifications":[{"name":"","issuer":"","year":""}],"experience":[{"jobTitle":"","employer":"","location":"","startDate":"","endDate":"","bullets":[""]}],"education":[{"credential":"","institution":"","location":"","year":""}],"additionalInformation":[""],"claimSources":[{"claimPath":"summary","sourceFactIds":["roles.0.bullets.0"]}]}
 
-Use empty arrays for unsupported optional sections. Every experience bullet must be supported by the intake.`;
+Use empty arrays for unsupported optional sections. Every experience bullet must be supported by the intake.
+For every summary, skill, certification, experience bullet, education item, and additional-information item, add one claimSources entry. claimPath uses zero-based paths such as skills.0, certifications.0, experience.0.bullets.0, education.0, and additionalInformation.0. Cite one to eight IDs from VERIFIED FACT CATALOG. Never invent an ID and never cite a fact that does not support the claim.`;
 }
 
 type ResumeAiProvider = "gemini" | "anthropic";
 
 type ResumeModelResult = {
-  resume: GeneratedResume;
+  resume: StoredGeneratedResume;
   model: string;
   inputTokens: number;
   outputTokens: number;
@@ -1380,7 +1385,7 @@ type ResumeModelResult = {
 
 const GEMINI_RESUME_RESPONSE_SCHEMA = {
   type: "OBJECT",
-  required: ["basics", "summary", "skills", "certifications", "experience", "education", "additionalInformation"],
+  required: ["basics", "summary", "skills", "certifications", "experience", "education", "additionalInformation", "claimSources"],
   properties: {
     basics: {
       type: "OBJECT",
@@ -1436,6 +1441,17 @@ const GEMINI_RESUME_RESPONSE_SCHEMA = {
       },
     },
     additionalInformation: { type: "ARRAY", items: { type: "STRING" } },
+    claimSources: {
+      type: "ARRAY",
+      items: {
+        type: "OBJECT",
+        required: ["claimPath", "sourceFactIds"],
+        properties: {
+          claimPath: { type: "STRING" },
+          sourceFactIds: { type: "ARRAY", items: { type: "STRING" } },
+        },
+      },
+    },
   },
 } as const;
 
@@ -1477,10 +1493,11 @@ function resumeUserPrompt(
   correctionRequest: string | null,
 ): string {
   const compactIntake = JSON.stringify(compactModelValue(intake));
+  const verifiedFacts = JSON.stringify(sourceFactCatalog(canonicalSourceRecord(intake, resume.title), correctionRequest));
   if (correctionRequest) {
-    return `Revise the current resume using only the requested correction and original intake. Preserve accurate content not affected by the correction.\n\nORIGINAL INTAKE:\n${compactIntake}\n\nTARGET JOB POSTING:\n${resume.target_job_posting ?? ""}\n\nCURRENT RESUME:\n${JSON.stringify(compactModelValue(prior))}\n\nCUSTOMER CORRECTION:\n${correctionRequest}`;
+    return `Revise the current resume using only the requested correction and original intake. Preserve accurate content not affected by the correction.\n\nVERIFIED FACT CATALOG:\n${verifiedFacts}\n\nORIGINAL INTAKE:\n${compactIntake}\n\nTARGET JOB POSTING:\n${resume.target_job_posting ?? ""}\n\nCURRENT RESUME:\n${JSON.stringify(compactModelValue(prior))}\n\nCUSTOMER CORRECTION:\n${correctionRequest}`;
   }
-  return `Create the resume from this verified intake.\n\nTRADE TRACK:\n${resume.trade}\n\nORIGINAL INTAKE:\n${compactIntake}\n\nTARGET JOB POSTING:\n${resume.target_job_posting ?? ""}`;
+  return `Create the resume from this verified intake.\n\nTRADE TRACK:\n${resume.trade}\n\nVERIFIED FACT CATALOG:\n${verifiedFacts}\n\nORIGINAL INTAKE:\n${compactIntake}\n\nTARGET JOB POSTING:\n${resume.target_job_posting ?? ""}`;
 }
 
 function parseModelResume(raw: string): unknown {
@@ -1497,6 +1514,21 @@ function parseModelResume(raw: string): unknown {
       throw new Error("Model returned invalid JSON.");
     }
   }
+}
+
+function modelClaimSources(parsed: unknown): ModelClaimSource[] {
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return [];
+  const claims = (parsed as Record<string, unknown>).claimSources;
+  if (!Array.isArray(claims)) return [];
+  return claims.flatMap((claim) => {
+    if (!claim || typeof claim !== "object" || Array.isArray(claim)) return [];
+    const item = claim as Record<string, unknown>;
+    const claimPath = cleanText(item.claimPath, 160);
+    const sourceFactIds = Array.isArray(item.sourceFactIds)
+      ? item.sourceFactIds.map((id) => cleanText(id, 160)).filter(Boolean).slice(0, 8)
+      : [];
+    return claimPath && sourceFactIds.length ? [{ claimPath, sourceFactIds }] : [];
+  }).slice(0, 240);
 }
 
 function normalizeResumePrefill(parsed: unknown): Record<string, unknown> | null {
@@ -1679,7 +1711,8 @@ function validateModelResume(
   intake: unknown,
   resume: ResumeRecord,
   correctionRequest: string | null,
-): { resume: GeneratedResume; guardFlags: UnsupportedNumericClaim[] } {
+): { resume: StoredGeneratedResume; guardFlags: UnsupportedNumericClaim[] } {
+  const claimSources = modelClaimSources(parsed);
   const validation = validateGeneratedResume(parsed);
   if (!validation.ok) {
     throw new ResumeGenerationError(
@@ -1691,19 +1724,23 @@ function validateModelResume(
   const source = canonicalSourceRecord(intake, resume.title);
   let generated = validation.resume;
   let guardFlags = unsupportedNumbers(generated, intake, resume.title, correctionRequest);
+  const initialGuardFlags = guardFlags;
   const firstIssues = validateResumeAgainstSource(generated, source, guardFlags.length, Boolean(correctionRequest));
-  if (firstIssues.length) {
+  const claimsValid = validateClaimSources(generated, source, claimSources, correctionRequest);
+  const contentRepaired = firstIssues.length > 0;
+  if (contentRepaired) {
     generated = repairResumeFromSource(generated, source, Boolean(correctionRequest));
     guardFlags = unsupportedNumbers(generated, intake, resume.title, correctionRequest);
   }
   const remainingIssues = validateResumeAgainstSource(generated, source, guardFlags.length, Boolean(correctionRequest));
-  if (guardFlags.length) {
-    const sections = Array.from(new Set(guardFlags.map((flag) => flag.section)));
+  if (initialGuardFlags.length || guardFlags.length) {
+    const allGuardFlags = [...initialGuardFlags, ...guardFlags];
+    const sections = Array.from(new Set(allGuardFlags.map((flag) => flag.section)));
     throw new ResumeGenerationError(
       "UNSUPPORTED_NUMERIC_CLAIM",
       "The generated resume contained numeric claims the intake does not support.",
       [INTAKE_SECTION.numbers],
-      { code: "unsupported_numeric_claim", count: guardFlags.length, sections },
+      { code: "unsupported_numeric_claim", count: allGuardFlags.length, sections },
     );
   }
   if (remainingIssues.length) {
@@ -1718,7 +1755,8 @@ function validateModelResume(
       },
     );
   }
-  return { resume: generated, guardFlags };
+  const grounding = groundingAuditFromSource(generated, source, claimSources, contentRepaired || !claimsValid, correctionRequest);
+  return { resume: { ...generated, grounding }, guardFlags };
 }
 
 async function callGemini(
