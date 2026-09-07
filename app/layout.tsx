@@ -173,6 +173,29 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${display.variable} ${body.variable}`}>
+        {/* Pinterest base tag for page-view attribution */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              !function(e){if(!window.pintrk){window.pintrk=function(){
+              window.pintrk.queue.push(Array.prototype.slice.call(arguments))};
+              var n=window.pintrk;n.queue=[],n.version="3.0";
+              var t=document.createElement("script");t.async=!0;t.src=e;
+              var r=document.getElementsByTagName("script")[0];
+              r.parentNode.insertBefore(t,r)}}("https://s.pinimg.com/ct/core.js");
+              pintrk('load', '2614218071063');
+              pintrk('page');
+            `,
+          }}
+        />
+
+        <noscript
+          dangerouslySetInnerHTML={{
+            __html:
+              '<img height="1" width="1" style="display:none" alt="" src="https://ct.pinterest.com/v3/?event=init&tid=2614218071063&noscript=1" />',
+          }}
+        />
+
         {/* Meta Pixel */}
         <script
           dangerouslySetInnerHTML={{
