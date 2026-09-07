@@ -22,6 +22,12 @@ export const metadata: Metadata = {
   description: SITE_DESCRIPTION,
   applicationName: SITE_NAME,
 
+  verification: {
+    other: {
+      "p:domain_verify": "88c69a5f98ee745a68038300b88af777",
+    },
+  },
+
   authors: [
     {
       name: "Zachary Ellis",
