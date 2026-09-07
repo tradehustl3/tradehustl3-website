@@ -31,15 +31,16 @@ export function CoverLetterPanel({
     event.preventDefault();
     if (working) return;
     const form = new FormData(event.currentTarget);
-    const payload = correction
-      ? { correctionRequest: String(form.get("coverCorrection") ?? "").trim() }
+    const correctionRequest = String(form.get("coverCorrection") ?? "").trim();
+    if (correction && !correctionRequest) return;
+    const payload: Record<string, string> = correction
+      ? { correctionRequest }
       : {
           companyName: String(form.get("companyName") ?? "").trim(),
           hiringManager: String(form.get("hiringManager") ?? "").trim(),
           targetJobTitle: String(form.get("targetJobTitle") ?? "").trim(),
           jobPosting: String(form.get("jobPosting") ?? "").trim(),
         };
-    if (correction && !payload.correctionRequest) return;
     setWorking(true);
     onMessage("");
     try {
