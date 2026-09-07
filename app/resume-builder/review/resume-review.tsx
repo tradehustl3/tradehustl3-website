@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
+import { CoverLetterPanel } from "./cover-letter-panel";
 
 type ResumeTheme = "plain" | "navy";
 
@@ -16,6 +17,17 @@ type Resume = {
   correctionsRemaining: number;
   previewUrl: string | null;
   downloads: { pdf: string; docx: string } | null;
+  coverLetter: {
+    included: boolean;
+    available: boolean;
+    generated: boolean;
+    correctionsRemaining: number;
+    previewUrl: string | null;
+    downloads: { pdf: string; docx: string } | null;
+    companyName: string;
+    hiringManager: string;
+    targetJobTitle: string;
+  } | null;
   qualityScore: {
     total: number;
     label: string;
@@ -280,7 +292,7 @@ export function ResumeReview() {
         <div className="rb-run-meter" aria-label={`${resume.runsUsed} of ${resume.runsTotal} AI runs used`}>
           <div><span>AI runs</span><strong>{resume.runsUsed} / {resume.runsTotal}</strong></div>
           <ol>{Array.from({ length: resume.runsTotal }, (_, index) => <li className={index < resume.runsUsed ? "used" : ""} key={index} />)}</ol>
-          <small>Initial build + 3 corrections</small>
+          <small>Initial resume build + 3 shared package corrections</small>
         </div>
       </section>
 
@@ -316,10 +328,10 @@ export function ResumeReview() {
           </div>
 
           <aside className="rb-review-sidebar">
-            <div className="rb-review-status"><p className="rb-kicker">/ {resume.paid ? "REVIEW + REFINE" : "PREVIEW BEFORE YOU PAY"}</p><h2>{resume.paid ? "MAKE IT SOUND LIKE YOU." : "LIKE WHAT YOU SEE?"}</h2><p className="rb-review-desc">{resume.paid ? "Check names, dates, certifications, job duties, and contact information before downloading." : "Your first resume is ready. Pay once to remove the watermark, unlock the clean PDF and DOCX, and receive up to three corrections."}</p>
+            <div className="rb-review-status"><p className="rb-kicker">/ {resume.paid ? "REVIEW + REFINE" : "PREVIEW BEFORE YOU PAY"}</p><h2>{resume.paid ? "MAKE IT SOUND LIKE YOU." : "LIKE WHAT YOU SEE?"}</h2><p className="rb-review-desc">{resume.paid ? "Check names, dates, certifications, job duties, contact information, and your included matching cover letter before downloading." : "Your first resume is ready. Pay once to remove the watermark, unlock the clean PDF and DOCX, generate the matching cover letter, and receive up to three shared corrections."}</p>
               <span className="rb-theme-label">Resume style</span>
               {renderThemePicker()}
-              <small className="rb-theme-note">Switch between Classic Black and Red Accent without using an AI correction run. Your preview and final files keep the same resume content and structure.</small>
+              <small className="rb-theme-note">Switch between Classic Black and Red Accent without using an AI correction run. Your resume and generated cover letter keep the same professional style.</small>
             </div>
 
             <section className="rb-quality-card" aria-labelledby="resume-quality-title">
@@ -369,24 +381,33 @@ export function ResumeReview() {
               </section>
             ) : null}
 
+            {resume.paid && resume.coverLetter ? (
+              <CoverLetterPanel
+                resumeId={resumeId}
+                coverLetter={resume.coverLetter}
+                onRefresh={async () => { await load(resumeId); }}
+                onMessage={setMessage}
+              />
+            ) : null}
+
             {resume.paid ? <form className="rb-correction-form" onSubmit={submitCorrection}>
-              <div className="rb-correction-count"><strong>{resume.correctionsRemaining}</strong><span>AI corrections remaining</span></div>
-              <label htmlFor="correctionRequest">What needs to change?</label>
+              <div className="rb-correction-count"><strong>{resume.correctionsRemaining}</strong><span>shared package corrections remaining</span></div>
+              <label htmlFor="correctionRequest">What needs to change on the resume?</label>
               <textarea id="correctionRequest" name="correctionRequest" rows={6} maxLength={2000} required disabled={working || resume.correctionsRemaining < 1} placeholder="Example: Change the end date at Apex Mechanical to June 2025 and emphasize my rooftop-unit diagnostics." />
-              <button className="rb-button rb-button-secondary-dark rb-button-full" type="submit" disabled={working || resume.correctionsRemaining < 1}>{working ? "Applying correction…" : resume.correctionsRemaining > 0 ? "Apply one correction" : "All corrections used"} <span>↻</span></button>
-              <small>One submitted correction uses one run. Failed generations are restored automatically.</small>
+              <button className="rb-button rb-button-secondary-dark rb-button-full" type="submit" disabled={working || resume.correctionsRemaining < 1}>{working ? "Applying correction…" : resume.correctionsRemaining > 0 ? "Apply one package correction" : "All corrections used"} <span>↻</span></button>
+              <small>The three corrections are shared across the resume and cover letter. One submitted correction uses one run. Failed generations are restored automatically.</small>
             </form> : (
               <div className="rb-unpaid-card">
                 <p className="rb-kicker">/ ONE-TIME PURCHASE</p>
-                <h2>REMOVE THE WATERMARK.</h2>
-                <p>Pay $9.99 once. No subscription. Clean PDF and editable DOCX unlock after Stripe confirms payment.</p>
-                <button className="rb-button rb-button-primary rb-button-full" type="button" disabled={checkingOut} onClick={() => void startCheckout()}>{checkingOut ? "Opening secure checkout…" : "Unlock clean resume — $9.99"} <span>↗</span></button>
+                <h2>UNLOCK THE FULL PACKAGE.</h2>
+                <p>Pay $9.99 once. No subscription. Get the clean resume PDF + editable DOCX, an on-demand matching cover letter in PDF + DOCX, and up to three shared corrections.</p>
+                <button className="rb-button rb-button-primary rb-button-full" type="button" disabled={checkingOut} onClick={() => void startCheckout()}>{checkingOut ? "Opening secure checkout…" : "Unlock resume + cover letter — $9.99"} <span>↗</span></button>
               </div>
             )}
 
             {resume.downloads ? (
               <div className="rb-downloads">
-                <p>FINAL FILES</p>
+                <p>RESUME FILES</p>
                 <a className="rb-download" href={resume.downloads.pdf}><span><strong>PDF</strong><small>Clean, ready to send</small></span><b>↓</b></a>
                 <a className="rb-download" href={resume.downloads.docx}><span><strong>DOCX</strong><small>Clean, editable copy</small></span><b>↓</b></a>
               </div>
