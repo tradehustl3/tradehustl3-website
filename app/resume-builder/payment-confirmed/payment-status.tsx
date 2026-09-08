@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { trackResumePurchase } from "../funnel-analytics";
 
 type Stage = "checking" | "waiting" | "ready" | "error";
 
@@ -22,6 +23,7 @@ export function PaymentStatus() {
       const result = await response.json() as { resume?: { paid: boolean }; message?: string };
       if (!response.ok) throw new Error(result.message || "We could not check the payment yet.");
       if (result.resume?.paid) {
+        trackResumePurchase(resumeId.current);
         setStage("ready");
         setMessage("Payment confirmed. Your clean resume and three correction runs are unlocked.");
         window.setTimeout(() => window.location.assign(`/resume-builder/review?resume_id=${encodeURIComponent(resumeId.current)}`), 900);
