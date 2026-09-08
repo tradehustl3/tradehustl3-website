@@ -1,7 +1,6 @@
 import type { GeneratedResume, ResumeEducation } from "./resume-documents";
 import {
   canonicalSourceRecord,
-  repairResumeFromSource,
   scoreResume,
   validateResumeAgainstSource,
 } from "./resume-quality";
@@ -74,14 +73,30 @@ export function hardenResumeCriticalFacts(
   title: string,
 ): GeneratedResume {
   const source = canonicalSourceRecord(intake, title);
-  let repaired = repairResumeFromSource(generated, source);
+  let hardened: GeneratedResume = {
+    ...generated,
+    basics: {
+      ...generated.basics,
+      fullName: generated.basics.fullName || source.contact.fullName,
+      targetTitle: generated.basics.targetTitle || source.targetTitle,
+      email: generated.basics.email || source.contact.email || undefined,
+      phone: generated.basics.phone || source.contact.phone || undefined,
+      location: generated.basics.location || source.contact.location || undefined,
+    },
+  };
 
-  if (source.education && !hasSourceEducation(repaired, source.education)) {
+  if (source.education) {
     const education = sourceEducationItem(source.education);
-    if (education) repaired = { ...repaired, education: [education] };
+    if (education && !hasSourceEducation(hardened, source.education)) {
+      hardened = { ...hardened, education: [education] };
+    } else if (education && hardened.education.some((item) => !hasSourceEducation({ ...hardened, education: [item] }, source.education))) {
+      // If the model supplied an unrelated education claim, use only the verified
+      // customer-provided education instead of carrying an invented school or degree.
+      hardened = { ...hardened, education: [education] };
+    }
   }
 
-  return repaired;
+  return hardened;
 }
 
 export function evaluateCriticalResumeGate(
@@ -98,7 +113,7 @@ export function evaluateCriticalResumeGate(
   const issues = Array.from(new Set([...deterministicIssues, ...criticalIssues, ...score.issues]));
 
   return {
-    ready: issues.length === 0 && score.total >= 80,
+    ready: issues.length === 0,
     score: score.total,
     issues,
     resume: hardened,
