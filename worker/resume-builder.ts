@@ -14,6 +14,7 @@ import {
   handleCoverLetterRoute,
   rerenderCoverLetterTheme,
 } from "./cover-letter";
+import { hardenGeneratedResumePackage } from "./resume-package-hardener";
 
 export * from "./resume-builder-base";
 
@@ -297,10 +298,6 @@ async function preserveImportedContact(requestCopy: JsonReadableRequest, respons
   return rewrittenJson(response, { ...payload, prefill });
 }
 
-function isGeneratePath(pathname: string): boolean {
-  return /^\/api\/resume-builder\/resumes\/[^/]+\/generate$/.test(pathname);
-}
-
 function isResumeTheme(theme: unknown): theme is ResumeTheme {
   return theme === "plain" || theme === "navy";
 }
@@ -392,6 +389,100 @@ function shouldAutoRetryNumericGuard(env: ResumeBuilderEnv): boolean {
     || Boolean(env.RESUME_AI_BRIDGE_URL?.trim());
 }
 
+async function authenticatedResumeProbe(
+  request: Request,
+  env: ResumeBuilderEnv,
+  dependencies: ResumeBuilderDependencies,
+  resumeId: string,
+): Promise<Response | null> {
+  const probeUrl = new URL(request.url);
+  probeUrl.pathname = `/api/resume-builder/resumes/${encodeURIComponent(resumeId)}`;
+  probeUrl.search = "";
+  return handleBaseResumeBuilderRoute(
+    new Request(probeUrl.toString(), { method: "GET", headers: request.headers }),
+    env,
+    preservationDependencies(dependencies, false),
+  );
+}
+
+async function enforceCheckoutQualityGate(
+  request: Request,
+  env: ResumeBuilderEnv,
+  dependencies: ResumeBuilderDependencies,
+  resumeId: string,
+): Promise<Response | null> {
+  const probe = await authenticatedResumeProbe(request, env, dependencies, resumeId);
+  if (!probe || !probe.ok) return probe;
+  try {
+    const gate = await hardenGeneratedResumePackage(env, dependencies, resumeId);
+    if (gate.ready) return null;
+    return rewrittenJson(probe, {
+      ok: false,
+      code: "QUALITY_GATE_FAILED",
+      paymentSafe: true,
+      runConsumed: false,
+      qualityScore: gate.score,
+      issues: gate.issues,
+      message: "This resume is not eligible for checkout yet. HUSTL3 BOT must produce a complete, verified resume before payment can open.",
+    }, 409);
+  } catch (error) {
+    console.error("Resume checkout quality preflight failed", error);
+    return rewrittenJson(probe, {
+      ok: false,
+      code: "QUALITY_GATE_ERROR",
+      paymentSafe: true,
+      runConsumed: false,
+      message: "Checkout is paused because the resume package could not be verified safely. Your existing resume and payment status are unchanged.",
+    }, 503);
+  }
+}
+
+async function hardenSuccessfulGeneration(
+  response: Response,
+  env: ResumeBuilderEnv,
+  dependencies: ResumeBuilderDependencies,
+  resumeId: string,
+): Promise<Response> {
+  if (!response.ok) return response;
+  try {
+    const gate = await hardenGeneratedResumePackage(env, dependencies, resumeId);
+    if (!gate.ready) {
+      return rewrittenJson(response, {
+        ok: false,
+        code: "QUALITY_GATE_FAILED",
+        retryable: false,
+        action: "return_to_intake",
+        paymentSafe: true,
+        runConsumed: false,
+        qualityScore: gate.score,
+        issues: gate.issues,
+        missing: gate.issues,
+        intakeUrl: `/resume-builder/intake?resume_id=${encodeURIComponent(resumeId)}`,
+        message: "HUSTL3 BOT stopped this draft because it is not complete enough to show as a paid-quality preview. Review the intake and rebuild.",
+      }, 422);
+    }
+    if (!gate.changed) return response;
+    const payload = await responseJson(response) ?? {};
+    return rewrittenJson(response, {
+      ...payload,
+      qualityHardened: true,
+      qualityScore: gate.score,
+      message: "Your protected preview passed the final completeness gate and is ready to review.",
+    });
+  } catch (error) {
+    console.error("Resume post-generation hardening failed", error);
+    return rewrittenJson(response, {
+      ok: false,
+      code: "QUALITY_GATE_ERROR",
+      retryable: true,
+      action: "retry_generation",
+      paymentSafe: true,
+      runConsumed: false,
+      message: "The resume was generated, but the final quality verification could not finish. No payment can open until verification succeeds.",
+    }, 503);
+  }
+}
+
 /**
  * Keeps the proven Resume Builder backend intact while adding protections:
  * 1) uploaded resume facts are preserved more aggressively through import/generation prompts;
@@ -401,7 +492,9 @@ function shouldAutoRetryNumericGuard(env: ResumeBuilderEnv): boolean {
  * 4) the paid $9.99 entitlement includes an on-demand matching cover letter that shares the
  *    existing three-correction package limit instead of creating an unbounded AI-cost path;
  * 5) free-preview rate limits tolerate normal retries while failed generations do not consume
- *    the prospect-facing preview allowance. The original user/IP/global cost controls remain.
+ *    the prospect-facing preview allowance. The original user/IP/global cost controls remain;
+ * 6) generated packages are deterministically hardened before review and checkout is blocked
+ *    unless the saved resume still passes the critical completeness gate.
  */
 export async function handleResumeBuilderRoute(
   request: Request,
@@ -414,13 +507,20 @@ export async function handleResumeBuilderRoute(
   if (coverLetterResponse) return coverLetterResponse;
 
   const importPath = pathname === "/api/resume-builder/resume-import";
-  const generatePath = isGeneratePath(pathname);
+  const generationPathMatch = pathname.match(/^\/api\/resume-builder\/resumes\/([^/]+)\/generate$/);
+  const generatePath = Boolean(generationPathMatch);
+  const checkoutPathMatch = pathname.match(/^\/api\/resume-builder\/resumes\/([^/]+)\/checkout$/);
   const resumePathMatch = pathname.match(/^\/api\/resume-builder\/resumes\/([^/]+)$/);
   const themeRequestCopy = request.method === "PATCH" && resumePathMatch ? request.clone() : null;
   const themeBody = themeRequestCopy ? await jsonBody(themeRequestCopy) : null;
   const themeChange = themeOnlyBody(themeBody) ? themeBody : null;
   const importCopy = importPath ? request.clone() : null;
   const retryRequest = generatePath && shouldAutoRetryNumericGuard(env) ? request.clone() : null;
+
+  if (request.method === "POST" && checkoutPathMatch) {
+    const blocked = await enforceCheckoutQualityGate(request, env, dependencies, checkoutPathMatch[1]);
+    if (blocked) return blocked;
+  }
 
   let previousTheme: ResumeTheme | null = null;
   let hadGeneratedResume = false;
@@ -501,6 +601,10 @@ export async function handleResumeBuilderRoute(
     return augmentResumeWithCoverLetter(first, env, resumePathMatch[1]);
   }
 
+  if (generatePath && generationPathMatch && first.ok) {
+    return hardenSuccessfulGeneration(first, env, dependencies, generationPathMatch[1]);
+  }
+
   if (!generatePath || !retryRequest || first.status !== 422) return first;
   const firstFailure = await responseJson(first);
   if (firstFailure?.code !== "UNSUPPORTED_NUMERIC_CLAIM") return first;
@@ -514,6 +618,9 @@ export async function handleResumeBuilderRoute(
   if (!retry) return null;
   if (retry.status === 429) return handleRateLimitedGeneration(retry, env, retryRateLimitPolicy);
   await refundUnpaidPreviewLimitOnFailure(retry, env, retryRateLimitPolicy);
+  if (retry.ok && generationPathMatch) {
+    return hardenSuccessfulGeneration(retry, env, dependencies, generationPathMatch[1]);
+  }
   if (retry.status !== 422) return retry;
   const retryFailure = await responseJson(retry);
   if (retryFailure?.code !== "UNSUPPORTED_NUMERIC_CLAIM") return retry;
