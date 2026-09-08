@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { AccountStart } from "./account-start";
 import { FlowSteps } from "./flow-steps";
+import { ResumeBuilderStartAnalytics } from "./funnel-analytics";
 import { ResumeBuilderHeader } from "./resume-builder-header";
 import { ResumeHeroTexture } from "./resume-hero-texture";
 import type { TradeTrack } from "./trade-content";
@@ -28,6 +29,7 @@ const tradeTracks: TradeTrack[] = [
 export default function ResumeBuilderPage() {
   return (
     <main className="rb-page">
+      <ResumeBuilderStartAnalytics />
       <ResumeBuilderHeader />
       <FlowSteps current={1} />
 

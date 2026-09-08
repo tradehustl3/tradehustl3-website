@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { FlowSteps } from "../flow-steps";
+import { ResumeIntakeAnalytics } from "../funnel-analytics";
 import { ResumeBuilderHeader } from "../resume-builder-header";
 import { ResumeWizard } from "./wizard";
 
@@ -11,6 +12,7 @@ export const metadata: Metadata = {
 export default function IntakePage() {
   return (
     <main className="rb-page rb-intake-page rb-wiz-page">
+      <ResumeIntakeAnalytics />
       <ResumeBuilderHeader />
       <FlowSteps current={2} />
       <section className="rb-flow-intro rb-wiz-intro">
