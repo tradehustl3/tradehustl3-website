@@ -321,7 +321,7 @@ test("unpaid AI generation is blocked by the daily attempt quota before the mode
     {
       DB: fakeDb({
         entitlement: null,
-        rateLimitCount: (_sql, values) => String(values[0]).includes("resume-ai-unpaid-user") ? 4 : 1,
+        rateLimitCount: (_sql, values) => String(values[0]).includes("resume-ai-unpaid-user") ? 7 : 1,
       }) as unknown as D1Database,
     },
     {
@@ -334,6 +334,9 @@ test("unpaid AI generation is blocked by the daily attempt quota before the mode
   assert.equal(response?.status, 429);
   assert.equal(response?.headers.get("retry-after"), "86400");
   assert.equal(modelCalled, false);
+  const result = await response?.json() as { rateLimitReason?: string; message?: string };
+  assert.equal(result.rateLimitReason, "UNPAID_USER_DAILY");
+  assert.doesNotMatch(result.message ?? "", /try again tomorrow/i);
 });
 
 test("oversized Resume Builder webhook payloads are rejected before signature work", async () => {
@@ -777,7 +780,6 @@ test("a full refund arriving before checkout completion cannot be overwritten by
     amountRefunded: 999,
   });
   assert.equal(harness.state.orderStatus, "refunded");
-
   const checkoutPayload = JSON.stringify({
     id: "evt_checkout_after_refund",
     type: "checkout.session.completed",
