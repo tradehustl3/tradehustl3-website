@@ -20,6 +20,18 @@ export * from "./resume-builder-base";
 type BaseResumeRequest = Parameters<typeof handleBaseResumeBuilderRoute>[0];
 type JsonReadableRequest = { json(): Promise<unknown> };
 
+type RateLimitObservation = {
+  bucket: string;
+  count: number;
+  effectiveCount: number;
+  windowStart: number;
+};
+
+type RateLimitPolicy = {
+  env: ResumeBuilderEnv;
+  observations: RateLimitObservation[];
+};
+
 const IMPORT_PRESERVATION_INSTRUCTION = `Uploaded-resume preservation rule:
 Preserve every explicit employer, job title, location, date range, certification, education item, contact detail available in the source schema, and every substantive responsibility or accomplishment. Do not summarize away supported facts. Keep every number exactly grounded in the source. When a role has multiple bullets, retain their factual content in responsibilities instead of collapsing the role to a generic sentence. Never invent a missing fact.`;
 
@@ -126,6 +138,142 @@ function rewrittenJson(response: Response, body: Record<string, unknown>, status
   headers.set("Cache-Control", "no-store");
   headers.set("Content-Type", "application/json; charset=utf-8");
   return new Response(JSON.stringify(body), { status, headers });
+}
+
+export function effectiveResumePreviewRateLimitCount(bucket: string, count: number): number {
+  if (bucket.startsWith("resume-ai-unpaid-user:")) return Math.ceil(count / 2);
+  if (bucket.startsWith("resume-ai-unpaid-ip:")) return Math.ceil((count * 6) / 20);
+  return count;
+}
+
+function proxiedMethod(target: object, property: PropertyKey): unknown {
+  const value = Reflect.get(target, property, target);
+  return typeof value === "function" ? value.bind(target) : value;
+}
+
+function createResumePreviewRateLimitPolicy(env: ResumeBuilderEnv): RateLimitPolicy {
+  const observations: RateLimitObservation[] = [];
+  const db = new Proxy(env.DB as unknown as object, {
+    get(target, property) {
+      if (property !== "prepare") return proxiedMethod(target, property);
+      return (query: string) => {
+        const statement = env.DB.prepare(query);
+        if (!query.includes("INSERT INTO rate_limits")) return statement;
+        return new Proxy(statement as unknown as object, {
+          get(statementTarget, statementProperty) {
+            if (statementProperty !== "bind") return proxiedMethod(statementTarget, statementProperty);
+            return (...values: unknown[]) => {
+              const bound = statement.bind(...values);
+              const bucket = typeof values[0] === "string" ? values[0] : "";
+              const windowStart = typeof values[1] === "number" ? values[1] : 0;
+              if (!bucket.startsWith("resume-ai-")) return bound;
+              return new Proxy(bound as unknown as object, {
+                get(boundTarget, boundProperty) {
+                  if (boundProperty !== "first") return proxiedMethod(boundTarget, boundProperty);
+                  return async (...args: unknown[]) => {
+                    const first = Reflect.get(boundTarget, "first", boundTarget);
+                    const row = await (first as (...values: unknown[]) => Promise<unknown>).apply(boundTarget, args);
+                    if (!row || typeof row !== "object" || Array.isArray(row)) return row;
+                    const record = row as Record<string, unknown>;
+                    const count = typeof record.count === "number" ? record.count : Number(record.count);
+                    if (!Number.isFinite(count)) return row;
+                    const effectiveCount = effectiveResumePreviewRateLimitCount(bucket, count);
+                    observations.push({ bucket, count, effectiveCount, windowStart });
+                    return { ...record, count: effectiveCount };
+                  };
+                },
+              }) as unknown as D1PreparedStatement;
+            };
+          },
+        }) as unknown as D1PreparedStatement;
+      };
+    },
+  }) as unknown as D1Database;
+  return { env: { ...env, DB: db }, observations };
+}
+
+function configuredGlobalRateLimit(env: ResumeBuilderEnv): number {
+  const configured = Number.parseInt(env.RESUME_AI_DAILY_ATTEMPT_LIMIT ?? "", 10);
+  return Number.isSafeInteger(configured) && configured > 0 ? Math.min(configured, 10_000) : 250;
+}
+
+function rateLimitThreshold(bucket: string, env: ResumeBuilderEnv): number | null {
+  if (bucket.startsWith("resume-ai-unpaid-user:")) return 3;
+  if (bucket.startsWith("resume-ai-unpaid-ip:")) return 6;
+  if (bucket.startsWith("resume-ai-user:")) return 10;
+  if (bucket.startsWith("resume-ai-ip:")) return 20;
+  if (bucket === "resume-ai-global") return configuredGlobalRateLimit(env);
+  return null;
+}
+
+export function resumePreviewRateLimitReason(
+  observations: ReadonlyArray<Pick<RateLimitObservation, "bucket" | "effectiveCount">>,
+  env: Pick<ResumeBuilderEnv, "RESUME_AI_DAILY_ATTEMPT_LIMIT"> = {},
+): string {
+  for (const observation of observations) {
+    const threshold = rateLimitThreshold(observation.bucket, env as ResumeBuilderEnv);
+    if (threshold === null || observation.effectiveCount <= threshold) continue;
+    if (observation.bucket.startsWith("resume-ai-unpaid-user:")) return "UNPAID_USER_DAILY";
+    if (observation.bucket.startsWith("resume-ai-unpaid-ip:")) return "UNPAID_IP_DAILY";
+    if (observation.bucket.startsWith("resume-ai-user:")) return "USER_DAILY";
+    if (observation.bucket.startsWith("resume-ai-ip:")) return "IP_DAILY";
+    if (observation.bucket === "resume-ai-global") return "GLOBAL_DAILY";
+  }
+  return "UNKNOWN";
+}
+
+function customerRateLimitMessage(reason: string): string {
+  if (reason === "GLOBAL_DAILY") {
+    return "Resume building is temporarily at capacity. Your information is saved. Please try again later.";
+  }
+  if (reason === "IP_DAILY" || reason === "UNPAID_IP_DAILY") {
+    return "This network has reached its resume-build limit for today. Your information is saved. Please try again after the limit resets.";
+  }
+  return "This account has reached its resume-build limit for today. Your information is saved. Please try again after the limit resets.";
+}
+
+async function refundRateLimitObservations(
+  env: ResumeBuilderEnv,
+  observations: ReadonlyArray<RateLimitObservation>,
+  unpaidOnly: boolean,
+): Promise<void> {
+  const unique = new Map<string, RateLimitObservation>();
+  for (const observation of observations) {
+    const isUnpaid = observation.bucket.startsWith("resume-ai-unpaid-user:")
+      || observation.bucket.startsWith("resume-ai-unpaid-ip:");
+    if (unpaidOnly && !isUnpaid) continue;
+    unique.set(`${observation.bucket}:${observation.windowStart}`, observation);
+  }
+  await Promise.all(Array.from(unique.values()).map((observation) => env.DB.prepare(
+    `UPDATE rate_limits
+     SET count = CASE WHEN count > 0 THEN count - 1 ELSE 0 END
+     WHERE bucket = ? AND window_start = ?`,
+  ).bind(observation.bucket, observation.windowStart).run()));
+}
+
+async function handleRateLimitedGeneration(
+  response: Response,
+  env: ResumeBuilderEnv,
+  policy: RateLimitPolicy,
+): Promise<Response> {
+  const payload = await responseJson(response);
+  if (response.status !== 429 || payload?.code !== "RATE_LIMITED") return response;
+  const reason = resumePreviewRateLimitReason(policy.observations, env);
+  await refundRateLimitObservations(env, policy.observations, false);
+  return rewrittenJson(response, {
+    ...payload,
+    rateLimitReason: reason,
+    message: customerRateLimitMessage(reason),
+  }, 429);
+}
+
+async function refundUnpaidPreviewLimitOnFailure(
+  response: Response,
+  env: ResumeBuilderEnv,
+  policy: RateLimitPolicy,
+): Promise<void> {
+  if (response.ok || response.status === 429) return;
+  await refundRateLimitObservations(env, policy.observations, true);
 }
 
 async function preserveImportedContact(requestCopy: JsonReadableRequest, response: Response): Promise<Response> {
@@ -251,7 +399,9 @@ function shouldAutoRetryNumericGuard(env: ResumeBuilderEnv): boolean {
  * 3) switching between Classic Black and Red Accent re-renders the existing PDF/DOCX/preview
  *    without spending an AI correction run or changing any resume content;
  * 4) the paid $9.99 entitlement includes an on-demand matching cover letter that shares the
- *    existing three-correction package limit instead of creating an unbounded AI-cost path.
+ *    existing three-correction package limit instead of creating an unbounded AI-cost path;
+ * 5) free-preview rate limits tolerate normal retries while failed generations do not consume
+ *    the prospect-facing preview allowance. The original user/IP/global cost controls remain.
  */
 export async function handleResumeBuilderRoute(
   request: Request,
@@ -290,12 +440,18 @@ export async function handleResumeBuilderRoute(
     hadGeneratedResume = typeof resume.previewUrl === "string" && resume.previewUrl.length > 0;
   }
 
+  const firstRateLimitPolicy = generatePath ? createResumePreviewRateLimitPolicy(env) : null;
   const first = await handleBaseResumeBuilderRoute(
     request as unknown as BaseResumeRequest,
-    env,
+    firstRateLimitPolicy?.env ?? env,
     preservationDependencies(dependencies, false),
   );
   if (!first) return null;
+
+  if (firstRateLimitPolicy) {
+    if (first.status === 429) return handleRateLimitedGeneration(first, env, firstRateLimitPolicy);
+    await refundUnpaidPreviewLimitOnFailure(first, env, firstRateLimitPolicy);
+  }
 
   if (importPath && importCopy) {
     return preserveImportedContact(importCopy, first);
@@ -349,12 +505,16 @@ export async function handleResumeBuilderRoute(
   const firstFailure = await responseJson(first);
   if (firstFailure?.code !== "UNSUPPORTED_NUMERIC_CLAIM") return first;
 
+  const retryRateLimitPolicy = createResumePreviewRateLimitPolicy(env);
   const retry = await handleBaseResumeBuilderRoute(
     retryRequest as unknown as BaseResumeRequest,
-    env,
+    retryRateLimitPolicy.env,
     preservationDependencies(dependencies, true),
   );
-  if (!retry || retry.status !== 422) return retry;
+  if (!retry) return null;
+  if (retry.status === 429) return handleRateLimitedGeneration(retry, env, retryRateLimitPolicy);
+  await refundUnpaidPreviewLimitOnFailure(retry, env, retryRateLimitPolicy);
+  if (retry.status !== 422) return retry;
   const retryFailure = await responseJson(retry);
   if (retryFailure?.code !== "UNSUPPORTED_NUMERIC_CLAIM") return retry;
 
