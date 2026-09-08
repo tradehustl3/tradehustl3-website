@@ -87,7 +87,9 @@ export function ResumeIntakeAnalytics() {
             window.sessionStorage.setItem(key, "1");
           }
         }
-      } catch {}
+      } catch {
+        // Analytics observation must never interfere with autosave or intake completion.
+      }
       return response;
     };
     return () => { window.fetch = originalFetch; };
@@ -114,7 +116,9 @@ export function ResumeReviewAnalytics() {
         if (response.ok && method === "POST" && /\/checkout$/.test(url)) {
           trackResumeCheckout();
         }
-      } catch {}
+      } catch {
+        // Analytics observation must never interfere with generation or checkout.
+      }
       return response;
     };
     return () => { window.fetch = originalFetch; };
