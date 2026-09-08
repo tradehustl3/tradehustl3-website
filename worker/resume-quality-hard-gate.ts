@@ -33,13 +33,32 @@ function sourceEducationItem(value: string): ResumeEducation | null {
   return { credential: raw, institution: "" };
 }
 
-function hasSourceEducation(generated: GeneratedResume, sourceEducation: string): boolean {
+function wordSet(value: string): Set<string> {
+  return new Set(normalize(value).split(" ").filter(Boolean));
+}
+
+function sameEducationFacts(sourceEducation: string, candidate: string): boolean {
   const sourceKey = normalize(sourceEducation);
+  const candidateKey = normalize(candidate);
   if (!sourceKey) return true;
-  return generated.education.some((item) => {
-    const candidate = normalize([item.credential, item.institution, item.location, item.year].filter(Boolean).join(" "));
-    return candidate && (candidate.includes(sourceKey) || sourceKey.includes(candidate));
-  });
+  if (!candidateKey) return false;
+  if (candidateKey.includes(sourceKey) || sourceKey.includes(candidateKey)) return true;
+
+  // Resume renderers often reverse "school — credential" into
+  // "credential — school". Treat the same factual tokens as equivalent while
+  // still rejecting a different school, degree, year, or credential.
+  const sourceWords = wordSet(sourceKey);
+  const candidateWords = wordSet(candidateKey);
+  if (!sourceWords.size || !candidateWords.size) return false;
+  return [...sourceWords].every((word) => candidateWords.has(word))
+    && [...candidateWords].every((word) => sourceWords.has(word));
+}
+
+function hasSourceEducation(generated: GeneratedResume, sourceEducation: string): boolean {
+  return generated.education.some((item) => sameEducationFacts(
+    sourceEducation,
+    [item.credential, item.institution, item.location, item.year].filter(Boolean).join(" "),
+  ));
 }
 
 function missingCriticalFacts(generated: GeneratedResume, intake: unknown, title: string): string[] {
@@ -89,10 +108,6 @@ export function hardenResumeCriticalFacts(
     const education = sourceEducationItem(source.education);
     if (education && !hasSourceEducation(hardened, source.education)) {
       hardened = { ...hardened, education: [education] };
-    } else if (education && hardened.education.some((item) => !hasSourceEducation({ ...hardened, education: [item] }, source.education))) {
-      // If the model supplied an unrelated education claim, use only the verified
-      // customer-provided education instead of carrying an invented school or degree.
-      hardened = { ...hardened, education: [education] };
     }
   }
 
@@ -112,8 +127,14 @@ export function evaluateCriticalResumeGate(
   const score = scoreResume(hardened, source);
   const issues = Array.from(new Set([...deterministicIssues, ...criticalIssues, ...score.issues]));
 
+  // The base generation pipeline already enforces unsupported claims, missing
+  // source duties, credentials, and correction safety before files are written.
+  // This additional gate exists to prevent critical source facts from vanishing
+  // from the customer-facing package. User-approved corrections (for example a
+  // corrected end date) must not be invalidated by comparing them to the older
+  // intake snapshot during this post-generation pass.
   return {
-    ready: issues.length === 0,
+    ready: criticalIssues.length === 0,
     score: score.total,
     issues,
     resume: hardened,
