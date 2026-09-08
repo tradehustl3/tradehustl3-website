@@ -64,7 +64,13 @@ export async function hardenGeneratedResumePackage(
   }>();
 
   if (!record?.generated_json) {
-    return { found: Boolean(record), ready: false, score: 0, issues: ["Build the protected preview first."], changed: false };
+    return {
+      found: Boolean(record),
+      ready: false,
+      score: 0,
+      issues: ["Generate and review the watermarked preview before checkout."],
+      changed: false,
+    };
   }
 
   let intake: unknown;
