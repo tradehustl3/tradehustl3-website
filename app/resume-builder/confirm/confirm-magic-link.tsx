@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { trackResumeFunnelEvent } from "../funnel-analytics";
 
 export function ConfirmMagicLink() {
   const [token] = useState(() => typeof window === "undefined"
@@ -30,6 +31,7 @@ export function ConfirmMagicLink() {
       });
       const result = await response.json() as { message?: string };
       if (!response.ok) throw new Error(result.message || "This confirmation link could not be used.");
+      trackResumeFunnelEvent("sign_up", { method: "magic_link" });
       window.location.assign("/resume-builder/intake");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "This confirmation link could not be used.");
