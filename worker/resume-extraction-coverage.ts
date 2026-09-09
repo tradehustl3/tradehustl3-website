@@ -1,5 +1,5 @@
 export type ExtractionCoverageIssue = {
-  code: "jobs" | "dates" | "responsibilities" | "education" | "credentials" | "skills_tools" | "software_cmms" | "training";
+  code: "jobs" | "employers" | "job_titles" | "dates" | "responsibilities" | "education" | "credentials" | "skills_tools" | "software_cmms" | "training";
   message: string;
   expected?: number;
   actual?: number;
@@ -59,6 +59,11 @@ function sourceHas(source: string, pattern: RegExp): boolean {
   return pattern.test(source);
 }
 
+function appearsInSource(source: string, value: unknown): boolean {
+  const candidate = normalize(text(value));
+  return Boolean(candidate && source.includes(candidate));
+}
+
 export function assessResumeExtractionCoverage(sourceResumeText: string, structured: unknown): ExtractionCoverageResult {
   const source = normalize(sourceResumeText);
   if (!source) return { ready: true, issues: [], sourceRoleSignals: 0, extractedRoles: extractedRoles(structured).length };
@@ -79,13 +84,29 @@ export function assessResumeExtractionCoverage(sourceResumeText: string, structu
   }
 
   if (roleSignals > 0 && roles.length > 0) {
+    const missingEmployers = roles.filter((role) => !text(role.employer)).length;
+    if (missingEmployers > 0) {
+      issues.push({ code: "employers", message: `${missingEmployers} extracted job(s) are missing an employer.` });
+    }
+    const missingTitles = roles.filter((role) => !text(role.jobTitle)).length;
+    if (missingTitles > 0) {
+      issues.push({ code: "job_titles", message: `${missingTitles} extracted job(s) are missing a job title.` });
+    }
+    const sourceMismatchEmployers = roles.filter((role) => text(role.employer) && !appearsInSource(source, role.employer)).length;
+    if (sourceMismatchEmployers > 0) {
+      issues.push({ code: "employers", message: `${sourceMismatchEmployers} extracted employer name(s) could not be verified in the uploaded resume.` });
+    }
+    const sourceMismatchTitles = roles.filter((role) => text(role.jobTitle) && !appearsInSource(source, role.jobTitle)).length;
+    if (sourceMismatchTitles > 0) {
+      issues.push({ code: "job_titles", message: `${sourceMismatchTitles} extracted job title(s) could not be verified in the uploaded resume.` });
+    }
     const rolesWithoutDates = roles.filter((role) => !text(role.startDate) && !text(role.dates)).length;
     if (rolesWithoutDates > 0) {
       issues.push({ code: "dates", message: `${rolesWithoutDates} extracted job(s) are missing dates that are present in the uploaded resume.` });
     }
   }
 
-  const sourceLooksLikeWorkHistory = sourceHas(source, /\b(work experience|professional experience|employment history|experience)\b/i);
+  const sourceLooksLikeWorkHistory = sourceHas(source, /\b(work experience|professional experience|employment history|work history|experience)\b/i);
   if (sourceLooksLikeWorkHistory && roles.length > 0 && roles.some((role) => !hasAnyRoleNarrative(role))) {
     issues.push({ code: "responsibilities", message: "At least one extracted job lost its responsibilities or substantive work details." });
   }
