@@ -1,0 +1,52 @@
+name: Fix authoritative source safety regressions
+
+on:
+  push:
+    branches:
+      - fix/upload-authoritative-source
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: fix/upload-authoritative-source
+      - name: Preserve exact source text without weakening validation
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('worker/resume-quality.ts')
+          source = path.read_text()
+
+          old = '    sourceResumeText: text(root.sourceResumeText, 100_000),'
+          new = '    sourceResumeText: typeof root.sourceResumeText === "string" ? root.sourceResumeText.trim().slice(0, 100_000) : "",'
+          if old not in source:
+              raise SystemExit('sourceResumeText canonical assignment not found')
+          source = source.replace(old, new, 1)
+
+          old = '  return [...source.certifications, ...source.licenses, ...source.safety, source.sourceResumeText]\n    .some((item) => {'
+          new = '  return [...source.certifications, ...source.licenses, ...source.safety, source.sourceResumeText]\n    .filter(Boolean)\n    .some((item) => {'
+          if old not in source:
+              raise SystemExit('credential support list not found')
+          source = source.replace(old, new, 1)
+
+          old = '''  return [\n    ...source.tools,\n    ...source.equipmentSystems,\n    ...source.technicalSkills,\n    ...source.software,\n    ...source.safety,\n    ...source.roles.flatMap((role) => role.bullets),\n    source.sourceResumeText,\n  ].some((claim) => normalized(claim).includes(normalized(skill))'''
+          new = '''  return [\n    ...source.tools,\n    ...source.equipmentSystems,\n    ...source.technicalSkills,\n    ...source.software,\n    ...source.safety,\n    ...source.roles.flatMap((role) => role.bullets),\n    source.sourceResumeText,\n  ].filter(Boolean).some((claim) => normalized(claim).includes(normalized(skill))'''
+          if old not in source:
+              raise SystemExit('skill support list not found')
+          source = source.replace(old, new, 1)
+
+          path.write_text(source)
+          PY
+      - name: Commit fix and remove one-shot workflow
+        run: |
+          git config user.name "TRADE HUSTL3 Automation"
+          git config user.email "tradehustl3@gmail.com"
+          git add worker/resume-quality.ts
+          git rm .github/workflows/fix-authoritative-source-tests.yml
+          git commit -m "Preserve raw upload without weakening source validation"
+          git push origin HEAD:fix/upload-authoritative-source
