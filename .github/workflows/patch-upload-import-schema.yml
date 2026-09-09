@@ -1,0 +1,71 @@
+name: Patch upload import schema
+
+on:
+  push:
+    branches:
+      - fix/upload-source-preservation
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/upload-source-preservation
+      - name: Expand Gemini import role schema
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('worker/resume-builder-base.ts')
+          source = path.read_text()
+          old = '''      items: {
+        type: "OBJECT",
+        required: ["jobTitle", "responsibilities"],
+        properties: {
+          employer: { type: "STRING" },
+          jobTitle: { type: "STRING" },
+          location: { type: "STRING" },
+          startDate: { type: "STRING" },
+          endDate: { type: "STRING" },
+          current: { type: "BOOLEAN" },
+          responsibilities: { type: "STRING" },
+        },
+      },'''
+          new = '''      items: {
+        type: "OBJECT",
+        required: [
+          "employer", "jobTitle", "location", "employmentType", "startDate", "endDate", "current",
+          "responsibilities", "equipment", "systems", "workPerformed", "leadership", "workOrders", "measurable",
+        ],
+        properties: {
+          employer: { type: "STRING" },
+          jobTitle: { type: "STRING" },
+          location: { type: "STRING" },
+          employmentType: { type: "STRING" },
+          startDate: { type: "STRING" },
+          endDate: { type: "STRING" },
+          current: { type: "BOOLEAN" },
+          responsibilities: { type: "STRING" },
+          equipment: { type: "STRING" },
+          systems: { type: "STRING" },
+          workPerformed: { type: "STRING" },
+          leadership: { type: "STRING" },
+          workOrders: { type: "STRING" },
+          measurable: { type: "STRING" },
+        },
+      },'''
+          if old not in source:
+              raise SystemExit('Expected Gemini import role schema block was not found')
+          path.write_text(source.replace(old, new, 1))
+          PY
+      - name: Commit one-shot patch
+        run: |
+          git config user.name "TRADE HUSTL3 Automation"
+          git config user.email "tradehustl3@gmail.com"
+          git add worker/resume-builder-base.ts
+          git rm .github/workflows/patch-upload-import-schema.yml
+          git commit -m "Capture full uploaded job structure in Gemini import schema"
+          git push origin HEAD:fix/upload-source-preservation
