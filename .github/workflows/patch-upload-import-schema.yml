@@ -2,11 +2,7 @@ name: Patch upload import schema
 
 on:
   push:
-    branches:
-      - fix/upload-source-preservation
-
-permissions:
-  contents: write
+    branches: [fix/upload-source-preservation]
 
 jobs:
   patch:
@@ -16,10 +12,11 @@ jobs:
         with:
           ref: fix/upload-source-preservation
       - name: Expand Gemini import role schema
+        shell: bash
         run: |
-          python - <<'PY'
+          python3 - <<'PY'
           from pathlib import Path
-          path = Path('worker/resume-builder-base.ts')
+          path = Path("worker/resume-builder-base.ts")
           source = path.read_text()
           old = '''      items: {
         type: "OBJECT",
@@ -58,10 +55,11 @@ jobs:
         },
       },'''
           if old not in source:
-              raise SystemExit('Expected Gemini import role schema block was not found')
+              raise SystemExit("Expected Gemini import role schema block was not found")
           path.write_text(source.replace(old, new, 1))
           PY
-      - name: Commit one-shot patch
+      - name: Commit patch
+        shell: bash
         run: |
           git config user.name "TRADE HUSTL3 Automation"
           git config user.email "tradehustl3@gmail.com"
