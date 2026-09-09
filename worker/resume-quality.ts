@@ -229,7 +229,7 @@ export function canonicalSourceRecord(intake: unknown, targetTitle = ""): Canoni
       ...splitClaims(root.additionalDetails),
     ])),
     education: text(root.education, 2_500),
-    sourceResumeText: text(root.sourceResumeText, 100_000),
+    sourceResumeText: typeof root.sourceResumeText === "string" ? root.sourceResumeText.trim().slice(0, 100_000) : "",
     metrics: numericClaims(metricSource),
     provenance,
   };
@@ -290,6 +290,7 @@ function findGeneratedRole(source: CanonicalSourceRole, generated: GeneratedResu
 function certSupported(name: string, source: CanonicalSourceRecord): boolean {
   const key = normalized(name);
   return [...source.certifications, ...source.licenses, ...source.safety, source.sourceResumeText]
+    .filter(Boolean)
     .some((item) => {
       const sourceKey = normalized(item);
       return sourceKey === key || sourceKey.includes(key) || key.includes(sourceKey);
@@ -335,7 +336,7 @@ function skillSupported(skill: string, source: CanonicalSourceRecord): boolean {
     ...source.safety,
     ...source.roles.flatMap((role) => role.bullets),
     source.sourceResumeText,
-  ].some((claim) => normalized(claim).includes(normalized(skill))
+  ].filter(Boolean).some((claim) => normalized(claim).includes(normalized(skill))
     || normalized(skill).includes(normalized(claim))
     || (overlap(skill, claim) >= 0.5 && claimSupported(skill, [claim])));
 }
