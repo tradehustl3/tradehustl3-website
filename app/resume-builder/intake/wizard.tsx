@@ -290,7 +290,7 @@ export function ResumeWizard() {
       if (!response.ok || !result.prefill) {
         throw new Error(result.message || "HUSTL3 BOT could not read that resume.");
       }
-      const nextData = mergeResumePrefill(dataRef.current, result.prefill);
+      const nextData = mergeResumePrefill(dataRef.current, result.prefill, text);
       setData(nextData);
       setImportState("done");
       setImportMessage("Resume imported. Enhance it now, or review and add details first.");
