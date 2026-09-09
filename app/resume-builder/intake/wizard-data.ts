@@ -29,6 +29,7 @@ export type RoleEntry = {
 
 export type WizardData = {
   sourceProvenance: "guided_intake" | "upload";
+  sourceResumeText: string;
   trade: TradeTrack | "";
   experienceLevel: ExperienceLevel | "";
   contact: { fullName: string; email?: string; phone: string; cityState: string };
@@ -71,6 +72,7 @@ export function emptyRole(): RoleEntry {
 export function emptyWizardData(): WizardData {
   return {
     sourceProvenance: "guided_intake",
+    sourceResumeText: "",
     trade: "",
     experienceLevel: "",
     contact: { fullName: "", email: "", phone: "", cityState: "" },
@@ -198,16 +200,18 @@ export function toIntake(data: WizardData, accountEmail: string): Record<string,
     experience,
     education: data.education.trim(),
     additionalDetails: data.additionalDetails.trim(),
+    sourceResumeText: data.sourceProvenance === "upload" ? data.sourceResumeText.trim() : "",
     targetJob: {
       title: data.targetJob.title.trim(),
       company: data.targetJob.company.trim(),
       location: data.targetJob.location.trim(),
     },
     meta: {
-      wizardVersion: 3,
+      wizardVersion: 4,
       lastStep: data.lastStep,
       source: data.sourceProvenance,
       importedResume: data.sourceProvenance === "upload",
+      sourceResumePreserved: data.sourceProvenance === "upload" && Boolean(data.sourceResumeText.trim()),
     },
   };
 }
@@ -236,6 +240,7 @@ export function fromIntake(
   data.sourceProvenance = meta.importedResume === true || asString(meta.source) === "upload"
     ? "upload"
     : "guided_intake";
+  data.sourceResumeText = data.sourceProvenance === "upload" ? asString(root.sourceResumeText) : "";
 
   data.trade = (fallback.trade || "") as WizardData["trade"];
   data.experienceLevel = asString(career.yearsExperience) as WizardData["experienceLevel"];
