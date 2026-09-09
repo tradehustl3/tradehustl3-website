@@ -126,6 +126,11 @@ test("Gemini import schema exposes every structured role field used by the wizar
   const schemaEnd = source.indexOf("export class ResumeGenerationError", schemaStart);
   assert.ok(schemaStart >= 0 && schemaEnd > schemaStart, "import response schema should be present");
   const schema = source.slice(schemaStart, schemaEnd);
+  const roleStart = schema.indexOf("roles:");
+  const requiredStart = schema.indexOf("required: [", roleStart);
+  const requiredEnd = schema.indexOf("],", requiredStart);
+  assert.ok(roleStart >= 0 && requiredStart > roleStart && requiredEnd > requiredStart, "role required fields should be present");
+  const requiredRoleFields = schema.slice(requiredStart, requiredEnd);
 
   for (const field of [
     "employer",
@@ -144,7 +149,6 @@ test("Gemini import schema exposes every structured role field used by the wizar
     "measurable",
   ]) {
     assert.match(schema, new RegExp(`${field}:`), `Gemini import schema must include role field ${field}`);
+    assert.match(requiredRoleFields, new RegExp(`"${field}"`), `Gemini import schema must require role field ${field}`);
   }
-
-  assert.match(schema, /required:\s*\[\s*"employer",\s*"jobTitle",\s*"location",\s*"employmentType",\s*"startDate",\s*"endDate",\s*"current",\s*"responsibilities",\s*"equipment",\s*"systems",\s*"workPerformed",\s*"leadership",\s*"workOrders",\s*"measurable"\s*\]/s);
 });
