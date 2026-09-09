@@ -1,0 +1,267 @@
+name: Wire upload extraction coverage gate
+
+on:
+  push:
+    branches:
+      - fix/upload-extraction-coverage-gate
+    paths:
+      - .github/workflows/wire-upload-coverage-gate.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: fix/upload-extraction-coverage-gate
+      - name: Patch production checkpoints
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('worker/resume-builder.ts')
+          text = path.read_text()
+
+          old = 'import { hardenGeneratedResumePackage } from "./resume-package-hardener";\n'
+          new = old + 'import { assessResumeExtractionCoverage, assessSavedIntakeExtractionCoverage } from "./resume-extraction-coverage";\n'
+          if 'assessResumeExtractionCoverage' not in text:
+              assert old in text
+              text = text.replace(old, new, 1)
+
+          marker = 'function firstResumeEmail(text: string): string {'
+          if 'IMPORT_RECONCILIATION_INSTRUCTION' not in text:
+              insert = r'''const IMPORT_RECONCILIATION_INSTRUCTION = `Extraction coverage reconciliation rule:
+A previous extraction of this uploaded resume was incomplete. Re-read the entire SOURCE_RESUME from top to bottom and return a complete factual extraction. Capture every distinct job, employer, job title, location, date range, substantive responsibility, education item, certification or license, skill, tool, equipment/system, software/CMMS product, and meaningful training item explicitly present. Do not omit older roles merely to keep the response short. Do not invent or infer anything that is not in the source.`;
+
+function reconciliationDependencies(dependencies: ResumeBuilderDependencies): ResumeBuilderDependencies {
+  const base = preservationDependencies(dependencies, false);
+  const appendGemini: typeof fetch = async (input, init) => {
+    if (!init || typeof init.body !== "string") return (base.geminiFetch ?? fetch)(input, init);
+    try {
+      const root = JSON.parse(init.body) as Record<string, unknown>;
+      const instruction = root.systemInstruction;
+      if (instruction && typeof instruction === "object" && !Array.isArray(instruction)) {
+        const instructionRecord = instruction as Record<string, unknown>;
+        const parts = Array.isArray(instructionRecord.parts) ? [...instructionRecord.parts] : [];
+        if (parts[0] && typeof parts[0] === "object" && !Array.isArray(parts[0])) {
+          const first = { ...(parts[0] as Record<string, unknown>) };
+          if (typeof first.text === "string" && /extract factual resume data for TRADE HUSTL3/i.test(first.text)) {
+            first.text = `${first.text}\n\n${IMPORT_RECONCILIATION_INSTRUCTION}`;
+            parts[0] = first;
+            root.systemInstruction = { ...instructionRecord, parts };
+            return (base.geminiFetch ?? fetch)(input, { ...init, body: JSON.stringify(root) });
+          }
+        }
+      }
+    } catch {
+      // Preserve the original request if the provider payload changes.
+    }
+    return (base.geminiFetch ?? fetch)(input, init);
+  };
+  const appendAnthropic: typeof fetch = async (input, init) => {
+    if (!init || typeof init.body !== "string") return (base.anthropicFetch ?? fetch)(input, init);
+    try {
+      const root = JSON.parse(init.body) as Record<string, unknown>;
+      if (typeof root.system === "string" && /extract factual resume data for TRADE HUSTL3/i.test(root.system)) {
+        root.system = `${root.system}\n\n${IMPORT_RECONCILIATION_INSTRUCTION}`;
+        return (base.anthropicFetch ?? fetch)(input, { ...init, body: JSON.stringify(root) });
+      }
+    } catch {
+      // Preserve the original request if the provider payload changes.
+    }
+    return (base.anthropicFetch ?? fetch)(input, init);
+  };
+  return { ...base, geminiFetch: appendGemini, anthropicFetch: appendAnthropic };
+}
+
+'''
+              assert marker in text
+              text = text.replace(marker, insert + marker, 1)
+
+          marker = 'function isResumeTheme(theme: unknown): theme is ResumeTheme {'
+          if 'reconcileImportedExtraction' not in text:
+              insert = r'''async function reconcileImportedExtraction(
+  requestCopy: JsonReadableRequest,
+  retryRequest: BaseResumeRequest,
+  response: Response,
+  env: ResumeBuilderEnv,
+  dependencies: ResumeBuilderDependencies,
+): Promise<Response> {
+  if (!response.ok) return response;
+  const requestBody = await jsonBody(requestCopy);
+  const payload = await responseJson(response);
+  if (!requestBody || !payload || !payload.prefill || typeof payload.prefill !== "object" || Array.isArray(payload.prefill)) {
+    return response;
+  }
+  const sourceText = typeof requestBody.text === "string" ? requestBody.text : "";
+  const firstCoverage = assessResumeExtractionCoverage(sourceText, payload.prefill);
+  if (firstCoverage.ready) return response;
+
+  const retry = await handleBaseResumeBuilderRoute(
+    retryRequest,
+    env,
+    reconciliationDependencies(dependencies),
+  );
+  if (!retry || !retry.ok) {
+    return rewrittenJson(response, {
+      ok: false,
+      code: "EXTRACTION_COVERAGE_FAILED",
+      retryable: true,
+      action: "retry_import",
+      runConsumed: false,
+      issues: firstCoverage.issues,
+      message: "HUSTL3 BOT found resume details that were not fully captured. It retried the extraction, but the resume still needs another upload attempt before generation.",
+    }, 422);
+  }
+
+  const retryPayload = await responseJson(retry);
+  if (!retryPayload || !retryPayload.prefill || typeof retryPayload.prefill !== "object" || Array.isArray(retryPayload.prefill)) {
+    return rewrittenJson(retry, {
+      ok: false,
+      code: "EXTRACTION_COVERAGE_FAILED",
+      retryable: true,
+      action: "retry_import",
+      runConsumed: false,
+      issues: firstCoverage.issues,
+      message: "HUSTL3 BOT could not verify the uploaded resume extraction. Nothing was generated.",
+    }, 422);
+  }
+
+  const retryCoverage = assessResumeExtractionCoverage(sourceText, retryPayload.prefill);
+  if (!retryCoverage.ready) {
+    return rewrittenJson(retry, {
+      ok: false,
+      code: "EXTRACTION_COVERAGE_FAILED",
+      retryable: true,
+      action: "retry_import",
+      runConsumed: false,
+      issues: retryCoverage.issues,
+      sourceRoleSignals: retryCoverage.sourceRoleSignals,
+      extractedRoles: retryCoverage.extractedRoles,
+      message: "HUSTL3 BOT stopped because the uploaded resume was still not completely extracted after an automatic reconciliation pass. Nothing was generated.",
+    }, 422);
+  }
+
+  return rewrittenJson(retry, {
+    ...retryPayload,
+    reconciled: true,
+    extractionCoverage: {
+      ready: true,
+      sourceRoleSignals: retryCoverage.sourceRoleSignals,
+      extractedRoles: retryCoverage.extractedRoles,
+    },
+  });
+}
+
+'''
+              assert marker in text
+              text = text.replace(marker, insert + marker, 1)
+
+          marker = 'async function enforceCheckoutQualityGate('
+          if 'enforceUploadExtractionCoverageBeforeGeneration' not in text:
+              insert = r'''async function enforceUploadExtractionCoverageBeforeGeneration(
+  request: Request,
+  env: ResumeBuilderEnv,
+  dependencies: ResumeBuilderDependencies,
+  resumeId: string,
+): Promise<Response | null> {
+  const probe = await authenticatedResumeProbe(request, env, dependencies, resumeId);
+  if (!probe || !probe.ok) return probe;
+
+  const record = await env.DB.prepare(
+    "SELECT intake_json FROM resumes WHERE resume_id = ? AND deleted_at IS NULL LIMIT 1",
+  ).bind(resumeId).first<{ intake_json: string }>();
+  if (!record?.intake_json) return rewrittenJson(probe, {
+    ok: false,
+    code: "EXTRACTION_COVERAGE_ERROR",
+    retryable: true,
+    action: "retry_import",
+    runConsumed: false,
+    message: "HUSTL3 BOT could not verify the saved uploaded resume before generation. No AI run was used.",
+  }, 503);
+
+  try {
+    const intake = JSON.parse(record.intake_json) as unknown;
+    const coverage = assessSavedIntakeExtractionCoverage(intake);
+    if (coverage.ready) return null;
+    return rewrittenJson(probe, {
+      ok: false,
+      code: "EXTRACTION_COVERAGE_FAILED",
+      retryable: true,
+      action: "retry_import",
+      paymentSafe: true,
+      runConsumed: false,
+      issues: coverage.issues,
+      missing: coverage.issues.map((issue) => issue.message),
+      sourceRoleSignals: coverage.sourceRoleSignals,
+      extractedRoles: coverage.extractedRoles,
+      intakeUrl: `/resume-builder/intake?resume_id=${encodeURIComponent(resumeId)}`,
+      message: "HUSTL3 BOT stopped generation because the uploaded resume was not fully captured in the saved intake. No AI generation run was used and no weak preview was produced.",
+    }, 422);
+  } catch (error) {
+    console.error("Resume extraction coverage preflight failed", error);
+    return rewrittenJson(probe, {
+      ok: false,
+      code: "EXTRACTION_COVERAGE_ERROR",
+      retryable: true,
+      action: "retry_import",
+      runConsumed: false,
+      message: "HUSTL3 BOT could not verify the uploaded resume before generation. No AI run was used.",
+    }, 503);
+  }
+}
+
+'''
+              assert marker in text
+              text = text.replace(marker, insert + marker, 1)
+
+          old = '  const importCopy = importPath ? request.clone() : null;\n'
+          new = ('  const importContactCopy = importPath ? request.clone() : null;\n'
+                 '  const importCoverageCopy = importPath ? request.clone() : null;\n'
+                 '  const importRetryCopy = importPath ? request.clone() : null;\n')
+          if old in text:
+              text = text.replace(old, new, 1)
+
+          marker = '  if (request.method === "POST" && checkoutPathMatch) {\n'
+          if 'enforceUploadExtractionCoverageBeforeGeneration(request' not in text:
+              insert = ('  if (request.method === "POST" && generationPathMatch) {\n'
+                        '    const blocked = await enforceUploadExtractionCoverageBeforeGeneration(request, env, dependencies, generationPathMatch[1]);\n'
+                        '    if (blocked) return blocked;\n'
+                        '  }\n\n')
+              assert marker in text
+              text = text.replace(marker, insert + marker, 1)
+
+          old = '''  if (importPath && importCopy) {
+    return preserveImportedContact(importCopy, first);
+  }
+'''
+          if old in text:
+              new = '''  if (importPath && importContactCopy && importCoverageCopy && importRetryCopy) {
+    const reconciled = await reconcileImportedExtraction(
+      importCoverageCopy,
+      importRetryCopy as unknown as BaseResumeRequest,
+      first,
+      env,
+      dependencies,
+    );
+    return preserveImportedContact(importContactCopy, reconciled);
+  }
+'''
+              text = text.replace(old, new, 1)
+
+          path.write_text(text)
+          PY
+
+          if git diff --quiet; then
+            echo "Coverage checkpoints already wired."
+            exit 0
+          fi
+          git config user.name "TRADE HUSTL3"
+          git config user.email "tradehustl3@gmail.com"
+          git add worker/resume-builder.ts
+          git commit -m "Enforce upload extraction coverage before generation"
+          git push origin HEAD:fix/upload-extraction-coverage-gate
