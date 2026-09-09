@@ -48,3 +48,15 @@ test("authoritative raw upload becomes part of canonical verification and ground
   assert.ok(facts.some((fact) => fact.id.startsWith("upload.raw.") && fact.value.includes("HVAC Technical Certificate")));
   assert.ok(facts.some((fact) => fact.id.startsWith("upload.raw.") && fact.value.includes("Cooler Heating & Air")));
 });
+
+test("an absent raw upload cannot authorize unsupported facts", () => {
+  const source = canonicalSourceRecord({
+    meta: { source: "upload", importedResume: true },
+    contact: { fullName: "Kamyren Ellis" },
+    experience: [{ employer: "RMB", jobTitle: "Maintenance Supervisor", responsibilities: "Managed HVAC service and work orders." }],
+    fieldValue: { certifications: ["EPA 608 Universal"], technicalSkills: ["HVAC diagnostics"] },
+  }, "Maintenance Supervisor");
+
+  assert.equal(source.sourceResumeText, "");
+  assert.equal(sourceFactCatalog(source).some((fact) => fact.id.startsWith("upload.raw.")), false);
+});
