@@ -6,6 +6,8 @@ export const RESUME_UPLOAD_MAX_TEXT_CHARS = 100_000;
 
 export type ResumeUploadKind = "pdf" | "docx";
 
+let lastExtractedResumeText = "";
+
 export function resumeUploadKind(file: Pick<File, "name" | "type">): ResumeUploadKind | null {
   const name = file.name.toLowerCase();
   if (name.endsWith(".pdf") && (!file.type || file.type === "application/pdf")) return "pdf";
@@ -25,12 +27,18 @@ function normalizeExtractedText(value: string): string {
     .slice(0, RESUME_UPLOAD_MAX_TEXT_CHARS);
 }
 
+function rememberExtractedText(value: string): string {
+  const normalized = normalizeExtractedText(value);
+  lastExtractedResumeText = normalized;
+  return normalized;
+}
+
 export async function extractResumeText(file: File, kind: ResumeUploadKind): Promise<string> {
   const arrayBuffer = await file.arrayBuffer();
   if (kind === "docx") {
     const mammoth = (await import("mammoth")).default;
     const result = await mammoth.extractRawText({ arrayBuffer });
-    return normalizeExtractedText(result.value);
+    return rememberExtractedText(result.value);
   }
 
   const { default: pdfWorkerUrl } = await import("pdfjs-dist/legacy/build/pdf.worker.min.mjs?url");
@@ -47,7 +55,7 @@ export async function extractResumeText(file: File, kind: ResumeUploadKind): Pro
       .join(" "));
   }
   await document.destroy();
-  return normalizeExtractedText(pages.join("\n\n"));
+  return rememberExtractedText(pages.join("\n\n"));
 }
 
 function stringValue(value: unknown, maxLength: number): string {
@@ -74,13 +82,18 @@ export function extractResumePhone(text: string): string {
 
 /**
  * Merge an uploaded resume as the source of truth. Existing wizard values are
- * used only when the uploaded resume did not provide that fact. This keeps an
- * account default or stale draft from overwriting contact/work-history facts
- * that are already present in the file the customer just chose to enhance.
+ * used only when the uploaded resume did not provide that fact. The normalized
+ * source text is retained with the intake so downstream generation always has
+ * the original uploaded facts available even if the extraction model produces
+ * a thinner structured prefill.
  */
 export function mergeResumePrefill(current: WizardData, prefill: unknown, sourceText = ""): WizardData {
   if (!prefill || typeof prefill !== "object") return current;
   const root = prefill as Record<string, unknown>;
+  const effectiveSourceText = stringValue(
+    sourceText || root.sourceResumeText || lastExtractedResumeText,
+    RESUME_UPLOAD_MAX_TEXT_CHARS,
+  );
   const contact = root.contact && typeof root.contact === "object"
     ? root.contact as Record<string, unknown>
     : {};
@@ -112,8 +125,8 @@ export function mergeResumePrefill(current: WizardData, prefill: unknown, source
   const importedTechnicalSkills = stringList(field.technicalSkills);
   const importedSoftware = stringList(field.software);
   const importedSafety = stringList(field.safety);
-  const importedEmail = stringValue(contact.email, 254) || extractResumeEmail(sourceText);
-  const importedPhone = stringValue(contact.phone, 100) || extractResumePhone(sourceText);
+  const importedEmail = stringValue(contact.email, 254) || extractResumeEmail(effectiveSourceText);
+  const importedPhone = stringValue(contact.phone, 100) || extractResumePhone(effectiveSourceText);
   const targetJobTitle = stringValue(root.targetJobTitle, 200) || roles[0]?.jobTitle || current.targetJob.title;
   const importedTrade = stringValue(root.trade, 100);
   const importedExperience = stringValue(root.experienceLevel, 40);
@@ -121,6 +134,7 @@ export function mergeResumePrefill(current: WizardData, prefill: unknown, source
   return {
     ...current,
     sourceProvenance: "upload",
+    sourceResumeText: effectiveSourceText || current.sourceResumeText,
     trade: isTradeTrack(importedTrade) ? importedTrade : current.trade,
     experienceLevel: (EXPERIENCE_LEVELS as readonly string[]).includes(importedExperience)
       ? importedExperience as WizardData["experienceLevel"]
