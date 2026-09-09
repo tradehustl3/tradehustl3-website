@@ -1309,14 +1309,16 @@ function intakeNumericSections(
     return [record.dates, record.startDate, record.endDate];
   });
   const correction = correctionRequest ?? "";
+  const uploadedSource = typeof root.sourceResumeText === "string" ? root.sourceResumeText : "";
   return {
-    "contact information": sourceText(contact, targetJob, title, correction),
-    "career summary": sourceText(career.yearsExperience, career.summaryNotes, workDetails, fieldValue, correction),
+    "contact information": sourceText(contact, targetJob, title, uploadedSource, correction),
+    "career summary": sourceText(career.yearsExperience, career.summaryNotes, workDetails, fieldValue, uploadedSource, correction),
     "skills and tools": sourceText(
       career.skillsAndTools,
       career.licensesAndCertifications,
       career.safetyTraining,
       fieldValue,
+      uploadedSource,
       correction,
     ),
     "certifications and training": sourceText(
@@ -1325,12 +1327,13 @@ function intakeNumericSections(
       fieldValue.certifications,
       fieldValue.licenses,
       fieldValue.safety,
+      uploadedSource,
       correction,
     ),
-    "work history": sourceText(workClaims, workDetails, career.skillsAndTools, fieldValue, correction),
-    "work dates": sourceText(workDateParts, correction),
-    education: sourceText(root.education, correction),
-    "additional information": sourceText(root.additionalDetails, career.safetyTraining, fieldValue, targetJob, correction),
+    "work history": sourceText(workClaims, workDetails, career.skillsAndTools, fieldValue, uploadedSource, correction),
+    "work dates": sourceText(workDateParts, uploadedSource, correction),
+    education: sourceText(root.education, uploadedSource, correction),
+    "additional information": sourceText(root.additionalDetails, career.safetyTraining, fieldValue, targetJob, uploadedSource, correction),
   };
 }
 

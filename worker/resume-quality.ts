@@ -26,6 +26,7 @@ export type CanonicalSourceRecord = {
   safety: string[];
   narrativeFacts: string[];
   education: string;
+  sourceResumeText: string;
   metrics: string[];
   provenance: FactProvenance;
   factProvenance: Record<string, FactProvenance>;
@@ -228,6 +229,7 @@ export function canonicalSourceRecord(intake: unknown, targetTitle = ""): Canoni
       ...splitClaims(root.additionalDetails),
     ])),
     education: text(root.education, 2_500),
+    sourceResumeText: text(root.sourceResumeText, 100_000),
     metrics: numericClaims(metricSource),
     provenance,
   };
@@ -247,6 +249,7 @@ export function canonicalSourceRecord(intake: unknown, targetTitle = ""): Canoni
     source[group].forEach((value, index) => mark(`${group}.${index}`, value));
   }
   mark("education", source.education);
+  mark("sourceResumeText", source.sourceResumeText);
   return { ...source, factProvenance };
 }
 
@@ -269,6 +272,11 @@ export function sourceFactCatalog(source: CanonicalSourceRecord, correctionReque
     source[group].forEach((value, index) => add(`${group}.${index}`, value));
   }
   add("education", source.education);
+  if (source.sourceResumeText) {
+    splitClaims(source.sourceResumeText).slice(0, 160).forEach((value, index) => {
+      add(`upload.raw.${index}`, value);
+    });
+  }
   add("customerCorrection", text(correctionRequest, 2_000));
   return facts;
 }
@@ -281,7 +289,7 @@ function findGeneratedRole(source: CanonicalSourceRole, generated: GeneratedResu
 
 function certSupported(name: string, source: CanonicalSourceRecord): boolean {
   const key = normalized(name);
-  return [...source.certifications, ...source.licenses, ...source.safety]
+  return [...source.certifications, ...source.licenses, ...source.safety, source.sourceResumeText]
     .some((item) => {
       const sourceKey = normalized(item);
       return sourceKey === key || sourceKey.includes(key) || key.includes(sourceKey);
@@ -326,13 +334,15 @@ function skillSupported(skill: string, source: CanonicalSourceRecord): boolean {
     ...source.software,
     ...source.safety,
     ...source.roles.flatMap((role) => role.bullets),
+    source.sourceResumeText,
   ].some((claim) => normalized(claim).includes(normalized(skill))
     || normalized(skill).includes(normalized(claim))
     || (overlap(skill, claim) >= 0.5 && claimSupported(skill, [claim])));
 }
 
 function educationSupported(item: GeneratedResume["education"][number], source: CanonicalSourceRecord): boolean {
-  return Boolean(source.education) && claimSupported(Object.values(item).filter(Boolean).join(" "), [source.education]);
+  const educationSources = [source.education, source.sourceResumeText].filter(Boolean);
+  return educationSources.length > 0 && claimSupported(Object.values(item).filter(Boolean).join(" "), educationSources);
 }
 
 function summarySources(source: CanonicalSourceRecord): string[] {
@@ -348,6 +358,7 @@ function summarySources(source: CanonicalSourceRecord): string[] {
     ...source.licenses,
     ...source.narrativeFacts,
     source.education,
+    source.sourceResumeText,
   ].filter(Boolean);
 }
 
