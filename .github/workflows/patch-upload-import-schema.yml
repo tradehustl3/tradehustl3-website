@@ -16,51 +16,17 @@ jobs:
           ref: fix/upload-source-preservation
       - name: Expand Gemini import role schema
         shell: bash
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          path = Path("worker/resume-builder-base.ts")
-          source = path.read_text()
-          old = '''      items: {
-        type: "OBJECT",
-        required: ["jobTitle", "responsibilities"],
-        properties: {
-          employer: { type: "STRING" },
-          jobTitle: { type: "STRING" },
-          location: { type: "STRING" },
-          startDate: { type: "STRING" },
-          endDate: { type: "STRING" },
-          current: { type: "BOOLEAN" },
-          responsibilities: { type: "STRING" },
-        },
-      },'''
-          new = '''      items: {
-        type: "OBJECT",
-        required: [
-          "employer", "jobTitle", "location", "employmentType", "startDate", "endDate", "current",
-          "responsibilities", "equipment", "systems", "workPerformed", "leadership", "workOrders", "measurable",
-        ],
-        properties: {
-          employer: { type: "STRING" },
-          jobTitle: { type: "STRING" },
-          location: { type: "STRING" },
-          employmentType: { type: "STRING" },
-          startDate: { type: "STRING" },
-          endDate: { type: "STRING" },
-          current: { type: "BOOLEAN" },
-          responsibilities: { type: "STRING" },
-          equipment: { type: "STRING" },
-          systems: { type: "STRING" },
-          workPerformed: { type: "STRING" },
-          leadership: { type: "STRING" },
-          workOrders: { type: "STRING" },
-          measurable: { type: "STRING" },
-        },
-      },'''
-          if old not in source:
-              raise SystemExit("Expected Gemini import role schema block was not found")
-          path.write_text(source.replace(old, new, 1))
-          PY
+        run: >-
+          python3 -c 'from pathlib import Path; p=Path("worker/resume-builder-base.ts"); s=p.read_text();
+          old="        required: [\"jobTitle\", \"responsibilities\"],";
+          new="        required: [\n          \"employer\", \"jobTitle\", \"location\", \"employmentType\", \"startDate\", \"endDate\", \"current\",\n          \"responsibilities\", \"equipment\", \"systems\", \"workPerformed\", \"leadership\", \"workOrders\", \"measurable\",\n        ],";
+          assert old in s, "required role schema marker missing"; s=s.replace(old,new,1);
+          old="          location: { type: \"STRING\" },\n          startDate: { type: \"STRING\" },";
+          new="          location: { type: \"STRING\" },\n          employmentType: { type: \"STRING\" },\n          startDate: { type: \"STRING\" },";
+          assert old in s, "location role schema marker missing"; s=s.replace(old,new,1);
+          old="          responsibilities: { type: \"STRING\" },\n        },\n      },";
+          new="          responsibilities: { type: \"STRING\" },\n          equipment: { type: \"STRING\" },\n          systems: { type: \"STRING\" },\n          workPerformed: { type: \"STRING\" },\n          leadership: { type: \"STRING\" },\n          workOrders: { type: \"STRING\" },\n          measurable: { type: \"STRING\" },\n        },\n      },";
+          assert old in s, "responsibility role schema marker missing"; s=s.replace(old,new,1); p.write_text(s)'
       - name: Commit patch
         shell: bash
         run: |
