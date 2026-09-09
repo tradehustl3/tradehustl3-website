@@ -6,6 +6,7 @@ on:
       - fix/upload-first-ux
     paths:
       - .github/workflows/fix-upload-first-ux.yml
+      - scripts/fix-upload-first-ux.py
 
 permissions:
   contents: write
