@@ -66,32 +66,35 @@ function sessionAndRateLimitDb(savedIntake?: Record<string, unknown>) {
   const DB = {
     prepare(sql: string) {
       return {
-        bind: (...values: unknown[]) => ({
-          async first() {
-            if (/RETURNING count/i.test(sql)) return { count: 1 };
-            if (/FROM sessions s/i.test(sql)) return { user_id: "user-1", email: "member@example.com", full_name: "Member" };
-            if (/FROM resumes WHERE/i.test(sql) && savedIntake) {
-              return {
-                resume_id: "resume-1",
-                user_id: "user-1",
-                trade: "Facilities Maintenance",
-                title: "Maintenance Supervisor",
-                intake_json: JSON.stringify(savedIntake),
-                generated_json: null,
-                target_job_posting: null,
-                status: "draft",
-                theme: "plain",
-              };
-            }
-            if (/SELECT intake_json FROM resumes/i.test(sql) && savedIntake) return { intake_json: JSON.stringify(savedIntake) };
-            if (/FROM entitlements/i.test(sql)) return null;
-            return null;
-          },
-          async run() {
-            if (/UPDATE resumes SET status = 'generating'/i.test(sql)) state.generationReserved = true;
-            return { meta: { changes: 1 } };
-          },
-        }),
+        bind: (...values: unknown[]) => {
+          void values;
+          return {
+            async first() {
+              if (/RETURNING count/i.test(sql)) return { count: 1 };
+              if (/FROM sessions s/i.test(sql)) return { user_id: "user-1", email: "member@example.com", full_name: "Member" };
+              if (/FROM resumes WHERE/i.test(sql) && savedIntake) {
+                return {
+                  resume_id: "resume-1",
+                  user_id: "user-1",
+                  trade: "Facilities Maintenance",
+                  title: "Maintenance Supervisor",
+                  intake_json: JSON.stringify(savedIntake),
+                  generated_json: null,
+                  target_job_posting: null,
+                  status: "draft",
+                  theme: "plain",
+                };
+              }
+              if (/SELECT intake_json FROM resumes/i.test(sql) && savedIntake) return { intake_json: JSON.stringify(savedIntake) };
+              if (/FROM entitlements/i.test(sql)) return null;
+              return null;
+            },
+            async run() {
+              if (/UPDATE resumes SET status = 'generating'/i.test(sql)) state.generationReserved = true;
+              return { meta: { changes: 1 } };
+            },
+          };
+        },
       };
     },
     async batch() { return []; },
