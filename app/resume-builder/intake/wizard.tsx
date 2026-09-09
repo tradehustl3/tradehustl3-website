@@ -292,8 +292,9 @@ export function ResumeWizard() {
       }
       const nextData = mergeResumePrefill(dataRef.current, result.prefill, text);
       setData(nextData);
+      setStep(0);
       setImportState("done");
-      setImportMessage("Resume imported. Enhance it now, or review and add details first.");
+      setImportMessage("Resume imported and verified. Choose the closest trade only if needed, then build your preview. You do not need to re-enter information already on your resume.");
     } catch (importError) {
       setImportState("error");
       setImportMessage(importError instanceof Error ? importError.message : "HUSTL3 BOT could not read that resume.");
@@ -352,6 +353,7 @@ export function ResumeWizard() {
   const activeStep = WIZARD_STEPS[step];
   const percent = Math.round((step / LAST_STEP) * 100);
   const showConsent = !paid && step === LAST_STEP;
+  const uploadedResumeMode = data.sourceProvenance === "upload" && Boolean(data.sourceResumeText.trim());
 
   return (
     <div className="rb-wiz">
@@ -397,6 +399,7 @@ export function ResumeWizard() {
             </label>
           ) : null}
 
+          {!(step === 0 && uploadedResumeMode) ? (
           <div className="rb-wiz-nav">
             <button
               type="button"
@@ -437,6 +440,7 @@ export function ResumeWizard() {
               </button>
             ) : null}
           </div>
+          ) : null}
         </div>
 
         <div className="rb-wiz-side">
@@ -518,19 +522,24 @@ export function ResumeWizard() {
                 onClick={() => {
                   if (!isTradeTrack(data.trade)) {
                     setImportState("build-error");
-                    setImportMessage("Choose the closest trade below before reviewing the imported details.");
+                    setImportMessage("Choose the closest trade below before editing the imported details.");
                     return;
                   }
                   void goNext();
                 }}
                 disabled={importState === "building"}
               >
-                REVIEW & ADD DETAILS
+                EDIT IMPORTED DETAILS
               </button>
+              <small>Only use Edit Imported Details if you want to change something HUSTL3 BOT pulled from your resume.</small>
             </div>
           ) : null}
         </div>
-        <p className="rb-resume-import-divider"><span>OR START FROM SCRATCH</span></p>
+        {!uploadedResumeMode ? (
+          <p className="rb-resume-import-divider"><span>OR START FROM SCRATCH</span></p>
+        ) : !isTradeTrack(data.trade) ? (
+          <p className="rb-resume-import-divider"><span>ONE THING TO CONFIRM — CHOOSE YOUR CLOSEST TRADE</span></p>
+        ) : null}
         <div className="rb-trade-grid" role="radiogroup" aria-label="Trade track">
           {TRADE_TRACKS.map((trade) => {
             const selected = data.trade === trade;
