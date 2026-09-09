@@ -1,0 +1,36 @@
+from pathlib import Path
+
+path = Path('app/resume-builder/intake/wizard.tsx')
+text = path.read_text()
+
+old = '''      const nextData = mergeResumePrefill(dataRef.current, result.prefill, text);\n      setData(nextData);\n      setImportState("done");\n      setImportMessage("Resume imported. Enhance it now, or review and add details first.");\n'''
+new = '''      const nextData = mergeResumePrefill(dataRef.current, result.prefill, text);\n      setData(nextData);\n      setStep(0);\n      setImportState("done");\n      setImportMessage("Resume imported and verified. Choose the closest trade only if needed, then build your preview. You do not need to re-enter information already on your resume.");\n'''
+assert old in text
+text = text.replace(old, new, 1)
+
+old = '''  const activeStep = WIZARD_STEPS[step];\n  const percent = Math.round((step / LAST_STEP) * 100);\n  const showConsent = !paid && step === LAST_STEP;\n'''
+new = '''  const activeStep = WIZARD_STEPS[step];\n  const percent = Math.round((step / LAST_STEP) * 100);\n  const showConsent = !paid && step === LAST_STEP;\n  const uploadedResumeMode = data.sourceProvenance === "upload" && Boolean(data.sourceResumeText.trim());\n'''
+assert old in text
+text = text.replace(old, new, 1)
+
+old = '''          <div className="rb-wiz-nav">\n            <button\n              type="button"\n              className="rb-button rb-button-ghost"\n              onClick={goBack}\n              disabled={step === 0 || submitting}\n            >\n              <span aria-hidden="true">←</span> BACK\n            </button>\n            <span className="rb-save-state" data-state={saveState} aria-live="polite">\n              {saveState === "saving" ? "Saving…" : null}\n              {saveState === "saved" ? "Progress saved" : null}\n              {saveState === "error" ? "Save failed — retrying" : null}\n            </span>\n            {step < 5 ? (\n              <button type="button" className="rb-button rb-button-primary" onClick={() => void goNext()}>\n                CONTINUE <span aria-hidden="true">→</span>\n              </button>\n            ) : null}\n            {step === 5 ? (\n              <button type="button" className="rb-button rb-button-primary" onClick={() => void goNext()}>\n                REVIEW MY INFO <span aria-hidden="true">→</span>\n              </button>\n            ) : null}\n            {step === 6 ? (\n              <button\n                type="button"\n                className="rb-button rb-button-primary rb-button-build"\n                onClick={() => void submitBuild()}\n                disabled={submitting}\n              >\n                {submitting\n                  ? "SAVING YOUR INTAKE…"\n                  : paid\n                    ? "SAVE & RETURN TO REVIEW"\n                    : "BUILD MY WATERMARKED RESUME"}{" "}\n                <span aria-hidden="true">→</span>\n              </button>\n            ) : null}\n          </div>\n'''
+new = '''          {!(step === 0 && uploadedResumeMode) ? (\n            <div className="rb-wiz-nav">\n              <button\n                type="button"\n                className="rb-button rb-button-ghost"\n                onClick={goBack}\n                disabled={step === 0 || submitting}\n              >\n                <span aria-hidden="true">←</span> BACK\n              </button>\n              <span className="rb-save-state" data-state={saveState} aria-live="polite">\n                {saveState === "saving" ? "Saving…" : null}\n                {saveState === "saved" ? "Progress saved" : null}\n                {saveState === "error" ? "Save failed — retrying" : null}\n              </span>\n              {step < 5 ? (\n                <button type="button" className="rb-button rb-button-primary" onClick={() => void goNext()}>\n                  CONTINUE <span aria-hidden="true">→</span>\n                </button>\n              ) : null}\n              {step === 5 ? (\n                <button type="button" className="rb-button rb-button-primary" onClick={() => void goNext()}>\n                  REVIEW MY INFO <span aria-hidden="true">→</span>\n                </button>\n              ) : null}\n              {step === 6 ? (\n                <button\n                  type="button"\n                  className="rb-button rb-button-primary rb-button-build"\n                  onClick={() => void submitBuild()}\n                  disabled={submitting}\n                >\n                  {submitting\n                    ? "SAVING YOUR INTAKE…"\n                    : paid\n                      ? "SAVE & RETURN TO REVIEW"\n                      : "BUILD MY WATERMARKED RESUME"}{" "}\n                  <span aria-hidden="true">→</span>\n                </button>\n              ) : null}\n            </div>\n          ) : null}\n'''
+assert old in text
+text = text.replace(old, new, 1)
+
+old = '''              <button\n                type="button"\n                className="rb-button rb-button-ghost"\n                onClick={() => {\n                  if (!isTradeTrack(data.trade)) {\n                    setImportState("build-error");\n                    setImportMessage("Choose the closest trade below before reviewing the imported details.");\n                    return;\n                  }\n                  void goNext();\n                }}\n                disabled={importState === "building"}\n              >\n                REVIEW & ADD DETAILS\n              </button>\n'''
+new = '''              <button\n                type="button"\n                className="rb-button rb-button-ghost"\n                onClick={() => {\n                  if (!isTradeTrack(data.trade)) {\n                    setImportState("build-error");\n                    setImportMessage("Choose the closest trade below before editing the imported details.");\n                    return;\n                  }\n                  void goNext();\n                }}\n                disabled={importState === "building"}\n              >\n                EDIT IMPORTED DETAILS\n              </button>\n              <small>Only use Edit Imported Details if you want to change something HUSTL3 BOT pulled from your resume.</small>\n'''
+assert old in text
+text = text.replace(old, new, 1)
+
+old = '''        <p className="rb-resume-import-divider"><span>OR START FROM SCRATCH</span></p>\n        <div className="rb-trade-grid" role="radiogroup" aria-label="Trade track">\n'''
+new = '''        {!uploadedResumeMode ? (\n          <p className="rb-resume-import-divider"><span>OR START FROM SCRATCH</span></p>\n        ) : !isTradeTrack(data.trade) ? (\n          <p className="rb-resume-import-divider"><span>ONE THING TO CONFIRM — CHOOSE YOUR CLOSEST TRADE</span></p>\n        ) : null}\n        {(!uploadedResumeMode || !isTradeTrack(data.trade)) ? (\n        <div className="rb-trade-grid" role="radiogroup" aria-label="Trade track">\n'''
+assert old in text
+text = text.replace(old, new, 1)
+
+old = '''        </div>\n      </>\n    );\n  }\n\n  function renderExperience() {\n'''
+new = '''        </div>\n        ) : null}\n      </>\n    );\n  }\n\n  function renderExperience() {\n'''
+assert old in text
+text = text.replace(old, new, 1)
+
+path.write_text(text)
