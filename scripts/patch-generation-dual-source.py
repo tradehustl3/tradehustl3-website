@@ -1,4 +1,5 @@
 from pathlib import Path
+import re
 
 base = Path('worker/resume-builder-base.ts')
 text = base.read_text()
@@ -19,19 +20,20 @@ text = text.replace(
     1,
 )
 
-needle = """      ...source.software,\n      ...source.safety,\n    ];\n    if (match.bullets.some((bullet) => !claimSupported(bullet, supportClaims))) {\n"""
-replacement = """      ...source.software,\n      ...source.safety,\n      source.sourceResumeText,\n    ].filter(Boolean);\n    if (match.bullets.some((bullet) => !claimSupported(bullet, supportClaims))) {\n"""
-text = text.replace(needle, replacement, 1)
+# Add raw uploaded text as backup support to both validation and deterministic repair work-bullet support arrays.
+text, n = re.subn(
+    r'(\.\.\.source\.software,\n\s+\.\.\.source\.safety,)(\n\s+\];\n\s+(?:if \(match\.bullets|const supportedGeneratedBullets))',
+    r'\1\n      source.sourceResumeText,\2',
+    text,
+    count=2,
+)
+assert n == 2, n
 
 text = text.replace(
-    "  const additionalSources = [...source.safety, ...source.certifications, ...source.licenses, source.education].filter(Boolean);",
-    "  const additionalSources = [...source.safety, ...source.certifications, ...source.licenses, source.education, source.sourceResumeText].filter(Boolean);",
+    "const additionalSources = [...source.safety, ...source.certifications, ...source.licenses, source.education].filter(Boolean);",
+    "const additionalSources = [...source.safety, ...source.certifications, ...source.licenses, source.education, source.sourceResumeText].filter(Boolean);",
     1,
 )
-
-needle = """      ...source.software,\n      ...source.safety,\n    ];\n    const supportedGeneratedBullets = existing?.bullets.filter((bullet) => {\n"""
-replacement = """      ...source.software,\n      ...source.safety,\n      source.sourceResumeText,\n    ].filter(Boolean);\n    const supportedGeneratedBullets = existing?.bullets.filter((bullet) => {\n"""
-text = text.replace(needle, replacement, 1)
 
 text = text.replace(
     """      ...source.licenses,\n      source.education,\n    ].filter(Boolean))),""",
@@ -39,13 +41,12 @@ text = text.replace(
     1,
 )
 
-required_fragments = [
+for fragment in [
     "two authoritative customer sources",
     "backup evidence layer",
     "upload.raw.* fact ID",
     "source.sourceResumeText",
-]
-for fragment in required_fragments:
+]:
     assert fragment in text, fragment
 
 base.write_text(text)
