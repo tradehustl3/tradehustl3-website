@@ -82,7 +82,7 @@ export default function Home() {
         <div className={styles.sampleCopy}>
           <p className={styles.eyebrow}>SEE THE OUTPUT BEFORE YOU START</p>
           <h2 id="sample-title">Actual Resume Builder output—not a promise.</h2>
-          <p className={styles.sampleLead}>This fictional HVAC candidate shows the actual ATS-friendly structure customers can receive. Choose Classic Black by default or the optional TRADE HUSTL3 Red Accent—the resume content and structure stay the same.</p>
+          <p className={styles.sampleLead}>This fictional HVAC candidate shows the actual ATS-friendly structure customers can receive. Classic Black is the default style, with TRADE HUSTL3 Red Accent available as an optional alternate.</p>
           <div className={styles.beforeAfter}>
             <article>
               <span>ROUGH INPUT</span>
@@ -94,26 +94,30 @@ export default function Home() {
             </article>
           </div>
           <div className={styles.sampleActions}>
-            <AnalyticsLink href="/sample-hvac-resume.pdf" location="sample_proof" item="hvac_sample_pdf" className={styles.secondaryButton}>View Red Accent Sample PDF <span aria-hidden="true">→</span></AnalyticsLink>
+            <AnalyticsLink href="/sample-hvac-resume.pdf" location="sample_proof" item="hvac_sample_pdf" className={styles.secondaryButton}>View Full Sample PDF <span aria-hidden="true">→</span></AnalyticsLink>
             <AnalyticsLink href="/resume-builder" location="sample_proof" className={styles.primaryButton}>Build My Free Preview <span aria-hidden="true">→</span></AnalyticsLink>
           </div>
-          <p className={styles.sampleDisclosure} style={{ color: '#526476', fontSize: '13px' }}>Sample candidate name, employers, and contact details are fictional and shown for demonstration. Classic Black is the default resume style.</p>
+          <p className={styles.sampleDisclosure}>Sample candidate name, employers, and contact details are fictional and shown for demonstration. Classic Black is the default resume style.</p>
         </div>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '18px', alignItems: 'flex-start' }} aria-label="Resume style examples">
-          <div style={{ flex: '1 1 240px', minWidth: 0 }}>
-            <p style={{ margin: '0 0 9px', color: '#111111', fontSize: '12px', fontWeight: 900, letterSpacing: '.12em' }}>CLASSIC BLACK — DEFAULT</p>
-            <div className={styles.sampleSheet}>
-              <Image src="/sample-hvac-resume.webp" alt="Classic Black sample HVAC and facilities maintenance resume" width={816} height={1056} sizes="(max-width: 900px) 88vw, 22vw" style={{ filter: 'grayscale(1) contrast(2.2)' }} />
-              <span style={{ color: '#111111' }}>CLASSIC BLACK <b aria-hidden="true">✓</b></span>
-            </div>
+
+        <div aria-label="Resume style example" style={{ width: '100%', maxWidth: '900px', margin: '0 auto' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '12px', marginBottom: '12px' }}>
+            <p style={{ margin: 0, color: '#111111', fontSize: '12px', fontWeight: 900, letterSpacing: '.12em' }}>CLASSIC BLACK — DEFAULT</p>
+            <AnalyticsLink href="/sample-hvac-resume.pdf" location="sample_style_switch" item="hvac_sample_pdf" style={{ color: '#c81f17', fontSize: '12px', fontWeight: 900, letterSpacing: '.08em' } as React.CSSProperties}>VIEW RED ACCENT PDF ↗</AnalyticsLink>
           </div>
-          <div style={{ flex: '1 1 240px', minWidth: 0 }}>
-            <p style={{ margin: '0 0 9px', color: '#c81f17', fontSize: '12px', fontWeight: 900, letterSpacing: '.12em' }}>TRADE HUSTL3 RED ACCENT</p>
-            <AnalyticsLink className={styles.sampleSheet} href="/sample-hvac-resume.pdf" location="sample_proof_image" item="hvac_sample_pdf">
-              <Image src="/sample-hvac-resume.webp" alt="TRADE HUSTL3 Red Accent sample HVAC and facilities maintenance resume" width={816} height={1056} sizes="(max-width: 900px) 88vw, 22vw" />
-              <span>VIEW RED SAMPLE PDF <b aria-hidden="true">↗</b></span>
-            </AnalyticsLink>
-          </div>
+          <AnalyticsLink href="/sample-hvac-resume.pdf" location="sample_proof_image" item="hvac_sample_pdf" className={styles.sampleSheet}>
+            <Image
+              src="/sample-hvac-resume.webp"
+              alt="Large Classic Black sample HVAC and facilities maintenance resume"
+              width={816}
+              height={1056}
+              sizes="(max-width: 1050px) 92vw, 816px"
+              quality={100}
+              style={{ filter: 'grayscale(1)', width: '100%', height: 'auto' }}
+            />
+            <span style={{ color: '#111111' }}>CLICK TO OPEN FULL-SIZE PDF <b aria-hidden="true">↗</b></span>
+          </AnalyticsLink>
+          <p style={{ margin: '15px 0 0', color: '#526476', fontSize: '13px', lineHeight: 1.5, textAlign: 'center' }}>Large desktop preview for easier reading. Open the PDF for full-resolution text.</p>
         </div>
       </section>
 
