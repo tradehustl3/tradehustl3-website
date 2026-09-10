@@ -61,6 +61,9 @@ const EDUCATION_HEADING_RE = /^(?:education(?:\s*(?:&|and)\s*(?:technical\s+)?tr
 const CREDENTIAL_HEADING_RE = /^(?:certifications?(?:\s*(?:&|and)\s*licenses?)?|licenses?|credentials)$/i;
 const TITLE_SIGNAL_RE = /\b(?:technician|supervisor|manager|mechanic|engineer|specialist|foreperson|foreman|lead|director|electrician|plumber|carpenter|welder|installer|operator|maintenance|hvac|refrigeration)\b/i;
 const EMPLOYER_SIGNAL_RE = /\b(?:llc|inc\.?|corp\.?|corporation|company|companies|services?|staffing|living|communities|properties|property|heating|air|university|college|hospital|medical|facilities|facility|center|centre|group|solutions)\b/i;
+const EDUCATION_EVIDENCE_RE = /\b(?:education|university|college|technical school|trade school|high school|diploma|associate(?:'s)?(?:\s+degree)?|bachelor(?:'s)?(?:\s+degree)?|master(?:'s)?\s+(?:degree|program)|degree)\b/i;
+const CREDENTIAL_EVIDENCE_RE = /\b(?:certifications?|licenses?|certified|epa\s*608|osha(?:\s*10|\s*30)?|nccer|universal certification)\b/i;
+const PROMPT_LIKE_RE = /\b(?:ignore|disregard)\b.{0,120}\b(?:instructions?|prompt|invent|fabricate|pretend)\b|\b(?:invent|fabricate)\b.{0,80}\b(?:license|certification|credential|employer|job|date)\b/i;
 
 function sourceRoleSignals(source: string): number {
   const ranges = normalize(source).match(DATE_RANGE_RE) ?? [];
@@ -220,13 +223,19 @@ function parseEducationDeterministically(source: string): string {
 function credentialCandidates(source: string): string[] {
   const lines = sourceLines(source);
   const section = collectSection(source, CREDENTIAL_HEADING_RE);
-  const explicit = lines.filter((line) => /\b(?:epa\s*608(?:\s+universal)?|osha\s*(?:10|30)|nccer|certification|certificate|license|licensed|certified)\b/i.test(line));
+  const educationLines = new Set(collectSection(source, EDUCATION_HEADING_RE).map(normalize));
+  const explicit = lines.filter((line) => {
+    const cleaned = stripBullet(line);
+    return CREDENTIAL_EVIDENCE_RE.test(cleaned)
+      && !educationLines.has(normalize(cleaned))
+      && !PROMPT_LIKE_RE.test(cleaned);
+  });
   const seen = new Set<string>();
   const result: string[] = [];
   for (const line of [...section, ...explicit]) {
     const cleaned = stripBullet(line);
     const key = normalize(cleaned);
-    if (!key || seen.has(key)) continue;
+    if (!key || seen.has(key) || PROMPT_LIKE_RE.test(cleaned)) continue;
     seen.add(key);
     result.push(cleaned);
   }
@@ -297,11 +306,6 @@ function mergeRolesFromSource(source: string, aiRoles: RecordValue[], fallbackRo
   return merged;
 }
 
-/**
- * Deterministic source-backed repair. This function never invents resume facts;
- * it only copies values that can be recovered from the original upload.
- * Coverage assessment remains pure and does not call this automatically.
- */
 export function repairResumeExtractionFromSource(sourceResumeText: string, structured: unknown): { structured: RecordValue; repaired: boolean } {
   const root = { ...record(structured) };
   const originalRoles = extractedRoles(root);
@@ -310,9 +314,9 @@ export function repairResumeExtractionFromSource(sourceResumeText: string, struc
     originalRoles.length < roleSignals
     || originalRoles.some((role) => !text(role.employer) || !text(role.jobTitle) || (!text(role.startDate) && !text(role.dates)) || !hasAnyRoleNarrative(role))
   );
-  const educationEvidence = /\b(education|university|college|technical school|trade school|high school|diploma|associate(?:'s)?|bachelor(?:'s)?|master(?:'s)?|degree)\b/i.test(sourceResumeText);
+  const educationEvidence = EDUCATION_EVIDENCE_RE.test(sourceResumeText);
   const field = fieldValue(root);
-  const credentialEvidence = /\b(certifications?|licenses?|certified|epa\s*608|osha(?:\s*10|\s*30)?|nccer|universal certification)\b/i.test(sourceResumeText);
+  const credentialEvidence = CREDENTIAL_EVIDENCE_RE.test(sourceResumeText) && !PROMPT_LIKE_RE.test(sourceResumeText);
   const credentialCount = list(field.certifications).length + (text(field.licenses) ? 1 : 0);
   let repaired = false;
 
@@ -388,10 +392,10 @@ export function assessResumeExtractionCoverage(sourceResumeText: string, structu
     issues.push({ code: "responsibilities", message: "At least one extracted job lost its responsibilities or substantive work details." });
   }
 
-  const educationEvidence = sourceHas(source, /\b(education|university|college|technical school|trade school|high school|diploma|associate(?:'s)?|bachelor(?:'s)?|master(?:'s)?|degree)\b/i);
+  const educationEvidence = sourceHas(source, EDUCATION_EVIDENCE_RE);
   if (educationEvidence && !text(root.education)) issues.push({ code: "education", message: "Education appears in the uploaded resume but was not extracted." });
 
-  const credentialEvidence = sourceHas(source, /\b(certifications?|licenses?|certified|epa\s*608|osha(?:\s*10|\s*30)?|nccer|universal certification)\b/i);
+  const credentialEvidence = sourceHas(source, CREDENTIAL_EVIDENCE_RE) && !PROMPT_LIKE_RE.test(sourceResumeText);
   const credentialCount = list(field.certifications).length + (text(field.licenses) ? 1 : 0);
   if (credentialEvidence && credentialCount === 0) issues.push({ code: "credentials", message: "Certifications or licenses appear in the uploaded resume but were not extracted." });
 

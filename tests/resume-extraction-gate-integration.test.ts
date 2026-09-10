@@ -109,10 +109,9 @@ function geminiResponse(value: unknown): Response {
   }), { status: 200, headers: { "Content-Type": "application/json" } });
 }
 
-test("incomplete upload extraction automatically reconciles against the original source before returning prefill", async () => {
+test("source-first import restores complete structure before accepting AI enrichment", async () => {
   const h = sessionAndRateLimitDb();
   let calls = 0;
-  const prompts: string[] = [];
   const thin = {
     ...completePrefill,
     roles: [completePrefill.roles[0]],
@@ -120,11 +119,9 @@ test("incomplete upload extraction automatically reconciles against the original
     education: "",
   };
   const dependencies: ResumeBuilderDependencies = {
-    geminiFetch: (async (_input, init) => {
+    geminiFetch: (async () => {
       calls += 1;
-      const body = JSON.parse(String(init?.body)) as { systemInstruction?: { parts?: Array<{ text?: string }> } };
-      prompts.push(body.systemInstruction?.parts?.[0]?.text ?? "");
-      return geminiResponse(calls === 1 ? thin : completePrefill);
+      return geminiResponse(thin);
     }) as typeof fetch,
   };
 
@@ -145,13 +142,24 @@ test("incomplete upload extraction automatically reconciles against the original
 
   assert.ok(response);
   assert.equal(response.status, 200);
-  const payload = await response.json() as { ok?: boolean; reconciled?: boolean; prefill?: { roles?: unknown[] } };
+  const payload = await response.json() as {
+    ok?: boolean;
+    sourceFirst?: boolean;
+    immutableSourceFactsVerified?: boolean;
+    aiEnrichmentOptional?: boolean;
+    prefill?: { roles?: Array<Record<string, unknown>>; education?: string; fieldValue?: { certifications?: string[] } };
+  };
   assert.equal(payload.ok, true);
-  assert.equal(payload.reconciled, true);
+  assert.equal(payload.sourceFirst, true);
+  assert.equal(payload.immutableSourceFactsVerified, true);
+  assert.equal(payload.aiEnrichmentOptional, true);
   assert.equal(payload.prefill?.roles?.length, 3);
-  assert.equal(calls, 2);
-  assert.match(prompts[1], /Extraction coverage reconciliation rule/i);
-  assert.match(prompts[1], /every distinct job, employer, job title/i);
+  assert.equal(payload.prefill?.roles?.[0]?.employer, "American Campus Communities");
+  assert.equal(payload.prefill?.roles?.[1]?.employer, "Cooler Heating & Air");
+  assert.equal(payload.prefill?.roles?.[2]?.employer, "Metro Facilities");
+  assert.match(payload.prefill?.education ?? "", /Atlanta Technical College/);
+  assert.deepEqual(payload.prefill?.fieldValue?.certifications, ["EPA 608 Universal", "OSHA 10"]);
+  assert.equal(calls, 1);
 });
 
 test("generation is blocked before the model or run reservation when saved upload coverage is incomplete", async () => {

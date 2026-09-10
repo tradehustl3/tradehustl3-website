@@ -20,6 +20,12 @@ import {
   assessSavedIntakeExtractionCoverage,
   repairResumeExtractionFromSource,
 } from "./resume-extraction-coverage";
+import {
+  buildCanonicalSourceRecord,
+  mergeCanonicalWithAiEnrichment,
+  validateCanonicalImmutability,
+  type CanonicalSourceRecord,
+} from "./resume-source-canonical";
 
 export * from "./resume-builder-base";
 
@@ -36,6 +42,11 @@ type RateLimitObservation = {
 type RateLimitPolicy = {
   env: ResumeBuilderEnv;
   observations: RateLimitObservation[];
+};
+
+type CanonicalImportPlan = {
+  sourceText: string;
+  canonical: CanonicalSourceRecord;
 };
 
 const IMPORT_PRESERVATION_INSTRUCTION = `Uploaded-resume preservation rule:
@@ -345,6 +356,82 @@ async function preserveImportedContact(requestCopy: JsonReadableRequest, respons
   if (!contact.phone && phone) contact.phone = phone;
   prefill.contact = contact;
   return rewrittenJson(response, { ...payload, prefill });
+}
+
+async function prepareCanonicalImport(requestCopy: JsonReadableRequest): Promise<CanonicalImportPlan | null> {
+  const requestBody = await jsonBody(requestCopy);
+  const sourceText = typeof requestBody?.text === "string" ? requestBody.text.trim() : "";
+  if (!sourceText) return null;
+  return { sourceText, canonical: buildCanonicalSourceRecord(sourceText) };
+}
+
+async function finalizeSourceFirstImport(
+  response: Response,
+  plan: CanonicalImportPlan,
+): Promise<Response> {
+  // Preserve authentication, origin, validation, and rate-limit failures from
+  // the proven base route. Canonical parsing never bypasses access controls.
+  if (!response.ok && response.status < 500) return response;
+
+  if (!plan.canonical.coverage.ready) {
+    return rewrittenJson(response, {
+      ok: false,
+      code: "CANONICAL_SOURCE_PARSE_FAILED",
+      retryable: true,
+      action: "review_import",
+      runConsumed: false,
+      sourceFirst: true,
+      parserVersion: plan.canonical.parserVersion,
+      issues: plan.canonical.coverage.issues,
+      warnings: plan.canonical.coverage.warnings,
+      sourceRoleSignals: plan.canonical.coverage.sourceRoleSignals,
+      extractedRoles: plan.canonical.coverage.extractedRoles,
+      message: "HUSTL3 BOT could not establish a complete source record from this resume. AI was not allowed to replace or invent the missing structure.",
+    }, 422);
+  }
+
+  const payload = response.ok ? await responseJson(response) : null;
+  const aiPrefill = payload?.prefill && typeof payload.prefill === "object" && !Array.isArray(payload.prefill)
+    ? payload.prefill
+    : {};
+  const merged = mergeCanonicalWithAiEnrichment(plan.sourceText, plan.canonical, aiPrefill);
+  const immutability = validateCanonicalImmutability(plan.canonical, merged);
+  const coverage = assessResumeExtractionCoverage(plan.sourceText, merged);
+
+  if (!immutability.valid || !coverage.ready) {
+    return rewrittenJson(response, {
+      ok: false,
+      code: "CANONICAL_SOURCE_INTEGRITY_FAILED",
+      retryable: true,
+      action: "review_import",
+      runConsumed: false,
+      sourceFirst: true,
+      parserVersion: plan.canonical.parserVersion,
+      immutableIssues: immutability.issues,
+      issues: coverage.issues,
+      warnings: coverage.warnings,
+      sourceRoleSignals: coverage.sourceRoleSignals,
+      extractedRoles: coverage.extractedRoles,
+      message: "HUSTL3 BOT stopped because the canonical source facts did not survive import verification unchanged. Nothing was generated.",
+    }, 422);
+  }
+
+  return rewrittenJson(response, {
+    ...(payload ?? {}),
+    ok: true,
+    prefill: merged,
+    sourceFirst: true,
+    parserVersion: plan.canonical.parserVersion,
+    aiEnrichmentApplied: Boolean(payload?.prefill),
+    aiEnrichmentOptional: true,
+    immutableSourceFactsVerified: true,
+    extractionCoverage: {
+      ready: true,
+      sourceRoleSignals: coverage.sourceRoleSignals,
+      extractedRoles: coverage.extractedRoles,
+      warnings: coverage.warnings,
+    },
+  }, 200);
 }
 
 async function reconcileImportedExtraction(
@@ -678,7 +765,7 @@ async function hardenSuccessfulGeneration(
 
 /**
  * Keeps the proven Resume Builder backend intact while adding protections:
- * 1) uploaded resume facts are preserved more aggressively through import/generation prompts;
+ * 1) uploaded resumes establish an immutable canonical source record before AI enrichment;
  * 2) on the Gemini production path, an AI-created unsupported number is retried automatically;
  * 3) switching between Classic Black and Red Accent re-renders the existing PDF/DOCX/preview
  *    without spending an AI correction run or changing any resume content;
@@ -710,6 +797,8 @@ export async function handleResumeBuilderRoute(
   const importContactCopy = importPath ? request.clone() : null;
   const importCoverageCopy = importPath ? request.clone() : null;
   const importRetryCopy = importPath ? request.clone() : null;
+  const importCanonicalCopy = importPath ? request.clone() : null;
+  const canonicalImportPlan = importCanonicalCopy ? await prepareCanonicalImport(importCanonicalCopy) : null;
   const retryRequest = generatePath && shouldAutoRetryNumericGuard(env) ? request.clone() : null;
 
   if (request.method === "POST" && generationPathMatch) {
@@ -753,6 +842,14 @@ export async function handleResumeBuilderRoute(
     await refundUnpaidPreviewLimitOnFailure(first, env, firstRateLimitPolicy);
   }
 
+  if (importPath && canonicalImportPlan && importContactCopy) {
+    const sourceFirst = await finalizeSourceFirstImport(first, canonicalImportPlan);
+    return preserveImportedContact(importContactCopy, sourceFirst);
+  }
+
+  // Legacy reconciliation remains only as a compatibility path for malformed
+  // requests that did not yield source text. Normal PDF/DOCX imports never let
+  // AI own job identity, dates, education, credentials, or contact facts.
   if (importPath && importContactCopy && importCoverageCopy && importRetryCopy) {
     const reconciled = await reconcileImportedExtraction(
       importCoverageCopy,
