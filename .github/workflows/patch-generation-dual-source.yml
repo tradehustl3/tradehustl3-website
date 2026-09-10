@@ -27,8 +27,8 @@ jobs:
           fi
           git config user.name "TRADE HUSTL3"
           git config user.email "tradehustl3@gmail.com"
-          git add worker/resume-builder-base.ts worker/resume-builder.ts
+          git add worker/resume-builder-base.ts worker/resume-builder.ts worker/resume-quality.ts
           git commit -m "Use structured intake and original resume during generation"
           git pull --rebase origin fix/generation-dual-source
           git push origin HEAD:fix/generation-dual-source
-# retrigger after regex fix
+# retrigger after quality-module fix
