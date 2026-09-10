@@ -129,22 +129,16 @@ function skillKey(value: string): string {
   return key;
 }
 
-function titleCaseSkill(value: string): string {
-  const cleaned = cleanLine(value);
-  if (/^[A-Z0-9/+& -]{2,}$/.test(cleaned)) return cleaned;
-  return cleaned.replace(/\b\w+/g, (word) => {
-    if (/^(?:and|of|to|for|with|in)$/i.test(word)) return word.toLowerCase();
-    return word.charAt(0).toUpperCase() + word.slice(1);
-  });
-}
-
 export function dedupeSkillTerms(values: string[]): string[] {
   const byKey = new Map<string, string>();
   for (const raw of values) {
     for (const part of splitSkillLine(raw)) {
       const key = skillKey(part);
       if (!key || key.length < 2) continue;
-      if (!byKey.has(key)) byKey.set(key, titleCaseSkill(part));
+      // Preserve the first source/model display spelling. Deduplication must not
+      // create a second render merely to change capitalization (for example,
+      // "HVAC diagnostics" to "Hvac Diagnostics").
+      if (!byKey.has(key)) byKey.set(key, cleanLine(part));
     }
   }
   return Array.from(byKey.values());
