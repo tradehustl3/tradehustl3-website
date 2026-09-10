@@ -236,7 +236,7 @@ const fixtures: CoverageFixture[] = [
         responsibilities: "Diagnosed HVAC systems, completed preventive maintenance, and repaired electrical controls.",
       }],
       fieldValue: {
-        certifications: ["EPA 608 Universal", "OSHA 10"], licenses: "", tools: [], equipmentSystems: [], technicalSkills: [], software: [], safety: [],
+        certifications: ["EPA 608 Universal", "OSHA 10"], licenses: "", tools: [], equipmentSystems: [], technicalSkills: [], software: [], safety: ["OSHA 10 safety training"],
       },
       education: "",
       additionalDetails: "",
@@ -244,7 +244,7 @@ const fixtures: CoverageFixture[] = [
     expected: {
       ready: true,
       issues: [],
-      warnings: ["training"],
+      warnings: [],
       sourceRoleSignals: 1,
       extractedRoles: 1,
     },
@@ -261,7 +261,7 @@ const fixtures: CoverageFixture[] = [
         responsibilities: "Diagnosed HVAC systems, completed preventive maintenance, and repaired electrical controls.",
       }],
       fieldValue: {
-        certifications: [], licenses: "", tools: [], equipmentSystems: [], technicalSkills: [], software: [], safety: [],
+        certifications: [], licenses: "", tools: [], equipmentSystems: [], technicalSkills: [], software: [], safety: ["OSHA 10 safety training"],
       },
       education: "",
       additionalDetails: "",
@@ -269,7 +269,7 @@ const fixtures: CoverageFixture[] = [
     expected: {
       ready: false,
       issues: ["credentials"],
-      warnings: ["training"],
+      warnings: [],
       sourceRoleSignals: 1,
       extractedRoles: 1,
     },
