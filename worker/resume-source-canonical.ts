@@ -28,6 +28,7 @@ export type CanonicalSourceRole = {
 export type CanonicalSourceRecord = {
   parserVersion: "source-first-v1";
   contact: {
+    fullName: SourceEvidence | null;
     email: SourceEvidence | null;
     phone: SourceEvidence | null;
     cityState: SourceEvidence | null;
@@ -36,6 +37,7 @@ export type CanonicalSourceRecord = {
   education: SourceEvidence[];
   credentials: SourceEvidence[];
   immutableFields: readonly [
+    "contact.fullName",
     "contact.email",
     "contact.phone",
     "contact.cityState",
@@ -98,9 +100,6 @@ function evidence(source: string, value: unknown): SourceEvidence | null {
     }
   }
 
-  // Multi-line narrative values are copied verbatim from source blocks. If the
-  // exact joined value cannot be found on one line, provenance remains the
-  // literal source-backed value while line coordinates stay null.
   return {
     value: resolved,
     sourceText: resolved,
@@ -132,6 +131,20 @@ function firstCityState(source: string): string {
     const line = rawLine.trim();
     const match = line.match(/\b([A-Za-z][A-Za-z .'-]{1,60},\s*[A-Z]{2})\b/);
     if (match) return match[1].trim();
+  }
+  return "";
+}
+
+function firstFullName(source: string): string {
+  const heading = /^(?:resume|curriculum vitae|professional summary|summary|profile|objective|contact|experience|professional experience|work experience|education|skills|certifications?)$/i;
+  for (const rawLine of sourceLines(source).slice(0, 10)) {
+    const firstSegment = rawLine.split(/\s*(?:\||•|▪|◦|●)\s*/)[0]?.trim() ?? "";
+    if (!firstSegment || firstSegment.length > 100 || heading.test(firstSegment)) continue;
+    if (/@|https?:\/\/|www\.|\d{3}[\s.()-]*\d{3}/i.test(firstSegment)) continue;
+    if (/\b(?:technician|supervisor|manager|mechanic|engineer|maintenance|hvac|refrigeration|electrician|plumber|welder|carpenter)\b/i.test(firstSegment)) continue;
+    if (/\b[A-Za-z .'-]+,\s*[A-Z]{2}\b/.test(firstSegment)) continue;
+    const words = firstSegment.match(/[A-Za-z][A-Za-z'.-]*/g) ?? [];
+    if (words.length >= 2 && words.length <= 5) return firstSegment;
   }
   return "";
 }
@@ -257,6 +270,7 @@ export function buildCanonicalSourceRecord(sourceResumeText: string): CanonicalS
     .map((item) => evidence(sourceResumeText, item))
     .filter((item): item is SourceEvidence => Boolean(item));
 
+  const fullName = evidence(sourceResumeText, firstFullName(sourceResumeText));
   const email = evidence(sourceResumeText, firstEmail(sourceResumeText));
   const phone = evidence(sourceResumeText, firstPhone(sourceResumeText));
   const cityState = evidence(sourceResumeText, firstCityState(sourceResumeText));
@@ -266,6 +280,7 @@ export function buildCanonicalSourceRecord(sourceResumeText: string): CanonicalS
     experienceLevel: "",
     targetJobTitle: "",
     contact: {
+      fullName: fullName?.value ?? "",
       email: email?.value ?? "",
       phone: phone?.value ?? "",
       cityState: cityState?.value ?? "",
@@ -287,11 +302,12 @@ export function buildCanonicalSourceRecord(sourceResumeText: string): CanonicalS
 
   return {
     parserVersion: "source-first-v1",
-    contact: { email, phone, cityState },
+    contact: { fullName, email, phone, cityState },
     roles,
     education,
     credentials,
     immutableFields: [
+      "contact.fullName",
       "contact.email",
       "contact.phone",
       "contact.cityState",
@@ -333,8 +349,6 @@ export function mergeCanonicalWithAiEnrichment(
     const canonicalRole = canonicalRoleToPrefill(sourceRole);
     return {
       ...canonicalRole,
-      // These optional fields may be classified by AI only when the proposed
-      // wording is itself present in the source. Identity never comes from AI.
       employmentType: sourceBacked(sourceResumeText, text(aiRole.employmentType)) ? text(aiRole.employmentType) : "",
       equipment: sourceBacked(sourceResumeText, text(aiRole.equipment)) ? text(aiRole.equipment) : "",
       systems: sourceBacked(sourceResumeText, text(aiRole.systems)) ? text(aiRole.systems) : "",
@@ -347,6 +361,7 @@ export function mergeCanonicalWithAiEnrichment(
 
   const contact = {
     ...aiContact,
+    fullName: canonical.contact.fullName?.value ?? text(aiContact.fullName),
     email: canonical.contact.email?.value ?? text(aiContact.email),
     phone: canonical.contact.phone?.value ?? text(aiContact.phone),
     cityState: canonical.contact.cityState?.value ?? text(aiContact.cityState),
@@ -399,6 +414,7 @@ export function validateCanonicalImmutability(
   if (text(root.education) !== canonical.education.map((item) => item.value).join("\n")) issues.push("education");
 
   const contact = record(root.contact);
+  if (canonical.contact.fullName && text(contact.fullName) !== canonical.contact.fullName.value) issues.push("contact.fullName");
   if (canonical.contact.email && text(contact.email) !== canonical.contact.email.value) issues.push("contact.email");
   if (canonical.contact.phone && text(contact.phone) !== canonical.contact.phone.value) issues.push("contact.phone");
   if (canonical.contact.cityState && text(contact.cityState) !== canonical.contact.cityState.value) issues.push("contact.cityState");
