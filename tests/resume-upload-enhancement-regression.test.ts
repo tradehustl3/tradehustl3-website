@@ -133,7 +133,7 @@ function harness(savedIntake: Record<string, unknown> = intake) {
   return { state, objects, DB, BOOKS };
 }
 
-test("Gemini uploaded-resume enhancement automatically retries an invented metric instead of asking the customer for numbers", async () => {
+test("Gemini uploaded-resume enhancement repairs an invented metric without forcing a second model call", async () => {
   const h = harness();
   let calls = 0;
   const systemPrompts: string[] = [];
@@ -180,13 +180,13 @@ test("Gemini uploaded-resume enhancement automatically retries an invented metri
   const payload = await response.json() as { ok?: boolean; runNumber?: number };
   assert.equal(payload.ok, true);
   assert.equal(payload.runNumber, 1);
-  assert.equal(calls, 2);
+  assert.equal(calls, 1);
   assert.equal(h.state.status, "ready");
   assert.equal(h.objects.size, 3);
   assert.match(systemPrompts[0], /Enhancement means preserve first/i);
   assert.match(systemPrompts[0], /If metrics are absent, write strong nonnumeric bullets/i);
-  assert.match(systemPrompts[1], /Safety retry rule/i);
-  assert.match(systemPrompts[1], /Do not create estimates, percentages, counts, quantities/i);
+  assert.equal(systemPrompts.length, 1);
+  assert.doesNotMatch(JSON.stringify(h.state.generatedJson), /35 percent/i);
 });
 
 test("a multi-job uploaded HVAC resume cannot collapse into summary, certifications, and skills", async () => {
