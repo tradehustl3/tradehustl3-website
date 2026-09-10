@@ -93,3 +93,22 @@ test("hard gate keeps source facts instead of inventing replacement education", 
   assert.equal(JSON.stringify(result.resume).includes("Invented University"), false);
   assert.equal(JSON.stringify(result.resume).includes("Metro Technical College"), true);
 });
+
+test("hard gate replaces corrupted model contact data with verified intake values", () => {
+  const result = evaluateCriticalResumeGate({
+    ...incomplete,
+    basics: {
+      ...incomplete.basics,
+      fullName: "Kam Ellis - candidate maybe?",
+      email: "wrong-model-email@example.net",
+      phone: "404-555-0100 wait use this number instead maybe 404-555-0100",
+      location: "Atlanta, GA or nearby",
+    },
+  }, intake, "Facilities Maintenance Technician");
+
+  assert.equal(result.ready, true);
+  assert.equal(result.resume.basics.fullName, "Kam Ellis");
+  assert.equal(result.resume.basics.email, "kam@example.com");
+  assert.equal(result.resume.basics.phone, "404-555-0100");
+  assert.equal(result.resume.basics.location, "Atlanta, GA");
+});
