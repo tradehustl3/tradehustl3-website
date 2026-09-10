@@ -31,3 +31,4 @@ jobs:
           git commit -m "Use structured intake and original resume during generation"
           git pull --rebase origin fix/generation-dual-source
           git push origin HEAD:fix/generation-dual-source
+# retrigger after patch hardening
