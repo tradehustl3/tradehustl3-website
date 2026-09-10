@@ -27,16 +27,17 @@ const purchaseTrust = [
   'Secure Stripe checkout',
 ];
 
-function AnalyticsLink({ href, location, children, className, event = 'cta_click', item }: {
+function AnalyticsLink({ href, location, children, className, event = 'cta_click', item, style }: {
   href: string;
   location: string;
   children: React.ReactNode;
   className?: string;
   event?: 'cta_click' | 'select_content';
   item?: string;
+  style?: React.CSSProperties;
 }) {
   return (
-    <Link href={href} className={className} data-analytics-event={event} data-location={location} data-destination={href} data-item={item}>
+    <Link href={href} className={className} style={style} data-analytics-event={event} data-location={location} data-destination={href} data-item={item}>
       {children}
     </Link>
   );
@@ -103,7 +104,7 @@ export default function Home() {
         <div aria-label="Resume style example" style={{ width: '100%', maxWidth: '900px', margin: '0 auto' }}>
           <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '12px', marginBottom: '12px' }}>
             <p style={{ margin: 0, color: '#111111', fontSize: '12px', fontWeight: 900, letterSpacing: '.12em' }}>CLASSIC BLACK — DEFAULT</p>
-            <AnalyticsLink href="/sample-hvac-resume.pdf" location="sample_style_switch" item="hvac_sample_pdf" style={{ color: '#c81f17', fontSize: '12px', fontWeight: 900, letterSpacing: '.08em' } as React.CSSProperties}>VIEW RED ACCENT PDF ↗</AnalyticsLink>
+            <AnalyticsLink href="/sample-hvac-resume.pdf" location="sample_style_switch" item="hvac_sample_pdf" style={{ color: '#c81f17', fontSize: '12px', fontWeight: 900, letterSpacing: '.08em' }}>VIEW RED ACCENT PDF ↗</AnalyticsLink>
           </div>
           <AnalyticsLink href="/sample-hvac-resume.pdf" location="sample_proof_image" item="hvac_sample_pdf" className={styles.sampleSheet}>
             <Image
