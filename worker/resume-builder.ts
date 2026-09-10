@@ -816,6 +816,6 @@ export async function handleResumeBuilderRoute(
     runConsumed: false,
     missing: [],
     intakeUrl: null,
-    message: "HUSTL3 BOT caught unsupported numeric wording and did not consume a customer AI run. Try the build again; do not add or invent metrics just to continue.",
+    message: "HUSTL3 BOT automatically retried the build, but unsupported numeric wording still remained. No customer AI run was consumed. Only review numeric facts that are actually present in your uploaded resume or intake before rebuilding.",
   }, 502);
 }

@@ -476,21 +476,18 @@ test("non-substantive output returns an intake action and restores the reserved 
   assert.equal(h.state.status, "draft");
 });
 
-test("unsupported numeric claims return sanitized telemetry and an intake action", async () => {
+test("unsupported numeric wording removed by deterministic repair completes without another customer build", async () => {
   const h = harness();
   const inflated = { ...entryLevelResume, summary: "Reduced callbacks by 35 percent across service visits." };
   const { response, payload } = await run(h, dependenciesFor(inflated));
-  assert.equal(response.status, 422);
-  assert.equal(payload.code, "UNSUPPORTED_NUMERIC_CLAIM");
-  assert.equal(payload.retryable, false);
-  assert.deepEqual(payload.missing, ["measurable results, dates, and quantities"]);
-  assert.equal(h.state.creditsUsed, 0);
+  assert.equal(response.status, 200);
+  assert.equal(payload.ok, true);
+  assert.equal(h.state.creditsUsed, 1);
+  assert.ok(h.state.generatedJson);
+  assert.doesNotMatch(h.state.generatedJson ?? "", /35/);
   const generation = h.batched.find((item) => /INSERT INTO resume_generations/i.test(item.sql));
   assert.ok(generation);
-  const flags = String(generation.values[5]);
-  assert.match(flags, /"count":1/);
-  assert.match(flags, /career summary/);
-  assert.doesNotMatch(flags, /35/);
+  assert.equal(String(generation.values[7]), "[]");
 });
 
 test("a deterministic failure can repeat without reducing the four-run allowance", async () => {
