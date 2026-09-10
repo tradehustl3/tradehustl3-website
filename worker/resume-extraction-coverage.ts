@@ -8,6 +8,7 @@ export type ExtractionCoverageIssue = {
 export type ExtractionCoverageResult = {
   ready: boolean;
   issues: ExtractionCoverageIssue[];
+  warnings: ExtractionCoverageIssue[];
   sourceRoleSignals: number;
   extractedRoles: number;
 };
@@ -66,13 +67,22 @@ function appearsInSource(source: string, value: unknown): boolean {
 
 export function assessResumeExtractionCoverage(sourceResumeText: string, structured: unknown): ExtractionCoverageResult {
   const source = normalize(sourceResumeText);
-  if (!source) return { ready: true, issues: [], sourceRoleSignals: 0, extractedRoles: extractedRoles(structured).length };
+  if (!source) {
+    return {
+      ready: true,
+      issues: [],
+      warnings: [],
+      sourceRoleSignals: 0,
+      extractedRoles: extractedRoles(structured).length,
+    };
+  }
 
   const root = record(structured);
   const roles = extractedRoles(structured);
   const field = fieldValue(structured);
   const roleSignals = sourceRoleSignals(sourceResumeText);
   const issues: ExtractionCoverageIssue[] = [];
+  const warnings: ExtractionCoverageIssue[] = [];
 
   if (roleSignals >= 2 && roles.length < roleSignals) {
     issues.push({
@@ -122,23 +132,33 @@ export function assessResumeExtractionCoverage(sourceResumeText: string, structu
     issues.push({ code: "credentials", message: "Certifications or licenses appear in the uploaded resume but were not extracted." });
   }
 
+  // Optional enrichment is advisory only. Missing equipment, systems, tools,
+  // leadership detail, CMMS/software, or safety/training detail must never keep
+  // a source-backed resume from reaching generation once the core facts above
+  // have been verified.
   const skillsToolsEvidence = sourceHas(source, /\b(core skills|technical skills|skills|tools|equipment|systems)\b/i);
   const skillsToolsCount = list(field.tools).length + list(field.equipmentSystems).length + list(field.technicalSkills).length;
   if (skillsToolsEvidence && skillsToolsCount === 0) {
-    issues.push({ code: "skills_tools", message: "Skills, tools, equipment, or systems appear in the uploaded resume but were not extracted." });
+    warnings.push({ code: "skills_tools", message: "Skills, tools, equipment, or systems appear in the uploaded resume but were not extracted." });
   }
 
   const softwareEvidence = sourceHas(source, /\b(software|cmms|salesforce|yardi|maximo|building engines|buildingengines|upkeep|emaint|computerized maintenance management)\b/i);
   if (softwareEvidence && list(field.software).length === 0) {
-    issues.push({ code: "software_cmms", message: "Software or CMMS experience appears in the uploaded resume but was not extracted." });
+    warnings.push({ code: "software_cmms", message: "Software or CMMS experience appears in the uploaded resume but was not extracted." });
   }
 
   const trainingEvidence = sourceHas(source, /\b(training|safety training|lockout\/?tagout|loto|confined space|fall protection|respirator|silica|fire watch)\b/i);
   if (trainingEvidence && list(field.safety).length === 0 && !text(root.additionalDetails)) {
-    issues.push({ code: "training", message: "Meaningful training appears in the uploaded resume but was not extracted." });
+    warnings.push({ code: "training", message: "Meaningful training appears in the uploaded resume but was not extracted." });
   }
 
-  return { ready: issues.length === 0, issues, sourceRoleSignals: roleSignals, extractedRoles: roles.length };
+  return {
+    ready: issues.length === 0,
+    issues,
+    warnings,
+    sourceRoleSignals: roleSignals,
+    extractedRoles: roles.length,
+  };
 }
 
 export function uploadedSourceFromIntake(intake: unknown): string {
