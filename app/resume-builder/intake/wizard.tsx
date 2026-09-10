@@ -71,6 +71,7 @@ export function ResumeWizard() {
   const [importState, setImportState] = useState<ImportState>("idle");
   const [importMessage, setImportMessage] = useState("");
   const [importConsent, setImportConsent] = useState(false);
+  const [editingImportedDetails, setEditingImportedDetails] = useState(false);
 
   const headingRef = useRef<HTMLHeadingElement | null>(null);
   const saveInFlight = useRef(false);
@@ -292,6 +293,7 @@ export function ResumeWizard() {
       }
       const nextData = mergeResumePrefill(dataRef.current, result.prefill, text);
       setData(nextData);
+      setEditingImportedDetails(false);
       setStep(0);
       setImportState("done");
       setImportMessage("Resume imported and verified. Choose the closest trade only if needed, then build your preview. You do not need to re-enter information already on your resume.");
@@ -354,14 +356,15 @@ export function ResumeWizard() {
   const percent = Math.round((step / LAST_STEP) * 100);
   const showConsent = !paid && step === LAST_STEP;
   const uploadedResumeMode = data.sourceProvenance === "upload" && Boolean(data.sourceResumeText.trim());
+  const uploadVerificationMode = uploadedResumeMode && !editingImportedDetails;
 
   return (
     <div className="rb-wiz">
-      <WizardProgress step={step} percent={percent} onJump={editStep} />
+      {!uploadVerificationMode ? <WizardProgress step={step} percent={percent} onJump={editStep} /> : null}
 
       <div className="rb-wiz-shell">
         <div className="rb-wiz-main">
-          <p className="rb-kicker">/ BUILD · STEP {step + 1} OF {WIZARD_STEPS.length}</p>
+          <p className="rb-kicker">{uploadVerificationMode ? "/ UPLOAD · VERIFY · ENHANCE" : `/ BUILD · STEP ${step + 1} OF ${WIZARD_STEPS.length}`}</p>
 
           <div className="rb-wiz-step" key={activeStep.key}>
             {step === 0 ? renderTrade() : null}
@@ -399,7 +402,7 @@ export function ResumeWizard() {
             </label>
           ) : null}
 
-          {!(step === 0 && uploadedResumeMode) ? (
+          {!uploadVerificationMode ? (
           <div className="rb-wiz-nav">
             <button
               type="button"
@@ -522,16 +525,17 @@ export function ResumeWizard() {
                 onClick={() => {
                   if (!isTradeTrack(data.trade)) {
                     setImportState("build-error");
-                    setImportMessage("Choose the closest trade below before editing the imported details.");
+                    setImportMessage("Choose the closest trade below before correcting imported details.");
                     return;
                   }
+                  setEditingImportedDetails(true);
                   void goNext();
                 }}
                 disabled={importState === "building"}
               >
-                EDIT IMPORTED DETAILS
+                CORRECT IMPORTED DETAILS (OPTIONAL)
               </button>
-              <small>Only use Edit Imported Details if you want to change something HUSTL3 BOT pulled from your resume.</small>
+              <small>Only open the form if something on the uploaded resume needs to be corrected. You do not need to re-enter information HUSTL3 BOT already captured.</small>
             </div>
           ) : null}
         </div>
