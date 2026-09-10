@@ -144,6 +144,6 @@ test("AI enrichment keeps only source-backed descriptive values", () => {
   const field = merged.fieldValue as Record<string, unknown>;
   assert.equal(roles[2].equipment, "heat pumps");
   assert.equal(roles[0].equipment, "");
-  assert.deepEqual(field.technicalSkills, ["Heat Pumps"]);
+  assert.deepEqual(field.technicalSkills, ["heat pumps"]);
   assert.deepEqual(field.software, []);
 });
