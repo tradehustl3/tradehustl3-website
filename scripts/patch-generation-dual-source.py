@@ -1,5 +1,4 @@
 from pathlib import Path
-import re
 
 base = Path('worker/resume-builder-base.ts')
 text = base.read_text()
@@ -19,37 +18,34 @@ text = text.replace(
     "Never invent an ID and never cite a fact that does not support the claim. When a claim is preserved from the original upload because structured extraction did not capture it, cite the matching upload.raw.* fact ID.`;",
     1,
 )
-
-# Add raw uploaded text as backup support to both validation and deterministic repair work-bullet support arrays.
-text, n = re.subn(
-    r'(\.\.\.source\.software,\n\s+\.\.\.source\.safety,)(\n\s+\];\n\s+(?:if \(match\.bullets|const supportedGeneratedBullets))',
-    r'\1\n      source.sourceResumeText,\2',
-    text,
-    count=2,
-)
-assert n == 2, n
-
-text = text.replace(
-    "const additionalSources = [...source.safety, ...source.certifications, ...source.licenses, source.education].filter(Boolean);",
-    "const additionalSources = [...source.safety, ...source.certifications, ...source.licenses, source.education, source.sourceResumeText].filter(Boolean);",
-    1,
-)
-
-text = text.replace(
-    """      ...source.licenses,\n      source.education,\n    ].filter(Boolean))),""",
-    """      ...source.licenses,\n      source.education,\n      source.sourceResumeText,\n    ].filter(Boolean))),""",
-    1,
-)
-
-for fragment in [
-    "two authoritative customer sources",
-    "backup evidence layer",
-    "upload.raw.* fact ID",
-    "source.sourceResumeText",
-]:
+for fragment in ["two authoritative customer sources", "backup evidence layer", "upload.raw.* fact ID"]:
     assert fragment in text, fragment
-
 base.write_text(text)
+
+quality = Path('worker/resume-quality.ts')
+q = quality.read_text()
+q = q.replace(
+'''      ...source.software,\n      ...source.safety,\n    ];\n    if (match.bullets.some((bullet) => !claimSupported(bullet, supportClaims))) {''',
+'''      ...source.software,\n      ...source.safety,\n      source.sourceResumeText,\n    ].filter(Boolean);\n    if (match.bullets.some((bullet) => !claimSupported(bullet, supportClaims))) {''',
+1,
+)
+q = q.replace(
+'''  const additionalSources = [...source.safety, ...source.certifications, ...source.licenses, source.education].filter(Boolean);''',
+'''  const additionalSources = [...source.safety, ...source.certifications, ...source.licenses, source.education, source.sourceResumeText].filter(Boolean);''',
+1,
+)
+q = q.replace(
+'''      ...source.software,\n      ...source.safety,\n    ];\n    const supportedGeneratedBullets = existing?.bullets.filter((bullet) => {''',
+'''      ...source.software,\n      ...source.safety,\n      source.sourceResumeText,\n    ].filter(Boolean);\n    const supportedGeneratedBullets = existing?.bullets.filter((bullet) => {''',
+1,
+)
+q = q.replace(
+'''      ...source.licenses,\n      source.education,\n    ].filter(Boolean))),''',
+'''      ...source.licenses,\n      source.education,\n      source.sourceResumeText,\n    ].filter(Boolean))),''',
+1,
+)
+assert q.count('source.sourceResumeText') >= 10
+quality.write_text(q)
 
 wrapper = Path('worker/resume-builder.ts')
 w = wrapper.read_text()
