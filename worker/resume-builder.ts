@@ -15,7 +15,11 @@ import {
   rerenderCoverLetterTheme,
 } from "./cover-letter";
 import { hardenGeneratedResumePackage } from "./resume-package-hardener";
-import { assessResumeExtractionCoverage, assessSavedIntakeExtractionCoverage } from "./resume-extraction-coverage";
+import {
+  assessResumeExtractionCoverage,
+  assessSavedIntakeExtractionCoverage,
+  repairResumeExtractionFromSource,
+} from "./resume-extraction-coverage";
 
 export * from "./resume-builder-base";
 
@@ -392,17 +396,36 @@ async function reconcileImportedExtraction(
 
   const retryCoverage = assessResumeExtractionCoverage(sourceText, retryPayload.prefill);
   if (!retryCoverage.ready) {
+    const fallback = repairResumeExtractionFromSource(sourceText, retryPayload.prefill);
+    const fallbackCoverage = assessResumeExtractionCoverage(sourceText, fallback.structured);
+    if (!fallbackCoverage.ready) {
+      return rewrittenJson(retry, {
+        ok: false,
+        code: "EXTRACTION_COVERAGE_FAILED",
+        retryable: true,
+        action: "retry_import",
+        runConsumed: false,
+        issues: fallbackCoverage.issues,
+        warnings: fallbackCoverage.warnings,
+        sourceRoleSignals: fallbackCoverage.sourceRoleSignals,
+        extractedRoles: fallbackCoverage.extractedRoles,
+        deterministicFallbackAttempted: true,
+        message: "HUSTL3 BOT stopped because the uploaded resume was still not completely extracted after AI reconciliation and deterministic source recovery. Nothing was generated.",
+      }, 422);
+    }
+
     return rewrittenJson(retry, {
-      ok: false,
-      code: "EXTRACTION_COVERAGE_FAILED",
-      retryable: true,
-      action: "retry_import",
-      runConsumed: false,
-      issues: retryCoverage.issues,
-      sourceRoleSignals: retryCoverage.sourceRoleSignals,
-      extractedRoles: retryCoverage.extractedRoles,
-      message: "HUSTL3 BOT stopped because the uploaded resume was still not completely extracted after an automatic reconciliation pass. Nothing was generated.",
-    }, 422);
+      ...retryPayload,
+      prefill: fallback.structured,
+      reconciled: true,
+      deterministicFallbackApplied: fallback.repaired,
+      extractionCoverage: {
+        ready: true,
+        sourceRoleSignals: fallbackCoverage.sourceRoleSignals,
+        extractedRoles: fallbackCoverage.extractedRoles,
+        warnings: fallbackCoverage.warnings,
+      },
+    });
   }
 
   return rewrittenJson(retry, {
