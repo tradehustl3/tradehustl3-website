@@ -166,6 +166,14 @@ function sourceBackedList(source: string, value: unknown): string[] {
   return result;
 }
 
+function isCredentialValue(value: string): boolean {
+  const cleaned = value.trim();
+  if (!cleaned) return false;
+  if (/^(?:certifications?(?:\s*(?:&|and)\s*licenses?)?|licenses?|credentials)$/i.test(cleaned)) return false;
+  if (/^(?:technical\s+skills(?:\s*(?:&|and)\s*tools?)?|skills(?:\s*(?:&|and)\s*tools?)?|tools|software(?:\s*\/\s*cmms|\s*(?:&|and)\s*cmms)?|cmms|safety\s+training|training)$/i.test(cleaned)) return false;
+  return /\b(?:epa\s*608(?:\s+universal)?|osha\s*(?:10|30)|nccer|certification|certificate|license|licensed|certified)\b/i.test(cleaned);
+}
+
 function roleIdentityKey(role: RecordValue): string {
   return [
     text(role.employer),
@@ -211,11 +219,6 @@ function canonicalRoleToPrefill(role: CanonicalSourceRole): RecordValue {
   };
 }
 
-/**
- * Builds the authoritative structure from the source document before AI is
- * allowed to influence the import. The existing deterministic parser is used
- * with an empty structured seed so no model value can participate in identity.
- */
 export function buildCanonicalSourceRecord(sourceResumeText: string): CanonicalSourceRecord {
   const seed = {
     roles: [],
@@ -259,9 +262,11 @@ export function buildCanonicalSourceRecord(sourceResumeText: string): CanonicalS
 
   const field = record(parsed.fieldValue);
   const credentials = list(field.certifications)
+    .filter(isCredentialValue)
     .map((item) => evidence(sourceResumeText, item))
     .filter((item): item is SourceEvidence => Boolean(item));
-  const license = evidence(sourceResumeText, field.licenses);
+  const licenseValue = text(field.licenses);
+  const license = isCredentialValue(licenseValue) ? evidence(sourceResumeText, licenseValue) : null;
   if (license && !credentials.some((item) => normalize(item.value) === normalize(license.value))) {
     credentials.push(license);
   }
@@ -327,11 +332,6 @@ export function buildCanonicalSourceRecord(sourceResumeText: string): CanonicalS
   };
 }
 
-/**
- * AI may enrich classifications and optional descriptive fields, but source
- * identity is always reconstructed from the canonical record. AI cannot add,
- * delete, merge, reorder, or rename roles, education, credentials, or contact.
- */
 export function mergeCanonicalWithAiEnrichment(
   sourceResumeText: string,
   canonical: CanonicalSourceRecord,
