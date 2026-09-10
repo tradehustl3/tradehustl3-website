@@ -1748,14 +1748,22 @@ function validateModelResume(
     guardFlags = unsupportedNumbers(generated, intake, resume.title, correctionRequest);
   }
   const remainingIssues = validateResumeAgainstSource(generated, source, guardFlags.length, Boolean(correctionRequest));
-  if (initialGuardFlags.length || guardFlags.length) {
-    const allGuardFlags = [...initialGuardFlags, ...guardFlags];
-    const sections = Array.from(new Set(allGuardFlags.map((flag) => flag.section)));
+  // Only reject numeric claims that still exist after deterministic source-grounded repair.
+  // The first draft may contain an unsupported number, but if repair removes it using the
+  // authoritative intake/sourceResumeText evidence, the customer should receive the repaired
+  // resume instead of being forced through another generation attempt.
+  if (guardFlags.length) {
+    const sections = Array.from(new Set(guardFlags.map((flag) => flag.section)));
     throw new ResumeGenerationError(
       "UNSUPPORTED_NUMERIC_CLAIM",
-      "The generated resume contained numeric claims the intake does not support.",
+      "The generated resume still contains numeric claims unsupported by the verified sources after automatic repair.",
       [INTAKE_SECTION.numbers],
-      { code: "unsupported_numeric_claim", count: allGuardFlags.length, sections },
+      {
+        code: "unsupported_numeric_claim",
+        count: guardFlags.length,
+        sections,
+        repairedInitialCount: initialGuardFlags.length,
+      },
     );
   }
   if (remainingIssues.length) {
