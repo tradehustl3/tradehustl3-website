@@ -86,6 +86,28 @@ Deploy the bridge with the dedicated `TRADE HUSTL3 Resume Worker` service accoun
 
 `ANTHROPIC_API_KEY` and `CLAUDE_MODEL` remain available as a temporary rollback path. Set `RESUME_AI_PROVIDER=anthropic` only if a staged rollback is required.
 
+## Private resume calibration
+
+Calibration runs locally through the same import, source-preservation, extraction-coverage,
+grounding, numeric-claim, model-fallback, quality-scoring, and PDF/DOCX rendering pipeline as
+the customer Resume Builder. It does not create an account, use Stripe, write to D1/R2, or add
+an unauthenticated Worker route.
+
+Provide the existing AI runtime values through the local environment, enable the explicit local
+guard, and write results outside the public repository:
+
+```bash
+CALIBRATION_MODE=1 npm run calibrate:resume -- \
+  --input ../private-calibration/Originals/resume.docx \
+  --output ../private-calibration/Test-Results/resume-001 \
+  --trade "Facilities Maintenance" \
+  --title "Building Equipment Mechanic"
+```
+
+The output folder contains the clean DOCX/PDF, protected preview PDF, normalized extraction,
+generated JSON, and a QA report. The command refuses to run in production or a Cloudflare
+deployment process. Never commit calibration inputs or outputs because they can contain PII.
+
 ## Production build
 
 ```bash
