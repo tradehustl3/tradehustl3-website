@@ -41,7 +41,9 @@ function text(value: unknown): string {
 }
 
 function list(value: unknown): string[] {
-  return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string" && Boolean(item.trim())) : [];
+  return Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === "string" && Boolean(item.trim()))
+    : [];
 }
 
 function normalize(value: string): string {
@@ -61,8 +63,7 @@ const TITLE_SIGNAL_RE = /\b(?:technician|supervisor|manager|mechanic|engineer|sp
 const EMPLOYER_SIGNAL_RE = /\b(?:llc|inc\.?|corp\.?|corporation|company|companies|services?|staffing|living|communities|properties|property|heating|air|university|college|hospital|medical|facilities|facility|center|centre|group|solutions)\b/i;
 
 function sourceRoleSignals(source: string): number {
-  const normalized = normalize(source);
-  const ranges = normalized.match(DATE_RANGE_RE) ?? [];
+  const ranges = normalize(source).match(DATE_RANGE_RE) ?? [];
   return Math.min(new Set(ranges.map((value) => value.replace(/\s+/g, " "))).size, 12);
 }
 
@@ -125,14 +126,16 @@ function chooseHeaderFields(lines: string[]): { employer: string; jobTitle: stri
 
   let jobTitle = nonLocation.find((part) => TITLE_SIGNAL_RE.test(part) && !EMPLOYER_SIGNAL_RE.test(part)) ?? "";
   let employer = nonLocation.find((part) => part !== jobTitle && EMPLOYER_SIGNAL_RE.test(part)) ?? "";
-
   if (!jobTitle) jobTitle = nonLocation.find((part) => TITLE_SIGNAL_RE.test(part)) ?? "";
   if (!employer) employer = nonLocation.find((part) => part !== jobTitle) ?? "";
-
   if (!jobTitle && nonLocation.length >= 2) jobTitle = nonLocation[1];
   if (!employer && nonLocation.length >= 1) employer = nonLocation[0] === jobTitle ? nonLocation[1] ?? "" : nonLocation[0];
-
   return { employer, jobTitle, location };
+}
+
+function looksLikeNarrative(line: string): boolean {
+  const cleaned = stripBullet(line);
+  return line.startsWith("•") || /[.!?]$/.test(cleaned) || cleaned.length > 120;
 }
 
 function roleHeaderStart(lines: string[], dateIndex: number): number {
@@ -141,9 +144,10 @@ function roleHeaderStart(lines: string[], dateIndex: number): number {
   for (let index = dateIndex - 1; index >= 0 && seen < 3; index -= 1) {
     const line = lines[index];
     if (!line) continue;
-    if (TOP_LEVEL_SECTION_RE.test(line) || parseDateRange(line)) break;
+    if (TOP_LEVEL_SECTION_RE.test(line) || parseDateRange(line) || looksLikeNarrative(line)) break;
     start = index;
     seen += 1;
+    if (splitHeaderParts(line).length >= 2) break;
   }
   return start;
 }
@@ -293,8 +297,13 @@ function mergeRolesFromSource(source: string, aiRoles: RecordValue[], fallbackRo
   return merged;
 }
 
+/**
+ * Deterministic source-backed repair. This function never invents resume facts;
+ * it only copies values that can be recovered from the original upload.
+ * Coverage assessment remains pure and does not call this automatically.
+ */
 export function repairResumeExtractionFromSource(sourceResumeText: string, structured: unknown): { structured: RecordValue; repaired: boolean } {
-  const root = record(structured);
+  const root = { ...record(structured) };
   const originalRoles = extractedRoles(root);
   const roleSignals = sourceRoleSignals(sourceResumeText);
   const needsRoleRepair = roleSignals > 0 && (
@@ -339,30 +348,18 @@ export function repairResumeExtractionFromSource(sourceResumeText: string, struc
 export function assessResumeExtractionCoverage(sourceResumeText: string, structured: unknown): ExtractionCoverageResult {
   const source = normalize(sourceResumeText);
   if (!source) {
-    return {
-      ready: true,
-      issues: [],
-      warnings: [],
-      sourceRoleSignals: 0,
-      extractedRoles: extractedRoles(structured).length,
-    };
+    return { ready: true, issues: [], warnings: [], sourceRoleSignals: 0, extractedRoles: extractedRoles(structured).length };
   }
 
-  const repaired = repairResumeExtractionFromSource(sourceResumeText, structured).structured;
-  const root = record(repaired);
-  const roles = extractedRoles(repaired);
-  const field = fieldValue(repaired);
+  const root = record(structured);
+  const roles = extractedRoles(structured);
+  const field = fieldValue(structured);
   const roleSignals = sourceRoleSignals(sourceResumeText);
   const issues: ExtractionCoverageIssue[] = [];
   const warnings: ExtractionCoverageIssue[] = [];
 
   if (roleSignals >= 2 && roles.length < roleSignals) {
-    issues.push({
-      code: "jobs",
-      message: `The uploaded resume appears to contain ${roleSignals} dated jobs, but only ${roles.length} were extracted.`,
-      expected: roleSignals,
-      actual: roles.length,
-    });
+    issues.push({ code: "jobs", message: `The uploaded resume appears to contain ${roleSignals} dated jobs, but only ${roles.length} were extracted.`, expected: roleSignals, actual: roles.length });
   }
 
   if (roleSignals > 0 && roles.length > 0) {
@@ -408,13 +405,7 @@ export function assessResumeExtractionCoverage(sourceResumeText: string, structu
   const trainingEvidence = sourceHas(source, /\b(training|safety training|lockout\/?tagout|loto|confined space|fall protection|respirator|silica|fire watch)\b/i);
   if (trainingEvidence && list(field.safety).length === 0 && !text(root.additionalDetails)) warnings.push({ code: "training", message: "Meaningful training appears in the uploaded resume but was not extracted." });
 
-  return {
-    ready: issues.length === 0,
-    issues,
-    warnings,
-    sourceRoleSignals: roleSignals,
-    extractedRoles: roles.length,
-  };
+  return { ready: issues.length === 0, issues, warnings, sourceRoleSignals: roleSignals, extractedRoles: roles.length };
 }
 
 export function uploadedSourceFromIntake(intake: unknown): string {
