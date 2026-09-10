@@ -1368,7 +1368,7 @@ Evidence rules:
 - Do not attach overall years of experience to a specific employer, role, or duty unless the intake dates prove it.
 - Preserve official credential names. Put verified certifications and licenses in certifications. Put safety training such as OSHA 10 in additionalInformation unless the intake explicitly identifies it as a certification.
 - Do not add classifications to named software or equipment. For example, write "managed work orders in Salesforce" unless the intake explicitly calls it a CMMS.
-- Every number in the resume must appear in the intake or customer correction.
+- Every number in the resume must appear in the structured intake, sourceResumeText, or customer correction.
 
 Writing rules:
 - Preserve every supported employer, title, location, date range, credential, education item, substantive work-history duty, tool/equipment fact, software/CMMS item, and meaningful training item across BOTH the structured intake and sourceResumeText. Do not collapse a multi-job source resume into a summary and skills page.
@@ -1384,7 +1384,7 @@ Writing rules:
 Required JSON shape:
 {"basics":{"fullName":"","targetTitle":"","location":"","phone":"","email":""},"summary":"","skills":[""],"certifications":[{"name":"","issuer":"","year":""}],"experience":[{"jobTitle":"","employer":"","location":"","startDate":"","endDate":"","bullets":[""]}],"education":[{"credential":"","institution":"","location":"","year":""}],"additionalInformation":[""],"claimSources":[{"claimPath":"summary","sourceFactIds":["roles.0.bullets.0"]}]}
 
-Use empty arrays for unsupported optional sections. Every experience bullet must be supported by the intake.
+Use empty arrays for unsupported optional sections. Every experience bullet must be supported by the structured intake or sourceResumeText.
 For every summary, skill, certification, experience bullet, education item, and additional-information item, add one claimSources entry. claimPath uses zero-based paths such as skills.0, certifications.0, experience.0.bullets.0, education.0, and additionalInformation.0. Cite one to eight IDs from VERIFIED FACT CATALOG. Never invent an ID and never cite a fact that does not support the claim. When a claim is preserved from the original upload because structured extraction did not capture it, cite the matching upload.raw.* fact ID.`;
 }
 
