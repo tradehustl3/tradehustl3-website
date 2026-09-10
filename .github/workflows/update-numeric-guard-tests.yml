@@ -1,0 +1,33 @@
+name: Update numeric guard tests
+
+on:
+  push:
+    branches:
+      - fix/numeric-guard-auto-repair
+    paths:
+      - .github/workflows/update-numeric-guard-tests.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: fix/numeric-guard-auto-repair
+      - name: Update numeric guard tests
+        run: python scripts/update-numeric-guard-tests.py
+      - name: Commit test updates
+        run: |
+          if git diff --quiet; then
+            echo "Already patched"
+            exit 0
+          fi
+          git config user.name "TRADE HUSTL3"
+          git config user.email "tradehustl3@gmail.com"
+          git add tests/resume-builder-generation-safety.test.ts tests/resume-upload-enhancement-regression.test.ts
+          git commit -m "Test repaired numeric drafts complete in one model call"
+          git pull --rebase origin fix/numeric-guard-auto-repair
+          git push origin HEAD:fix/numeric-guard-auto-repair
