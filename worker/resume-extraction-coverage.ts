@@ -252,7 +252,7 @@ function preferSourceValue(source: string, aiValue: unknown, fallbackValue: unkn
 
 function mergeRolesFromSource(source: string, aiRoles: RecordValue[], fallbackRoles: ParsedRole[]): RecordValue[] {
   const unused = new Set(aiRoles.map((_, index) => index));
-  const merged = fallbackRoles.map((fallbackRole) => {
+  const merged: RecordValue[] = fallbackRoles.map((fallbackRole) => {
     let bestIndex = -1;
     let bestScore = 0;
     for (const index of unused) {
@@ -326,7 +326,7 @@ export function repairResumeExtractionFromSource(sourceResumeText: string, struc
   if (credentialEvidence && credentialCount === 0) {
     const credentials = credentialCandidates(sourceResumeText);
     if (credentials.length) {
-      const nextField = { ...field, certifications: credentials };
+      const nextField: RecordValue = { ...field, certifications: credentials };
       if (!("licenses" in nextField)) nextField.licenses = "";
       root.fieldValue = nextField;
       repaired = true;
