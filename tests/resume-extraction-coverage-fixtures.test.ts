@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { assessResumeExtractionCoverage } from "../worker/resume-extraction-coverage";
+import { assessResumeExtractionCoverage, repairResumeExtractionFromSource } from "../worker/resume-extraction-coverage";
 
 type ExpectedGate = {
   ready: boolean;
@@ -79,24 +79,47 @@ June 2021 - Present
 Diagnosed HVAC systems, completed preventive maintenance, and repaired electrical controls.
 `;
 
+const productionShapeSource = `
+ZACHARY ELLIS
+BUILDING EQUIPMENT MECHANIC / HVAC & FACILITIES MAINTENANCE
+
+CERTIFICATIONS
+EPA 608 Universal Certification
+OSHA 10
+HVAC Technical Certificate
+
+PROFESSIONAL EXPERIENCE
+American Campus Communities — Service Supervisor — Marietta, GA
+April 2026 - July 2026
+Supervised technicians and coordinated HVAC, electrical, plumbing, appliance, and building repairs.
+Managed work orders, parts, vendors, and emergency rooftop repairs.
+
+TRC Staffing Services — Facility Maintenance Technician — Atlanta, GA
+March 2026 - April 2026
+Performed commercial preventive and corrective maintenance and HVAC inspections.
+Completed filter changes, split-system repairs, and electrical and plumbing troubleshooting.
+
+Cooler Heating & Air — Independent HVAC Technician — Marietta, GA
+January 2022 - March 2026
+Diagnosed and repaired air conditioners, furnaces, heat pumps, thermostats, controls, airflow, and refrigerant issues.
+Performed preventive maintenance, installations, ductwork, and documented diagnoses and repairs.
+
+Sunrise Senior Living — Maintenance Supervisor — Marietta, GA
+April 2017 - December 2022
+Led HVAC, electrical, plumbing, mechanical, resident-area, and common-area maintenance.
+Managed preventive maintenance schedules, emergency repairs, vendors, and compliance records.
+
+EDUCATION
+Mississippi Gulf Coast Community College — Gulfport, MS
+HVAC Technical Certification
+`;
+
 const fixtures: CoverageFixture[] = [
   {
     name: "PASS: valid resume with optional sections completely absent",
     source: noOptionalSectionsSource,
     structured: {
-      roles: [{
-        employer: "North Plant",
-        jobTitle: "Maintenance Technician",
-        startDate: "January 2022",
-        endDate: "Present",
-        responsibilities: "Performed preventive and corrective building maintenance and HVAC diagnostics.",
-        equipment: "",
-        systems: "",
-        workPerformed: "",
-        leadership: "",
-        workOrders: "",
-        measurable: "",
-      }],
+      roles: [{ employer: "North Plant", jobTitle: "Maintenance Technician", startDate: "January 2022", endDate: "Present", responsibilities: "Performed preventive and corrective building maintenance and HVAC diagnostics.", equipment: "", systems: "", workPerformed: "", leadership: "", workOrders: "", measurable: "" }],
       fieldValue: { certifications: [], licenses: "", tools: [], equipmentSystems: [], technicalSkills: [], software: [], safety: [] },
       education: "",
       additionalDetails: "",
@@ -107,19 +130,7 @@ const fixtures: CoverageFixture[] = [
     name: "PASS: blank optional equipment systems leadership and CMMS fields are advisory only",
     source: optionalFieldsBlankSource,
     structured: {
-      roles: [{
-        employer: "North Plant",
-        jobTitle: "Maintenance Technician",
-        startDate: "January 2022",
-        endDate: "Present",
-        responsibilities: "Diagnosed rooftop HVAC equipment, handled building systems, led repair coordination, and documented Salesforce work orders.",
-        equipment: "",
-        systems: "",
-        workPerformed: "",
-        leadership: "",
-        workOrders: "",
-        measurable: "",
-      }],
+      roles: [{ employer: "North Plant", jobTitle: "Maintenance Technician", startDate: "January 2022", endDate: "Present", responsibilities: "Diagnosed rooftop HVAC equipment, handled building systems, led repair coordination, and documented Salesforce work orders.", equipment: "", systems: "", workPerformed: "", leadership: "", workOrders: "", measurable: "" }],
       fieldValue: { certifications: [], licenses: "", tools: [], equipmentSystems: [], technicalSkills: [], software: [], safety: [] },
       education: "",
       additionalDetails: "",
@@ -142,7 +153,7 @@ const fixtures: CoverageFixture[] = [
     expected: { ready: true, issues: [], warnings: [], sourceRoleSignals: 3, extractedRoles: 3 },
   },
   {
-    name: "FAIL: one dated job is missing from a multi-job extraction",
+    name: "PASS: deterministic fallback restores a missing dated job",
     source: multipleJobsSource,
     structured: {
       roles: [
@@ -153,7 +164,7 @@ const fixtures: CoverageFixture[] = [
       education: "",
       additionalDetails: "",
     },
-    expected: { ready: false, issues: ["jobs"], warnings: [], sourceRoleSignals: 3, extractedRoles: 2 },
+    expected: { ready: true, issues: [], warnings: [], sourceRoleSignals: 3, extractedRoles: 3 },
   },
   {
     name: "PASS: overlapping employment dates are valid when every role is preserved",
@@ -171,7 +182,7 @@ const fixtures: CoverageFixture[] = [
     expected: { ready: true, issues: [], warnings: [], sourceRoleSignals: 3, extractedRoles: 3 },
   },
   {
-    name: "FAIL: overlapping dates do not excuse a missing role",
+    name: "PASS: deterministic fallback restores an omitted overlapping role",
     source: overlappingDatesSource,
     structured: {
       roles: [
@@ -182,57 +193,40 @@ const fixtures: CoverageFixture[] = [
       education: "",
       additionalDetails: "",
     },
-    expected: { ready: false, issues: ["jobs"], warnings: [], sourceRoleSignals: 3, extractedRoles: 2 },
+    expected: { ready: true, issues: [], warnings: [], sourceRoleSignals: 3, extractedRoles: 3 },
   },
   {
     name: "PASS: credentials embedded in prose are preserved",
     source: proseCredentialSource,
     structured: {
-      roles: [{
-        employer: "Coastal Air",
-        jobTitle: "HVAC Technician",
-        startDate: "June 2021",
-        endDate: "Present",
-        responsibilities: "Diagnosed HVAC systems, completed preventive maintenance, and repaired electrical controls.",
-      }],
-      fieldValue: {
-        certifications: ["EPA 608 Universal", "OSHA 10"],
-        licenses: "",
-        tools: [],
-        equipmentSystems: [],
-        technicalSkills: ["HVAC systems"],
-        software: [],
-        safety: ["OSHA 10 safety training"],
-      },
+      roles: [{ employer: "Coastal Air", jobTitle: "HVAC Technician", startDate: "June 2021", endDate: "Present", responsibilities: "Diagnosed HVAC systems, completed preventive maintenance, and repaired electrical controls." }],
+      fieldValue: { certifications: ["EPA 608 Universal", "OSHA 10"], licenses: "", tools: [], equipmentSystems: [], technicalSkills: ["HVAC systems"], software: [], safety: ["OSHA 10 safety training"] },
       education: "",
       additionalDetails: "",
     },
     expected: { ready: true, issues: [], warnings: [], sourceRoleSignals: 1, extractedRoles: 1 },
   },
   {
-    name: "FAIL: credentials embedded in prose cannot be dropped completely",
+    name: "PASS: deterministic fallback restores credentials embedded in prose",
     source: proseCredentialSource,
     structured: {
-      roles: [{
-        employer: "Coastal Air",
-        jobTitle: "HVAC Technician",
-        startDate: "June 2021",
-        endDate: "Present",
-        responsibilities: "Diagnosed HVAC systems, completed preventive maintenance, and repaired electrical controls.",
-      }],
-      fieldValue: {
-        certifications: [],
-        licenses: "",
-        tools: [],
-        equipmentSystems: [],
-        technicalSkills: ["HVAC systems"],
-        software: [],
-        safety: ["OSHA 10 safety training"],
-      },
+      roles: [{ employer: "Coastal Air", jobTitle: "HVAC Technician", startDate: "June 2021", endDate: "Present", responsibilities: "Diagnosed HVAC systems, completed preventive maintenance, and repaired electrical controls." }],
+      fieldValue: { certifications: [], licenses: "", tools: [], equipmentSystems: [], technicalSkills: ["HVAC systems"], software: [], safety: ["OSHA 10 safety training"] },
       education: "",
       additionalDetails: "",
     },
-    expected: { ready: false, issues: ["credentials"], warnings: [], sourceRoleSignals: 1, extractedRoles: 1 },
+    expected: { ready: true, issues: [], warnings: [], sourceRoleSignals: 1, extractedRoles: 1 },
+  },
+  {
+    name: "PASS: production-shaped empty AI extraction recovers four roles education and credentials",
+    source: productionShapeSource,
+    structured: {
+      roles: [],
+      fieldValue: { certifications: [], licenses: "", tools: [], equipmentSystems: [], technicalSkills: [], software: [], safety: [] },
+      education: "",
+      additionalDetails: "",
+    },
+    expected: { ready: true, issues: [], warnings: ["skills_tools"], sourceRoleSignals: 4, extractedRoles: 4 },
   },
 ];
 
@@ -246,3 +240,37 @@ for (const fixture of fixtures) {
     assert.equal(result.extractedRoles, fixture.expected.extractedRoles);
   });
 }
+
+test("fallback prefers literal source-backed employer title and dates over conflicting AI values", () => {
+  const structured: Record<string, unknown> = {
+    roles: [{
+      employer: "Invented Employer",
+      jobTitle: "Chief Engineer",
+      startDate: "May 2022",
+      endDate: "August 2024",
+      responsibilities: "",
+    }],
+    fieldValue: { certifications: [], licenses: "" },
+    education: "",
+  };
+
+  const repaired = repairResumeExtractionFromSource(noOptionalSectionsSource, structured).structured;
+  const roles = repaired.roles as Array<Record<string, unknown>>;
+  assert.equal(roles.length, 1);
+  assert.equal(roles[0].employer, "North Plant");
+  assert.equal(roles[0].jobTitle, "Maintenance Technician");
+  assert.equal(roles[0].startDate, "January 2022");
+  assert.equal(roles[0].endDate, "Present");
+  assert.equal(roles[0].responsibilities, "Performed preventive and corrective building maintenance and HVAC diagnostics.");
+});
+
+test("production-shaped fallback restores education and explicit credentials", () => {
+  const structured: Record<string, unknown> = { roles: [], fieldValue: { certifications: [], licenses: "" }, education: "" };
+  const repaired = repairResumeExtractionFromSource(productionShapeSource, structured).structured;
+  const field = repaired.fieldValue as Record<string, unknown>;
+  const certifications = field.certifications as string[];
+  assert.match(String(repaired.education), /Mississippi Gulf Coast Community College/);
+  assert.ok(certifications.some((item) => /EPA 608 Universal Certification/i.test(item)));
+  assert.ok(certifications.some((item) => /OSHA 10/i.test(item)));
+  assert.ok(certifications.some((item) => /HVAC Technical Certificate/i.test(item)));
+});
