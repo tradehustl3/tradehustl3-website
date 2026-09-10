@@ -1,0 +1,33 @@
+name: Fix dual-source prompt consistency
+
+on:
+  push:
+    branches:
+      - fix/generation-dual-source
+    paths:
+      - .github/workflows/fix-dual-source-prompt-consistency.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: fix/generation-dual-source
+      - name: Apply prompt consistency patch
+        run: python scripts/fix-dual-source-prompt-consistency.py
+      - name: Commit patch
+        run: |
+          if git diff --quiet; then
+            echo "Already patched"
+            exit 0
+          fi
+          git config user.name "TRADE HUSTL3"
+          git config user.email "tradehustl3@gmail.com"
+          git add worker/resume-builder-base.ts worker/resume-builder.ts
+          git commit -m "Keep dual-source evidence rules consistent"
+          git pull --rebase origin fix/generation-dual-source
+          git push origin HEAD:fix/generation-dual-source
