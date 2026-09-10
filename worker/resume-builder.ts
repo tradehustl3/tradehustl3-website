@@ -93,7 +93,7 @@ function wrapAnthropicFetch(delegate: typeof fetch, strictNumericRetry: boolean)
   return wrapped;
 }
 
-function preservationDependencies(
+export function preservationDependencies(
   dependencies: ResumeBuilderDependencies,
   strictNumericRetry: boolean,
 ): ResumeBuilderDependencies {
@@ -107,7 +107,7 @@ function preservationDependencies(
 const IMPORT_RECONCILIATION_INSTRUCTION = `Extraction coverage reconciliation rule:
 A previous extraction of this uploaded resume was incomplete. Re-read the entire SOURCE_RESUME from top to bottom and return a complete factual extraction. Capture every distinct job, employer, job title, location, date range, substantive responsibility, education item, certification or license, skill, tool, equipment/system, software/CMMS product, and meaningful training item explicitly present. Do not omit older roles merely to keep the response short. Do not invent or infer anything that is not in the source.`;
 
-function reconciliationDependencies(dependencies: ResumeBuilderDependencies): ResumeBuilderDependencies {
+export function reconciliationDependencies(dependencies: ResumeBuilderDependencies): ResumeBuilderDependencies {
   const base = preservationDependencies(dependencies, false);
   const appendGemini: typeof fetch = async (input, init) => {
     if (!init || typeof init.body !== "string") return (base.geminiFetch ?? fetch)(input, init);
