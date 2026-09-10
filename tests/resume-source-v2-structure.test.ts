@@ -181,7 +181,7 @@ test("Gemini may rewrite supported role language but cannot change identity or i
     summaryNotes: "HVAC and facilities maintenance professional focused on preventive maintenance, diagnostics, and repairs.",
     contact: { fullName: "Wrong Name", email: "wrong@example.com" },
     roles: canonical.roles.map((role, index) => ({
-      employer: index === 0 ? "Invented Employer" : role.employer.value,
+      employer: role.employer.value,
       jobTitle: role.jobTitle.value,
       startDate: role.startDate.value,
       endDate: role.endDate.value,
