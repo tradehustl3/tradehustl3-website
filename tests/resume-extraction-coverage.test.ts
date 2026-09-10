@@ -59,26 +59,108 @@ const complete = {
   additionalDetails: "",
 };
 
+function codes(items: Array<{ code: string }>): string[] {
+  return items.map((item) => item.code).sort();
+}
+
 test("complete multi-job extraction passes coverage gate", () => {
   const result = assessResumeExtractionCoverage(source, complete);
   assert.equal(result.ready, true);
   assert.equal(result.sourceRoleSignals, 3);
   assert.equal(result.extractedRoles, 3);
   assert.deepEqual(result.issues, []);
+  assert.deepEqual(result.warnings, []);
 });
 
-test("thin extraction is blocked before generation when uploaded source has multiple jobs and sections", () => {
+test("thin extraction is blocked only by missing core resume facts", () => {
   const result = assessResumeExtractionCoverage(source, {
     roles: [{ employer: "American Campus Communities", jobTitle: "Maintenance Supervisor", responsibilities: "" }],
     fieldValue: { certifications: [], tools: [], equipmentSystems: [], technicalSkills: [], software: [], safety: [], licenses: "" },
     education: "",
     additionalDetails: "",
   });
+
   assert.equal(result.ready, false);
-  const codes = new Set(result.issues.map((issue) => issue.code));
-  for (const code of ["jobs", "dates", "responsibilities", "education", "credentials", "skills_tools", "software_cmms", "training"]) {
-    assert.equal(codes.has(code as never), true, `expected coverage issue: ${code}`);
-  }
+  assert.deepEqual(codes(result.issues), [
+    "credentials",
+    "dates",
+    "education",
+    "jobs",
+    "responsibilities",
+  ]);
+  assert.deepEqual(codes(result.warnings), ["skills_tools", "software_cmms", "training"]);
+});
+
+test("missing optional enrichment fields cannot block an otherwise valid uploaded resume", () => {
+  const result = assessResumeExtractionCoverage(source, {
+    roles: complete.roles.map((role) => ({
+      ...role,
+      equipment: "",
+      systems: "",
+      workPerformed: "",
+      leadership: "",
+      workOrders: "",
+      measurable: "",
+    })),
+    fieldValue: {
+      certifications: ["EPA 608 Universal", "OSHA 10"],
+      licenses: "",
+      tools: [],
+      equipmentSystems: [],
+      technicalSkills: [],
+      software: [],
+      safety: [],
+    },
+    education: complete.education,
+    additionalDetails: "",
+  });
+
+  // PASS: every dated role has its employer, title, dates and substantive duty text;
+  // education and credentials explicitly present in the source were preserved.
+  assert.equal(result.ready, true);
+  assert.deepEqual(result.issues, []);
+
+  // Missing equipment, systems, leadership/work-order detail, tools/skills,
+  // CMMS/software and training may be reported for diagnostics, but never block.
+  assert.deepEqual(codes(result.warnings), ["skills_tools", "software_cmms", "training"]);
+});
+
+test("missing core role identity, dates, or substantive work still blocks even when optional enrichment exists", () => {
+  const result = assessResumeExtractionCoverage(source, {
+    ...complete,
+    roles: [
+      {
+        ...complete.roles[0],
+        employer: "",
+        jobTitle: "",
+        startDate: "",
+        endDate: "",
+        responsibilities: "",
+      },
+      complete.roles[1],
+      complete.roles[2],
+    ],
+  });
+
+  assert.equal(result.ready, false);
+  assert.deepEqual(codes(result.issues), ["dates", "employers", "job_titles", "responsibilities"]);
+  assert.deepEqual(result.warnings, []);
+});
+
+test("education and credentials remain blocking source facts when the uploaded resume explicitly contains them", () => {
+  const result = assessResumeExtractionCoverage(source, {
+    ...complete,
+    fieldValue: {
+      ...complete.fieldValue,
+      certifications: [],
+      licenses: "",
+    },
+    education: "",
+  });
+
+  assert.equal(result.ready, false);
+  assert.deepEqual(codes(result.issues), ["credentials", "education"]);
+  assert.deepEqual(result.warnings, []);
 });
 
 test("saved uploaded intake is checked against its authoritative source text", () => {
@@ -91,6 +173,8 @@ test("saved uploaded intake is checked against its authoritative source text", (
   });
   assert.equal(result.ready, true);
   assert.equal(result.extractedRoles, 3);
+  assert.deepEqual(result.issues, []);
+  assert.deepEqual(result.warnings, []);
 });
 
 test("guided intake without an uploaded source is not subject to upload coverage gate", () => {
@@ -101,4 +185,5 @@ test("guided intake without an uploaded source is not subject to upload coverage
   });
   assert.equal(result.ready, true);
   assert.deepEqual(result.issues, []);
+  assert.deepEqual(result.warnings, []);
 });
