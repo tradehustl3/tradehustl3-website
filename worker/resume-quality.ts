@@ -396,7 +396,8 @@ export function validateResumeAgainstSource(
       ...source.technicalSkills,
       ...source.software,
       ...source.safety,
-    ];
+      source.sourceResumeText,
+    ].filter(Boolean);
     if (match.bullets.some((bullet) => !claimSupported(bullet, supportClaims))) {
       issues.push({ code: "unsupported_duty", sourceIndex: role.sourceIndex, message: `An experience claim is not supported for ${role.jobTitle}.` });
     }
@@ -418,7 +419,7 @@ export function validateResumeAgainstSource(
   if (generated.education.some((item) => !educationSupported(item, source))) {
     issues.push({ code: "unsupported_education", message: "The draft contains unsupported education." });
   }
-  const additionalSources = [...source.safety, ...source.certifications, ...source.licenses, source.education].filter(Boolean);
+  const additionalSources = [...source.safety, ...source.certifications, ...source.licenses, source.education, source.sourceResumeText].filter(Boolean);
   if (generated.additionalInformation.some((item) => !claimSupported(item, additionalSources))) {
     issues.push({ code: "unsupported_additional_information", message: "The draft contains unsupported additional information." });
   }
@@ -450,7 +451,8 @@ export function repairResumeFromSource(
       ...source.technicalSkills,
       ...source.software,
       ...source.safety,
-    ];
+      source.sourceResumeText,
+    ].filter(Boolean);
     const supportedGeneratedBullets = existing?.bullets.filter((bullet) => {
       const generatedNumbers = numericClaims(bullet).map(normalized);
       const allowedNumbers = source.metrics.map(normalized);
@@ -509,6 +511,7 @@ export function repairResumeFromSource(
       ...source.certifications,
       ...source.licenses,
       source.education,
+      source.sourceResumeText,
     ].filter(Boolean))),
   };
 }
