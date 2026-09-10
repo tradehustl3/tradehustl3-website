@@ -120,7 +120,7 @@ function looksLikeLocation(value: string): boolean {
 
 function chooseHeaderFields(lines: string[]): { employer: string; jobTitle: string; location: string } {
   const candidates = lines.flatMap(splitHeaderParts).filter((part) => !DATE_RANGE_LINE_RE.test(part));
-  let location = candidates.find(looksLikeLocation) ?? "";
+  const location = candidates.find(looksLikeLocation) ?? "";
   const nonLocation = candidates.filter((part) => part !== location);
 
   let jobTitle = nonLocation.find((part) => TITLE_SIGNAL_RE.test(part) && !EMPLOYER_SIGNAL_RE.test(part)) ?? "";
