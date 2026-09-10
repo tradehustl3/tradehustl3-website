@@ -96,11 +96,14 @@ export function hardenResumeCriticalFacts(
     ...generated,
     basics: {
       ...generated.basics,
-      fullName: generated.basics.fullName || source.contact.fullName,
+      // Verified intake contact data is authoritative. The model may format
+      // resume content, but it must never rewrite or contaminate identity or
+      // contact fields supplied by the customer.
+      fullName: source.contact.fullName || generated.basics.fullName,
       targetTitle: generated.basics.targetTitle || source.targetTitle,
-      email: generated.basics.email || source.contact.email || undefined,
-      phone: generated.basics.phone || source.contact.phone || undefined,
-      location: generated.basics.location || source.contact.location || undefined,
+      email: source.contact.email || undefined,
+      phone: source.contact.phone || undefined,
+      location: source.contact.location || undefined,
     },
   };
 
