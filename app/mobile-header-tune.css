@@ -107,3 +107,25 @@
     font-size: 7.6px !important;
   }
 }
+
+/* Homepage resume order: Classic Black first, TRADE HUSTL3 Red Accent second. */
+img[alt="Finished TRADE HUSTL3 HVAC resume sample"] {
+  filter: grayscale(1) contrast(1.72);
+}
+
+#sample-resume img[alt="Classic Black sample HVAC and facilities maintenance resume"] {
+  filter: none !important;
+}
+
+#sample-resume img[alt="Classic Black sample HVAC and facilities maintenance resume"] + span {
+  font-size: 0 !important;
+}
+
+#sample-resume img[alt="Classic Black sample HVAC and facilities maintenance resume"] + span::before {
+  content: "TRADE HUSTL3 RED ACCENT";
+  font-size: 12px;
+}
+
+#sample-resume img[alt="Classic Black sample HVAC and facilities maintenance resume"] + span b {
+  font-size: 12px;
+}
