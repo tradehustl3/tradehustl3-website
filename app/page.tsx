@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { CtaAnalytics } from './cta-analytics';
 import styles from './home-traffic-director.module.css';
 
-const tradeChips = ['HVAC', 'Electrical', 'Plumbing', 'Welding', 'Facilities', 'Maintenance'];
+const tradeChips = ['HVAC & Refrigeration', 'Electrical', 'Plumbing', 'Construction & Carpentry', 'Facilities Maintenance', 'Welding & Fabrication', 'General Labor / Maintenance Tech'];
 
 const processSteps = [
   ['01', 'Upload or start from scratch', 'Bring your current resume or answer a few guided questions about your trade, tools, certifications, and experience.'],
@@ -68,7 +68,7 @@ export default function Home() {
       <section className={styles.hero} id="top">
         <div className={styles.heroCopy}>
           <p className={styles.eyebrow}>SKILLED-TRADES CAREER SYSTEM</p>
-          <h1>Build a trade resume that <span>looks ready for the job.</span></h1>
+          <h1><span className={styles.headlineLead}>Build a trade resume that</span><span>Looks ready for the job.</span></h1>
           <p className={styles.heroLead}>Upload your current resume or start from scratch. HUSTL3 BOT turns your real trade experience into a professionally structured resume you can preview before paying.</p>
 
           <div className={styles.priceLine} aria-label="Resume Builder pricing">
@@ -83,7 +83,19 @@ export default function Home() {
           </div>
 
           <p className={styles.heroAssurance}>No credit card required to build your preview. Pay only when you are ready to unlock the clean PDF + editable DOCX.</p>
-          <ul className={styles.chips} aria-label="Supported trades">{tradeChips.map((chip) => <li key={chip}>{chip}</li>)}</ul>
+          <div className={styles.tradeVisual}>
+            <Image
+              src="/optimized/hvac-manifold-worksite.webp"
+              alt="Digital HVAC manifold with blue hose on the left low-side port, yellow hose on the center service port, and red hose on the right high-side port"
+              fill
+              sizes="(max-width: 1050px) 92vw, 52vw"
+              priority
+            />
+            <div className={styles.tradeVisualLabel}>
+              <strong>TRADE-CORRECT SETUP</strong>
+              <span>Blue low side · Yellow service · Red high side</span>
+            </div>
+          </div>
         </div>
 
         <div className={styles.heroVisual} aria-label="TRADE HUSTL3 Resume Builder output preview">
@@ -95,11 +107,21 @@ export default function Home() {
             <Image src="/sample-hvac-resume.webp" alt="Finished TRADE HUSTL3 HVAC resume sample" width={816} height={1056} sizes="(max-width: 900px) 86vw, 42vw" priority />
           </div>
           <div className={styles.botCard}>
-            <span>HUSTL3 BOT</span>
-            <strong>Builds it for you.</strong>
-            <p>Trade experience in. Stronger resume out.</p>
+            <div className={styles.botAvatar}>
+              <Image src="/optimized/hustl3-bot.webp" alt="" fill sizes="58px" />
+            </div>
+            <div className={styles.botCopy}>
+              <span>HUSTL3 BOT</span>
+              <strong>Builds it for you.</strong>
+              <p>Trade experience in. Stronger resume out.</p>
+            </div>
           </div>
         </div>
+      </section>
+
+      <section className={styles.tradeStrip} aria-label="Supported trade categories">
+        <strong>BUILT FOR THE TRADES</strong>
+        <ul>{tradeChips.map((trade) => <li key={trade}>{trade}</li>)}</ul>
       </section>
 
       <section className={styles.trustStrip} aria-label="Resume Builder purchase protections">
