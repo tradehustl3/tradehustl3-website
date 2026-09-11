@@ -83,6 +83,11 @@
   [data-home-header] + #top {
     padding-top: 30px !important;
   }
+
+  /* Prevent the fixed CTA from flashing over the hero before hydration. */
+  a[data-location="mobile_sticky"] {
+    display: none;
+  }
 }
 
 @media (max-width: 380px) {
