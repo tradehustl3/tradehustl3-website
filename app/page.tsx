@@ -46,10 +46,79 @@ export default function Home() {
   return (
     <main className={styles.page}>
       <CtaAnalytics />
+      <style>{`
+        @media (max-width: 720px) {
+          [data-home-header] {
+            display: grid !important;
+            grid-template-columns: 72px minmax(112px, 1fr) 102px;
+            align-items: center;
+            gap: 4px !important;
+            min-height: 82px;
+            padding: 6px 8px !important;
+          }
+          [data-header-brand] {
+            min-width: 0;
+            padding: 2px 3px !important;
+            border-radius: 12px !important;
+            justify-self: start;
+          }
+          [data-header-logo-ring] {
+            width: 64px !important;
+            height: 54px !important;
+            padding: 2px 4px !important;
+          }
+          [data-header-motto] {
+            display: flex !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            width: 100%;
+            min-width: 0 !important;
+            margin: 0 !important;
+            gap: 3px !important;
+            justify-self: stretch;
+            font-size: 7.6px !important;
+            letter-spacing: .025em !important;
+          }
+          [data-header-motto] [data-accent-lines] {
+            gap: 2px !important;
+          }
+          [data-header-motto] [data-accent-lines] i {
+            width: 8px !important;
+            height: 2px !important;
+          }
+          [data-header-nav] {
+            width: 100%;
+            min-width: 0;
+            justify-content: flex-end;
+            gap: 0 !important;
+          }
+          [data-header-nav] > a:not([href="/resume-builder"]) {
+            display: none !important;
+          }
+          [data-header-nav] a[href="/resume-builder"] {
+            display: inline-flex !important;
+            width: 100%;
+            max-width: 102px;
+            min-width: 0;
+            padding: 9px 6px !important;
+            font-size: 8.5px !important;
+            line-height: 1.1;
+            text-align: center;
+            white-space: normal;
+          }
+        }
+        @media (min-width: 721px) and (max-width: 1100px) {
+          [data-header-motto] {
+            display: flex !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+          }
+        }
+      `}</style>
 
-      <header className={styles.header}>
-        <Link className={styles.brand} href="#top" aria-label="TRADE HUSTL3 Resume Builder home">
-          <span className={styles.brandLogoRing}>
+      <header className={styles.header} data-home-header>
+        <Link className={styles.brand} href="#top" aria-label="TRADE HUSTL3 Resume Builder home" data-header-brand>
+          <span className={styles.brandLogoRing} data-header-logo-ring>
             <Image
               className={styles.brandLogo}
               src="/optimized/resume-builder-logo-header.webp"
@@ -62,6 +131,7 @@ export default function Home() {
         </Link>
         <div
           aria-hidden="true"
+          data-header-motto
           data-product-positioning="BUILT BY HUSTLE. BACKED BY TRADES."
           data-header-accent="yellow-red-blue-both-sides"
           style={{
@@ -78,7 +148,7 @@ export default function Home() {
             whiteSpace: 'nowrap',
           }}
         >
-          <span style={{ display: 'grid', gap: '2px', flex: '0 0 auto' }}>
+          <span data-accent-lines style={{ display: 'grid', gap: '2px', flex: '0 0 auto' }}>
             <i style={{ display: 'block', width: 'clamp(12px,2vw,28px)', height: '2px', backgroundColor: '#f1c357' }} />
             <i style={{ display: 'block', width: 'clamp(12px,2vw,28px)', height: '2px', backgroundColor: '#d71920' }} />
             <i style={{ display: 'block', width: 'clamp(12px,2vw,28px)', height: '2px', backgroundColor: '#2671a7' }} />
@@ -87,13 +157,13 @@ export default function Home() {
             <strong style={{ color: '#fff' }}>BUILT BY HUSTLE.</strong>
             <span style={{ color: '#f1c357' }}>BACKED BY TRADES.</span>
           </span>
-          <span style={{ display: 'grid', gap: '2px', flex: '0 0 auto' }}>
+          <span data-accent-lines style={{ display: 'grid', gap: '2px', flex: '0 0 auto' }}>
             <i style={{ display: 'block', width: 'clamp(12px,2vw,28px)', height: '2px', backgroundColor: '#f1c357' }} />
             <i style={{ display: 'block', width: 'clamp(12px,2vw,28px)', height: '2px', backgroundColor: '#d71920' }} />
             <i style={{ display: 'block', width: 'clamp(12px,2vw,28px)', height: '2px', backgroundColor: '#2671a7' }} />
           </span>
         </div>
-        <nav className={styles.nav} aria-label="Primary navigation">
+        <nav className={styles.nav} aria-label="Primary navigation" data-header-nav>
           <Link href="#sample-resume">See a sample</Link>
           <Link href="/book">The Book</Link>
           <AnalyticsLink href="/resume-builder" location="sticky_header" className={styles.headerCta}>Build My Free Preview</AnalyticsLink>
