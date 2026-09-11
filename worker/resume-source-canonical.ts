@@ -3,6 +3,15 @@ import {
   repairResumeExtractionFromSource,
   type ExtractionCoverageResult,
 } from "./resume-extraction-coverage";
+import {
+  classifyResumeSections,
+  dedupeSkillTerms,
+  isCredentialEntity,
+  isRoleIdentityLike,
+  normalizeResumeValue,
+  semanticDedupe,
+  type ResumeSourceSection,
+} from "./resume-section-classifier";
 
 type RecordValue = Record<string, unknown>;
 
@@ -11,7 +20,8 @@ export type SourceEvidence = {
   sourceText: string;
   lineStart: number | null;
   lineEnd: number | null;
-  immutable: true;
+  section: ResumeSourceSection;
+  immutable: boolean;
 };
 
 export type CanonicalSourceRole = {
@@ -25,8 +35,14 @@ export type CanonicalSourceRole = {
   responsibilities: SourceEvidence[];
 };
 
+export type CanonicalSourceSkill = {
+  id: string;
+  canonicalName: string;
+  evidence: SourceEvidence[];
+};
+
 export type CanonicalSourceRecord = {
-  parserVersion: "source-first-v1";
+  parserVersion: "source-first-v2";
   contact: {
     fullName: SourceEvidence | null;
     email: SourceEvidence | null;
@@ -36,6 +52,10 @@ export type CanonicalSourceRecord = {
   roles: CanonicalSourceRole[];
   education: SourceEvidence[];
   credentials: SourceEvidence[];
+  skills: CanonicalSourceSkill[];
+  summaryFacts: SourceEvidence[];
+  sourceSections: Record<ResumeSourceSection, SourceEvidence[]>;
+  unclassified: SourceEvidence[];
   immutableFields: readonly [
     "contact.fullName",
     "contact.email",
@@ -73,18 +93,24 @@ function list(value: unknown): string[] {
 }
 
 function normalize(value: string): string {
-  return value
-    .toLowerCase()
-    .replace(/[\u2012-\u2015]/g, "-")
-    .replace(/\s+/g, " ")
-    .trim();
+  return normalizeResumeValue(value);
 }
 
 function sourceLines(source: string): string[] {
   return source.replace(/\r\n?/g, "\n").split("\n");
 }
 
-function evidence(source: string, value: unknown): SourceEvidence | null {
+function sectionForLine(source: string, lineNumber: number | null): ResumeSourceSection {
+  if (!lineNumber) return "unclassified";
+  const classified = classifyResumeSections(source).lines.find((item) => item.lineNumber === lineNumber);
+  return classified?.section ?? "unclassified";
+}
+
+function evidence(
+  source: string,
+  value: unknown,
+  options: { immutable?: boolean; section?: ResumeSourceSection } = {},
+): SourceEvidence | null {
   const resolved = text(value);
   if (!resolved) return null;
   const lines = sourceLines(source);
@@ -93,7 +119,8 @@ function evidence(source: string, value: unknown): SourceEvidence | null {
   let lineEnd: number | null = null;
 
   for (let index = 0; index < lines.length; index += 1) {
-    if (normalize(lines[index]).includes(needle)) {
+    const haystack = normalize(lines[index]);
+    if (haystack === needle || haystack.includes(needle)) {
       lineStart = index + 1;
       lineEnd = index + 1;
       break;
@@ -105,14 +132,15 @@ function evidence(source: string, value: unknown): SourceEvidence | null {
     sourceText: resolved,
     lineStart,
     lineEnd,
-    immutable: true,
+    section: options.section ?? sectionForLine(source, lineStart),
+    immutable: options.immutable ?? true,
   };
 }
 
 function splitNarrative(value: unknown): string[] {
   return text(value)
-    .split(/\n+/)
-    .map((item) => item.trim())
+    .split(/\n+|[•▪◦●]/)
+    .map((item) => item.replace(/^[-*]\s*/, "").trim())
     .filter(Boolean);
 }
 
@@ -154,24 +182,49 @@ function sourceBacked(source: string, value: string): boolean {
   return Boolean(candidate && normalize(source).includes(candidate));
 }
 
-function sourceBackedList(source: string, value: unknown): string[] {
-  const seen = new Set<string>();
-  const result: string[] = [];
-  for (const item of list(value)) {
-    const key = normalize(item);
-    if (!key || seen.has(key) || !sourceBacked(source, item)) continue;
-    seen.add(key);
-    result.push(item.trim());
-  }
-  return result;
+function significantWords(value: string): string[] {
+  const ignored = new Set([
+    "and", "the", "for", "with", "from", "into", "that", "this", "work", "worked", "performed",
+    "perform", "responsible", "using", "used", "support", "supported", "professional", "experienced",
+    "skilled", "experience", "proficient", "maintain", "maintained", "manage", "managed", "complete",
+    "completed", "ensure", "ensured", "provide", "provided", "execute", "executed", "assist", "assisted",
+    "coordinate", "coordinated", "including", "across", "through", "while", "daily",
+  ]);
+  return Array.from(new Set(normalize(value).split(" ")
+    .filter((word) => word.length > 3 && !ignored.has(word))));
 }
 
-function isCredentialValue(value: string): boolean {
-  const cleaned = value.trim();
-  if (!cleaned) return false;
-  if (/^(?:certifications?(?:\s*(?:&|and)\s*licenses?)?|licenses?|credentials)$/i.test(cleaned)) return false;
-  if (/^(?:technical\s+skills(?:\s*(?:&|and)\s*tools?)?|skills(?:\s*(?:&|and)\s*tools?)?|tools|software(?:\s*\/\s*cmms|\s*(?:&|and)\s*cmms)?|cmms|safety\s+training|training)$/i.test(cleaned)) return false;
-  return /\b(?:epa\s*608(?:\s+universal)?|osha\s*(?:10|30)|nccer|certification|certificate|license|licensed|certified)\b/i.test(cleaned);
+function numericClaims(value: string): string[] {
+  return Array.from(new Set(value.match(/\b\d[\d,]*(?:\.\d+)?(?:\s*(?:%|percent|years?|tons?|units?|properties|work orders?))?\b/gi) ?? []))
+    .map(normalize);
+}
+
+function rewriteSupported(candidate: string, sourceFacts: string[]): boolean {
+  const cleaned = text(candidate);
+  if (!cleaned || !sourceFacts.length) return false;
+  const sourceCombined = sourceFacts.join(" ");
+  if (numericClaims(cleaned).some((claim) => !normalize(sourceCombined).includes(claim))) return false;
+  const words = significantWords(cleaned);
+  if (!words.length) return true;
+  const sourceWords = new Set(sourceFacts.flatMap(significantWords));
+  const shared = words.filter((word) => sourceWords.has(word)).length;
+  return shared / words.length >= 0.55;
+}
+
+function supportedRewrittenNarrative(
+  candidate: unknown,
+  sourceFacts: SourceEvidence[],
+  identities: string[],
+): string[] {
+  const sourceValues = sourceFacts.map((item) => item.value);
+  return semanticDedupe(splitNarrative(candidate).filter((item) => {
+    if (isRoleIdentityLike(item, identities)) return false;
+    return rewriteSupported(item, sourceValues);
+  }), 0.78).slice(0, 8);
+}
+
+function sourceBackedList(source: string, value: unknown): string[] {
+  return dedupeSkillTerms(list(value).filter((item) => sourceBacked(source, item)));
 }
 
 function roleIdentityKey(role: RecordValue): string {
@@ -219,6 +272,46 @@ function canonicalRoleToPrefill(role: CanonicalSourceRole): RecordValue {
   };
 }
 
+function classifiedEvidence(source: string, section: ResumeSourceSection): SourceEvidence[] {
+  const classification = classifyResumeSections(source);
+  return classification.sections[section]
+    .filter((item) => item.kind !== "heading")
+    .map((item) => ({
+      value: item.value,
+      sourceText: item.value,
+      lineStart: item.lineNumber,
+      lineEnd: item.lineNumber,
+      section,
+      immutable: false,
+    }));
+}
+
+function canonicalCredentials(sourceResumeText: string): SourceEvidence[] {
+  const classification = classifyResumeSections(sourceResumeText);
+  return classification.credentialEntities
+    .filter(isCredentialEntity)
+    .map((item) => evidence(sourceResumeText, item, { immutable: true, section: "credentials" }))
+    .filter((item): item is SourceEvidence => Boolean(item));
+}
+
+function canonicalEducation(sourceResumeText: string, parsedEducation: unknown): SourceEvidence[] {
+  const classified = classifiedEvidence(sourceResumeText, "education");
+  const values = classified.length ? classified.map((item) => item.value) : splitNarrative(parsedEducation);
+  return semanticDedupe(values, 0.9)
+    .map((item) => evidence(sourceResumeText, item, { immutable: true, section: "education" }))
+    .filter((item): item is SourceEvidence => Boolean(item));
+}
+
+function canonicalSkills(sourceResumeText: string): CanonicalSourceSkill[] {
+  const classification = classifyResumeSections(sourceResumeText);
+  return classification.skillEntities.map((canonicalName, index) => ({
+    id: `source-skill-${index + 1}`,
+    canonicalName,
+    evidence: classifiedEvidence(sourceResumeText, "skills")
+      .filter((item) => normalize(item.value).includes(normalize(canonicalName)) || normalize(canonicalName).includes(normalize(item.value))),
+  }));
+}
+
 export function buildCanonicalSourceRecord(sourceResumeText: string): CanonicalSourceRecord {
   const seed = {
     roles: [],
@@ -241,44 +334,51 @@ export function buildCanonicalSourceRecord(sourceResumeText: string): CanonicalS
     : [];
 
   const roles: CanonicalSourceRole[] = parsedRoles.flatMap((role, index) => {
-    const employer = evidence(sourceResumeText, role.employer);
-    const jobTitle = evidence(sourceResumeText, role.jobTitle);
-    const startDate = evidence(sourceResumeText, role.startDate);
-    const endDate = evidence(sourceResumeText, role.endDate);
+    const employer = evidence(sourceResumeText, role.employer, { immutable: true, section: "experience" });
+    const jobTitle = evidence(sourceResumeText, role.jobTitle, { immutable: true, section: "experience" });
+    const startDate = evidence(sourceResumeText, role.startDate, { immutable: true, section: "experience" });
+    const endDate = evidence(sourceResumeText, role.endDate, { immutable: true, section: "experience" });
     if (!employer || !jobTitle || !startDate || !endDate) return [];
+
+    const identities = [employer.value, jobTitle.value, startDate.value, endDate.value, text(role.location)];
+    const responsibilities = semanticDedupe(splitNarrative(role.responsibilities)
+      .filter((item) => !isRoleIdentityLike(item, identities)), 0.78)
+      .map((item) => evidence(sourceResumeText, item, { immutable: false, section: "experience" }))
+      .filter((item): item is SourceEvidence => Boolean(item));
+
     return [{
       id: `source-role-${index + 1}`,
       employer,
       jobTitle,
-      location: evidence(sourceResumeText, role.location),
+      location: evidence(sourceResumeText, role.location, { immutable: true, section: "experience" }),
       startDate,
       endDate,
       current: role.current === true,
-      responsibilities: splitNarrative(role.responsibilities)
-        .map((item) => evidence(sourceResumeText, item))
-        .filter((item): item is SourceEvidence => Boolean(item)),
+      responsibilities,
     }];
   });
 
-  const field = record(parsed.fieldValue);
-  const credentials = list(field.certifications)
-    .filter(isCredentialValue)
-    .map((item) => evidence(sourceResumeText, item))
-    .filter((item): item is SourceEvidence => Boolean(item));
-  const licenseValue = text(field.licenses);
-  const license = isCredentialValue(licenseValue) ? evidence(sourceResumeText, licenseValue) : null;
-  if (license && !credentials.some((item) => normalize(item.value) === normalize(license.value))) {
-    credentials.push(license);
-  }
+  const credentials = canonicalCredentials(sourceResumeText);
+  const education = canonicalEducation(sourceResumeText, parsed.education);
+  const skills = canonicalSkills(sourceResumeText);
+  const summaryFacts = classifiedEvidence(sourceResumeText, "summary");
+  const classification = classifyResumeSections(sourceResumeText);
+  const sourceSections = {
+    header: classifiedEvidence(sourceResumeText, "header"),
+    summary: summaryFacts,
+    credentials: classifiedEvidence(sourceResumeText, "credentials"),
+    skills: classifiedEvidence(sourceResumeText, "skills"),
+    experience: classifiedEvidence(sourceResumeText, "experience"),
+    education: classifiedEvidence(sourceResumeText, "education"),
+    training: classifiedEvidence(sourceResumeText, "training"),
+    additional: classifiedEvidence(sourceResumeText, "additional"),
+    unclassified: classifiedEvidence(sourceResumeText, "unclassified"),
+  } satisfies Record<ResumeSourceSection, SourceEvidence[]>;
 
-  const education = splitNarrative(parsed.education)
-    .map((item) => evidence(sourceResumeText, item))
-    .filter((item): item is SourceEvidence => Boolean(item));
-
-  const fullName = evidence(sourceResumeText, firstFullName(sourceResumeText));
-  const email = evidence(sourceResumeText, firstEmail(sourceResumeText));
-  const phone = evidence(sourceResumeText, firstPhone(sourceResumeText));
-  const cityState = evidence(sourceResumeText, firstCityState(sourceResumeText));
+  const fullName = evidence(sourceResumeText, firstFullName(sourceResumeText), { immutable: true, section: "header" });
+  const email = evidence(sourceResumeText, firstEmail(sourceResumeText), { immutable: true, section: "header" });
+  const phone = evidence(sourceResumeText, firstPhone(sourceResumeText), { immutable: true, section: "header" });
+  const cityState = evidence(sourceResumeText, firstCityState(sourceResumeText), { immutable: true, section: "header" });
 
   const prefill: RecordValue = {
     trade: "",
@@ -290,27 +390,34 @@ export function buildCanonicalSourceRecord(sourceResumeText: string): CanonicalS
       phone: phone?.value ?? "",
       cityState: cityState?.value ?? "",
     },
-    summaryNotes: "",
+    summaryNotes: summaryFacts.map((item) => item.value).join("\n"),
     roles: roles.map(canonicalRoleToPrefill),
     fieldValue: {
       certifications: credentials.map((item) => item.value),
       licenses: "",
       tools: [],
       equipmentSystems: [],
-      technicalSkills: [],
+      technicalSkills: skills.map((item) => item.canonicalName),
       software: [],
       safety: [],
     },
     education: education.map((item) => item.value).join("\n"),
-    additionalDetails: "",
+    additionalDetails: classification.sections.additional
+      .filter((item) => item.kind !== "heading" && !isCredentialEntity(item.value))
+      .map((item) => item.value)
+      .join("\n"),
   };
 
   return {
-    parserVersion: "source-first-v1",
+    parserVersion: "source-first-v2",
     contact: { fullName, email, phone, cityState },
     roles,
     education,
     credentials,
+    skills,
+    summaryFacts,
+    sourceSections,
+    unclassified: sourceSections.unclassified,
     immutableFields: [
       "contact.fullName",
       "contact.email",
@@ -347,8 +454,17 @@ export function mergeCanonicalWithAiEnrichment(
   const roles = canonical.roles.map((sourceRole) => {
     const aiRole = matchingAiRole(aiRoles, sourceRole);
     const canonicalRole = canonicalRoleToPrefill(sourceRole);
+    const identities = [
+      sourceRole.employer.value,
+      sourceRole.jobTitle.value,
+      sourceRole.startDate.value,
+      sourceRole.endDate.value,
+      sourceRole.location?.value ?? "",
+    ];
+    const rewritten = supportedRewrittenNarrative(aiRole.responsibilities, sourceRole.responsibilities, identities);
     return {
       ...canonicalRole,
+      responsibilities: (rewritten.length ? rewritten : sourceRole.responsibilities.map((item) => item.value)).join("\n"),
       employmentType: sourceBacked(sourceResumeText, text(aiRole.employmentType)) ? text(aiRole.employmentType) : "",
       equipment: sourceBacked(sourceResumeText, text(aiRole.equipment)) ? text(aiRole.equipment) : "",
       systems: sourceBacked(sourceResumeText, text(aiRole.systems)) ? text(aiRole.systems) : "",
@@ -367,21 +483,37 @@ export function mergeCanonicalWithAiEnrichment(
     cityState: canonical.contact.cityState?.value ?? text(aiContact.cityState),
   };
 
+  const canonicalSkillNames = canonical.skills.map((item) => item.canonicalName);
+  const aiSkills = [
+    ...sourceBackedList(sourceResumeText, aiField.tools),
+    ...sourceBackedList(sourceResumeText, aiField.equipmentSystems),
+    ...sourceBackedList(sourceResumeText, aiField.technicalSkills),
+    ...sourceBackedList(sourceResumeText, aiField.software),
+  ];
+  const technicalSkills = dedupeSkillTerms([...canonicalSkillNames, ...aiSkills]);
+  const aiSummary = text(ai.summaryNotes);
+  const summarySource = canonical.summaryFacts.map((item) => item.value);
+  const summaryNotes = aiSummary && rewriteSupported(aiSummary, summarySource.length ? summarySource : [sourceResumeText])
+    ? aiSummary
+    : canonical.summaryFacts.map((item) => item.value).join("\n");
+
   return {
     ...ai,
     contact,
+    summaryNotes,
     roles,
     fieldValue: {
       ...aiField,
       certifications: canonical.credentials.map((item) => item.value),
       licenses: "",
-      tools: sourceBackedList(sourceResumeText, aiField.tools),
-      equipmentSystems: sourceBackedList(sourceResumeText, aiField.equipmentSystems),
-      technicalSkills: sourceBackedList(sourceResumeText, aiField.technicalSkills),
-      software: sourceBackedList(sourceResumeText, aiField.software),
-      safety: sourceBackedList(sourceResumeText, aiField.safety),
+      tools: [],
+      equipmentSystems: [],
+      technicalSkills,
+      software: [],
+      safety: [],
     },
     education: canonical.education.map((item) => item.value).join("\n"),
+    additionalDetails: text(canonical.prefill.additionalDetails),
   };
 }
 
@@ -405,12 +537,24 @@ export function validateCanonicalImmutability(
     if (text(role.startDate) !== sourceRole.startDate.value) issues.push(`roles.${index}.startDate`);
     if (text(role.endDate) !== sourceRole.endDate.value) issues.push(`roles.${index}.endDate`);
     if ((role.current === true) !== sourceRole.current) issues.push(`roles.${index}.current`);
+
+    const identities = [
+      sourceRole.employer.value,
+      sourceRole.jobTitle.value,
+      sourceRole.startDate.value,
+      sourceRole.endDate.value,
+      sourceRole.location?.value ?? "",
+    ];
+    if (splitNarrative(role.responsibilities).some((item) => isRoleIdentityLike(item, identities))) {
+      issues.push(`roles.${index}.responsibility_identity_contamination`);
+    }
   });
 
   const field = record(root.fieldValue);
   const credentials = list(field.certifications);
   const expectedCredentials = canonical.credentials.map((item) => item.value);
   if (JSON.stringify(credentials) !== JSON.stringify(expectedCredentials)) issues.push("credentials");
+  if (credentials.some((item) => !isCredentialEntity(item))) issues.push("credential_contamination");
   if (text(root.education) !== canonical.education.map((item) => item.value).join("\n")) issues.push("education");
 
   const contact = record(root.contact);

@@ -13,6 +13,9 @@ Atlanta, GA
 jordan@example.com | (404) 555-0100
 BUILDING EQUIPMENT MECHANIC / HVAC & FACILITIES MAINTENANCE
 
+PROFESSIONAL SUMMARY
+EPA 608 Universal-certified HVAC and facilities maintenance professional with 9+ years of experience performing preventive maintenance and repairs.
+
 CERTIFICATIONS
 EPA 608 Universal Certification
 OSHA 10
@@ -46,7 +49,7 @@ HVAC Technical Certification
 
 test("canonical parser establishes complete structure before AI", () => {
   const canonical = buildCanonicalSourceRecord(source);
-  assert.equal(canonical.parserVersion, "source-first-v1");
+  assert.equal(canonical.parserVersion, "source-first-v2");
   assert.equal(canonical.coverage.ready, true, JSON.stringify(canonical.coverage.issues));
   assert.equal(canonical.roles.length, 4);
   assert.equal(canonical.roles[0].employer.value, "American Campus Communities");
@@ -59,6 +62,8 @@ test("canonical parser establishes complete structure before AI", () => {
     canonical.credentials.map((item) => item.value),
     ["EPA 608 Universal Certification", "OSHA 10", "HVAC Technical Certificate"],
   );
+  assert.equal(canonical.credentials.some((item) => /9\+ years/i.test(item.value)), false);
+  assert.match(canonical.summaryFacts.map((item) => item.value).join(" "), /9\+ years/i);
 });
 
 test("AI cannot add delete rename reorder or redates canonical roles", () => {
@@ -116,7 +121,7 @@ test("AI cannot add delete rename reorder or redates canonical roles", () => {
   assert.equal(coverage.ready, true, JSON.stringify(coverage.issues));
 });
 
-test("AI enrichment may classify only values literally backed by source", () => {
+test("AI enrichment keeps only source-backed descriptive values", () => {
   const canonical = buildCanonicalSourceRecord(source);
   const ai = {
     trade: "HVAC & Refrigeration",
@@ -139,6 +144,6 @@ test("AI enrichment may classify only values literally backed by source", () => 
   const field = merged.fieldValue as Record<string, unknown>;
   assert.equal(roles[2].equipment, "heat pumps");
   assert.equal(roles[0].equipment, "");
-  assert.deepEqual(field.equipmentSystems, ["heat pumps"]);
+  assert.deepEqual(field.technicalSkills, ["heat pumps"]);
   assert.deepEqual(field.software, []);
 });
