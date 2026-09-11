@@ -60,9 +60,38 @@ export default function Home() {
             />
           </span>
         </Link>
-        <div className={styles.headerSignal} aria-hidden="true" data-product-positioning="BUILT FOR THE TRADES. READY FOR THE JOB.">
-          <strong>BUILT BY HUSTLE.</strong>
-          <span>BACKED BY TRADES.</span>
+        <div
+          aria-hidden="true"
+          data-product-positioning="BUILT BY HUSTLE. BACKED BY TRADES."
+          data-header-accent="yellow-red-blue-both-sides"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 'clamp(5px,1vw,10px)',
+            marginRight: 'auto',
+            minWidth: 0,
+            color: '#fff',
+            fontFamily: 'var(--font-display), Impact, sans-serif',
+            fontSize: 'clamp(9px,1.15vw,18px)',
+            letterSpacing: '.045em',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          <span style={{ display: 'grid', gap: '2px', flex: '0 0 auto' }}>
+            <i style={{ display: 'block', width: 'clamp(12px,2vw,28px)', height: '2px', backgroundColor: '#f1c357' }} />
+            <i style={{ display: 'block', width: 'clamp(12px,2vw,28px)', height: '2px', backgroundColor: '#d71920' }} />
+            <i style={{ display: 'block', width: 'clamp(12px,2vw,28px)', height: '2px', backgroundColor: '#2671a7' }} />
+          </span>
+          <span style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.04, textAlign: 'center' }}>
+            <strong style={{ color: '#fff' }}>BUILT BY HUSTLE.</strong>
+            <span style={{ color: '#f1c357' }}>BACKED BY TRADES.</span>
+          </span>
+          <span style={{ display: 'grid', gap: '2px', flex: '0 0 auto' }}>
+            <i style={{ display: 'block', width: 'clamp(12px,2vw,28px)', height: '2px', backgroundColor: '#f1c357' }} />
+            <i style={{ display: 'block', width: 'clamp(12px,2vw,28px)', height: '2px', backgroundColor: '#d71920' }} />
+            <i style={{ display: 'block', width: 'clamp(12px,2vw,28px)', height: '2px', backgroundColor: '#2671a7' }} />
+          </span>
         </div>
         <nav className={styles.nav} aria-label="Primary navigation">
           <Link href="#sample-resume">See a sample</Link>
