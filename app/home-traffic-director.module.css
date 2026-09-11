@@ -111,9 +111,6 @@
 }
 .customerProof strong{display:block;color:#f1c357;font-size:13px;line-height:1.35;letter-spacing:.075em}
 .customerProof p{margin:5px 0 0;color:#dbe8f1;font-size:12px;line-height:1.5}
-.founderQuote{margin:2px 0 0;padding:12px 14px;border:1px solid #d7e1e8;border-radius:10px;background:#f6f9fb}
-.founderQuote p{margin:0;color:#163650;font-size:13px;font-weight:800;line-height:1.5}
-.founderQuote cite{display:block;margin-top:7px;color:#607487;font-size:11px;font-style:normal;font-weight:800}
 @media(max-width:1100px){.headerSignal{display:none}}
 @media(max-width:720px){
   .header{min-height:86px;padding-block:7px}

@@ -130,10 +130,6 @@ export default function Home() {
               <strong>500+ TRADESPEOPLE HELPED — AND COUNTING</strong>
               <p>Real trade experience deserves a resume that gets taken seriously.</p>
             </div>
-            <blockquote className={styles.founderQuote}>
-              <p>“I built this for the worker who knows the job but struggles to explain it on paper.”</p>
-              <cite>— Zachary Ellis, Founder, TRADE HUSTL3</cite>
-            </blockquote>
           </aside>
         </div>
       </section>

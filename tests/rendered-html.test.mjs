@@ -239,7 +239,7 @@ test("homepage leads with preview-before-payment proof before free resources", a
   assert.match(html, /blue hose on the left low-side port/i);
   assert.match(html, /optimized\/hustl3-bot\.webp/i);
   assert.match(html, /500\+ TRADESPEOPLE HELPED — AND COUNTING/i);
-  assert.match(html, /Zachary Ellis, Founder, TRADE HUSTL3/i);
+  assert.doesNotMatch(html, /Zachary Ellis|Founder, TRADE HUSTL3/i);
   assert.match(html, /BUILT FOR THE TRADES\.[\s\S]*READY FOR THE JOB\./i);
   assert.ok(html.indexOf('id="sample-resume"') < html.indexOf('id="guide-title"'));
 });
