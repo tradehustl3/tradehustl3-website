@@ -29,3 +29,15 @@
 @media(max-width:1050px){.hero{grid-template-columns:1fr}.heroVisual{width:min(720px,100%)}.tradeStrip{align-items:flex-start;flex-direction:column}}
 @media(max-width:720px){.brand{padding:3px 8px}.brand img{width:clamp(112px,34vw,148px)!important;height:42px!important}.tradeVisual{margin-top:24px;border-radius:14px}.tradeVisualLabel{align-items:flex-start;flex-direction:column;gap:3px}.tradeVisualLabel span{font-size:11px}.botCard{grid-template-columns:52px minmax(0,1fr)}.botAvatar{width:52px;height:52px}.tradeStrip{padding:18px}.tradeStrip ul{display:grid;grid-template-columns:1fr 1fr;width:100%}.tradeStrip li{display:flex;align-items:center}}
 @media(prefers-reduced-motion:reduce){.tradeVisual,.botCard{scroll-behavior:auto}}
+
+
+/* Desktop hero lockup and resilient header wordmark. */
+.brand{gap:10px;padding:4px 14px 4px 5px}
+.brandBadge{display:grid;place-items:center;width:50px;height:50px;border:2px solid #f5c35b;border-radius:50%;background:#fff;box-shadow:0 0 0 3px rgba(245,195,91,.13)}
+.brandBadge img{width:44px;height:44px;border-radius:50%}
+.brandName{display:grid;gap:1px;line-height:1}
+.brandName strong{color:#fff;font-family:var(--font-display),Impact,sans-serif;font-size:23px;font-weight:400;letter-spacing:.035em}
+.brandName small{color:#f5c35b;font-family:var(--font-body),Arial,sans-serif;font-size:10px;font-weight:900;letter-spacing:.16em}
+.hero h1{font-size:clamp(43px,3.9vw,64px);line-height:.96}
+.hero h1>span{white-space:nowrap}
+@media(max-width:720px){.brand{gap:7px;padding:3px 8px 3px 3px}.brandBadge{width:42px;height:42px}.brandBadge img{width:37px!important;height:37px!important}.brandName strong{font-size:17px}.brandName small{font-size:8px;letter-spacing:.1em}.hero h1{font-size:clamp(43px,13.5vw,64px)}.hero h1>span{white-space:normal}}

@@ -49,14 +49,13 @@ export default function Home() {
 
       <header className={styles.header}>
         <Link className={styles.brand} href="#top" aria-label="TRADE HUSTL3 Resume Builder home">
-          <Image
-            src="/resume-builder-logo-llc.png"
-            alt="TRADE HUSTL3 Resume Builder logo"
-            width={190}
-            height={56}
-            priority
-            style={{ width: 'clamp(128px, 17vw, 190px)', height: '50px', objectFit: 'contain', objectPosition: 'left center', borderRadius: 0 }}
-          />
+          <span className={styles.brandBadge}>
+            <Image src="/optimized/trade-hustl3-logo.webp" alt="" width={48} height={48} priority />
+          </span>
+          <span className={styles.brandName}>
+            <strong>TRADE HUSTL3</strong>
+            <small>RESUME BUILDER</small>
+          </span>
         </Link>
         <nav className={styles.nav} aria-label="Primary navigation">
           <Link href="#sample-resume">See a sample</Link>
