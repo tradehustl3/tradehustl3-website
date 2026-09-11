@@ -53,3 +53,70 @@
 .heroProof li{color:#455d70;font-size:12px;font-weight:800}
 .heroProof li:before{content:"✓";margin-right:6px;color:#147744}
 @media(max-width:720px){.brandLogo{width:clamp(96px,27vw,124px)!important;height:auto!important}.heroProof{padding:15px}.heroProof ul{display:grid;gap:7px}}
+
+
+/* Branded header and verified field-proof treatment */
+.header{
+  isolation:isolate;
+  min-height:104px;
+  border-bottom:3px solid #d6a52a;
+  background-color:#071d31;
+  background-image:
+    linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px),
+    radial-gradient(circle at 18% 0,rgba(34,104,157,.34),transparent 42%);
+  background-size:32px 32px,32px 32px,auto;
+}
+.brand{flex:0 0 auto}
+.brandLogoRing{
+  display:grid;
+  place-items:center;
+  width:126px;
+  height:88px;
+  padding:8px 13px;
+  overflow:visible;
+  border:2px solid #d6a52a;
+  border-radius:50%;
+  background:rgba(4,20,34,.56);
+  box-shadow:0 0 0 4px rgba(214,165,42,.13),inset 0 0 22px rgba(214,165,42,.09),0 10px 24px rgba(0,0,0,.24);
+}
+.brandLogo{
+  width:100%!important;
+  height:100%!important;
+  object-fit:contain;
+  object-position:center;
+  filter:drop-shadow(0 4px 8px rgba(0,0,0,.28));
+}
+.headerSignal{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin-right:auto;
+  padding-left:2px;
+  color:#fff;
+  font-family:var(--font-display),Impact,sans-serif;
+  font-size:clamp(15px,1.3vw,20px);
+  letter-spacing:.055em;
+  white-space:nowrap;
+}
+.headerSignal:before{content:"";width:28px;height:2px;background:#d6a52a;box-shadow:0 5px 0 #d71920}
+.headerSignal span{color:#f1c357}
+.customerProof{
+  margin-top:7px;
+  padding:15px 16px;
+  border-left:4px solid #d71920;
+  border-radius:4px 10px 10px 4px;
+  background:#071d31;
+  color:#fff;
+}
+.customerProof strong{display:block;color:#f1c357;font-size:13px;line-height:1.35;letter-spacing:.075em}
+.customerProof p{margin:5px 0 0;color:#dbe8f1;font-size:12px;line-height:1.5}
+.founderQuote{margin:2px 0 0;padding:12px 14px;border:1px solid #d7e1e8;border-radius:10px;background:#f6f9fb}
+.founderQuote p{margin:0;color:#163650;font-size:13px;font-weight:800;line-height:1.5}
+.founderQuote footer{margin-top:7px;color:#607487;font-size:11px;font-weight:800}
+@media(max-width:1100px){.headerSignal{display:none}}
+@media(max-width:720px){
+  .header{min-height:86px;padding-block:7px}
+  .brandLogoRing{width:104px;height:72px;padding:7px 11px}
+  .brandLogo{width:100%!important;height:100%!important}
+}

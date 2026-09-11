@@ -49,15 +49,21 @@ export default function Home() {
 
       <header className={styles.header}>
         <Link className={styles.brand} href="#top" aria-label="TRADE HUSTL3 Resume Builder home">
-          <Image
-            className={styles.brandLogo}
-            src="/optimized/resume-builder-logo-header.webp"
-            alt="TRADE HUSTL3 Resume Builder logo"
-            width={500}
-            height={410}
-            priority
-          />
+          <span className={styles.brandLogoRing}>
+            <Image
+              className={styles.brandLogo}
+              src="/optimized/resume-builder-logo-header.webp"
+              alt="TRADE HUSTL3 Resume Builder logo"
+              width={500}
+              height={410}
+              priority
+            />
+          </span>
         </Link>
+        <div className={styles.headerSignal} aria-hidden="true">
+          <strong>BUILT FOR THE TRADES.</strong>
+          <span>READY FOR THE JOB.</span>
+        </div>
         <nav className={styles.nav} aria-label="Primary navigation">
           <Link href="#sample-resume">See a sample</Link>
           <Link href="/book">The Book</Link>
@@ -120,6 +126,14 @@ export default function Home() {
               <li>ATS-friendly structure</li>
               <li>PDF + editable DOCX</li>
             </ul>
+            <div className={styles.customerProof}>
+              <strong>500+ TRADESPEOPLE HELPED — AND COUNTING</strong>
+              <p>Real trade experience deserves a resume that gets taken seriously.</p>
+            </div>
+            <blockquote className={styles.founderQuote}>
+              <p>“I built this for the worker who knows the job but struggles to explain it on paper.”</p>
+              <footer>— Zachary Ellis, Founder, TRADE HUSTL3</footer>
+            </blockquote>
           </aside>
         </div>
       </section>
