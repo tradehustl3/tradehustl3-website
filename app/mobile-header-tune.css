@@ -1,0 +1,109 @@
+@media (max-width: 720px) {
+  [data-home-header] {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 6px !important;
+    min-height: 62px !important;
+    padding: 4px 8px !important;
+  }
+
+  [data-header-brand] {
+    min-width: 0 !important;
+    padding: 1px 2px !important;
+    border-radius: 10px !important;
+    justify-self: auto !important;
+    flex: 0 0 auto !important;
+    z-index: 2;
+  }
+
+  [data-header-logo-ring] {
+    width: 58px !important;
+    height: 46px !important;
+    padding: 1px 3px !important;
+  }
+
+  [data-header-motto] {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    position: absolute !important;
+    left: 50% !important;
+    top: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    width: max-content !important;
+    max-width: calc(100% - 176px) !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    gap: 4px !important;
+    justify-content: center !important;
+    font-size: 7.4px !important;
+    letter-spacing: .015em !important;
+    line-height: 1 !important;
+    z-index: 1;
+  }
+
+  [data-header-motto] [data-accent-lines] {
+    gap: 2px !important;
+  }
+
+  [data-header-motto] [data-accent-lines] i {
+    width: 9px !important;
+    height: 1.5px !important;
+  }
+
+  [data-header-nav] {
+    width: auto !important;
+    min-width: 0 !important;
+    margin-left: auto !important;
+    justify-content: flex-end !important;
+    gap: 0 !important;
+    flex: 0 0 auto !important;
+    z-index: 2;
+  }
+
+  [data-header-nav] > a:not([href="/resume-builder"]) {
+    display: none !important;
+  }
+
+  [data-header-nav] a[href="/resume-builder"] {
+    display: inline-flex !important;
+    width: 94px !important;
+    max-width: 94px !important;
+    min-width: 0 !important;
+    min-height: 34px !important;
+    padding: 7px 5px !important;
+    font-size: 8px !important;
+    line-height: 1.08 !important;
+    text-align: center !important;
+    white-space: normal !important;
+  }
+
+  [data-home-header] + #top {
+    padding-top: 30px !important;
+  }
+}
+
+@media (max-width: 380px) {
+  [data-header-logo-ring] {
+    width: 54px !important;
+    height: 43px !important;
+  }
+
+  [data-header-motto] {
+    max-width: calc(100% - 164px) !important;
+    font-size: 7px !important;
+    gap: 3px !important;
+  }
+
+  [data-header-motto] [data-accent-lines] i {
+    width: 7px !important;
+  }
+
+  [data-header-nav] a[href="/resume-builder"] {
+    width: 88px !important;
+    max-width: 88px !important;
+    font-size: 7.6px !important;
+  }
+}
