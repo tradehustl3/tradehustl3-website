@@ -73,7 +73,7 @@ export default function Home() {
           <ul className={styles.chips} aria-label="Resume Builder features">{tradeChips.map((chip) => <li key={chip}>{chip}</li>)}</ul>
         </div>
         <div className={styles.heroVisual}>
-          <div className={styles.heroImageWrap}><Image src="/optimized/resume-workspace.webp" alt="Skilled-trades workspace with safety gear and a laptop" fill sizes="(max-width: 900px) 92vw, 46vw" priority /></div>
+          <div className={styles.heroImageWrap}><Image src="/optimized/trade-hustl3-workspace.avif" alt="TRADE HUSTL3 skilled-trades workspace with safety vest, hard hat, work boots, tools, and career laptop" fill sizes="(max-width: 900px) 92vw, 46vw" priority /></div>
           <div className={styles.heroStatus}><span>HUSTL3 BOT</span><strong>Trade experience in. Stronger resume out.</strong></div>
         </div>
       </section>
