@@ -48,9 +48,15 @@ export default function Home() {
       <CtaAnalytics />
 
       <header className={styles.header}>
-        <Link className={styles.brand} href="#top" aria-label="TRADE HUSTL3 home">
-          <Image src="/optimized/trade-hustl3-logo.webp" alt="TRADE HUSTL3 logo" width={48} height={48} priority />
-          <span>TRADE HUSTL<span>3</span></span>
+        <Link className={styles.brand} href="#top" aria-label="TRADE HUSTL3 Resume Builder home">
+          <Image
+            src="/resume-builder-logo-llc.png"
+            alt="TRADE HUSTL3 Resume Builder logo"
+            width={190}
+            height={56}
+            priority
+            style={{ width: 'clamp(128px, 17vw, 190px)', height: '50px', objectFit: 'contain', objectPosition: 'left center', borderRadius: 0 }}
+          />
         </Link>
         <nav className={styles.nav} aria-label="Primary navigation">
           <Link href="#sample-resume">See a sample</Link>
