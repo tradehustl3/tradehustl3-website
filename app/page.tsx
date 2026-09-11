@@ -5,10 +5,28 @@ import styles from './home-traffic-director.module.css';
 
 const tradeChips = ['HVAC & Refrigeration', 'Electrical', 'Plumbing', 'Construction & Carpentry', 'Facilities Maintenance', 'Welding & Fabrication', 'General Labor / Maintenance Tech'];
 
-const processSteps = [
-  ['01', 'Upload or start from scratch', 'Bring your current resume or answer a few guided questions about your trade, tools, certifications, and experience.'],
-  ['02', 'HUSTL3 BOT builds the preview', 'Your real field experience is organized into stronger, trade-specific resume language and an ATS-friendly layout.'],
-  ['03', 'Unlock when you are ready', 'Review the protected preview first. Unlock the clean PDF + editable DOCX for one $9.99 payment.'],
+const processSteps: { step: string; title: string; copy: string; icon: 'upload' | 'bot' | 'unlock'; accent: 'accentBlue' | 'accentRed' | 'accentGold' }[] = [
+  {
+    step: '01',
+    title: 'Upload or start from scratch',
+    copy: 'Bring your current resume or answer a few guided questions about your trade, tools, certifications, and experience.',
+    icon: 'upload',
+    accent: 'accentBlue',
+  },
+  {
+    step: '02',
+    title: 'HUSTL3 BOT builds the preview',
+    copy: 'Your real field experience is organized into stronger, trade-specific resume language and an ATS-friendly layout.',
+    icon: 'bot',
+    accent: 'accentRed',
+  },
+  {
+    step: '03',
+    title: 'Unlock when you are ready',
+    copy: 'Review the protected preview first. Unlock the clean PDF + editable DOCX for one $9.99 payment.',
+    icon: 'unlock',
+    accent: 'accentGold',
+  },
 ];
 
 const proofPoints = [
@@ -39,6 +57,31 @@ function AnalyticsLink({ href, location, children, className, event = 'cta_click
     <Link href={href} className={className} data-analytics-event={event} data-location={location} data-destination={href} data-item={item}>
       {children}
     </Link>
+  );
+}
+
+function ProcessIcon({ type }: { type: 'upload' | 'bot' | 'unlock' }) {
+  if (type === 'upload') {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true" width="24" height="24">
+        <path d="M12 3v10m0-10 4 4m-4-4-4 4M5 15v3a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-3" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    );
+  }
+
+  if (type === 'bot') {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true" width="24" height="24">
+        <rect x="5" y="7" width="14" height="10" rx="3" fill="none" stroke="currentColor" strokeWidth="2" />
+        <path d="M12 4v3M9 12h.01M15 12h.01M9 17v2M15 17v2M5 12H3M21 12h-2" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" width="24" height="24">
+      <path d="M7 11V8a5 5 0 0 1 10 0v3M6 11h12v8H6zM10 15l1.5 1.5L14.5 13.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
   );
 }
 
@@ -279,7 +322,26 @@ export default function Home() {
           <h2 id="process-title">Three steps. One stronger resume.</h2>
         </div>
         <ol className={styles.processGrid}>
-          {processSteps.map(([step, title, copy]) => <li key={step}><span>{step}</span><h3>{title}</h3><p>{copy}</p></li>)}
+          {processSteps.map(({ step, title, copy, icon, accent }, index) => (
+            <li key={step} className={`${styles.processCard} ${styles[accent]}`}>
+              <div className={styles.processConnector} aria-hidden="true" />
+              <div className={styles.processTop}>
+                <span className={styles.processStep}>{step}</span>
+                <div className={styles.processIcon}>
+                  <ProcessIcon type={icon} />
+                </div>
+              </div>
+
+              <h3>{title}</h3>
+              <p>{copy}</p>
+
+              {index < processSteps.length - 1 ? (
+                <div className={styles.processArrow} aria-hidden="true">
+                  <span />
+                </div>
+              ) : null}
+            </li>
+          ))}
         </ol>
         <AnalyticsLink href="/resume-builder" location="process" className={styles.secondaryButton}>Start My Resume <span aria-hidden="true">→</span></AnalyticsLink>
       </section>

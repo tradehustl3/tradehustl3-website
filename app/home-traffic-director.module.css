@@ -117,3 +117,62 @@
   .brandLogoRing{width:104px;height:72px;padding:7px 11px}
   .brandLogo{width:100%!important;height:100%!important}
 }
+
+
+/* How It Works: layered cards with icons, brand accents, and a blueprint backdrop */
+.process{
+  position:relative;
+  padding:clamp(74px,8.5vw,124px) clamp(22px,6vw,94px);
+  background:
+    radial-gradient(circle at top right,rgba(38,113,167,.10),transparent 30%),
+    linear-gradient(180deg,#f8fbfd 0%,#eef4f8 100%);
+  color:#0b1f33;
+  text-align:center;
+  overflow:hidden;
+}
+.process:before{
+  content:"";
+  position:absolute;
+  inset:0;
+  background-image:
+    linear-gradient(rgba(23,79,126,.05) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(23,79,126,.05) 1px,transparent 1px);
+  background-size:26px 26px;
+  pointer-events:none;
+  opacity:.35;
+}
+.sectionHeading{position:relative;z-index:1;max-width:900px;margin:0 auto 44px}
+.processGrid{position:relative;z-index:1;display:grid;grid-template-columns:repeat(3,1fr);gap:22px;max-width:1240px;margin:0 auto 34px;padding:0;list-style:none;text-align:left}
+.processGrid li.processCard{position:relative;min-height:290px;padding:26px 24px 30px;border:1px solid #d5e0e8;border-radius:18px;background:rgba(255,255,255,.92);box-shadow:0 16px 38px rgba(10,38,59,.08);backdrop-filter:blur(2px)}
+.processCard:before{content:"";position:absolute;top:0;left:0;right:0;height:5px;border-radius:18px 18px 0 0}
+.accentBlue:before{background:linear-gradient(90deg,#2671a7,#5aa2d6)}
+.accentRed:before{background:linear-gradient(90deg,#d71920,#ef4b43)}
+.accentGold:before{background:linear-gradient(90deg,#f1c357,#ffd980)}
+.processTop{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:28px}
+.processStep{display:inline-grid;place-items:center;width:56px;height:56px;border-radius:50%;background:#0b2c49;color:#fff;font-size:18px;font-weight:950;letter-spacing:.04em;box-shadow:0 10px 22px rgba(11,44,73,.16);flex:0 0 auto}
+.processIcon{display:inline-grid;place-items:center;width:52px;height:52px;border-radius:14px;background:#f4f8fb;color:#174f7e;border:1px solid #d7e2ea;box-shadow:inset 0 0 0 1px rgba(255,255,255,.7);flex:0 0 auto}
+.processCard h3{margin:0 0 14px;font-size:30px;line-height:1.18;color:#0b1f33}
+.processCard p{margin:0;color:#5a6d7d;font-size:17px;line-height:1.75}
+.processArrow{position:absolute;top:50%;right:-18px;width:36px;height:36px;transform:translateY(-50%);display:grid;place-items:center;z-index:2}
+.processArrow span{display:block;width:18px;height:18px;border-top:2px solid #9bb8cf;border-right:2px solid #9bb8cf;transform:rotate(45deg)}
+.processConnector{display:none}
+@media(max-width:1050px){
+  .processGrid{grid-template-columns:1fr;gap:18px;max-width:760px}
+  .processGrid li.processCard{min-height:auto;padding:24px 22px 28px 22px}
+  .processCard h3{font-size:24px}
+  .processCard p{font-size:16px;line-height:1.7}
+  .processArrow{display:none}
+  .processConnector{display:block;position:absolute;left:27px;bottom:-19px;width:2px;height:28px;background:linear-gradient(180deg,rgba(38,113,167,.35),rgba(215,25,32,.18))}
+  .processGrid li:last-child .processConnector{display:none}
+}
+@media(max-width:720px){
+  .process{padding:62px 18px}
+  .processGrid{gap:16px}
+  .processGrid li.processCard{border-radius:16px;padding:22px 20px 26px}
+  .processTop{margin-bottom:22px}
+  .processStep{width:50px;height:50px;font-size:16px}
+  .processIcon{width:46px;height:46px}
+  .processCard h3{font-size:21px;line-height:1.28}
+  .processCard p{font-size:15px;line-height:1.7}
+  .processConnector{left:24px;bottom:-17px;height:24px}
+}
