@@ -88,9 +88,11 @@ function sectionHeading(text: string, theme: ResumeTheme): Paragraph {
   });
 }
 
-function bullet(text: string): Paragraph {
+function bullet(text: string, keepNext = false): Paragraph {
   return new Paragraph({
     bullet: { level: 0 },
+    keepLines: true,
+    keepNext,
     spacing: { after: 40 },
     children: [new TextRun({ text: clean(text), size: 21, font: "Arial" })],
   });
@@ -184,7 +186,9 @@ export async function createResumeDocx(resume: GeneratedResume, theme: ResumeThe
           })],
         }));
       }
-      for (const item of job.bullets) children.push(bullet(item));
+      for (const [index, item] of job.bullets.entries()) {
+        children.push(bullet(item, index < job.bullets.length - 1));
+      }
     }
   }
 
@@ -247,11 +251,73 @@ type PdfWriter = {
   italic: PDFFont;
   y: number;
   theme: ResumeTheme;
+  layout: PdfLayout;
 };
 
-const PDF_MARGIN = 50;
 const PDF_WIDTH = 612;
 const PDF_HEIGHT = 792;
+
+type PdfLayout = {
+  margin: number;
+  nameSize: number;
+  targetSize: number;
+  contactSize: number;
+  contactAfter: number;
+  sectionBefore: number;
+  sectionSize: number;
+  sectionLineGap: number;
+  bodySize: number;
+  bodyLineHeight: number;
+  bodyAfter: number;
+  jobTitleSize: number;
+  organizationSize: number;
+  bulletSize: number;
+  bulletLineHeight: number;
+  bulletAfter: number;
+  jobAfter: number;
+};
+
+const STANDARD_PDF_LAYOUT: PdfLayout = {
+  margin: 50,
+  nameSize: 21,
+  targetSize: 12,
+  contactSize: 10,
+  contactAfter: 10,
+  sectionBefore: 7,
+  sectionSize: 12,
+  sectionLineGap: 6,
+  bodySize: 10.7,
+  bodyLineHeight: 13.2,
+  bodyAfter: 4,
+  jobTitleSize: 10.7,
+  organizationSize: 10.5,
+  bulletSize: 10.5,
+  bulletLineHeight: 12.9,
+  bulletAfter: 1.5,
+  jobAfter: 2,
+};
+
+// Used only when measurement proves the complete resume will fit on one page.
+// Body copy remains 10.5pt; the fit comes from margins and vertical rhythm.
+const COMPACT_ONE_PAGE_LAYOUT: PdfLayout = {
+  margin: 44,
+  nameSize: 20,
+  targetSize: 11.5,
+  contactSize: 9.5,
+  contactAfter: 7,
+  sectionBefore: 5,
+  sectionSize: 11.5,
+  sectionLineGap: 4.5,
+  bodySize: 10.5,
+  bodyLineHeight: 12.4,
+  bodyAfter: 2,
+  jobTitleSize: 10.5,
+  organizationSize: 10.5,
+  bulletSize: 10.5,
+  bulletLineHeight: 12.4,
+  bulletAfter: 1,
+  jobAfter: 1,
+};
 
 function themeAccentColor(theme: ResumeTheme): ReturnType<typeof rgb> {
   return theme === "navy" ? BRAND_RED_RGB : BRAND_BLACK_RGB;
@@ -271,7 +337,7 @@ function newPdfPage(writer: Pick<PdfWriter, "document">): PDFPage {
 
 function addPage(writer: PdfWriter): void {
   writer.page = newPdfPage(writer);
-  writer.y = PDF_HEIGHT - PDF_MARGIN;
+  writer.y = PDF_HEIGHT - writer.layout.margin;
 }
 
 function wrapText(text: string, font: PDFFont, size: number, width: number): string[] {
@@ -292,7 +358,104 @@ function wrapText(text: string, font: PDFFont, size: number, width: number): str
 }
 
 function ensureSpace(writer: PdfWriter, height: number): void {
-  if (writer.y - height < PDF_MARGIN) addPage(writer);
+  if (writer.y - height < writer.layout.margin) addPage(writer);
+}
+
+function wrappedLineCount(text: string, font: PDFFont, size: number, width: number): number {
+  return Math.max(1, wrapText(text, font, size, width).length);
+}
+
+function textHeight(writer: PdfWriter, text: string, font: PDFFont, size: number, indent: number, lineHeight: number, after: number): number {
+  const width = PDF_WIDTH - writer.layout.margin * 2 - indent;
+  return wrappedLineCount(text, font, size, width) * lineHeight + after;
+}
+
+function sectionHeight(layout: PdfLayout): number {
+  return layout.sectionBefore + layout.sectionSize + 4 + layout.sectionLineGap;
+}
+
+function bulletHeight(writer: PdfWriter, text: string): number {
+  return textHeight(writer, text, writer.regular, writer.layout.bulletSize, 20, writer.layout.bulletLineHeight, writer.layout.bulletAfter);
+}
+
+function certificationHeight(writer: PdfWriter, certification: ResumeCertification): number {
+  const rest = [clean(certification.issuer), clean(certification.year)].filter(Boolean).join(" — ");
+  const segments = [
+    { text: clean(certification.name), font: writer.bold },
+    ...(rest ? [{ text: ` — ${rest}`, font: writer.regular }] : []),
+  ];
+  const lines = wrapSegments(segments, writer.layout.bulletSize, PDF_WIDTH - writer.layout.margin * 2 - 20);
+  return Math.max(1, lines.length) * writer.layout.bulletLineHeight + writer.layout.bulletAfter;
+}
+
+function jobHeadingHeight(writer: PdfWriter, job: ResumeExperience, continued = false): number {
+  const dates = [job.startDate, job.endDate].map(clean).filter(Boolean).join(" – ");
+  const title = [job.jobTitle, dates].filter(Boolean).join("  |  ") + (continued ? "  (continued)" : "");
+  const organization = [job.employer, job.location].map(clean).filter(Boolean).join(" — ");
+  return textHeight(writer, title, writer.bold, writer.layout.jobTitleSize, 0, writer.layout.bodyLineHeight, 0)
+    + (organization
+      ? textHeight(writer, organization, writer.italic, writer.layout.organizationSize, 0, writer.layout.bodyLineHeight, 1)
+      : 0);
+}
+
+function jobHeight(writer: PdfWriter, job: ResumeExperience): number {
+  return jobHeadingHeight(writer, job)
+    + job.bullets.reduce((height, item) => height + bulletHeight(writer, item), 0)
+    + writer.layout.jobAfter;
+}
+
+function educationHeight(writer: PdfWriter, education: ResumeEducation): number {
+  const heading = [education.credential, education.year].map(clean).filter(Boolean).join("  |  ");
+  const organization = [education.institution, education.location].map(clean).filter(Boolean).join(" — ");
+  return textHeight(writer, heading, writer.bold, writer.layout.jobTitleSize, 0, writer.layout.bodyLineHeight, 0)
+    + textHeight(writer, organization, writer.italic, writer.layout.organizationSize, 0, writer.layout.bodyLineHeight, 1);
+}
+
+function resumeHeight(writer: PdfWriter, resume: GeneratedResume): number {
+  let height = writer.layout.nameSize * 1.3
+    + writer.layout.targetSize * 1.3
+    + writer.layout.contactSize * 1.3
+    + writer.layout.contactAfter;
+
+  height += sectionHeight(writer.layout)
+    + textHeight(writer, resume.summary, writer.regular, writer.layout.bodySize, 0, writer.layout.bodyLineHeight, writer.layout.bodyAfter);
+
+  if (resume.certifications.length) {
+    height += sectionHeight(writer.layout)
+      + resume.certifications.reduce((total, certification) => total + certificationHeight(writer, certification), 0);
+  }
+
+  height += sectionHeight(writer.layout)
+    + textHeight(
+      writer,
+      resume.skills.map(clean).filter(Boolean).join("  •  "),
+      writer.regular,
+      writer.layout.bodySize,
+      0,
+      writer.layout.bodyLineHeight,
+      writer.layout.bodyAfter,
+    );
+
+  if (resume.experience.length) {
+    height += sectionHeight(writer.layout)
+      + resume.experience.reduce((total, job) => total + jobHeight(writer, job), 0);
+  }
+
+  if (resume.education.length) {
+    height += sectionHeight(writer.layout)
+      + resume.education.reduce((total, education) => total + educationHeight(writer, education), 0);
+  }
+
+  if (resume.additionalInformation.length) {
+    height += sectionHeight(writer.layout)
+      + resume.additionalInformation.reduce((total, item) => total + bulletHeight(writer, item), 0);
+  }
+
+  return height;
+}
+
+function onePageCapacity(layout: PdfLayout): number {
+  return PDF_HEIGHT - layout.margin * 2;
 }
 
 function writeLines(
@@ -305,11 +468,11 @@ function writeLines(
   const indent = options.indent ?? 0;
   const lineHeight = options.lineHeight ?? size * 1.25;
   const after = options.after ?? 4;
-  const lines = wrapText(text, font, size, PDF_WIDTH - PDF_MARGIN * 2 - indent);
+  const lines = wrapText(text, font, size, PDF_WIDTH - writer.layout.margin * 2 - indent);
   ensureSpace(writer, Math.max(1, lines.length) * lineHeight + after);
   for (const line of lines) {
     writer.page.drawText(line, {
-      x: PDF_MARGIN + indent,
+      x: writer.layout.margin + indent,
       y: writer.y - size,
       size,
       font,
@@ -324,7 +487,7 @@ function writeCentered(writer: PdfWriter, text: string, font: PDFFont, size: num
   ensureSpace(writer, size * 1.3 + after);
   const width = font.widthOfTextAtSize(clean(text), size);
   writer.page.drawText(clean(text), {
-    x: Math.max(PDF_MARGIN, (PDF_WIDTH - width) / 2),
+    x: Math.max(writer.layout.margin, (PDF_WIDTH - width) / 2),
     y: writer.y - size,
     size,
     font,
@@ -333,30 +496,30 @@ function writeCentered(writer: PdfWriter, text: string, font: PDFFont, size: num
   writer.y -= size * 1.3 + after;
 }
 
-function writeSection(writer: PdfWriter, title: string): void {
-  ensureSpace(writer, 28);
-  writer.y -= 7;
+function writeSection(writer: PdfWriter, title: string, firstContentHeight = 0): void {
+  ensureSpace(writer, sectionHeight(writer.layout) + firstContentHeight);
+  writer.y -= writer.layout.sectionBefore;
   writer.page.drawText(title, {
-    x: PDF_MARGIN,
-    y: writer.y - 12,
-    size: 12,
+    x: writer.layout.margin,
+    y: writer.y - writer.layout.sectionSize,
+    size: writer.layout.sectionSize,
     font: writer.bold,
     color: themeSectionTitleColor(writer.theme),
   });
-  writer.y -= 16;
+  writer.y -= writer.layout.sectionSize + 4;
   writer.page.drawLine({
-    start: { x: PDF_MARGIN, y: writer.y },
-    end: { x: PDF_WIDTH - PDF_MARGIN, y: writer.y },
+    start: { x: writer.layout.margin, y: writer.y },
+    end: { x: PDF_WIDTH - writer.layout.margin, y: writer.y },
     thickness: 0.9,
     color: themeAccentColor(writer.theme),
   });
-  writer.y -= 6;
+  writer.y -= writer.layout.sectionLineGap;
 }
 
 function writeBullet(writer: PdfWriter, text: string): void {
-  ensureSpace(writer, 16);
-  writer.page.drawText("•", { x: PDF_MARGIN + 7, y: writer.y - 10, size: 10, font: writer.regular, color: themeBulletColor(writer.theme) });
-  writeLines(writer, text, { indent: 20, size: 10.2, lineHeight: 12.5, after: 1.5 });
+  ensureSpace(writer, bulletHeight(writer, text));
+  writer.page.drawText("•", { x: writer.layout.margin + 7, y: writer.y - writer.layout.bulletSize, size: writer.layout.bulletSize, font: writer.regular, color: themeBulletColor(writer.theme) });
+  writeLines(writer, text, { indent: 20, size: writer.layout.bulletSize, lineHeight: writer.layout.bulletLineHeight, after: writer.layout.bulletAfter });
 }
 
 function wrapSegments(
@@ -390,26 +553,67 @@ function wrapSegments(
 }
 
 function writeCertificationBullet(writer: PdfWriter, certification: ResumeCertification): void {
-  const size = 10.2;
+  const size = writer.layout.bulletSize;
   const indent = 20;
-  const lineHeight = 12.5;
+  const lineHeight = writer.layout.bulletLineHeight;
   const rest = [clean(certification.issuer), clean(certification.year)].filter(Boolean).join(" — ");
   const segments = [
     { text: clean(certification.name), font: writer.bold },
     ...(rest ? [{ text: ` — ${rest}`, font: writer.regular }] : []),
   ];
-  const lines = wrapSegments(segments, size, PDF_WIDTH - PDF_MARGIN * 2 - indent);
-  ensureSpace(writer, Math.max(1, lines.length) * lineHeight + 1.5);
-  writer.page.drawText("•", { x: PDF_MARGIN + 7, y: writer.y - 10, size: 10, font: writer.regular, color: themeBulletColor(writer.theme) });
+  const lines = wrapSegments(segments, size, PDF_WIDTH - writer.layout.margin * 2 - indent);
+  ensureSpace(writer, Math.max(1, lines.length) * lineHeight + writer.layout.bulletAfter);
+  writer.page.drawText("•", { x: writer.layout.margin + 7, y: writer.y - size, size, font: writer.regular, color: themeBulletColor(writer.theme) });
   for (const line of lines) {
-    let x = PDF_MARGIN + indent;
+    let x = writer.layout.margin + indent;
     for (const word of line) {
       writer.page.drawText(word.text, { x, y: writer.y - size, size, font: word.font, color: rgb(0.07, 0.07, 0.07) });
       x += word.font.widthOfTextAtSize(`${word.text} `, size);
     }
     writer.y -= lineHeight;
   }
-  writer.y -= 1.5;
+  writer.y -= writer.layout.bulletAfter;
+}
+
+function writeJobHeading(writer: PdfWriter, job: ResumeExperience, continued = false): void {
+  const dates = [job.startDate, job.endDate].map(clean).filter(Boolean).join(" – ");
+  const continuedLabel = continued ? "  (continued)" : "";
+  const organizationLine = [job.employer, job.location].map(clean).filter(Boolean).join(" — ");
+  writeLines(writer, `${[job.jobTitle, dates].filter(Boolean).join("  |  ")}${continuedLabel}`, {
+    font: writer.bold,
+    size: writer.layout.jobTitleSize,
+    lineHeight: writer.layout.bodyLineHeight,
+    after: 0,
+  });
+  if (organizationLine) {
+    writeLines(writer, organizationLine, {
+      font: writer.italic,
+      size: writer.layout.organizationSize,
+      lineHeight: writer.layout.bodyLineHeight,
+      after: 1,
+    });
+  }
+}
+
+function writeJob(writer: PdfWriter, job: ResumeExperience, keepWholeWhenPossible: boolean): void {
+  const fullHeight = jobHeight(writer, job);
+  const pageCapacity = onePageCapacity(writer.layout);
+  const firstBulletHeight = job.bullets.length ? bulletHeight(writer, job.bullets[0]) : 0;
+  const introHeight = jobHeadingHeight(writer, job) + firstBulletHeight;
+
+  if (keepWholeWhenPossible && fullHeight <= pageCapacity) ensureSpace(writer, fullHeight);
+  else ensureSpace(writer, introHeight);
+
+  writeJobHeading(writer, job);
+  for (const item of job.bullets) {
+    const height = bulletHeight(writer, item);
+    if (writer.y - height < writer.layout.margin) {
+      addPage(writer);
+      writeJobHeading(writer, job, true);
+    }
+    writeBullet(writer, item);
+  }
+  writer.y -= writer.layout.jobAfter;
 }
 
 export async function createResumePdf(resume: GeneratedResume, watermarked = false, theme: ResumeTheme = "plain"): Promise<Uint8Array> {
@@ -421,48 +625,63 @@ export async function createResumePdf(resume: GeneratedResume, watermarked = fal
     regular: await document.embedFont(decodeFont(ROBOTO_REGULAR_BASE64), { subset: true }),
     bold: await document.embedFont(decodeFont(ROBOTO_BOLD_BASE64), { subset: true }),
     italic: await document.embedFont(decodeFont(ROBOTO_ITALIC_BASE64), { subset: true }),
-    y: PDF_HEIGHT - PDF_MARGIN,
+    y: PDF_HEIGHT - STANDARD_PDF_LAYOUT.margin,
     theme,
+    layout: STANDARD_PDF_LAYOUT,
   };
-  writeCentered(writer, resume.basics.fullName, writer.bold, 21, 0);
-  writeCentered(writer, resume.basics.targetTitle, writer.regular, 12, 0);
-  writeCentered(writer, [resume.basics.location, resume.basics.phone, resume.basics.email].map(clean).filter(Boolean).join("  |  "), writer.regular, 10, 10);
 
-  writeSection(writer, "PROFESSIONAL SUMMARY");
-  writeLines(writer, resume.summary, { after: 4 });
+  const standardHeight = resumeHeight(writer, resume);
+  if (standardHeight > onePageCapacity(STANDARD_PDF_LAYOUT)) {
+    writer.layout = COMPACT_ONE_PAGE_LAYOUT;
+    const compactHeight = resumeHeight(writer, resume);
+    if (compactHeight > onePageCapacity(COMPACT_ONE_PAGE_LAYOUT)) writer.layout = STANDARD_PDF_LAYOUT;
+  }
+  writer.y = PDF_HEIGHT - writer.layout.margin;
+
+  writeCentered(writer, resume.basics.fullName, writer.bold, writer.layout.nameSize, 0);
+  writeCentered(writer, resume.basics.targetTitle, writer.regular, writer.layout.targetSize, 0);
+  writeCentered(
+    writer,
+    [resume.basics.location, resume.basics.phone, resume.basics.email].map(clean).filter(Boolean).join("  |  "),
+    writer.regular,
+    writer.layout.contactSize,
+    writer.layout.contactAfter,
+  );
+
+  const summaryHeight = textHeight(writer, resume.summary, writer.regular, writer.layout.bodySize, 0, writer.layout.bodyLineHeight, writer.layout.bodyAfter);
+  writeSection(writer, "PROFESSIONAL SUMMARY", summaryHeight);
+  writeLines(writer, resume.summary, { size: writer.layout.bodySize, lineHeight: writer.layout.bodyLineHeight, after: writer.layout.bodyAfter });
 
   if (resume.certifications.length) {
-    writeSection(writer, "CERTIFICATIONS & LICENSES");
+    writeSection(writer, "CERTIFICATIONS & LICENSES", certificationHeight(writer, resume.certifications[0]));
     for (const certification of resume.certifications) writeCertificationBullet(writer, certification);
   }
 
-  writeSection(writer, "CORE SKILLS");
-  writeLines(writer, resume.skills.map(clean).filter(Boolean).join("  •  "), { after: 4 });
+  const skillsText = resume.skills.map(clean).filter(Boolean).join("  •  ");
+  const skillsHeight = textHeight(writer, skillsText, writer.regular, writer.layout.bodySize, 0, writer.layout.bodyLineHeight, writer.layout.bodyAfter);
+  writeSection(writer, "CORE SKILLS", skillsHeight);
+  writeLines(writer, skillsText, { size: writer.layout.bodySize, lineHeight: writer.layout.bodyLineHeight, after: writer.layout.bodyAfter });
 
   if (resume.experience.length) {
-    writeSection(writer, "WORK EXPERIENCE");
-    for (const job of resume.experience) {
-      const dates = [job.startDate, job.endDate].map(clean).filter(Boolean).join(" – ");
-      const organizationLine = [job.employer, job.location].map(clean).filter(Boolean).join(" — ");
-      writeLines(writer, [job.jobTitle, dates].filter(Boolean).join("  |  "), { font: writer.bold, size: 10.7, after: 0 });
-      if (organizationLine) {
-        writeLines(writer, organizationLine, { font: writer.italic, size: 10.2, after: 1 });
-      }
-      for (const item of job.bullets) writeBullet(writer, item);
-      writer.y -= 2;
+    const firstJob = resume.experience[0];
+    const firstJobIntro = jobHeadingHeight(writer, firstJob) + (firstJob.bullets.length ? bulletHeight(writer, firstJob.bullets[0]) : 0);
+    writeSection(writer, "WORK EXPERIENCE", firstJobIntro);
+    for (const [index, job] of resume.experience.entries()) {
+      writeJob(writer, job, index > 0);
     }
   }
 
   if (resume.education.length) {
-    writeSection(writer, "EDUCATION & TRAINING");
+    writeSection(writer, "EDUCATION & TRAINING", educationHeight(writer, resume.education[0]));
     for (const education of resume.education) {
-      writeLines(writer, [education.credential, education.year].map(clean).filter(Boolean).join("  |  "), { font: writer.bold, size: 10.7, after: 0 });
-      writeLines(writer, [education.institution, education.location].map(clean).filter(Boolean).join(" — "), { font: writer.italic, size: 10.2, after: 1 });
+      ensureSpace(writer, educationHeight(writer, education));
+      writeLines(writer, [education.credential, education.year].map(clean).filter(Boolean).join("  |  "), { font: writer.bold, size: writer.layout.jobTitleSize, lineHeight: writer.layout.bodyLineHeight, after: 0 });
+      writeLines(writer, [education.institution, education.location].map(clean).filter(Boolean).join(" — "), { font: writer.italic, size: writer.layout.organizationSize, lineHeight: writer.layout.bodyLineHeight, after: 1 });
     }
   }
 
   if (resume.additionalInformation.length) {
-    writeSection(writer, "ADDITIONAL INFORMATION");
+    writeSection(writer, "ADDITIONAL INFORMATION", bulletHeight(writer, resume.additionalInformation[0]));
     for (const item of resume.additionalInformation) writeBullet(writer, item);
   }
 
