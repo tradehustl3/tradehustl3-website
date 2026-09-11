@@ -3,28 +3,28 @@ import Link from 'next/link';
 import { CtaAnalytics } from './cta-analytics';
 import styles from './home-traffic-director.module.css';
 
-const tradeChips = ['ATS-friendly', 'Trade-specific language', 'PDF + DOCX', 'HVAC', 'Electrical', 'Plumbing', 'Welding', 'Maintenance'];
+const tradeChips = ['HVAC', 'Electrical', 'Plumbing', 'Welding', 'Facilities', 'Maintenance'];
 
 const processSteps = [
-  ['01', 'Tell us your trade & experience', 'Share the work you have done, the tools you know, and the job you want next.'],
-  ['02', 'Preview your resume', 'HUSTL3 BOT helps structure your real experience into stronger trade-specific language.'],
-  ['03', 'Unlock PDF + DOCX', 'Review the result, then unlock a clean PDF and an editable DOCX for $9.99 one-time.'],
+  ['01', 'Upload or start from scratch', 'Bring your current resume or answer a few guided questions about your trade, tools, certifications, and experience.'],
+  ['02', 'HUSTL3 BOT builds the preview', 'Your real field experience is organized into stronger, trade-specific resume language and an ATS-friendly layout.'],
+  ['03', 'Unlock when you are ready', 'Review the protected preview first. Unlock the clean PDF + editable DOCX for one $9.99 payment.'],
 ];
 
 const proofPoints = [
-  ['Trade-specific wording', 'Built around field experience, certifications, tools, safety, and measurable work—not generic office language.'],
-  ['Guided intake', 'A clear step-by-step process helps you capture what you actually do without staring at a blank page.'],
-  ['ATS-focused structure', 'Professional formatting and keyword-aware organization designed for modern hiring systems.'],
-  ['Multiple trade categories', 'Useful for HVAC, electrical, plumbing, welding, facilities, maintenance, construction, and related work.'],
-  ['HUSTL3 BOT assistance', 'Intelligent guidance helps turn rough notes into stronger resume material while keeping your experience honest.'],
-  ['Built from the field', 'Created from real skilled-trades experience and practical lessons earned on the job.'],
+  ['Trade-specific language', 'Built around real field work, tools, certifications, safety, troubleshooting, PMs, installs, repairs, and measurable results.'],
+  ['ATS-friendly structure', 'Clean single-column formatting keeps the resume readable for hiring managers and modern applicant tracking systems.'],
+  ['Upload or guided intake', 'Use your current resume as a starting point or build one from scratch without staring at a blank page.'],
+  ['Real preview before payment', 'See the finished structure before you decide whether to pay. No credit card is required to build the preview.'],
+  ['PDF + editable DOCX', 'Unlock both a clean PDF and an editable Word file so you can apply immediately and still keep control of your document.'],
+  ['Built for skilled trades', 'Designed for HVAC, electrical, plumbing, welding, construction, facilities, general labor, and maintenance careers.'],
 ];
 
 const purchaseTrust = [
-  'Preview before payment',
+  'No credit card to preview',
+  '$9.99 one-time',
+  'No subscription',
   '3 corrections within 7 days',
-  'PDF + editable DOCX',
-  'Secure Stripe checkout',
 ];
 
 function AnalyticsLink({ href, location, children, className, event = 'cta_click', item }: {
@@ -62,27 +62,51 @@ export default function Home() {
       <section className={styles.hero} id="top">
         <div className={styles.heroCopy}>
           <p className={styles.eyebrow}>SKILLED-TRADES CAREER SYSTEM</p>
-          <h1>Skilled-Trades<br /><span>Resume Builder</span></h1>
-          <p className={styles.heroLead}>See your professionally structured, watermarked resume before paying. Unlock the clean PDF and editable DOCX for $9.99 only when you are ready.</p>
-          <div className={styles.priceLine}><strong>$0 to preview</strong><span>$9.99 to unlock</span><span>No subscription</span></div>
+          <h1>Build a trade resume that <span>looks ready for the job.</span></h1>
+          <p className={styles.heroLead}>Upload your current resume or start from scratch. HUSTL3 BOT turns your real trade experience into a professionally structured resume you can preview before paying.</p>
+
+          <div className={styles.priceLine} aria-label="Resume Builder pricing">
+            <strong>$0 to preview</strong>
+            <span>$9.99 to unlock</span>
+            <span>No subscription</span>
+          </div>
+
           <div className={styles.heroActions}>
             <AnalyticsLink href="/resume-builder" location="hero" className={styles.primaryButton}>Build My Free Preview <span aria-hidden="true">→</span></AnalyticsLink>
             <a href="#sample-resume" className={styles.textLink}>See a finished sample first</a>
           </div>
-          <p className={styles.heroAssurance}>No payment to build your first protected preview. Pay only to remove the watermark and download your files.</p>
-          <ul className={styles.chips} aria-label="Resume Builder features">{tradeChips.map((chip) => <li key={chip}>{chip}</li>)}</ul>
+
+          <p className={styles.heroAssurance}>No credit card required to build your preview. Pay only when you are ready to unlock the clean PDF + editable DOCX.</p>
+          <ul className={styles.chips} aria-label="Supported trades">{tradeChips.map((chip) => <li key={chip}>{chip}</li>)}</ul>
         </div>
-        <div className={styles.heroVisual}>
-          <div className={styles.heroImageWrap}><Image src="/optimized/trade-hustl3-workspace.avif" alt="TRADE HUSTL3 skilled-trades workspace with safety vest, hard hat, work boots, tools, and career laptop" fill sizes="(max-width: 900px) 92vw, 46vw" priority /></div>
-          <div className={styles.heroStatus}><span>HUSTL3 BOT</span><strong>Trade experience in. Stronger resume out.</strong></div>
+
+        <div className={styles.heroVisual} aria-label="TRADE HUSTL3 Resume Builder output preview">
+          <div className={styles.resumeFrame}>
+            <div className={styles.resumeFrameTop}>
+              <span className={styles.liveDot} />
+              <span>ACTUAL BUILDER OUTPUT</span>
+            </div>
+            <Image src="/sample-hvac-resume.webp" alt="Finished TRADE HUSTL3 HVAC resume sample" width={816} height={1056} sizes="(max-width: 900px) 86vw, 42vw" priority />
+          </div>
+          <div className={styles.botCard}>
+            <span>HUSTL3 BOT</span>
+            <strong>Builds it for you.</strong>
+            <p>Trade experience in. Stronger resume out.</p>
+          </div>
         </div>
+      </section>
+
+      <section className={styles.trustStrip} aria-label="Resume Builder purchase protections">
+        <p><strong>SEE IT BEFORE YOU BUY IT.</strong> Build your protected preview first. Unlock only when you are happy with the direction.</p>
+        <ul>{purchaseTrust.map((item) => <li key={item}>{item}</li>)}</ul>
       </section>
 
       <section className={styles.sampleProof} id="sample-resume" aria-labelledby="sample-title">
         <div className={styles.sampleCopy}>
-          <p className={styles.eyebrow}>SEE THE OUTPUT BEFORE YOU START</p>
-          <h2 id="sample-title">Actual Resume Builder output—not a promise.</h2>
-          <p className={styles.sampleLead}>This fictional HVAC candidate shows the actual ATS-friendly structure customers can receive. Choose Classic Black by default or the optional TRADE HUSTL3 Red Accent—the resume content and structure stay the same.</p>
+          <p className={styles.eyebrow}>PROOF BEFORE THE PITCH</p>
+          <h2 id="sample-title">Actual resume builder output—not a promise.</h2>
+          <p className={styles.sampleLead}>This fictional HVAC candidate demonstrates the real resume structure customers can receive. Classic Black stays clean, professional, and ATS-safe.</p>
+
           <div className={styles.beforeAfter}>
             <article>
               <span>ROUGH INPUT</span>
@@ -93,63 +117,71 @@ export default function Home() {
               <p>“Diagnose and repair 3–15 ton split systems, including capacitors, contactors, transformers, control boards, motors, and 24V control circuits.”</p>
             </article>
           </div>
+
           <div className={styles.sampleActions}>
-            <AnalyticsLink href="/sample-hvac-resume.pdf" location="sample_proof" item="hvac_sample_pdf" className={styles.secondaryButton}>View Red Accent Sample PDF <span aria-hidden="true">→</span></AnalyticsLink>
+            <AnalyticsLink href="/sample-hvac-resume.pdf" location="sample_proof" item="hvac_sample_pdf" className={styles.secondaryButton}>View Full Sample PDF <span aria-hidden="true">→</span></AnalyticsLink>
             <AnalyticsLink href="/resume-builder" location="sample_proof" className={styles.primaryButton}>Build My Free Preview <span aria-hidden="true">→</span></AnalyticsLink>
           </div>
-          <p className={styles.sampleDisclosure} style={{ color: '#526476', fontSize: '13px' }}>Sample candidate name, employers, and contact details are fictional and shown for demonstration. Classic Black is the default resume style.</p>
+          <p className={styles.sampleDisclosure}>Sample candidate name, employers, and contact details are fictional and shown for demonstration.</p>
         </div>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '18px', alignItems: 'flex-start' }} aria-label="Resume style examples">
-          <div style={{ flex: '1 1 240px', minWidth: 0 }}>
-            <p style={{ margin: '0 0 9px', color: '#111111', fontSize: '12px', fontWeight: 900, letterSpacing: '.12em' }}>CLASSIC BLACK — DEFAULT</p>
-            <div className={styles.sampleSheet}>
-              <Image src="/sample-hvac-resume.webp" alt="Classic Black sample HVAC and facilities maintenance resume" width={816} height={1056} sizes="(max-width: 900px) 88vw, 22vw" style={{ filter: 'grayscale(1) contrast(2.2)' }} />
-              <span style={{ color: '#111111' }}>CLASSIC BLACK <b aria-hidden="true">✓</b></span>
-            </div>
-          </div>
-          <div style={{ flex: '1 1 240px', minWidth: 0 }}>
-            <p style={{ margin: '0 0 9px', color: '#c81f17', fontSize: '12px', fontWeight: 900, letterSpacing: '.12em' }}>TRADE HUSTL3 RED ACCENT</p>
-            <AnalyticsLink className={styles.sampleSheet} href="/sample-hvac-resume.pdf" location="sample_proof_image" item="hvac_sample_pdf">
-              <Image src="/sample-hvac-resume.webp" alt="TRADE HUSTL3 Red Accent sample HVAC and facilities maintenance resume" width={816} height={1056} sizes="(max-width: 900px) 88vw, 22vw" />
-              <span>VIEW RED SAMPLE PDF <b aria-hidden="true">↗</b></span>
-            </AnalyticsLink>
-          </div>
-        </div>
-      </section>
 
-      <section className={styles.trustStrip} aria-label="Resume Builder purchase protections">
-        <p><strong>REVIEW FIRST. REFINE AFTER.</strong> Preview before payment, then use up to three corrections within seven days after purchase.</p>
-        <ul>{purchaseTrust.map((item) => <li key={item}>{item}</li>)}</ul>
+        <div className={styles.sampleSheet}>
+          <Image src="/sample-hvac-resume.webp" alt="Classic Black sample HVAC and facilities maintenance resume" width={816} height={1056} sizes="(max-width: 900px) 88vw, 38vw" />
+          <span>CLASSIC BLACK <b aria-hidden="true">✓</b></span>
+        </div>
       </section>
 
       <section className={styles.process} aria-labelledby="process-title">
-        <div className={styles.sectionHeading}><p className={styles.eyebrow}>HOW IT WORKS</p><h2 id="process-title">Three steps. One stronger resume.</h2></div>
-        <ol className={styles.processGrid}>{processSteps.map(([step, title, copy]) => <li key={step}><span>{step}</span><h3>{title}</h3><p>{copy}</p></li>)}</ol>
+        <div className={styles.sectionHeading}>
+          <p className={styles.eyebrow}>HOW IT WORKS</p>
+          <h2 id="process-title">Three steps. One stronger resume.</h2>
+        </div>
+        <ol className={styles.processGrid}>
+          {processSteps.map(([step, title, copy]) => <li key={step}><span>{step}</span><h3>{title}</h3><p>{copy}</p></li>)}
+        </ol>
         <AnalyticsLink href="/resume-builder" location="process" className={styles.secondaryButton}>Start My Resume <span aria-hidden="true">→</span></AnalyticsLink>
       </section>
 
       <section className={styles.difference} aria-labelledby="difference-title">
-        <div className={styles.differenceIntro}><p className={styles.eyebrow}>WHY IT&apos;S DIFFERENT</p><h2 id="difference-title">Built around the work you actually do.</h2><p>TRADE HUSTL3 combines guided technology with credibility earned in the field. The result is practical, focused, and made for skilled-trades careers.</p><Image src="/optimized/hustl3-bot.webp" alt="HUSTL3 BOT in branded skilled-trades safety gear" width={330} height={495} sizes="(max-width: 760px) 70vw, 330px" /></div>
+        <div className={styles.differenceIntro}>
+          <p className={styles.eyebrow}>BUILT FOR THE TRADES</p>
+          <h2 id="difference-title">Your work is not generic. Your resume should not be either.</h2>
+          <p>TRADE HUSTL3 is built around the way skilled-trades people actually work: equipment, tools, troubleshooting, PMs, installs, safety, certifications, emergency response, production, and measurable results.</p>
+          <Image src="/optimized/hustl3-bot.webp" alt="HUSTL3 BOT in branded skilled-trades safety gear" width={330} height={495} sizes="(max-width: 760px) 70vw, 330px" />
+        </div>
         <div className={styles.proofGrid}>{proofPoints.map(([title, copy], index) => <article key={title}><span>0{index + 1}</span><h3>{title}</h3><p>{copy}</p></article>)}</div>
       </section>
 
-      <section className={styles.doors} id="three-ways" aria-labelledby="doors-title">
-        <div className={styles.sectionHeading}><p className={styles.eyebrow}>MORE WAYS IN</p><h2 id="doors-title">Not ready to build yet?</h2><p>The Resume Builder stays the main path. These free resources can help you choose a trade or learn what TRADE HUSTL3 is about.</p></div>
-        <div className={styles.doorGrid}>
-          <AnalyticsLink href="/resume-builder" location="three_doors" event="select_content" item="resume_builder" className={`${styles.doorCard} ${styles.paidDoor}`}>
-            <p>I need a stronger resume now.</p><span className={styles.doorLabel}>PRIMARY CAREER TOOL</span><h3>Resume Builder</h3><strong>Preview free · $9.99 to unlock</strong>
-            <ul><li>Preview before payment</li><li>Trade-specific language</li><li>PDF + DOCX</li></ul><span className={styles.doorCta}>Build my free preview <b aria-hidden="true">→</b></span>
-          </AnalyticsLink>
-          <AnalyticsLink href="/top-10-trades" location="three_doors" event="select_content" item="top_10_trades" className={styles.doorCard}>
-            <p>I&apos;m not sure which trade.</p><span className={styles.doorLabel}>FREE CAREER GUIDE</span><h3>Top 10 Trades for 2026–2027</h3><strong>Free PDF</strong>
-            <p className={styles.doorCopy}>Compare ten skilled-trades paths, opportunity, and practical next moves.</p><span className={styles.doorCta}>Get the free guide <b aria-hidden="true">→</b></span>
-          </AnalyticsLink>
+      <section className={styles.guideSignup} aria-labelledby="guide-title">
+        <div>
+          <p className={styles.eyebrow}>FREE CAREER GUIDE</p>
+          <h2 id="guide-title">Still figuring out your next move?</h2>
+          <p>Get the free <strong>Top 10 Trades for 2026–2027</strong> guide and compare skilled-trade paths, opportunity, and practical next steps.</p>
         </div>
+        <AnalyticsLink href="/top-10-trades" location="guide_signup" event="select_content" item="top_10_trades" className={styles.secondaryButton}>Get the Free Guide <span aria-hidden="true">→</span></AnalyticsLink>
       </section>
 
-      <section className={styles.finalCta} aria-labelledby="final-cta-title"><p className={styles.eyebrow}>READY WHEN YOU ARE</p><h2 id="final-cta-title">Build a resume that speaks the language of your trade.</h2><p>Build and review your protected preview for free. Unlock the clean PDF and editable DOCX for one $9.99 payment.</p><AnalyticsLink href="/resume-builder" location="footer_cta" className={styles.primaryButton}>Build My Free Preview <span aria-hidden="true">→</span></AnalyticsLink></section>
+      <section className={styles.finalCta} aria-labelledby="final-cta-title">
+        <p className={styles.eyebrow}>READY WHEN YOU ARE</p>
+        <h2 id="final-cta-title">Build the resume. See the preview. Decide after.</h2>
+        <p>No subscription. No credit card to preview. One $9.99 payment only when you are ready to unlock the clean files.</p>
+        <AnalyticsLink href="/resume-builder" location="footer_cta" className={styles.primaryButton}>Build My Free Preview <span aria-hidden="true">→</span></AnalyticsLink>
+      </section>
 
-      <footer className={styles.footer}><div className={styles.footerBrand}><Image src="/optimized/trade-hustl3-logo.webp" alt="TRADE HUSTL3 logo" width={44} height={44} /><strong>TRADE HUSTL3 LLC</strong></div><p>Built by Hustle, Backed by Trades.</p><nav aria-label="Footer links"><Link href="/resume-builder">Resume Builder</Link><Link href="/top-10-trades">Top 10 Trades</Link><Link href="/book">The Book</Link><Link href="/privacy">Privacy</Link><Link href="/terms">Terms</Link><Link href="/contact">Support</Link></nav></footer>
+      <footer className={styles.footer}>
+        <div className={styles.footerBrand}><Image src="/optimized/trade-hustl3-logo.webp" alt="TRADE HUSTL3 logo" width={44} height={44} /><strong>TRADE HUSTL3 LLC</strong></div>
+        <p>Built by Hustle, Backed by Trades.</p>
+        <nav aria-label="Footer links">
+          <Link href="/resume-builder">Resume Builder</Link>
+          <Link href="/top-10-trades">Top 10 Trades</Link>
+          <Link href="/book">The Book</Link>
+          <Link href="/privacy">Privacy</Link>
+          <Link href="/terms">Terms</Link>
+          <Link href="/contact">Support</Link>
+        </nav>
+      </footer>
+
+      <AnalyticsLink href="/resume-builder" location="mobile_sticky" className={styles.mobileStickyCta}>Build Free Preview <span aria-hidden="true">→</span></AnalyticsLink>
     </main>
   );
 }
