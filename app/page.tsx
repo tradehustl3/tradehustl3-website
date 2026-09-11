@@ -60,9 +60,9 @@ export default function Home() {
             />
           </span>
         </Link>
-        <div className={styles.headerSignal} aria-hidden="true">
-          <strong>BUILT FOR THE TRADES.</strong>
-          <span>READY FOR THE JOB.</span>
+        <div className={styles.headerSignal} aria-hidden="true" data-product-positioning="BUILT FOR THE TRADES. READY FOR THE JOB.">
+          <strong>BUILT BY HUSTLE.</strong>
+          <span>BACKED BY TRADES.</span>
         </div>
         <nav className={styles.nav} aria-label="Primary navigation">
           <Link href="#sample-resume">See a sample</Link>
