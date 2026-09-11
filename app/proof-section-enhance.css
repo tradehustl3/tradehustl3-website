@@ -1,0 +1,198 @@
+/* Proof / difference section polish: keep HUSTL3 BOT clear of cards and add restrained brand depth. */
+section[aria-labelledby="difference-title"] {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 10% 8%, rgba(241, 195, 87, .13), transparent 26%),
+    radial-gradient(circle at 92% 82%, rgba(38, 113, 167, .12), transparent 30%),
+    linear-gradient(180deg, #eef6fb 0%, #f8fafb 100%) !important;
+}
+
+section[aria-labelledby="difference-title"]::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: .34;
+  background-image:
+    linear-gradient(rgba(23, 79, 126, .06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(23, 79, 126, .06) 1px, transparent 1px);
+  background-size: 30px 30px;
+  mask-image: linear-gradient(to bottom, transparent, #000 15%, #000 85%, transparent);
+}
+
+section[aria-labelledby="difference-title"] > div:first-child,
+section[aria-labelledby="difference-title"] > div:last-child {
+  position: relative;
+  z-index: 1;
+}
+
+/* The old negative bottom margins caused the bot to overlap proof card 01. */
+section[aria-labelledby="difference-title"] > div:first-child > img {
+  display: block;
+  width: min(300px, 70vw) !important;
+  height: auto;
+  margin: 34px auto 8px !important;
+  padding: 7px;
+  border: 1px solid rgba(241, 195, 87, .55);
+  border-radius: 20px;
+  background: linear-gradient(145deg, #071d31, #0b2c49);
+  box-shadow:
+    0 24px 45px rgba(5, 31, 52, .18),
+    0 0 0 5px rgba(255, 255, 255, .58);
+  filter: none !important;
+}
+
+section[aria-labelledby="difference-title"] > div:last-child {
+  gap: 18px !important;
+}
+
+section[aria-labelledby="difference-title"] > div:last-child > article {
+  --proof-accent: #d71920;
+  --proof-wash: rgba(215, 25, 32, .09);
+  position: relative;
+  overflow: hidden;
+  min-height: 210px;
+  padding: 29px 27px 27px !important;
+  border: 1px solid #d5e0e7 !important;
+  border-left: 1px solid #d5e0e7 !important;
+  border-radius: 16px !important;
+  background:
+    radial-gradient(circle at 100% 0%, var(--proof-wash), transparent 34%),
+    rgba(255, 255, 255, .95) !important;
+  box-shadow:
+    0 15px 34px rgba(10, 38, 59, .085),
+    inset 0 1px 0 rgba(255, 255, 255, .9) !important;
+  transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+}
+
+section[aria-labelledby="difference-title"] > div:last-child > article::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 5px;
+  background: var(--proof-accent);
+}
+
+section[aria-labelledby="difference-title"] > div:last-child > article::after {
+  content: "";
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  width: 34px;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--proof-accent);
+  box-shadow: 0 7px 0 rgba(11, 44, 73, .16);
+  opacity: .8;
+}
+
+section[aria-labelledby="difference-title"] > div:last-child > article:nth-child(3n + 1) {
+  --proof-accent: #d71920;
+  --proof-wash: rgba(215, 25, 32, .09);
+}
+
+section[aria-labelledby="difference-title"] > div:last-child > article:nth-child(3n + 2) {
+  --proof-accent: #d7a72e;
+  --proof-wash: rgba(241, 195, 87, .16);
+}
+
+section[aria-labelledby="difference-title"] > div:last-child > article:nth-child(3n) {
+  --proof-accent: #2671a7;
+  --proof-wash: rgba(38, 113, 167, .10);
+}
+
+section[aria-labelledby="difference-title"] > div:last-child > article > span {
+  display: inline-grid;
+  place-items: center;
+  min-width: 48px;
+  height: 38px;
+  padding: 0 11px;
+  border: 1px solid color-mix(in srgb, var(--proof-accent) 36%, white);
+  border-radius: 999px;
+  background: var(--proof-wash);
+  color: var(--proof-accent) !important;
+  font-size: 15px;
+  font-weight: 950;
+  letter-spacing: .07em;
+}
+
+section[aria-labelledby="difference-title"] > div:last-child > article h3 {
+  margin: 20px 0 10px !important;
+  color: #0b1f33;
+  font-size: clamp(20px, 1.8vw, 25px) !important;
+  line-height: 1.2;
+}
+
+section[aria-labelledby="difference-title"] > div:last-child > article p {
+  margin: 0;
+  color: #586b7b;
+  line-height: 1.68 !important;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  section[aria-labelledby="difference-title"] > div:last-child > article:hover {
+    transform: translateY(-4px);
+    border-color: color-mix(in srgb, var(--proof-accent) 38%, #d5e0e7) !important;
+    box-shadow: 0 22px 42px rgba(10, 38, 59, .13) !important;
+  }
+}
+
+@media (max-width: 1050px) {
+  section[aria-labelledby="difference-title"] {
+    gap: 44px !important;
+  }
+
+  section[aria-labelledby="difference-title"] > div:first-child > img {
+    margin: 30px auto 4px !important;
+  }
+}
+
+@media (max-width: 720px) {
+  section[aria-labelledby="difference-title"] {
+    gap: 28px !important;
+    padding-top: 56px !important;
+    padding-bottom: 72px !important;
+  }
+
+  section[aria-labelledby="difference-title"] > div:first-child > img {
+    width: min(78vw, 330px) !important;
+    margin: 28px auto 18px !important;
+    padding: 5px;
+    border-radius: 16px;
+    box-shadow:
+      0 18px 32px rgba(5, 31, 52, .16),
+      0 0 0 4px rgba(255, 255, 255, .62);
+  }
+
+  section[aria-labelledby="difference-title"] > div:last-child {
+    gap: 18px !important;
+  }
+
+  section[aria-labelledby="difference-title"] > div:last-child > article {
+    min-height: auto;
+    padding: 25px 22px 24px !important;
+    border-radius: 15px !important;
+  }
+
+  section[aria-labelledby="difference-title"] > div:last-child > article::after {
+    top: 17px;
+    right: 16px;
+    width: 27px;
+  }
+
+  section[aria-labelledby="difference-title"] > div:last-child > article > span {
+    min-width: 44px;
+    height: 35px;
+    font-size: 14px;
+  }
+
+  section[aria-labelledby="difference-title"] > div:last-child > article h3 {
+    margin-top: 18px !important;
+    font-size: 22px !important;
+  }
+}
