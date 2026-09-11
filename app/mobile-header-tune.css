@@ -1,20 +1,25 @@
 @media (max-width: 720px) {
   [data-home-header] {
-    display: flex !important;
-    align-items: center !important;
-    justify-content: space-between !important;
-    gap: 6px !important;
+    display: block !important;
+    position: sticky !important;
+    top: 0 !important;
+    width: 100% !important;
+    max-width: none !important;
     min-height: 62px !important;
     padding: 4px 8px !important;
+    box-sizing: border-box !important;
   }
 
   [data-header-brand] {
+    position: absolute !important;
+    left: 8px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
     min-width: 0 !important;
     padding: 1px 2px !important;
     border-radius: 10px !important;
-    justify-self: auto !important;
-    flex: 0 0 auto !important;
-    z-index: 2;
+    margin: 0 !important;
+    z-index: 3;
   }
 
   [data-header-logo-ring] {
@@ -32,14 +37,14 @@
     top: 50% !important;
     transform: translate(-50%, -50%) !important;
     width: max-content !important;
-    max-width: calc(100% - 176px) !important;
+    max-width: calc(100% - 190px) !important;
     min-width: 0 !important;
     margin: 0 !important;
     padding: 0 !important;
     gap: 4px !important;
     justify-content: center !important;
-    font-size: 7.4px !important;
-    letter-spacing: .015em !important;
+    font-size: 7.2px !important;
+    letter-spacing: .01em !important;
     line-height: 1 !important;
     z-index: 1;
   }
@@ -49,18 +54,24 @@
   }
 
   [data-header-motto] [data-accent-lines] i {
-    width: 9px !important;
+    width: 8px !important;
     height: 1.5px !important;
   }
 
   [data-header-nav] {
+    position: absolute !important;
+    right: 8px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
     width: auto !important;
     min-width: 0 !important;
-    margin-left: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    display: flex !important;
+    align-items: center !important;
     justify-content: flex-end !important;
     gap: 0 !important;
-    flex: 0 0 auto !important;
-    z-index: 2;
+    z-index: 3;
   }
 
   [data-header-nav] > a:not([href="/resume-builder"]) {
@@ -69,11 +80,12 @@
 
   [data-header-nav] a[href="/resume-builder"] {
     display: inline-flex !important;
-    width: 94px !important;
-    max-width: 94px !important;
-    min-width: 0 !important;
+    width: 90px !important;
+    max-width: 90px !important;
+    min-width: 90px !important;
     min-height: 34px !important;
     padding: 7px 5px !important;
+    margin: 0 !important;
     font-size: 8px !important;
     line-height: 1.08 !important;
     text-align: center !important;
@@ -91,25 +103,34 @@
 }
 
 @media (max-width: 380px) {
+  [data-header-brand] {
+    left: 6px !important;
+  }
+
   [data-header-logo-ring] {
     width: 54px !important;
     height: 43px !important;
   }
 
   [data-header-motto] {
-    max-width: calc(100% - 164px) !important;
-    font-size: 7px !important;
+    max-width: calc(100% - 176px) !important;
+    font-size: 6.8px !important;
     gap: 3px !important;
   }
 
   [data-header-motto] [data-accent-lines] i {
-    width: 7px !important;
+    width: 6px !important;
+  }
+
+  [data-header-nav] {
+    right: 6px !important;
   }
 
   [data-header-nav] a[href="/resume-builder"] {
-    width: 88px !important;
-    max-width: 88px !important;
-    font-size: 7.6px !important;
+    width: 84px !important;
+    max-width: 84px !important;
+    min-width: 84px !important;
+    font-size: 7.4px !important;
   }
 }
 
