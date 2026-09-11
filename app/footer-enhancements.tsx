@@ -53,7 +53,23 @@ export function FooterEnhancements() {
       setHost(null);
       return;
     }
-    setHost(document.querySelector("footer"));
+
+    const footer = document.querySelector("footer");
+    if (!footer) {
+      setHost(null);
+      return;
+    }
+
+    const bottomNav = footer.querySelector('nav[aria-label="Footer links"]');
+    const mount = document.createElement("div");
+    mount.className = styles.host;
+    mount.dataset.footerEnhancementsHost = "true";
+    footer.insertBefore(mount, bottomNav ?? null);
+    setHost(mount);
+
+    return () => {
+      mount.remove();
+    };
   }, [pathname]);
 
   if (pathname !== "/" || !host) return null;
@@ -78,7 +94,15 @@ export function FooterEnhancements() {
         </div>
         <nav className={styles.socials} aria-label="TRADE HUSTL3 social media links">
           {socials.map((social) => (
-            <a key={social.label} href={social.href} target="_blank" rel="noreferrer" aria-label={social.label} title={social.label}>
+            <a
+              key={social.label}
+              href={social.href}
+              target="_blank"
+              rel="noreferrer"
+              aria-label={social.label}
+              title={social.label}
+              className={`${styles.socialIcon} ${styles[social.icon]}`}
+            >
               <SocialIcon type={social.icon} />
             </a>
           ))}
