@@ -44,6 +44,7 @@ const EDUCATION_CREDENTIAL_RE = /\b(?:diploma|associate(?:'s)?(?:\s+degree)?|bac
 const CREDENTIAL_SIGNAL_RE = /\b(?:epa\s*(?:section\s*)?608(?:\s+universal)?|osha\s*(?:10|30)|nccer|journeyman|master\s+(?:electrician|plumber)|certification|certificate|license)\b/i;
 const CREDENTIAL_NARRATIVE_RE = /\b(?:professional|experience|experienced|years?|performed|managed|maintained|responsible|skilled|proficient|specializing|expertise|with\s+experience)\b/i;
 const PROMPT_LIKE_RE = /\b(?:ignore|disregard)\b.{0,120}\b(?:instructions?|prompt|invent|fabricate|pretend)\b|\b(?:invent|fabricate)\b.{0,80}\b(?:license|certification|credential|employer|job|date)\b/i;
+const CREDENTIAL_SEPARATOR_RE = /\s*(?:\||•|▪|◦|●|;)\s*|\s+\/\s+/;
 
 function cleanLine(value: string): string {
   return value.replace(/[\t ]+/g, " ").replace(/^\s*[•▪◦●*-]\s*/, "").trim();
@@ -73,14 +74,26 @@ function wordCount(value: string): number {
   return normalizeResumeValue(value).split(" ").filter(Boolean).length;
 }
 
+function splitCredentialLine(value: string): string[] {
+  return cleanLine(value)
+    .split(CREDENTIAL_SEPARATOR_RE)
+    .map((part) => cleanLine(part))
+    .filter(Boolean);
+}
+
 export function isCredentialEntity(value: string): boolean {
   const cleaned = cleanLine(value);
   if (!cleaned || headingSection(cleaned) || PROMPT_LIKE_RE.test(cleaned)) return false;
+  if (splitCredentialLine(cleaned).length > 1) return false;
   if (!CREDENTIAL_SIGNAL_RE.test(cleaned)) return false;
   if (wordCount(cleaned) > 12) return false;
   if (/[.!?]$/.test(cleaned) && wordCount(cleaned) > 7) return false;
   if (CREDENTIAL_NARRATIVE_RE.test(cleaned)) return false;
   return true;
+}
+
+function credentialEntitiesInLine(value: string): string[] {
+  return splitCredentialLine(value).filter((part) => isCredentialEntity(part));
 }
 
 function credentialCanonicalName(value: string): string {
@@ -111,7 +124,7 @@ function splitSkillLine(value: string): string[] {
 
 function looksLikeSkillLine(value: string, activeSection: ResumeSourceSection): boolean {
   const cleaned = cleanLine(value);
-  if (!cleaned || isCredentialEntity(cleaned) || DATE_RANGE_RE.test(cleaned)) return false;
+  if (!cleaned || credentialEntitiesInLine(cleaned).length > 0 || DATE_RANGE_RE.test(cleaned)) return false;
   const parts = splitSkillLine(cleaned);
   if (activeSection === "skills") return parts.length >= 1 && !/[.!?]$/.test(cleaned);
   return parts.length >= 3 && !/[.!?]$/.test(cleaned) && wordCount(cleaned) <= 24;
@@ -135,9 +148,6 @@ export function dedupeSkillTerms(values: string[]): string[] {
     for (const part of splitSkillLine(raw)) {
       const key = skillKey(part);
       if (!key || key.length < 2) continue;
-      // Preserve the first source/model display spelling. Deduplication must not
-      // create a second render merely to change capitalization (for example,
-      // "HVAC diagnostics" to "Hvac Diagnostics").
       if (!byKey.has(key)) byKey.set(key, cleanLine(part));
     }
   }
@@ -205,6 +215,7 @@ export function classifyResumeSections(source: string): ResumeSectionClassificat
       continue;
     }
 
+    const credentialParts = credentialEntitiesInLine(value);
     let kind: ClassifiedResumeLine["kind"] = "unclassified";
     let section: ResumeSourceSection = "unclassified";
 
@@ -215,7 +226,7 @@ export function classifyResumeSections(source: string): ResumeSectionClassificat
     } else if (isEducationLine(value, activeSection)) {
       kind = "education";
       section = "education";
-    } else if (isCredentialEntity(value)) {
+    } else if (credentialParts.length > 0) {
       kind = "credential";
       section = "credentials";
     } else if (looksLikeSkillLine(value, activeSection)) {
@@ -239,10 +250,10 @@ export function classifyResumeSections(source: string): ResumeSectionClassificat
     classified.push(item);
     sections[section].push(item);
 
-    // Credential registry is intrinsic and may span section context. An education
-    // line such as "HVAC Technical Certificate" is education-associated first,
-    // but is also registered once as a credential entity for presentation.
-    if (isCredentialEntity(value)) credentials.push(credentialCanonicalName(value));
+    // Split combined credential rows before canonicalization. This prevents a
+    // row such as "EPA 608 | OSHA 10 | HVAC Technical Certificate" from being
+    // collapsed into the first credential only.
+    for (const credential of credentialParts) credentials.push(credentialCanonicalName(credential));
     if (kind === "skill") skillValues.push(...splitSkillLine(value));
   }
 

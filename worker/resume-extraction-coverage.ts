@@ -62,8 +62,10 @@ const CREDENTIAL_HEADING_RE = /^(?:certifications?(?:\s*(?:&|and)\s*licenses?)?|
 const TITLE_SIGNAL_RE = /\b(?:technician|supervisor|manager|mechanic|engineer|specialist|foreperson|foreman|lead|director|electrician|plumber|carpenter|welder|installer|operator|maintenance|hvac|refrigeration)\b/i;
 const EMPLOYER_SIGNAL_RE = /\b(?:llc|inc\.?|corp\.?|corporation|company|companies|services?|staffing|living|communities|properties|property|heating|air|university|college|hospital|medical|facilities|facility|center|centre|group|solutions)\b/i;
 const EDUCATION_EVIDENCE_RE = /\b(?:education|university|college|technical school|trade school|high school|diploma|associate(?:'s)?(?:\s+degree)?|bachelor(?:'s)?(?:\s+degree)?|master(?:'s)?\s+(?:degree|program)|degree)\b/i;
-const CREDENTIAL_EVIDENCE_RE = /\b(?:certifications?|licenses?|certified|epa\s*608|osha(?:\s*10|\s*30)?|nccer|universal certification)\b/i;
+const CREDENTIAL_EVIDENCE_RE = /\b(?:certifications?|certificate|licenses?|certified|epa\s*608|osha(?:\s*10|\s*30)?|nccer|universal certification)\b/i;
+const CREDENTIAL_NARRATIVE_RE = /\b(?:professional|experience|experienced|years?|performed|managed|maintained|responsible|skilled|proficient|specializing|expertise|with\s+experience)\b/i;
 const PROMPT_LIKE_RE = /\b(?:ignore|disregard)\b.{0,120}\b(?:instructions?|prompt|invent|fabricate|pretend)\b|\b(?:invent|fabricate)\b.{0,80}\b(?:license|certification|credential|employer|job|date)\b/i;
+const CREDENTIAL_SEPARATOR_RE = /\s*(?:\||•|▪|◦|●|;)\s*|\s+\/\s+/;
 
 function sourceRoleSignals(source: string): number {
   const ranges = normalize(source).match(DATE_RANGE_RE) ?? [];
@@ -122,7 +124,29 @@ function looksLikeLocation(value: string): boolean {
   return /\b[A-Za-z .'-]+,\s*[A-Z]{2}\b/.test(value) || /\b(?:remote|hybrid)\b/i.test(value);
 }
 
+function inlineTitleEmployerHeader(lines: string[]): { employer: string; jobTitle: string; location: string } | null {
+  for (const line of lines) {
+    if (!line.includes("|")) continue;
+    const parts = line.split(/\s*\|\s*/).map((part) => part.trim()).filter(Boolean);
+    if (parts.length < 2) continue;
+
+    const location = parts.find(looksLikeLocation) ?? "";
+    const nonLocation = parts.filter((part) => part !== location);
+    if (nonLocation.length < 2) continue;
+
+    const [first, second] = nonLocation;
+    if (!TITLE_SIGNAL_RE.test(first)) continue;
+    if (normalize(first) === normalize(second)) continue;
+
+    return { jobTitle: first, employer: second, location };
+  }
+  return null;
+}
+
 function chooseHeaderFields(lines: string[]): { employer: string; jobTitle: string; location: string } {
+  const explicitInline = inlineTitleEmployerHeader(lines);
+  if (explicitInline) return explicitInline;
+
   const candidates = lines.flatMap(splitHeaderParts).filter((part) => !DATE_RANGE_LINE_RE.test(part));
   const location = candidates.find(looksLikeLocation) ?? "";
   const nonLocation = candidates.filter((part) => part !== location);
@@ -133,6 +157,10 @@ function chooseHeaderFields(lines: string[]): { employer: string; jobTitle: stri
   if (!employer) employer = nonLocation.find((part) => part !== jobTitle) ?? "";
   if (!jobTitle && nonLocation.length >= 2) jobTitle = nonLocation[1];
   if (!employer && nonLocation.length >= 1) employer = nonLocation[0] === jobTitle ? nonLocation[1] ?? "" : nonLocation[0];
+
+  if (normalize(employer) === normalize(jobTitle)) {
+    employer = nonLocation.find((part) => normalize(part) !== normalize(jobTitle)) ?? "";
+  }
   return { employer, jobTitle, location };
 }
 
@@ -220,6 +248,21 @@ function parseEducationDeterministically(source: string): string {
     .join("\n");
 }
 
+function splitCredentialCandidateLine(value: string): string[] {
+  return stripBullet(value)
+    .split(CREDENTIAL_SEPARATOR_RE)
+    .map((part) => part.trim())
+    .filter(Boolean);
+}
+
+function isConciseCredentialCandidate(value: string): boolean {
+  const cleaned = stripBullet(value);
+  if (!cleaned || PROMPT_LIKE_RE.test(cleaned) || !CREDENTIAL_EVIDENCE_RE.test(cleaned)) return false;
+  if (CREDENTIAL_NARRATIVE_RE.test(cleaned)) return false;
+  const words = normalize(cleaned).split(" ").filter(Boolean);
+  return words.length <= 12;
+}
+
 function credentialCandidates(source: string): string[] {
   const lines = sourceLines(source);
   const section = collectSection(source, CREDENTIAL_HEADING_RE);
@@ -232,10 +275,10 @@ function credentialCandidates(source: string): string[] {
   });
   const seen = new Set<string>();
   const result: string[] = [];
-  for (const line of [...section, ...explicit]) {
-    const cleaned = stripBullet(line);
+  for (const candidate of [...section, ...explicit].flatMap(splitCredentialCandidateLine)) {
+    const cleaned = stripBullet(candidate);
     const key = normalize(cleaned);
-    if (!key || seen.has(key) || PROMPT_LIKE_RE.test(cleaned)) continue;
+    if (!key || seen.has(key) || !isConciseCredentialCandidate(cleaned)) continue;
     seen.add(key);
     result.push(cleaned);
   }
