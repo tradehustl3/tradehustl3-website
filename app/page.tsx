@@ -49,13 +49,14 @@ export default function Home() {
 
       <header className={styles.header}>
         <Link className={styles.brand} href="#top" aria-label="TRADE HUSTL3 Resume Builder home">
-          <span className={styles.brandBadge}>
-            <Image src="/optimized/trade-hustl3-logo.webp" alt="" width={48} height={48} priority />
-          </span>
-          <span className={styles.brandName}>
-            <strong>TRADE HUSTL3</strong>
-            <small>RESUME BUILDER</small>
-          </span>
+          <Image
+            className={styles.brandLogo}
+            src="/optimized/resume-builder-logo-header.webp"
+            alt="TRADE HUSTL3 Resume Builder logo"
+            width={500}
+            height={410}
+            priority
+          />
         </Link>
         <nav className={styles.nav} aria-label="Primary navigation">
           <Link href="#sample-resume">See a sample</Link>
@@ -90,10 +91,6 @@ export default function Home() {
               sizes="(max-width: 1050px) 92vw, 52vw"
               priority
             />
-            <div className={styles.tradeVisualLabel}>
-              <strong>TRADE-CORRECT SETUP</strong>
-              <span>Blue low side · Yellow service · Red high side</span>
-            </div>
           </div>
         </div>
 
@@ -104,17 +101,26 @@ export default function Home() {
               <span>ACTUAL BUILDER OUTPUT</span>
             </div>
             <Image src="/sample-hvac-resume.webp" alt="Finished TRADE HUSTL3 HVAC resume sample" width={816} height={1056} sizes="(max-width: 900px) 86vw, 42vw" priority />
-          </div>
-          <div className={styles.botCard}>
-            <div className={styles.botAvatar}>
-              <Image src="/optimized/hustl3-bot.webp" alt="" fill sizes="58px" />
+            <div className={styles.botCard}>
+              <div className={styles.botAvatar}>
+                <Image src="/optimized/hustl3-bot.webp" alt="" fill sizes="58px" />
+              </div>
+              <div className={styles.botCopy}>
+                <span>HUSTL3 BOT</span>
+                <strong>Builds it for you.</strong>
+                <p>Trade experience in. Stronger resume out.</p>
+              </div>
             </div>
-            <div className={styles.botCopy}>
-              <span>HUSTL3 BOT</span>
-              <strong>Builds it for you.</strong>
-              <p>Trade experience in. Stronger resume out.</p>
-            </div>
           </div>
+          <aside className={styles.heroProof} aria-label="Why trade workers can trust the Resume Builder">
+            <span>BUILT FROM THE FIELD</span>
+            <strong>Shaped by 10+ years of hands-on maintenance and HVAC experience.</strong>
+            <ul>
+              <li>Preview before payment</li>
+              <li>ATS-friendly structure</li>
+              <li>PDF + editable DOCX</li>
+            </ul>
+          </aside>
         </div>
       </section>
 

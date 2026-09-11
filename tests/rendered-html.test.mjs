@@ -82,6 +82,9 @@ test("server-renders the corrected TRADE HUSTL3 brand and metadata", async () =>
 test("server-renders Resume Builder credibility and audience content", async () => {
   const html = await (await render()).text();
   assert.match(html, /Built around the way skilled-trades people actually work/i);
+  assert.match(html, /optimized\/resume-builder-logo-header\.webp/i);
+  assert.match(html, /Shaped by 10\+ years of hands-on maintenance and HVAC experience/i);
+  assert.doesNotMatch(html, /TRADE-CORRECT SETUP/i);
   for (const proofPoint of ["Trade-specific language", "ATS-friendly structure", "Upload or guided intake", "Real preview before payment", "PDF + editable DOCX", "Built for skilled trades"]) assert.match(html, new RegExp(proofPoint.replace("+", "\\+"), "i"));
   for (const trustPoint of [/No credit card to preview/i, /3 corrections within 7 days/i, /\$9\.99 one-time/i, /No subscription/i]) assert.match(html, trustPoint);
 });

@@ -41,3 +41,15 @@
 .hero h1{font-size:clamp(43px,3.9vw,64px);line-height:.96}
 .hero h1>span{white-space:nowrap}
 @media(max-width:720px){.brand{gap:7px;padding:3px 8px 3px 3px}.brandBadge{width:42px;height:42px}.brandBadge img{width:37px!important;height:37px!important}.brandName strong{font-size:17px}.brandName small{font-size:8px;letter-spacing:.1em}.hero h1{font-size:clamp(43px,13.5vw,64px)}.hero h1>span{white-space:normal}}
+
+
+/* Exact Resume Builder mark and honest launch-stage trust proof. */
+.brand{padding:0;border:0;border-radius:0;background:none;box-shadow:none}
+.brandLogo{display:block;width:clamp(116px,11vw,154px);height:auto;filter:drop-shadow(0 5px 10px rgba(0,0,0,.25))}
+.heroProof{display:grid;gap:8px;padding:17px 18px;border:1px solid #c2d3df;border-radius:14px;background:#fff;color:#0b1f33;box-shadow:0 12px 28px rgba(13,49,81,.09)}
+.heroProof>span{color:#d71920;font-size:11px;font-weight:950;letter-spacing:.15em}
+.heroProof>strong{font-size:16px;line-height:1.35}
+.heroProof ul{display:flex;flex-wrap:wrap;gap:7px 14px;margin:3px 0 0;padding:0;list-style:none}
+.heroProof li{color:#455d70;font-size:12px;font-weight:800}
+.heroProof li:before{content:"✓";margin-right:6px;color:#147744}
+@media(max-width:720px){.brandLogo{width:clamp(96px,27vw,124px)!important;height:auto!important}.heroProof{padding:15px}.heroProof ul{display:grid;gap:7px}}
