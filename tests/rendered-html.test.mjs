@@ -231,8 +231,11 @@ test("homepage leads with preview-before-payment proof before free resources", a
   assert.match(html, /href="\/sample-hvac-resume\.pdf"/i);
   assert.match(html, /src="\/sample-hvac-resume\.webp"/i);
   assert.match(html, /3 corrections within 7 days/i);
-  assert.match(html, /Secure Stripe checkout/i);
-  assert.ok(html.indexOf('id="sample-resume"') < html.indexOf('id="three-ways"'));
+  assert.match(html, /No credit card to preview/i);
+  assert.match(html, /optimized\/hvac-manifold-worksite\.webp/i);
+  assert.match(html, /blue hose on the left low-side port/i);
+  assert.match(html, /optimized\/hustl3-bot\.webp/i);
+  assert.ok(html.indexOf('id="sample-resume"') < html.indexOf('id="guide-title"'));
 });
 
 test("subscriber endpoint validates and stores normalized signups", async () => {
@@ -928,7 +931,7 @@ test("server-renders the focused homepage paths without book promotion", async (
   assert.doesNotMatch(html, /Read 7 Pages Free/i);
   assert.match(html, /href="\/resume-builder"/i);
   assert.match(html, /href="\/book"/i);
-  for (const location of ["sticky_header", "hero", "process", "three_doors", "footer_cta"]) assert.match(html, new RegExp(`data-location="${location}"`, "i"));
+  for (const location of ["sticky_header", "hero", "process", "guide_signup", "footer_cta"]) assert.match(html, new RegExp(`data-location="${location}"`, "i"));
   assert.doesNotMatch(html, /data-location="book_teaser"/i);
   assert.match(html, /data-analytics-event="select_content"/i);
 });
