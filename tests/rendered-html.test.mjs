@@ -70,7 +70,7 @@ test("server-renders the corrected TRADE HUSTL3 brand and metadata", async () =>
   assert.equal(html.includes("localhost:3000"), false);
   for (const schemaType of ["Organization", "Person", "WebSite", "WebPage"]) assert.match(html, new RegExp(`"@type":"${schemaType}"`, "i"));
   assert.doesNotMatch(html, /"@type":"Book"/i);
-  assert.match(html, /aria-label="TRADE HUSTL3 home"/i);
+  assert.match(html, /aria-label="TRADE HUSTL3 Resume Builder home"/i);
   assert.equal(html.toUpperCase().includes("TRA" + "D3"), false);
   assert.match(html, /optimized\/trade-hustl3-logo\.webp/i);
   assert.match(html, /favicon\.svg/i);
@@ -81,9 +81,9 @@ test("server-renders the corrected TRADE HUSTL3 brand and metadata", async () =>
 
 test("server-renders Resume Builder credibility and audience content", async () => {
   const html = await (await render()).text();
-  assert.match(html, /Created from real skilled-trades experience/i);
-  for (const proofPoint of ["Trade-specific wording", "Guided intake", "ATS-focused structure", "Multiple trade categories", "HUSTL3 BOT assistance", "Built from the field"]) assert.match(html, new RegExp(proofPoint, "i"));
-  for (const trustPoint of [/Preview before payment/i, /3 corrections within 7 days/i, /PDF \+ editable DOCX/i, /Secure Stripe checkout/i]) assert.match(html, trustPoint);
+  assert.match(html, /Built around the way skilled-trades people actually work/i);
+  for (const proofPoint of ["Trade-specific language", "ATS-friendly structure", "Upload or guided intake", "Real preview before payment", "PDF + editable DOCX", "Built for skilled trades"]) assert.match(html, new RegExp(proofPoint.replace("+", "\\+"), "i"));
+  for (const trustPoint of [/No credit card to preview/i, /3 corrections within 7 days/i, /\$9\.99 one-time/i, /No subscription/i]) assert.match(html, trustPoint);
 });
 
 test("publishes a canonical XML sitemap and robots discovery hints", async () => {
@@ -205,7 +205,7 @@ test("homepage is a traffic director with no signup form", async () => {
   const html = await (await render()).text();
   assert.doesNotMatch(html, /type="email"/i);
   assert.doesNotMatch(html, /<form\b/i);
-  assert.match(html, /MORE WAYS IN/i);
+  assert.match(html, /FREE CAREER GUIDE/i);
   assert.match(html, /href="\/top-10-trades"/i);
   assert.match(html, /href="\/book"/i);
   assert.doesNotMatch(html, /href="\/book\/sample"/i);
