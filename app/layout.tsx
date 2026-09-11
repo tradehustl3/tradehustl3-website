@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Anton, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import "./mobile-header-tune.css";
+import "./proof-section-enhance.css";
 import { GoogleAnalytics } from "./google-analytics";
 import { MetaCampaignViewTracker } from "./meta-view-content";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_TITLE, SITE_URL } from "./site";
