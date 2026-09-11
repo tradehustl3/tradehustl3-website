@@ -132,7 +132,7 @@ export default function Home() {
             </div>
             <blockquote className={styles.founderQuote}>
               <p>“I built this for the worker who knows the job but struggles to explain it on paper.”</p>
-              <footer>— Zachary Ellis, Founder, TRADE HUSTL3</footer>
+              <cite>— Zachary Ellis, Founder, TRADE HUSTL3</cite>
             </blockquote>
           </aside>
         </div>
