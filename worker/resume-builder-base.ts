@@ -30,6 +30,7 @@ export interface ResumeBuilderEnv {
   GEMINI_MODEL?: string;
   RESUME_AI_PROVIDER?: string;
   RESUME_AI_DAILY_ATTEMPT_LIMIT?: string;
+  CALIBRATION_MODE?: string;
 }
 
 export interface ResumeBuilderDependencies {
@@ -1922,6 +1923,102 @@ async function callResumeModel(
     console.warn("Gemini resume generation unavailable; using configured Anthropic fallback.");
     return callAnthropic(env, resume, correctionRequest, dependencies);
   }
+}
+
+export type ResumeCalibrationCoreInput = {
+  sourceText: string;
+  fileName: string;
+  trade: string;
+  title: string;
+  intake: Record<string, unknown>;
+  targetJobPosting?: string;
+  theme?: ResumeTheme;
+};
+
+export type ResumeCalibrationCoreResult = {
+  resume: StoredGeneratedResume;
+  model: string;
+  inputTokens: number;
+  outputTokens: number;
+  guardFlags: UnsupportedNumericClaim[];
+  qualityScore: ReturnType<typeof scoreResume>;
+  files: {
+    docx: Uint8Array;
+    pdf: Uint8Array;
+    preview: Uint8Array;
+  };
+};
+
+function requireCalibrationMode(env: ResumeBuilderEnv): void {
+  if (env.CALIBRATION_MODE?.trim() !== "1") {
+    throw new Error("Resume calibration is disabled. Set CALIBRATION_MODE=1 in a local development process.");
+  }
+}
+
+/**
+ * Internal-only extraction entrypoint for the local calibration runner.
+ * It deliberately has no HTTP route, session shortcut, D1 write, or production deployment path.
+ */
+export async function extractResumeFactsForCalibration(
+  env: ResumeBuilderEnv,
+  sourceText: string,
+  dependencies: ResumeBuilderDependencies = {},
+): Promise<Record<string, unknown>> {
+  requireCalibrationMode(env);
+  const text = sourceText.trim();
+  if (text.length < 80 || text.length > MAX_IMPORT_TEXT_CHARS) {
+    throw new Error("Calibration source text must contain 80 to 100,000 characters.");
+  }
+  try {
+    return await callResumeImportModel(env, text, dependencies);
+  } catch (primaryError) {
+    if (resumeAiProvider(env) !== "gemini" || !env.ANTHROPIC_API_KEY?.trim()) throw primaryError;
+    return callResumeImportModel({ ...env, RESUME_AI_PROVIDER: "anthropic" }, text, dependencies);
+  }
+}
+
+/**
+ * Runs the production generation, grounding, numeric guard, and document renderers without
+ * creating an account, entitlement, D1 row, R2 object, or public authentication bypass.
+ */
+export async function generateResumeForCalibration(
+  env: ResumeBuilderEnv,
+  input: ResumeCalibrationCoreInput,
+  dependencies: ResumeBuilderDependencies = {},
+): Promise<ResumeCalibrationCoreResult> {
+  requireCalibrationMode(env);
+  if (!ALLOWED_TRADES.has(input.trade)) throw new Error("Choose a supported calibration trade.");
+  if (!input.title.trim()) throw new Error("A calibration target title is required.");
+  if (!input.sourceText.trim()) throw new Error("Calibration source text is required.");
+
+  const resume: ResumeRecord = {
+    resume_id: `calibration-${crypto.randomUUID()}`,
+    user_id: "calibration-local",
+    trade: input.trade,
+    title: input.title.trim(),
+    intake_json: JSON.stringify(input.intake),
+    generated_json: null,
+    target_job_posting: input.targetJobPosting?.trim() || null,
+    status: "draft",
+    theme: normalizeTheme(input.theme),
+  };
+  const generated = await callResumeModel(env, resume, null, dependencies);
+  const theme = normalizeTheme(input.theme);
+  const [docx, pdf, preview] = await Promise.all([
+    (dependencies.createDocx ?? createResumeDocx)(generated.resume, theme),
+    (dependencies.createPdf ?? createResumePdf)(generated.resume, false, theme),
+    (dependencies.createPdf ?? createResumePdf)(generated.resume, true, theme),
+  ]);
+  const source = canonicalSourceRecord(input.intake, resume.title);
+  return {
+    resume: generated.resume,
+    model: generated.model,
+    inputTokens: generated.inputTokens,
+    outputTokens: generated.outputTokens,
+    guardFlags: generated.guardFlags,
+    qualityScore: scoreResume(generated.resume, source),
+    files: { docx, pdf, preview },
+  };
 }
 
 async function storeResumeFile(
