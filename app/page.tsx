@@ -233,8 +233,8 @@ export default function Home() {
           <p className={styles.heroAssurance}>No credit card required to build your preview. Pay only when you are ready to unlock the clean PDF + editable DOCX.</p>
           <div className={styles.tradeVisual}>
             <Image
-              src="/optimized/hvac-manifold-worksite.webp"
-              alt="Digital HVAC manifold with blue hose on the left low-side port, yellow hose on the center service port, and red hose on the right high-side port"
+              src="/trade-landings/trade-hustl3-resume-builder-hero.webp"
+              alt="TRADE HUSTL3 Resume Builder commercial construction worksite built for skilled trades"
               fill
               sizes="(max-width: 1050px) 92vw, 52vw"
               priority
