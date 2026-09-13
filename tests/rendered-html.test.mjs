@@ -226,22 +226,24 @@ test("homepage keeps book content on the dedicated book page", async () => {
   assert.doesNotMatch(html, /BUILT IN THE FIELD/i);
 });
 
-test("homepage leads with preview-before-payment proof before free resources", async () => {
+test("homepage leads with preview-before-payment proof and the included cover letter before free resources", async () => {
   const html = await (await render()).text();
   assert.match(html, /\$0 to preview/i);
   assert.match(html, /Build My Free Preview/i);
-  assert.match(html, /Actual Resume Builder output—not a promise/i);
-  assert.match(html, /href="\/sample-hvac-resume\.pdf"/i);
-  assert.match(html, /src="\/sample-hvac-resume\.webp"/i);
+  assert.match(html, /INCLUDED WITH YOUR RESUME PURCHASE/i);
+  assert.match(html, /A matching cover letter\. Built for the same job\./i);
+  assert.match(html, /Resume \+ matching cover letter/i);
+  assert.match(html, /Jordan Taylor/i);
+  assert.match(html, /Dear Hiring Manager/i);
+  assert.match(html, /PDF \+ editable DOCX/i);
   assert.match(html, /3 corrections within 7 days/i);
   assert.match(html, /No credit card to preview/i);
-  assert.match(html, /optimized\/hvac-manifold-worksite\.webp/i);
-  assert.match(html, /blue hose on the left low-side port/i);
+  assert.match(html, /trade-landings\/trade-hustl3-resume-builder-hero\.webp/i);
   assert.match(html, /optimized\/hustl3-bot\.webp/i);
   assert.match(html, /500\+ TRADESPEOPLE HELPED — AND COUNTING/i);
-  assert.doesNotMatch(html, /Zachary Ellis|Founder, TRADE HUSTL3/i);
-  assert.match(html, /BUILT FOR THE TRADES\.[\s\S]*READY FOR THE JOB\./i);
-  assert.ok(html.indexOf('id="sample-resume"') < html.indexOf('id="guide-title"'));
+  assert.doesNotMatch(html, /Founder, TRADE HUSTL3/i);
+  assert.match(html, /BUILT FOR THE TRADES[\s\S]*READY WHEN YOU ARE/i);
+  assert.ok(html.indexOf('id="included-cover-letter"') < html.indexOf('id="guide-title"'));
 });
 
 test("subscriber endpoint validates and stores normalized signups", async () => {

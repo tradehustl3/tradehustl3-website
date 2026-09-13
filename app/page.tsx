@@ -23,7 +23,7 @@ const processSteps: { step: string; title: string; copy: string; icon: 'upload' 
   {
     step: '03',
     title: 'Unlock when you are ready',
-    copy: 'Review the protected preview first. Unlock the clean PDF + editable DOCX for one $9.99 payment.',
+    copy: 'Review your protected preview first. One $9.99 payment unlocks your resume plus a matching cover letter in PDF + editable DOCX.',
     icon: 'unlock',
     accent: 'accentGold',
   },
@@ -34,13 +34,14 @@ const proofPoints = [
   ['ATS-friendly structure', 'Clean single-column formatting keeps the resume readable for hiring managers and modern applicant tracking systems.'],
   ['Upload or guided intake', 'Use your current resume as a starting point or build one from scratch without staring at a blank page.'],
   ['Real preview before payment', 'See the finished structure before you decide whether to pay. No credit card is required to build the preview.'],
-  ['PDF + editable DOCX', 'Unlock both a clean PDF and an editable Word file so you can apply immediately and still keep control of your document.'],
+  ['Resume + cover letter files', 'Unlock your resume and matching cover letter as clean PDFs and editable Word files so you can apply immediately.'],
   ['Built for skilled trades', 'Designed for HVAC, electrical, plumbing, welding, construction, facilities, general labor, and maintenance careers.'],
 ];
 
 const purchaseTrust = [
   'No credit card to preview',
   '$9.99 one-time',
+  'Matching cover letter included',
   'No subscription',
   '3 corrections within 7 days',
 ];
@@ -207,7 +208,7 @@ export default function Home() {
           </span>
         </div>
         <nav className={styles.nav} aria-label="Primary navigation" data-header-nav>
-          <Link href="#sample-resume">See a sample</Link>
+          <Link href="#included-cover-letter">Cover letter included</Link>
           <Link href="/book">The Book</Link>
           <AnalyticsLink href="/resume-builder" location="sticky_header" className={styles.headerCta}>Build My Free Preview</AnalyticsLink>
         </nav>
@@ -227,10 +228,10 @@ export default function Home() {
 
           <div className={styles.heroActions}>
             <AnalyticsLink href="/resume-builder" location="hero" className={styles.primaryButton}>Build My Free Preview <span aria-hidden="true">→</span></AnalyticsLink>
-            <a href="#sample-resume" className={styles.textLink}>See a finished sample first</a>
+            <a href="#included-cover-letter" className={styles.textLink}>See the included cover letter</a>
           </div>
 
-          <p className={styles.heroAssurance}>No credit card required to build your preview. Pay only when you are ready to unlock the clean PDF + editable DOCX.</p>
+          <p className={styles.heroAssurance}>No credit card required to build your preview. Pay only when you are ready to unlock your resume and matching cover letter in PDF + editable DOCX.</p>
           <div className={styles.tradeVisual}>
             <Image
               src="/trade-landings/trade-hustl3-resume-builder-hero.webp"
@@ -286,34 +287,53 @@ export default function Home() {
         <ul>{purchaseTrust.map((item) => <li key={item}>{item}</li>)}</ul>
       </section>
 
-      <section className={styles.sampleProof} id="sample-resume" aria-labelledby="sample-title">
-        <div className={styles.sampleCopy}>
-          <p className={styles.eyebrow}>PROOF BEFORE THE PITCH</p>
-          <h2 id="sample-title">Actual resume builder output—not a promise.</h2>
-          <p className={styles.sampleLead}>This fictional HVAC candidate demonstrates the real resume structure customers can receive. Classic Black stays clean, professional, and ATS-safe.</p>
+      <section className={styles.coverProof} id="included-cover-letter" aria-labelledby="cover-letter-title">
+        <div className={styles.coverCopy}>
+          <p className={styles.eyebrow}>INCLUDED WITH YOUR RESUME PURCHASE</p>
+          <h2 id="cover-letter-title">A matching cover letter. Built for the same job.</h2>
+          <p className={styles.coverLead}>Your $9.99 one-time purchase includes more than the resume. HUSTL3 BOT uses your verified experience and target job to build a professional cover letter that sounds direct, capable, and ready to send.</p>
 
-          <div className={styles.beforeAfter}>
-            <article>
-              <span>ROUGH INPUT</span>
-              <p>“Did HVAC repairs, work orders, and helped the maintenance team.”</p>
-            </article>
-            <article>
-              <span>STRONGER RESUME LANGUAGE</span>
-              <p>“Diagnose and repair 3–15 ton split systems, including capacitors, contactors, transformers, control boards, motors, and 24V control circuits.”</p>
-            </article>
+          <div className={styles.includedOffer} aria-label="Cover letter package details">
+            <strong>INCLUDED AT NO EXTRA COST</strong>
+            <span>Resume + matching cover letter</span>
+            <small>PDF + editable DOCX · No subscription</small>
           </div>
 
-          <div className={styles.sampleActions}>
-            <AnalyticsLink href="/sample-hvac-resume.pdf" location="sample_proof" item="hvac_sample_pdf" className={styles.secondaryButton}>View Full Sample PDF <span aria-hidden="true">→</span></AnalyticsLink>
-            <AnalyticsLink href="/resume-builder" location="sample_proof" className={styles.primaryButton}>Build My Free Preview <span aria-hidden="true">→</span></AnalyticsLink>
+          <ul className={styles.coverBenefits}>
+            <li>Matched to your target role and company</li>
+            <li>Built only from facts verified in your resume</li>
+            <li>Professional trade-focused language</li>
+            <li>Downloadable as PDF and editable DOCX</li>
+          </ul>
+
+          <div className={styles.coverActions}>
+            <AnalyticsLink href="/resume-builder" location="cover_letter_proof" className={styles.primaryButton}>Build My Free Preview <span aria-hidden="true">→</span></AnalyticsLink>
           </div>
-          <p className={styles.sampleDisclosure}>Sample candidate name, employers, and contact details are fictional and shown for demonstration.</p>
+          <p className={styles.coverDisclosure}>Example candidate, company, and contact details are fictional and shown for demonstration.</p>
         </div>
 
-        <div className={styles.sampleSheet}>
-          <Image src="/sample-hvac-resume.webp" alt="Classic Black sample HVAC and facilities maintenance resume" width={816} height={1056} sizes="(max-width: 900px) 88vw, 38vw" />
-          <span>CLASSIC BLACK <b aria-hidden="true">✓</b></span>
-        </div>
+        <article className={styles.coverSheet} aria-label="Example matching HVAC cover letter">
+          <div className={styles.coverSheetTop}>
+            <span>MATCHING COVER LETTER</span>
+            <b>INCLUDED</b>
+          </div>
+          <header>
+            <h3>Jordan Taylor</h3>
+            <p>HVAC &amp; Facilities Maintenance Technician</p>
+            <small>Atlanta, GA · (404) 555-0142 · jordan.taylor@example.com</small>
+          </header>
+          <div className={styles.coverRule} />
+          <div className={styles.coverLetterBody}>
+            <p>September 13, 2026</p>
+            <p><strong>Hiring Manager</strong><br />ABC Property Management<br />Atlanta, GA</p>
+            <p>Dear Hiring Manager,</p>
+            <p>I am applying for the HVAC Maintenance Technician position with ABC Property Management. I bring more than 10 years of hands-on experience supporting commercial and multifamily properties through preventive maintenance, HVAC troubleshooting, electrical diagnostics, work-order execution, and emergency response.</p>
+            <p>My background includes diagnosing and repairing split systems, working with 24V controls, motors, contactors, capacitors, and control boards, and documenting completed work clearly. I hold EPA 608 Universal and OSHA 10 certifications and understand the importance of safety, communication, and keeping occupied properties operating reliably.</p>
+            <p>I would welcome the opportunity to bring that field experience and dependable approach to your maintenance team. Thank you for your time and consideration.</p>
+            <p>Sincerely,<br /><strong>Jordan Taylor</strong></p>
+          </div>
+          <footer>TRADE HUSTL3 APPLICATION PACKAGE <b aria-hidden="true">✓</b></footer>
+        </article>
       </section>
 
       <section className={styles.process} aria-labelledby="process-title">

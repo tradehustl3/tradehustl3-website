@@ -176,3 +176,78 @@
   .processCard p{font-size:15px;line-height:1.7}
   .processConnector{left:24px;bottom:-17px;height:24px}
 }
+
+/* Included cover-letter proof replaces the repeated resume sample. */
+.coverProof{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(380px,.72fr);
+  gap:clamp(42px,7vw,104px);
+  align-items:center;
+  padding:clamp(72px,8.5vw,124px) clamp(22px,6vw,94px);
+  background:#f7f8f9;
+  color:#0b1f33;
+}
+.coverCopy h2{
+  max-width:800px;
+  margin:0;
+  font-family:var(--font-display),Impact,sans-serif;
+  font-size:clamp(44px,5.5vw,80px);
+  font-weight:400;
+  letter-spacing:-.025em;
+  line-height:.98;
+}
+.coverLead{max-width:720px;margin:23px 0 26px;color:#53687a;font-size:17px;line-height:1.65}
+.includedOffer{
+  display:grid;
+  gap:5px;
+  max-width:650px;
+  padding:20px 22px;
+  border-left:5px solid #d71920;
+  border-radius:6px 14px 14px 6px;
+  background:#0b2c49;
+  color:#fff;
+  box-shadow:0 12px 28px rgba(11,44,73,.14);
+}
+.includedOffer strong{color:#f1c357;font-size:12px;letter-spacing:.14em}
+.includedOffer span{font-size:22px;font-weight:950}
+.includedOffer small{color:#d8e6f1;font-size:13px;font-weight:760}
+.coverBenefits{display:grid;grid-template-columns:1fr 1fr;gap:12px 18px;max-width:700px;margin:25px 0 0;padding:0;list-style:none}
+.coverBenefits li{position:relative;padding-left:28px;color:#243d52;font-size:15px;font-weight:800;line-height:1.45}
+.coverBenefits li:before{content:"✓";position:absolute;left:0;top:0;display:grid;place-items:center;width:20px;height:20px;border-radius:50%;background:#e7f4ec;color:#147744;font-size:12px}
+.coverActions{display:flex;margin-top:28px}
+.coverActions .primaryButton{font-size:15px}
+.coverDisclosure{max-width:720px;margin:15px 0 0;color:#70808d;font-size:11px;line-height:1.5}
+.coverSheet{
+  position:relative;
+  display:block;
+  padding:18px 26px 56px;
+  border:1px solid #b8c4cc;
+  border-top:7px solid #d71920;
+  border-radius:4px;
+  background:#fff;
+  box-shadow:20px 24px 0 rgba(13,49,81,.08),0 20px 48px rgba(13,49,81,.10);
+}
+.coverSheetTop{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 -8px 24px;padding:10px 12px;border-radius:6px;background:#0b2c49;color:#fff;font-size:10px;font-weight:950;letter-spacing:.12em}
+.coverSheetTop b{padding:5px 8px;border-radius:999px;background:#f1c357;color:#0b1f33;font-size:9px}
+.coverSheet header{text-align:center}
+.coverSheet h3{margin:0;color:#101820;font-size:25px;line-height:1.1}
+.coverSheet header p{margin:5px 0 2px;color:#253e52;font-size:13px;font-weight:850}
+.coverSheet header small{color:#576a79;font-size:9px}
+.coverRule{height:2px;margin:18px 0;background:#172f43}
+.coverLetterBody{color:#263846;font-family:Arial,sans-serif;font-size:11px;line-height:1.58}
+.coverLetterBody p{margin:0 0 14px}
+.coverSheet>footer{position:absolute;right:26px;bottom:18px;left:26px;display:flex;justify-content:space-between;border-top:1px solid #ccd5dc;padding-top:12px;color:#172f43;font-size:9px;font-weight:950;letter-spacing:.09em}
+@media(max-width:1050px){
+  .coverProof{grid-template-columns:1fr}
+  .coverSheet{width:min(650px,100%)}
+}
+@media(max-width:720px){
+  .coverProof{gap:36px;padding:62px 18px}
+  .coverLead{font-size:16px}
+  .coverBenefits{grid-template-columns:1fr}
+  .coverActions{display:grid}
+  .coverSheet{padding:14px 17px 52px;box-shadow:12px 14px 0 rgba(13,49,81,.08)}
+  .coverSheetTop{margin:0 0 20px}
+  .coverLetterBody{font-size:10px;line-height:1.5}
+  .coverSheet>footer{right:17px;left:17px}
+}
