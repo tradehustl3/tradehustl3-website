@@ -37,8 +37,8 @@ const TRADE_WORKSITE_IMAGES: Record<
     height: 1024,
   },
   Plumbing: {
-    src: "/trade-landings/plumbing-worksite.webp",
-    alt: "Plumbing press tool, pipe wrenches, and copper fittings in a commercial mechanical room",
+    src: "/trade-landings/plumbing-drain-cleaner-worksite.webp",
+    alt: "Plumber operating a wheeled auto-feed sewer auger at a commercial drain cleanout",
     width: 1536,
     height: 1024,
   },
