@@ -17,12 +17,6 @@
   background-size: 22px 22px;
 }
 
-/* The old header image is unreliable in the Worker preview and duplicates the
-   adjacent TRADE HUSTL3 wordmark. Keep one clean brand mark in this header. */
-.page :global(.rb-brand img) { display: none; }
-.page :global(.rb-brand) { gap: 0; }
-.page :global(.rb-brand > span) { font-size: clamp(22px, 2.3vw, 28px); }
-
 .tradeBar {
   min-height: 38px;
   display: flex;
