@@ -14,6 +14,54 @@ import styles from "./trade-landing.module.css";
 
 const HUB_HREF = "/resume-builder";
 
+const TRADE_WORKSITE_IMAGES: Record<
+  TradeLandingContent["trade"],
+  { src: string; alt: string; width: number; height: number }
+> = {
+  "HVAC & Refrigeration": {
+    src: "/optimized/hvac-manifold-worksite.webp",
+    alt: "HVAC manifold gauges connected to commercial equipment at an active worksite",
+    width: 1400,
+    height: 788,
+  },
+  "Facilities Maintenance": {
+    src: "/trade-landings/facilities-maintenance-worksite.webp",
+    alt: "Facilities maintenance tools, multimeter, and drill in a commercial mechanical room",
+    width: 1536,
+    height: 1024,
+  },
+  Electrical: {
+    src: "/trade-landings/electrician-worksite.webp",
+    alt: "Commercial electrical panel, multimeter, and insulated tools at a construction site",
+    width: 1536,
+    height: 1024,
+  },
+  Plumbing: {
+    src: "/trade-landings/plumbing-worksite.webp",
+    alt: "Plumbing press tool, pipe wrenches, and copper fittings in a commercial mechanical room",
+    width: 1536,
+    height: 1024,
+  },
+  "Welding & Fabrication": {
+    src: "/trade-landings/welding-fabrication-worksite.webp",
+    alt: "Welding helmet, fabrication tools, and steel workpieces in an active metal shop",
+    width: 1536,
+    height: 1024,
+  },
+  "Construction & Carpentry": {
+    src: "/trade-landings/construction-carpentry-worksite.webp",
+    alt: "Carpentry power tools and plans on an active wood-framing jobsite",
+    width: 1536,
+    height: 1024,
+  },
+  "General Labor / Trade Helper": {
+    src: "/trade-landings/general-labor-worksite.webp",
+    alt: "General labor tools and building materials staged in a commercial renovation area",
+    width: 1536,
+    height: 1024,
+  },
+};
+
 function BuildCta({ content, location, label, className, withArrow = true }: {
   content: TradeLandingContent;
   location: string;
@@ -57,6 +105,8 @@ function SiblingGuides({ content }: { content: TradeLandingContent }) {
 }
 
 export function TradeLandingPage({ content }: { content: TradeLandingContent }) {
+  const worksiteImage = TRADE_WORKSITE_IMAGES[content.trade];
+
   return (
     <main className={`rb-page ${styles.page}`}>
       <script type="application/ld+json"
@@ -92,9 +142,8 @@ export function TradeLandingPage({ content }: { content: TradeLandingContent }) 
 
         <aside className={styles.heroProof} aria-labelledby="pricing-title">
           <div className={styles.workspaceFrame}>
-            <Image src="/trade-hustl3-resume-workspace.png"
-              alt="TRADE HUSTL3 workspace showing a professional skilled-trades resume"
-              width={1448} height={1086} priority />
+            <Image src={worksiteImage.src} alt={worksiteImage.alt}
+              width={worksiteImage.width} height={worksiteImage.height} priority />
             <span className={styles.previewBadge}>Preview before payment</span>
           </div>
           <div className={styles.priceCard}>
