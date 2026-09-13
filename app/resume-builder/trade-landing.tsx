@@ -43,8 +43,8 @@ const TRADE_WORKSITE_IMAGES: Record<
     height: 1024,
   },
   "Welding & Fabrication": {
-    src: "/trade-landings/welding-fabrication-worksite.webp",
-    alt: "Welding helmet, fabrication tools, and steel workpieces in an active metal shop",
+    src: "/trade-landings/welding-female-pink-helmet-worksite.webp",
+    alt: "Black female welder with a ponytail and pink welding helmet fabricating steel in an active shop",
     width: 1536,
     height: 1024,
   },
