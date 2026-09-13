@@ -21,11 +21,11 @@ export function ResumeBuilderHeader({ action }: { action?: ReactNode } = {}) {
           height={410}
           priority
         />
-        <span>TRADE HUSTL<span>3</span></span>
       </a>
-      <div className="rb-header-product">
-        <span>Career tools</span>
-        <strong>Resume Builder</strong>
+      <div className="rb-header-tagline" aria-label="Built by Hustle. Backed by Trades.">
+        <span className="rb-header-lines" aria-hidden="true"><i /><i /><i /></span>
+        <strong>Built by Hustle. Backed by Trades.</strong>
+        <span className="rb-header-lines" aria-hidden="true"><i /><i /><i /></span>
       </div>
       {action ?? <a className="rb-exit" href="/">Exit builder</a>}
     </header>
