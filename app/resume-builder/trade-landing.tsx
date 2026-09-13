@@ -25,7 +25,7 @@ const TRADE_WORKSITE_IMAGES: Record<
     height: 788,
   },
   "Facilities Maintenance": {
-    src: "/trade-landings/general-labor-worksite.webp",
+    src: "/trade-landings/facilities-maintenance-worksite.webp",
     alt: "Facilities maintenance tool cart, drill, ladders, and building materials in a commercial renovation corridor",
     width: 1536,
     height: 1024,
