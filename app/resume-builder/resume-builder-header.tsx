@@ -14,7 +14,13 @@ export function ResumeBuilderHeader({ action }: { action?: ReactNode } = {}) {
   return (
     <header className="rb-header">
       <a className="rb-brand" href="/" aria-label="TRADE HUSTL3 home">
-        <Image src="/resume-builder-logo-llc.png" alt="TRADE HUSTL3 LLC Resume Builder logo" width={132} height={88} priority />
+        <Image
+          src="/optimized/resume-builder-logo-header.webp"
+          alt="TRADE HUSTL3 Resume Builder logo"
+          width={500}
+          height={410}
+          priority
+        />
         <span>TRADE HUSTL<span>3</span></span>
       </a>
       <div className="rb-header-product">
