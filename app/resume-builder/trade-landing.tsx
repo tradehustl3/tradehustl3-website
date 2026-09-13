@@ -25,8 +25,8 @@ const TRADE_WORKSITE_IMAGES: Record<
     height: 788,
   },
   "Facilities Maintenance": {
-    src: "/trade-landings/facilities-maintenance-worksite.webp",
-    alt: "Facilities maintenance tools, multimeter, and drill in a commercial mechanical room",
+    src: "/trade-landings/general-labor-worksite.webp",
+    alt: "Facilities maintenance tool cart, drill, ladders, and building materials in a commercial renovation corridor",
     width: 1536,
     height: 1024,
   },
@@ -55,8 +55,8 @@ const TRADE_WORKSITE_IMAGES: Record<
     height: 1024,
   },
   "General Labor / Trade Helper": {
-    src: "/trade-landings/general-labor-worksite.webp",
-    alt: "General labor tools and building materials staged in a commercial renovation area",
+    src: "/trade-landings/facilities-maintenance-worksite.webp",
+    alt: "Maintenance tools, multimeter, and drill staged in a commercial mechanical room",
     width: 1536,
     height: 1024,
   },
