@@ -236,6 +236,8 @@ test("homepage leads with preview-before-payment proof and the included cover le
   assert.match(html, /Jordan Taylor/i);
   assert.match(html, /Dear Hiring Manager/i);
   assert.match(html, /PDF \+ editable DOCX/i);
+  assert.equal((html.match(/<footer\b/gi) ?? []).length, 1);
+  assert.match(html, /<footer[^>]*data-site-footer/i);
   assert.match(html, /3 corrections within 7 days/i);
   assert.match(html, /No credit card to preview/i);
   assert.match(html, /trade-landings\/trade-hustl3-resume-builder-hero\.webp/i);

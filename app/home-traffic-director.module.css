@@ -236,7 +236,7 @@
 .coverRule{height:2px;margin:18px 0;background:#172f43}
 .coverLetterBody{color:#263846;font-family:Arial,sans-serif;font-size:11px;line-height:1.58}
 .coverLetterBody p{margin:0 0 14px}
-.coverSheet>footer{position:absolute;right:26px;bottom:18px;left:26px;display:flex;justify-content:space-between;border-top:1px solid #ccd5dc;padding-top:12px;color:#172f43;font-size:9px;font-weight:950;letter-spacing:.09em}
+.coverSheetFooter{position:absolute;right:26px;bottom:18px;left:26px;display:flex;justify-content:space-between;border-top:1px solid #ccd5dc;padding-top:12px;color:#172f43;font-size:9px;font-weight:950;letter-spacing:.09em}
 @media(max-width:1050px){
   .coverProof{grid-template-columns:1fr}
   .coverSheet{width:min(650px,100%)}
@@ -249,5 +249,5 @@
   .coverSheet{padding:14px 17px 52px;box-shadow:12px 14px 0 rgba(13,49,81,.08)}
   .coverSheetTop{margin:0 0 20px}
   .coverLetterBody{font-size:10px;line-height:1.5}
-  .coverSheet>footer{right:17px;left:17px}
+  .coverSheetFooter{right:17px;left:17px}
 }

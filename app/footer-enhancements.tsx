@@ -51,7 +51,7 @@ export function FooterEnhancements() {
   useEffect(() => {
     if (pathname !== "/") return;
 
-    const footer = document.querySelector("footer");
+    const footer = document.querySelector("footer[data-site-footer]") ?? document.querySelector("footer");
     if (!footer) return;
 
     const bottomNav = footer.querySelector('nav[aria-label="Footer links"]');

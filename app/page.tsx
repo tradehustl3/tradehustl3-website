@@ -332,7 +332,7 @@ export default function Home() {
             <p>I would welcome the opportunity to bring that field experience and dependable approach to your maintenance team. Thank you for your time and consideration.</p>
             <p>Sincerely,<br /><strong>Jordan Taylor</strong></p>
           </div>
-          <footer>TRADE HUSTL3 APPLICATION PACKAGE <b aria-hidden="true">✓</b></footer>
+          <div className={styles.coverSheetFooter}>TRADE HUSTL3 APPLICATION PACKAGE <b aria-hidden="true">✓</b></div>
         </article>
       </section>
 
@@ -392,7 +392,7 @@ export default function Home() {
         <AnalyticsLink href="/resume-builder" location="footer_cta" className={styles.primaryButton}>Build My Free Preview <span aria-hidden="true">→</span></AnalyticsLink>
       </section>
 
-      <footer className={styles.footer}>
+      <footer className={styles.footer} data-site-footer>
         <div className={styles.footerBrand}><Image src="/optimized/trade-hustl3-logo.webp" alt="TRADE HUSTL3 logo" width={44} height={44} /><strong>TRADE HUSTL3 LLC</strong></div>
         <p>Built by Hustle, Backed by Trades.</p>
         <nav aria-label="Footer links">
