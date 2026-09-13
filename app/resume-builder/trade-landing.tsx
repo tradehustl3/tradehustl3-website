@@ -55,8 +55,8 @@ const TRADE_WORKSITE_IMAGES: Record<
     height: 1024,
   },
   "General Labor / Trade Helper": {
-    src: "/trade-landings/facilities-maintenance-worksite.webp",
-    alt: "Maintenance tools, multimeter, and drill staged in a commercial mechanical room",
+    src: "/trade-landings/general-labor-traffic-control-worksite.webp",
+    alt: "Road construction flagger in a high-visibility safety vest holding a stop paddle in an active work zone",
     width: 1536,
     height: 1024,
   },
