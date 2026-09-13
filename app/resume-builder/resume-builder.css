@@ -31,7 +31,7 @@
 .rb-page :focus-visible { outline: 3px solid var(--rb-gold); outline-offset: 3px; }
 
 .rb-header {
-  min-height: 76px;
+  min-height: 92px;
   display: grid;
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
@@ -41,13 +41,20 @@
   background: var(--rb-navy-3);
 }
 
-.rb-brand { display: flex; align-items: center; gap: 12px; width: fit-content; }
-.rb-brand img { height: 46px; width: auto; object-fit: contain; filter: drop-shadow(0 0 14px #d6a52a2e); }
+.rb-brand { display: flex; align-items: center; width: fit-content; }
+.rb-brand img { height: 66px; width: auto; object-fit: contain; filter: drop-shadow(0 0 14px #d6a52a2e); }
 .rb-brand > span { font-family: var(--font-display), Impact, sans-serif; font-size: 23px; letter-spacing: .055em; }
 .rb-brand > span span, .rb-footer strong span { color: var(--rb-red); }
 .rb-header-product { display: flex; align-items: center; gap: 12px; text-transform: uppercase; }
 .rb-header-product span { color: var(--rb-gray); font-size: 9px; font-weight: 800; letter-spacing: .18em; }
 .rb-header-product strong { padding-left: 12px; border-left: 1px solid var(--rb-gold); font-size: 12px; letter-spacing: .12em; }
+.rb-header-tagline { display: flex; align-items: center; justify-content: center; gap: 12px; color: var(--rb-cream); text-align: center; text-transform: uppercase; }
+.rb-header-tagline strong { font-size: 10px; line-height: 1.35; letter-spacing: .12em; }
+.rb-header-lines { width: 38px; display: grid; gap: 3px; }
+.rb-header-lines i { height: 2px; display: block; }
+.rb-header-lines i:nth-child(1) { background: var(--rb-gold); }
+.rb-header-lines i:nth-child(2) { background: var(--rb-red); }
+.rb-header-lines i:nth-child(3) { background: #2f75a8; }
 .rb-exit { justify-self: end; color: var(--rb-gray); font-size: 10px; font-weight: 800; letter-spacing: .15em; text-transform: uppercase; }
 .rb-exit:hover { color: var(--rb-gold); }
 /* Compact primary CTA that replaces "Exit builder" in the header on trade landing pages. */
@@ -358,6 +365,11 @@
 }
 
 @media (max-width: 700px) {
+  .rb-header { grid-template-columns: 1fr auto; gap: 10px 16px; padding: 10px 20px 12px; }
+  .rb-brand img { height: 62px; }
+  .rb-header-tagline { grid-column: 1 / -1; grid-row: 2; gap: 9px; }
+  .rb-header-tagline strong { font-size: 8px; letter-spacing: .1em; }
+  .rb-header-lines { width: min(62px, 18vw); }
   .rb-header { grid-template-columns: 1fr auto; }
   .rb-header-product { display: none; }
   .rb-brand > span { font-size: 19px; }
