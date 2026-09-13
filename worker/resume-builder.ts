@@ -15,6 +15,7 @@ import {
   rerenderCoverLetterTheme,
 } from "./cover-letter";
 import { hardenGeneratedResumePackage } from "./resume-package-hardener";
+import { assessIntakeSubstance } from "./resume-quality";
 import {
   assessResumeExtractionCoverage,
   assessSavedIntakeExtractionCoverage,
@@ -685,6 +686,66 @@ async function enforceUploadExtractionCoverageBeforeGeneration(
   }
 }
 
+async function enforceIntakeSubstanceBeforeGeneration(
+  request: Request,
+  env: ResumeBuilderEnv,
+  dependencies: ResumeBuilderDependencies,
+  resumeId: string,
+): Promise<Response | null> {
+  const probe = await authenticatedResumeProbe(request, env, dependencies, resumeId);
+  if (!probe || !probe.ok) return probe;
+
+  const record = await env.DB.prepare(
+    "SELECT title, intake_json, generated_json FROM resumes WHERE resume_id = ? AND deleted_at IS NULL LIMIT 1",
+  ).bind(resumeId).first<{ title: string; intake_json: string; generated_json: string | null }>();
+  if (!record?.intake_json) {
+    return rewrittenJson(probe, {
+      ok: false,
+      code: "INTAKE_INFORMATION_REQUIRED",
+      retryable: false,
+      action: "return_to_intake",
+      paymentSafe: true,
+      runConsumed: false,
+      missing: ["Complete the resume intake before building your preview."],
+      intakeUrl: `/resume-builder/intake?resume_id=${encodeURIComponent(resumeId)}`,
+      message: "Add more real work, training, project, or hands-on skill details before HUSTL3 BOT builds the resume. No AI run was used.",
+    }, 422);
+  }
+
+  // Existing packages are corrections/rebuilds. The base route must decide
+  // payment, refund, and run eligibility first; the final package gate still
+  // rechecks source substance before checkout.
+  if (record.generated_json) return null;
+
+  try {
+    const assessment = assessIntakeSubstance(JSON.parse(record.intake_json) as unknown, record.title);
+    if (assessment.ready) return null;
+    return rewrittenJson(probe, {
+      ok: false,
+      code: "INTAKE_INFORMATION_REQUIRED",
+      retryable: false,
+      action: "return_to_intake",
+      paymentSafe: true,
+      runConsumed: false,
+      issues: assessment.missing,
+      missing: assessment.missing,
+      intakeUrl: `/resume-builder/intake?resume_id=${encodeURIComponent(resumeId)}`,
+      message: "There is not enough verified information to build a paid-quality resume yet. Add real work, apprenticeship, training, project, tool, or task details. No AI run was used and no weak preview was created.",
+    }, 422);
+  } catch (error) {
+    console.error("Resume intake substance preflight failed", error);
+    return rewrittenJson(probe, {
+      ok: false,
+      code: "INTAKE_QUALITY_GATE_ERROR",
+      retryable: true,
+      action: "return_to_intake",
+      paymentSafe: true,
+      runConsumed: false,
+      message: "HUSTL3 BOT could not verify the resume intake safely. No AI run was used.",
+    }, 503);
+  }
+}
+
 async function enforceCheckoutQualityGate(
   request: Request,
   env: ResumeBuilderEnv,
@@ -804,6 +865,8 @@ export async function handleResumeBuilderRoute(
   if (request.method === "POST" && generationPathMatch) {
     const blocked = await enforceUploadExtractionCoverageBeforeGeneration(request, env, dependencies, generationPathMatch[1]);
     if (blocked) return blocked;
+    const thinIntake = await enforceIntakeSubstanceBeforeGeneration(request, env, dependencies, generationPathMatch[1]);
+    if (thinIntake) return thinIntake;
   }
 
   if (request.method === "POST" && checkoutPathMatch) {

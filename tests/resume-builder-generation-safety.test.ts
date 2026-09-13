@@ -206,6 +206,33 @@ test("entry-level candidate with no employment history generates successfully", 
   assert.equal(h.objects.size, 3);
 });
 
+test("generation stops before AI when intake contains only a title, experience level, and credential", async () => {
+  const h = harness({
+    intake: {
+      contact: { fullName: "Kamyren Ellis", email: "example@example.com" },
+      targetJob: { title: "HVAC" },
+      career: { yearsExperience: "Less than 1 year" },
+      fieldValue: { certifications: ["ASME Section IX"] },
+      experience: [],
+    },
+  });
+  let aiCalled = false;
+  const dependencies = dependenciesFor(entryLevelResume);
+  dependencies.anthropicFetch = (async () => {
+    aiCalled = true;
+    return new Response();
+  }) as typeof fetch;
+
+  const { response, payload } = await run(h, dependencies);
+  assert.equal(response.status, 422);
+  assert.equal(payload.code, "INTAKE_INFORMATION_REQUIRED");
+  assert.equal(payload.action, "return_to_intake");
+  assert.equal(payload.runConsumed, false);
+  assert.equal(aiCalled, false);
+  assert.equal(h.state.creditsUsed, 0);
+  assert.equal(h.objects.size, 0);
+});
+
 test("Gemini generation uses structured output, bounded thinking, and the authenticated bridge", async () => {
   const h = harness();
   let calledUrl = "";

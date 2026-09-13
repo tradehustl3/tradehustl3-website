@@ -70,6 +70,13 @@ export type ResumeQualityScore = {
   issues: string[];
 };
 
+export type IntakeSubstanceAssessment = {
+  ready: boolean;
+  anchors: string[];
+  practicalEvidenceCount: number;
+  missing: string[];
+};
+
 type EditorialSelection = {
   jobIndex: number;
   bulletIndex: number;
@@ -251,6 +258,68 @@ export function canonicalSourceRecord(intake: unknown, targetTitle = ""): Canoni
   mark("education", source.education);
   mark("sourceResumeText", source.sourceResumeText);
   return { ...source, factProvenance };
+}
+
+function meaningfulEvidence(value: string, minimumWords = 3): boolean {
+  const words = normalized(value).split(" ").filter(Boolean);
+  return value.trim().length >= 12 && words.length >= minimumWords;
+}
+
+function experienceLevelOnly(value: string): boolean {
+  const key = normalized(value);
+  return /^(?:no paid experience(?: yet)?|no experience|entry level|beginner|less than 1 year|under 1 year|0 years?|none|n a)$/.test(key);
+}
+
+/**
+ * A credential or target title is not enough evidence for a paid-quality
+ * resume. Entry-level candidates can still pass with real training/project
+ * context plus at least two hands-on skills, tools, systems, or safety facts.
+ */
+export function assessIntakeSubstance(intake: unknown, targetTitle = ""): IntakeSubstanceAssessment {
+  const source = canonicalSourceRecord(intake, targetTitle);
+  const roleEvidence = source.roles.flatMap((role) => role.bullets.filter((bullet) => meaningfulEvidence(bullet)));
+  const practicalEvidence = Array.from(new Set([
+    ...roleEvidence,
+    ...source.tools,
+    ...source.equipmentSystems,
+    ...source.technicalSkills,
+    ...source.software,
+    ...source.safety,
+  ].map(normalized).filter(Boolean)));
+  const hasDocumentedRole = source.roles.some((role) =>
+    Boolean(role.jobTitle) && role.bullets.some((bullet) => meaningfulEvidence(bullet)));
+  const hasTraining = meaningfulEvidence(source.education, 2);
+  const hasNarrative = source.narrativeFacts.some((fact) =>
+    !experienceLevelOnly(fact) && meaningfulEvidence(fact));
+  const uploadWords = normalized(source.sourceResumeText).split(" ").filter(Boolean).length;
+  const hasSourceResume = source.sourceResumeText.length >= 80 && uploadWords >= 12;
+
+  const anchors = [
+    ...(hasDocumentedRole ? ["documented work or apprenticeship"] : []),
+    ...(hasTraining ? ["education or hands-on training"] : []),
+    ...(hasNarrative ? ["project or experience details"] : []),
+    ...(hasSourceResume ? ["uploaded resume details"] : []),
+  ];
+  const hasEntryLevelFoundation = (hasTraining || hasNarrative) && practicalEvidence.length >= 2;
+  const ready = hasDocumentedRole || hasSourceResume || hasEntryLevelFoundation;
+  const missing: string[] = [];
+
+  if (!hasDocumentedRole && !hasSourceResume && !hasTraining && !hasNarrative) {
+    missing.push("Add at least one job, apprenticeship, school or lab project, or hands-on training experience.");
+  }
+  if (!hasDocumentedRole && !hasSourceResume && practicalEvidence.length < 2) {
+    missing.push("Add at least two real tools, systems, technical or safety skills, or tasks you can perform.");
+  }
+  if (source.roles.some((role) => role.jobTitle && !role.bullets.some((bullet) => meaningfulEvidence(bullet)))) {
+    missing.push("Add at least one specific duty or accomplishment for each listed job.");
+  }
+
+  return {
+    ready,
+    anchors,
+    practicalEvidenceCount: practicalEvidence.length,
+    missing: Array.from(new Set(missing)),
+  };
 }
 
 export function sourceFactCatalog(source: CanonicalSourceRecord, correctionRequest: string | null = null): SourceFact[] {
