@@ -49,16 +49,10 @@ export function FooterEnhancements() {
   const [host, setHost] = useState<HTMLElement | null>(null);
 
   useEffect(() => {
-    if (pathname !== "/") {
-      setHost(null);
-      return;
-    }
+    if (pathname !== "/") return;
 
     const footer = document.querySelector("footer");
-    if (!footer) {
-      setHost(null);
-      return;
-    }
+    if (!footer) return;
 
     const bottomNav = footer.querySelector('nav[aria-label="Footer links"]');
     const mount = document.createElement("div");
