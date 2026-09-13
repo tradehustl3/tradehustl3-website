@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import { AccountStart } from "./account-start";
 import { FlowSteps } from "./flow-steps";
 import { ResumeBuilderStartAnalytics } from "./funnel-analytics";
 import { ResumeBuilderHeader } from "./resume-builder-header";
-import { ResumeHeroTexture } from "./resume-hero-texture";
 import type { TradeTrack } from "./trade-content";
 import {
   TRADE_LANDING_PAGES,
@@ -35,12 +35,23 @@ export default function ResumeBuilderPage() {
 
       <section className="rb-entry">
         <div className="rb-entry-copy">
-          <ResumeHeroTexture />
+          <Image
+            src="/trade-landings/trade-hustl3-resume-builder-hero.webp"
+            alt="TRADE HUSTL3 Resume Builder commercial construction worksite for skilled trades"
+            width={1024}
+            height={576}
+            priority
+            sizes="(max-width: 900px) 100vw, 58vw"
+            style={{ width: "100%", height: "auto", borderRadius: "18px", display: "block", marginBottom: "24px" }}
+          />
           <p className="rb-kicker">/ BUILT FOR SKILLED WORK</p>
           <h1>TURN YOUR FIELD EXPERIENCE INTO A <span>JOB-READY RESUME.</span></h1>
           <p className="rb-lead">
             Give us the facts. TRADE HUSTL3 turns your tools, tickets, field hours, and real responsibilities into one clear, ATS-friendly resume.
           </p>
+          <a className="rb-button rb-button-primary" href="#account-title" data-analytics-event="cta_click" data-location="resume_builder_home_hero" data-destination="#account-title">
+            BUILD MY RESUME →
+          </a>
           <div className="rb-proof-row" aria-label="Resume Builder package details">
             <div><strong>$9.99</strong><span>One-time · no subscription</span></div>
             <div><strong>7</strong><span>Skilled-trade tracks</span></div>

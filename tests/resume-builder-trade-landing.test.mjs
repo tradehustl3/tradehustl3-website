@@ -179,7 +179,7 @@ for (const page of PAGES) {
     }
 
     // Approved TRADE HUSTL3 Resume Builder logo only — never the standalone mark.
-    assert.match(html, /\/resume-builder-logo-llc\.png/, `${page.slug} logo asset`);
+    assert.match(html, /\/optimized\/resume-builder-logo-header\.webp/, `${page.slug} logo asset`);
     assert.doesNotMatch(html, /src="[^"]*\/trade-hustl3-logo\.png/, `${page.slug} standalone logo leaked`);
 
     // No unsupported guarantees; example bullets clearly labelled.
@@ -285,7 +285,7 @@ test("regression: /resume-builder and /resume-builder/hvac still render on the s
     const res = await renderPath(p);
     assert.equal(res.status, 200, `${p} status`);
     const html = await res.text();
-    assert.match(html, /\/resume-builder-logo-llc\.png/, `${p} approved logo`);
+    assert.match(html, /\/optimized\/resume-builder-logo-header\.webp/, `${p} approved logo`);
     assert.doesNotMatch(html, /src="[^"]*\/trade-hustl3-logo\.png/, `${p} standalone logo leaked`);
   }
 });

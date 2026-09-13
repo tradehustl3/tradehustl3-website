@@ -1,442 +1,224 @@
-/* Trade-specific Resume Builder SEO landing pages (e.g. /resume-builder/hvac).
-   The page shell reuses the real .rb-* design system (rb-page, rb-header,
-   rb-entry, rb-tracks, rb-package, rb-footer, rb-button) from resume-builder.css.
-   This module only styles the content blocks that system doesn't already have —
-   using the same tokens, borders, radii, and type inheritance so the page reads
-   as a native part of the Resume Builder, not a separate template. No font
-   families are overridden here: headings inherit the system's display treatment,
-   body copy inherits Space Grotesk. */
-
-/* --- content sections -----------------------------------------------------
-   Same grid, padding, and deep-navy ground as the hub's `.rb-tracks` section,
-   but standalone so the hub's `.rb-tracks li` styling does not bleed into the
-   chip lists, plain lists, and step lists below. */
-.lpSection {
-  display: grid;
-  grid-template-columns: 0.8fr 1.2fr;
-  gap: clamp(40px, 9vw, 140px);
-  align-items: start;
-  padding: clamp(64px, 8vw, 100px) clamp(26px, 7vw, 112px);
-  background: var(--rb-navy-3);
+.page {
+  --canvas: #f7f5ef;
+  --paper: #fff;
+  --ink: #071a2b;
+  --muted: #53616b;
+  overflow: hidden;
+  background: var(--canvas);
 }
 
-/* Subtle navy / deep-navy alternation for reading rhythm over many sections. */
-.lpSection:nth-of-type(even) {
-  background: var(--rb-navy);
+.page :global(.rb-header) {
+  position: relative;
+  z-index: 10;
+  border-bottom-color: rgba(214, 165, 42, .55);
+  background-color: #061522;
+  background-image: linear-gradient(rgba(126, 190, 225, .05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(126, 190, 225, .05) 1px, transparent 1px);
+  background-size: 22px 22px;
 }
 
-/* Section headings: the hub's display treatment (uppercase, weight from the
-   global h2 rule, cream on navy), sized down and given slightly looser tracking
-   so a content-dense page of them stays readable and never overwhelms the CTA. */
-.lpSection > div:first-child > h2 {
-  margin: 0;
-  max-width: 22ch;
-  font-size: clamp(30px, 3.6vw, 46px);
-  line-height: 1.02;
-  letter-spacing: -0.03em;
-  text-transform: uppercase;
-  color: var(--rb-white);
-}
-
-/* Closing CTA band keeps the hub's `.rb-package` shell; only cap the headline
-   (the `:global` keeps this above the system's `.rb-package > div h2` size). */
-:global(.rb-package).closingSection > div:first-child > h2 {
-  font-size: clamp(38px, 5vw, 64px);
-  line-height: 0.98;
-}
-
-.sectionLead {
-  margin: 16px 0 0;
-  max-width: 100%;
-  color: var(--rb-gray);
-  font-size: 14px;
-  line-height: 1.65;
-}
-
-.inlineLink {
-  color: var(--rb-gold);
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
-
-.siblingGuides {
-  margin-top: 22px;
-}
-
-.siblingGuides ul {
+.tradeBar {
+  min-height: 38px;
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px 10px;
-  margin: 12px 0 0;
-  padding: 0;
-  list-style: none;
-}
-
-.siblingGuides a {
-  display: inline-block;
-  padding: 6px 11px;
-  border: 1px solid var(--rb-line);
-  background: var(--rb-navy-2);
-  color: var(--rb-gray);
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.siblingGuides a:hover {
-  border-color: var(--rb-gold);
-  color: var(--rb-gold);
-}
-
-.inlineLink:hover {
-  color: #f0c256;
-}
-
-/* --- hero extras --------------------------------------------------------- */
-.heroActions {
-  display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  gap: 16px 24px;
-  margin: 0 0 34px;
-}
-
-.textLink {
-  align-self: center;
-  padding: 8px 0;
-  color: var(--rb-gold);
+  justify-content: center;
+  gap: clamp(18px, 4vw, 52px);
+  padding: 8px 22px;
+  border-bottom: 1px solid rgba(214, 165, 42, .35);
+  background: #0a2134;
+  color: #c5ced5;
   font-size: 11px;
   font-weight: 800;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  text-decoration: underline;
-  text-underline-offset: 4px;
-}
-
-.textLink:hover {
-  color: var(--rb-white);
-}
-
-/* --- pricing panel (inside cream .rb-entry-panel) ----------------------- */
-/* .rb-package-price uses line-height:.8, so the giant "9" overflows its box —
-   give it room below the panel heading and above the subhead. */
-.panelPrice {
-  margin: 18px 0 14px;
-}
-
-.panelSubhead {
-  margin: 0 0 4px;
-  max-width: 520px;
-  color: var(--rb-ink-soft);
-  line-height: 1.6;
-}
-
-.pricingList {
-  margin: 20px 0 6px;
-  padding: 0;
-  list-style: none;
-}
-
-.pricingList li {
-  padding: 12px 0;
-  border-top: 1px solid rgba(7, 26, 43, 0.12);
-  color: var(--rb-ink);
-  font-size: 14px;
-  font-weight: 700;
-  line-height: 1.45;
-}
-
-.pricingList li span {
-  margin-right: 8px;
-  color: var(--rb-gold);
-  font-weight: 900;
-}
-
-/* --- value props ------------------------------------------------------- */
-.valueGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
-  gap: 14px;
-}
-
-.valueCard {
-  padding: 22px;
-  border: 1px solid var(--rb-line);
-  border-left: 3px solid var(--rb-red);
-  background: var(--rb-navy-2);
-}
-
-.valueCard h3 {
-  margin: 0 0 8px;
-  color: var(--rb-gold);
-  font-size: 12px;
-  font-weight: 900;
-  letter-spacing: 0.1em;
+  letter-spacing: .12em;
   text-transform: uppercase;
 }
+.tradeBar span + span::before { content: "•"; margin-right: clamp(18px, 4vw, 52px); color: #d6a52a; }
+.tradeBar a { color: #d6a52a; text-decoration: underline; text-underline-offset: 3px; }
 
-.valueCard p {
-  margin: 0;
-  color: var(--rb-gray);
-  font-size: 14px;
-  line-height: 1.6;
-}
-
-/* --- plain lists (who it's for, certifications) ----------------------- */
-.plainList {
+.hero {
+  min-height: 0;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 10px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
+  grid-template-columns: minmax(0, 1.02fr) minmax(430px, .98fr);
+  background: #0b3f64;
 }
-
-.plainList li {
+.hero::before { display: none; }
+.heroCopy {
   position: relative;
-  padding: 12px 16px 12px 34px;
-  border: 1px solid var(--rb-line);
-  background: var(--rb-navy-2);
-  color: var(--rb-gray);
-  font-size: 13.5px;
-  line-height: 1.5;
+  isolation: isolate;
+  overflow: hidden;
+  padding: clamp(68px, 7vw, 110px) clamp(26px, 7vw, 104px);
+}
+.heroCopy > :not(:global(.rb-hero-texture)) { position: relative; z-index: 2; }
+.heroCopy h1 { max-width: 820px; margin: 0; font-size: clamp(56px, 6.6vw, 104px); line-height: .88; letter-spacing: -.02em; text-wrap: balance; }
+.heroCopy h1 span { display: block; color: #ff3b30; }
+.heroLead { max-width: 720px; margin: 28px 0 32px; color: #f1f6fa; font-size: clamp(16px, 1.35vw, 19px); line-height: 1.65; }
+.heroActions { display: flex; align-items: center; flex-wrap: wrap; gap: 18px 26px; }
+.primaryCta { min-width: min(100%, 310px); box-shadow: 8px 8px 0 rgba(6, 21, 34, .3); }
+.heroActions p { display: grid; gap: 2px; margin: 0; }
+.heroActions p strong { color: #fff; font-size: 13px; }
+.heroActions p span { color: #c5ced5; font-size: 11px; }
+.proofRow { display: grid; grid-template-columns: repeat(3, 1fr); margin-top: 42px; border-block: 1px solid rgba(214, 165, 42, .48); }
+.proofRow div { padding: 17px 16px 17px 0; }
+.proofRow strong, .proofRow span { display: block; }
+.proofRow strong { color: #f3c34c; font-family: var(--font-display), Impact, sans-serif; font-size: clamp(25px, 2.4vw, 36px); font-weight: 400; }
+.proofRow span { max-width: 145px; color: #dce5eb; font-size: 10px; font-weight: 700; line-height: 1.4; text-transform: uppercase; }
+
+.heroProof { position: relative; padding: clamp(28px, 4vw, 58px); background: #ece8df; color: #071a2b; }
+.workspaceFrame { position: relative; overflow: hidden; aspect-ratio: 4 / 2.65; border: 1px solid #c5c1b7; background: #fff; box-shadow: 16px 16px 0 rgba(7, 26, 43, .08); }
+.workspaceFrame img { width: 100%; height: 100%; object-fit: cover; }
+.previewBadge { position: absolute; top: 14px; left: 14px; padding: 9px 12px; background: #071a2b; color: #fff; font-size: 9px; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; }
+.priceCard { position: relative; margin: -18px 18px 0; padding: clamp(24px, 3vw, 38px); border-top: 5px solid #d71920; background: #fff; box-shadow: 14px 14px 0 rgba(7, 26, 43, .08); }
+.priceCard h2 { max-width: 440px; margin: 5px 0 14px; color: #071a2b; font-size: clamp(36px, 3.5vw, 54px); line-height: .92; }
+.eyebrow { margin: 0; color: #b3141a; font-size: 10px; font-weight: 900; letter-spacing: .14em; text-transform: uppercase; }
+.priceCard > p:not(.eyebrow) { margin: 6px 0 0; color: #53616b; font-size: 14px; line-height: 1.55; }
+.priceCard ul { display: grid; grid-template-columns: 1fr 1fr; gap: 0 18px; margin: 18px 0 0; padding: 0; list-style: none; }
+.priceCard li { padding: 10px 0; border-top: 1px solid #071a2b1c; color: #263746; font-size: 12px; font-weight: 700; line-height: 1.45; }
+
+.promiseStrip { display: grid; grid-template-columns: repeat(4, 1fr); padding: 0 clamp(26px, 7vw, 104px); border-bottom: 1px solid #d8d5cd; background: #fff; color: #071a2b; }
+.promiseStrip div { display: grid; grid-template-columns: auto 1fr; gap: 2px 13px; padding: 24px clamp(12px, 2vw, 28px); border-left: 1px solid #dedbd4; }
+.promiseStrip div:last-child { border-right: 1px solid #dedbd4; }
+.promiseStrip strong { grid-row: 1 / span 2; color: #d71920; font-family: var(--font-display), Impact, sans-serif; font-size: 30px; font-weight: 400; }
+.promiseStrip span { align-self: end; font-size: 13px; font-weight: 900; text-transform: uppercase; }
+.promiseStrip small { color: #53616b; font-size: 11px; }
+
+.section { padding: clamp(68px, 8vw, 112px) clamp(26px, 7vw, 104px); }
+.sectionHeader { display: grid; grid-template-columns: minmax(280px, .9fr) minmax(280px, 1.1fr); gap: 20px clamp(42px, 8vw, 110px); align-items: end; margin-bottom: clamp(38px, 5vw, 64px); }
+.sectionHeader :global(.rb-kicker) { grid-column: 1 / -1; margin-bottom: -3px; }
+.sectionHeader h2 { margin: 0; color: #071a2b; font-size: clamp(42px, 5.2vw, 74px); line-height: .92; text-wrap: balance; }
+.sectionHeader > p:last-child { max-width: 560px; margin: 0; padding-left: 20px; border-left: 3px solid #d6a52a; color: #53616b; font-size: 16px; line-height: 1.65; }
+.whiteSection { background: #fff; color: #071a2b; }
+.valueGrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+.valueCard { min-height: 250px; padding: 28px; border: 1px solid #d9d6ce; border-top: 4px solid #071a2b; background: #f7f5ef; transition: transform .2s, border-color .2s; }
+.valueCard:hover { transform: translateY(-4px); border-top-color: #d71920; }
+.valueCard > span { color: #d71920; font-family: var(--font-display), Impact, sans-serif; font-size: 32px; }
+.valueCard h3 { margin: 30px 0 12px; color: #071a2b; font-size: 19px; line-height: 1.2; text-transform: uppercase; }
+.valueCard p { margin: 0; color: #53616b; font-size: 14px; line-height: 1.65; }
+
+.proofSection { display: grid; grid-template-columns: minmax(320px, .85fr) minmax(0, 1.15fr); gap: clamp(50px, 8vw, 110px); background: #071a2b; }
+.proofSection h2 { margin: 8px 0 20px; color: #fff; font-size: clamp(38px, 4.5vw, 66px); line-height: .94; }
+.botPanel { align-self: start; display: grid; grid-template-columns: 145px 1fr; align-items: end; overflow: hidden; padding: 30px 30px 0; border: 1px solid rgba(214, 165, 42, .42); background: #0a2134; }
+.botPanel > div:last-child { padding: 0 0 32px; }
+.botPanel > div:last-child > p:last-child { margin: 0; color: #c5ced5; font-size: 14px; line-height: 1.65; }
+.botImage { align-self: end; height: 300px; }
+.botImage img { width: 100%; height: 100%; object-fit: contain; object-position: bottom; }
+.exampleList { display: grid; gap: 12px; margin: 24px 0 0; padding: 0; list-style: none; counter-reset: proof; }
+.exampleList li { position: relative; padding: 17px 18px 17px 54px; border: 1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.035); color: #e2e8ec; font-size: 14px; line-height: 1.6; counter-increment: proof; }
+.exampleList li::before { content: counter(proof, decimal-leading-zero); position: absolute; left: 17px; top: 18px; color: #d6a52a; font-size: 11px; font-weight: 900; }
+.disclaimer, .note { margin: 18px 0 0; padding: 14px 16px; border-left: 3px solid #d6a52a; background: rgba(214, 165, 42, .09); color: #c5ced5; font-size: 12px; line-height: 1.6; }
+
+.fieldSection { background: #f7f5ef; color: #071a2b; }
+.fieldBlock { display: grid; grid-template-columns: minmax(260px, .65fr) minmax(0, 1.35fr); gap: clamp(28px, 6vw, 80px); padding: 42px 0; border-top: 1px solid #cfcbc2; }
+.fieldBlock:last-child { border-bottom: 1px solid #cfcbc2; }
+.fieldBlockTitle { display: grid; grid-template-columns: 48px 1fr; gap: 18px; align-items: start; }
+.fieldBlockTitle > span { color: #d71920; font-family: var(--font-display), Impact, sans-serif; font-size: 42px; line-height: 1; }
+.fieldBlockTitle p { margin: 0 0 7px; color: #9b761e; font-size: 9px; font-weight: 900; letter-spacing: .13em; text-transform: uppercase; }
+.fieldBlockTitle h3 { margin: 0 0 12px; color: #071a2b; font-size: clamp(27px, 3vw, 40px); line-height: .96; text-transform: uppercase; }
+.fieldBlockTitle small { display: block; color: #53616b; font-size: 13px; line-height: 1.6; }
+.groupGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.groupCard { padding: 22px; border: 1px solid #d6d2ca; background: #fff; }
+.groupCard h3 { margin: 0 0 12px; color: #071a2b; font-size: 14px; text-transform: uppercase; }
+.chipList { display: flex; flex-wrap: wrap; gap: 7px; margin: 0; padding: 0; list-style: none; }
+.chipList li { padding: 7px 10px; border: 1px solid #d8d4ca; background: #f7f5ef; color: #394a57; font-size: 12px; font-weight: 650; line-height: 1.35; }
+.certList { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin: 0; padding: 0; list-style: none; }
+.certList li { padding: 13px 15px; border: 1px solid #d8d4ca; background: #fff; color: #263746; font-size: 13px; font-weight: 700; }
+.fieldBlock .note { color: #53616b; }
+
+.stepsSection { background: #fff; color: #071a2b; }
+.steps { display: grid; grid-template-columns: repeat(4, 1fr); margin: 0; padding: 0; border-top: 4px solid #d71920; list-style: none; }
+.steps li { min-height: 270px; padding: 28px; border-right: 1px solid #d9d6ce; border-bottom: 1px solid #d9d6ce; }
+.steps li:first-child { border-left: 1px solid #d9d6ce; }
+.steps li > span { color: #d71920; font-family: var(--font-display), Impact, sans-serif; font-size: 42px; }
+.steps h3 { margin: 36px 0 10px; color: #071a2b; font-size: 18px; text-transform: uppercase; }
+.steps p { margin: 0; color: #53616b; font-size: 13px; line-height: 1.65; }
+.midCta { min-width: min(100%, 320px); margin-top: 32px; }
+
+.fitSection { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(38px, 8vw, 110px); background: #ece8df; color: #071a2b; }
+.fitSection h2 { margin: 0 0 28px; color: #071a2b; font-size: clamp(38px, 4.6vw, 64px); line-height: .95; }
+.fitList { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin: 0; padding: 0; list-style: none; }
+.fitList li { padding: 14px 15px; border-left: 3px solid #d6a52a; background: #fff; color: #394a57; font-size: 13px; line-height: 1.5; }
+.atsCard { align-self: start; padding: clamp(30px, 4vw, 52px); border-top: 5px solid #d71920; background: #071a2b; box-shadow: 18px 18px 0 rgba(7,26,43,.1); }
+.atsCard h2 { color: #fff; font-size: clamp(34px, 3.7vw, 52px); }
+.atsCard > p:not(.eyebrow) { color: #c5ced5; font-size: 14px; line-height: 1.7; }
+
+.faqSection { display: grid; grid-template-columns: minmax(280px, .7fr) minmax(0, 1.3fr); gap: clamp(42px, 8vw, 110px); background: #fff; color: #071a2b; }
+.faqSection .sectionHeader { display: block; margin: 0; }
+.faqSection .sectionHeader h2 { margin-top: 8px; }
+.faqList { border-top: 1px solid #cfcac0; }
+.faq { border-bottom: 1px solid #cfcac0; }
+.faq summary { position: relative; padding: 21px 48px 21px 0; cursor: pointer; color: #071a2b; font-size: 16px; font-weight: 800; line-height: 1.45; list-style: none; }
+.faq summary::-webkit-details-marker { display: none; }
+.faq summary::after { content: "+"; position: absolute; right: 8px; top: 18px; color: #d71920; font-family: var(--font-display), Impact, sans-serif; font-size: 26px; }
+.faq[open] summary::after { content: "–"; }
+.faq p { max-width: 720px; margin: 0; padding: 0 48px 22px 0; color: #53616b; font-size: 14px; line-height: 1.7; }
+
+.closingSection { align-items: center; padding-block: clamp(70px, 8vw, 110px); background: #0b3f64; color: #fff; }
+.closingSection > div:first-child h2 { max-width: 750px; color: #fff; font-size: clamp(50px, 6.3vw, 88px); line-height: .9; }
+.closingSection > div:first-child > p:last-child { max-width: 600px; color: #e4edf2; font-size: 16px; line-height: 1.65; }
+.closingCard { padding: 34px; border-top: 5px solid #d71920; background: #fff; box-shadow: 18px 18px 0 rgba(6,21,34,.22); }
+.closingCard > p { display: grid; grid-template-columns: 120px 1fr; align-items: center; margin: 0; padding: 17px 0; border-bottom: 1px solid #dedbd4; }
+.closingCard > p strong { color: #d71920; font-family: var(--font-display), Impact, sans-serif; font-size: 36px; font-weight: 400; }
+.closingCard > p span { color: #394a57; font-size: 13px; font-weight: 800; }
+.closingCard small { display: block; margin-top: 14px; color: #53616b; font-size: 11px; line-height: 1.55; }
+
+.siblingGuides { padding: 34px clamp(26px, 7vw, 104px); border-top: 1px solid rgba(214,165,42,.34); background: #061522; }
+.siblingGuides p { margin: 0 0 13px; color: #d6a52a; font-size: 9px; font-weight: 900; letter-spacing: .14em; text-transform: uppercase; }
+.siblingGuides ul { display: flex; flex-wrap: wrap; gap: 9px; margin: 0; padding: 0; list-style: none; }
+.siblingGuides a { display: block; padding: 9px 12px; border: 1px solid rgba(214,165,42,.3); color: #d7e0e6; font-size: 11px; font-weight: 750; }
+.siblingGuides a:hover { border-color: #d6a52a; color: #d6a52a; }
+
+@media (max-width: 1100px) {
+  .hero { grid-template-columns: 1fr; }
+  .heroProof { display: grid; grid-template-columns: .9fr 1.1fr; align-items: center; }
+  .priceCard { margin: 0 0 0 -22px; }
+  .valueGrid, .steps { grid-template-columns: repeat(2, 1fr); }
 }
 
-.plainList li::before {
-  content: "";
-  position: absolute;
-  left: 15px;
-  top: 18px;
-  width: 6px;
-  height: 6px;
-  background: var(--rb-gold);
-}
-
-/* --- grouped chip cards (skills, tools) ----------------------------- */
-.groupGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 14px;
-}
-
-.groupCard {
-  padding: 22px;
-  border: 1px solid var(--rb-line);
-  border-top: 3px solid var(--rb-gold);
-  background: var(--rb-navy-2);
-}
-
-.groupCard h3 {
-  margin: 0 0 12px;
-  color: var(--rb-white);
-  font-size: 14px;
-  font-weight: 800;
-  letter-spacing: 0.01em;
-}
-
-.chipList {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 7px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.chip {
-  padding: 7px 11px;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.04);
-  color: var(--rb-gray);
-  font-size: 12px;
-  font-weight: 600;
-  line-height: 1.3;
-}
-
-/* --- example accomplishment bullets ------------------------------- */
-.exampleList {
-  display: grid;
-  gap: 10px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.exampleList li {
-  padding: 14px 18px;
-  border: 1px solid var(--rb-line);
-  border-left: 4px solid var(--rb-gold);
-  background: var(--rb-navy-2);
-  color: var(--rb-gray);
-  font-size: 14px;
-  line-height: 1.6;
-}
-
-/* --- how it works steps ---------------------------------------- */
-.steps {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 16px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.step {
-  padding: 22px;
-  border: 1px solid var(--rb-line);
-  background: var(--rb-navy-2);
-}
-
-.stepNum {
-  display: block;
-  margin-bottom: 10px;
-  color: var(--rb-red);
-  font-family: var(--font-display), Impact, sans-serif;
-  font-size: 30px;
-  line-height: 1;
-}
-
-.step h3 {
-  margin: 0 0 6px;
-  color: var(--rb-white);
-  font-size: 15px;
-  font-weight: 800;
-}
-
-.step p {
-  margin: 0;
-  color: var(--rb-gray);
-  font-size: 13px;
-  line-height: 1.6;
-}
-
-/* --- ATS body ------------------------------------------------- */
-.atsBody {
-  display: grid;
-  gap: 14px;
-  max-width: 60ch;
-}
-
-.atsBody p {
-  margin: 0;
-  color: var(--rb-gray);
-  font-size: 15px;
-  line-height: 1.75;
-}
-
-/* --- FAQ (native <details>, crawlable regardless of open state) --- */
-.faqList {
-  display: grid;
-  gap: 8px;
-}
-
-.faq {
-  border: 1px solid var(--rb-line);
-  background: var(--rb-navy-2);
-}
-
-.faq summary {
-  padding: 16px 20px;
-  cursor: pointer;
-  color: var(--rb-white);
-  font-size: 15px;
-  font-weight: 700;
-  line-height: 1.45;
-  list-style: none;
-}
-
-.faq summary::-webkit-details-marker {
-  display: none;
-}
-
-.faq summary::after {
-  content: "+";
-  float: right;
-  margin-left: 14px;
-  color: var(--rb-gold);
-  font-weight: 900;
-}
-
-.faq[open] summary::after {
-  content: "\2013";
-}
-
-.faq p {
-  margin: 0;
-  padding: 0 20px 18px;
-  color: var(--rb-gray);
-  font-size: 13.5px;
-  line-height: 1.7;
-}
-
-/* --- callouts ---------------------------------------------- */
-.note,
-.disclaimer {
-  margin: 18px 0 0;
-  padding: 13px 16px;
-  border-left: 3px solid var(--rb-gold);
-  background: rgba(214, 165, 42, 0.09);
-  color: var(--rb-gray);
-  font-size: 13px;
-  line-height: 1.6;
-}
-
-.disclaimer {
-  border-left-color: var(--rb-red);
-  background: rgba(215, 25, 32, 0.09);
-}
-
-/* --- closing CTA card (inside cream .rb-package) ---------------- */
-.closingCard {
-  padding: 32px;
-  border-top: 5px solid var(--rb-red);
-  background: #fff;
-  box-shadow: 18px 18px 0 rgba(7, 26, 43, 0.07);
-}
-
-.closingCard p {
-  margin: 0 0 22px;
-  color: var(--rb-ink-soft);
-  line-height: 1.6;
-}
-
-.closingLink {
-  display: inline-block;
-  margin-top: 12px;
-  padding: 8px 0;
-  color: var(--rb-red);
-  font-size: 10px;
-  font-weight: 900;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  text-decoration: underline;
-  text-underline-offset: 4px;
-}
-
-/* --- responsive ------------------------------------------------ */
-@media (max-width: 980px) {
-  .lpSection {
-    grid-template-columns: 1fr;
-    gap: 34px;
-  }
+@media (max-width: 820px) {
+  .sectionHeader, .proofSection, .fieldBlock, .fitSection, .faqSection { grid-template-columns: 1fr; }
+  .sectionHeader :global(.rb-kicker) { grid-column: auto; }
+  .sectionHeader > p:last-child { padding-left: 16px; }
+  .botPanel { max-width: 620px; }
+  .fieldBlock { gap: 28px; }
+  .faqSection .sectionHeader { margin-bottom: 30px; }
+  .promiseStrip { grid-template-columns: repeat(2, 1fr); }
 }
 
 @media (max-width: 700px) {
-  .lpSection {
-    padding: 60px 22px;
-  }
-
-  .lpSection > div:first-child > h2 {
-    font-size: clamp(26px, 7.5vw, 36px);
-  }
-
-  .closingCard {
-    padding: 24px 20px;
-    box-shadow: 8px 8px 0 rgba(7, 26, 43, 0.07);
-  }
-
-  .heroActions {
-    gap: 14px;
-  }
+  .page :global(.rb-header) { grid-template-columns: 1fr auto; }
+  .tradeBar { justify-content: space-between; font-size: 8px; }
+  .tradeBar span:nth-child(2) { display: none; }
+  .tradeBar span + span::before { display: none; }
+  .heroCopy { padding: 54px 22px; }
+  .heroCopy h1 { font-size: clamp(42px, 13vw, 66px); }
+  .heroLead { font-size: 16px; }
+  .proofRow { grid-template-columns: 1fr; }
+  .proofRow div { display: grid; grid-template-columns: 100px 1fr; align-items: center; border-bottom: 1px solid rgba(214,165,42,.25); }
+  .proofRow div:last-child { border-bottom: 0; }
+  .proofRow span { max-width: none; }
+  .heroProof { display: block; padding: 12px 14px 26px; }
+  .workspaceFrame { box-shadow: 9px 9px 0 rgba(7,26,43,.08); }
+  .previewBadge { top: 10px; left: 10px; padding: 8px 10px; font-size: 8px; }
+  .priceCard { margin: -8px 8px 0; padding: 20px 18px 24px; box-shadow: 8px 8px 0 rgba(7,26,43,.08); }
+  .priceCard h2 { margin: 4px 0 9px; font-size: clamp(34px, 10.5vw, 46px); }
+  .priceCard > p:not(.eyebrow) { margin-top: 4px; line-height: 1.48; }
+  .priceCard ul { grid-template-columns: 1fr; margin-top: 14px; }
+  .priceCard li { padding: 9px 0; line-height: 1.4; }
+  .promiseStrip { padding: 0; }
+  .promiseStrip div { padding: 18px 14px; }
+  .promiseStrip strong { font-size: 25px; }
+  .promiseStrip span { font-size: 11px; }
+  .promiseStrip small { font-size: 9px; }
+  .section { padding: 62px 22px; }
+  .sectionHeader h2 { font-size: clamp(36px, 11vw, 52px); }
+  .valueGrid, .steps, .groupGrid, .certList, .fitList { grid-template-columns: 1fr; }
+  .valueCard { min-height: 0; }
+  .botPanel { grid-template-columns: 100px 1fr; padding: 20px 18px 0; }
+  .botImage { height: 230px; }
+  .botPanel h2 { font-size: 34px; }
+  .fieldBlockTitle { grid-template-columns: 38px 1fr; }
+  .steps li { min-height: 0; }
+  .closingCard { padding: 24px 20px; box-shadow: 8px 8px 0 rgba(6,21,34,.22); }
+  .closingCard > p { grid-template-columns: 105px 1fr; }
 }
+
+@media (prefers-reduced-motion: reduce) { .valueCard { transition: none; } }
