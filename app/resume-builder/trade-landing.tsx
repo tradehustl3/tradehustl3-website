@@ -49,8 +49,8 @@ const TRADE_WORKSITE_IMAGES: Record<
     height: 1024,
   },
   "Construction & Carpentry": {
-    src: "/trade-landings/construction-carpentry-worksite.webp",
-    alt: "Carpentry power tools and plans on an active wood-framing jobsite",
+    src: "/trade-landings/construction-carpenter-framing-worksite.webp",
+    alt: "Framing nail gun, speed square, carpenter pencil, and house plans at a residential framing site",
     width: 1536,
     height: 1024,
   },
