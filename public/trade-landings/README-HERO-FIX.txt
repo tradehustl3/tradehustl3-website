@@ -1,0 +1,1 @@
+Homepage hero WebP binary replacement prepared from approved 1536x1024 source. This marker can be removed after binary asset deployment.
