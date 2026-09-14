@@ -4,6 +4,7 @@ import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { CoverLetterPanel } from "./cover-letter-panel";
 
 type ResumeTheme = "plain" | "navy";
+type PreviewTab = "resume" | "cover-letter";
 
 type Resume = {
   resumeId: string;
@@ -27,6 +28,7 @@ type Resume = {
     companyName: string;
     hiringManager: string;
     targetJobTitle: string;
+    needsTargetDetails?: boolean;
   } | null;
   qualityScore: {
     total: number;
@@ -79,6 +81,7 @@ export function ResumeReview() {
   const [themeSaving, setThemeSaving] = useState(false);
   const [bulletSaving, setBulletSaving] = useState("");
   const [bulletDrafts, setBulletDrafts] = useState<Record<string, string>>({});
+  const [activePreview, setActivePreview] = useState<PreviewTab>("resume");
 
   const load = useCallback(async (id: string) => {
     try {
@@ -284,6 +287,11 @@ export function ResumeReview() {
   }
 
   const hasDraft = Boolean(resume.previewUrl);
+  const coverLetter = resume.coverLetter;
+  const coverPreviewReady = Boolean(coverLetter?.generated && coverLetter.previewUrl);
+  const resumePreviewSrc = resume.paid && resume.downloads
+    ? `${resume.downloads.pdf}?view=1&run=${resume.runsUsed}&style=${resume.theme}`
+    : `${resume.previewUrl}?run=${resume.runsUsed}&style=${resume.theme}`;
 
   return (
     <div className="rb-review-workspace">
@@ -323,12 +331,49 @@ export function ResumeReview() {
       ) : (
         <section className="rb-review-grid">
           <div className="rb-preview-panel">
-            <div className="rb-preview-toolbar"><div><span className="rb-status-dot" />{resume.paid ? "Clean paid resume" : "Protected watermarked preview"}</div><small>{resume.paid ? "Watermark removed · clean files below" : "Preview only · pay to remove watermark"}</small></div>
-            <iframe key={`${resume.previewUrl}-${resume.runsUsed}-${resume.paid}-${resume.theme}`} src={resume.paid && resume.downloads ? `${resume.downloads.pdf}?view=1&run=${resume.runsUsed}&style=${resume.theme}` : `${resume.previewUrl}?run=${resume.runsUsed}&style=${resume.theme}`} title={resume.paid ? "Clean paid resume" : "Watermarked resume preview"} />
+            {coverLetter?.available ? (
+              <div role="tablist" aria-label="Package preview" style={{ display: "flex", gap: 8, padding: "10px 12px", borderBottom: "1px solid rgba(255,255,255,.12)" }}>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={activePreview === "resume"}
+                  onClick={() => setActivePreview("resume")}
+                  className={activePreview === "resume" ? "rb-button rb-button-primary" : "rb-button rb-button-secondary-dark"}
+                >RESUME</button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={activePreview === "cover-letter"}
+                  onClick={() => setActivePreview("cover-letter")}
+                  className={activePreview === "cover-letter" ? "rb-button rb-button-primary" : "rb-button rb-button-secondary-dark"}
+                >COVER LETTER</button>
+              </div>
+            ) : null}
+
+            {activePreview === "resume" ? (
+              <>
+                <div className="rb-preview-toolbar"><div><span className="rb-status-dot" />{resume.paid ? "Clean paid resume" : "Protected watermarked preview"}</div><small>{resume.paid ? "Watermark removed · clean files below" : "Preview only · pay to remove watermark"}</small></div>
+                <iframe key={`${resume.previewUrl}-${resume.runsUsed}-${resume.paid}-${resume.theme}`} src={resumePreviewSrc} title={resume.paid ? "Clean paid resume" : "Watermarked resume preview"} />
+              </>
+            ) : coverPreviewReady && coverLetter?.previewUrl ? (
+              <>
+                <div className="rb-preview-toolbar"><div><span className="rb-status-dot" />{resume.paid ? "Clean paid cover letter" : "Protected cover-letter preview"}</div><small>{resume.paid ? "Included with your package" : "Preview only · pay to unlock clean files"}</small></div>
+                <iframe key={`${coverLetter.previewUrl}-${resume.paid}-${resume.theme}`} src={`${coverLetter.previewUrl}&style=${resume.theme}`} title={resume.paid ? "Clean matching cover letter" : "Watermarked matching cover letter preview"} />
+              </>
+            ) : (
+              <div style={{ minHeight: 520, display: "grid", placeItems: "center", padding: 32, textAlign: "center", background: "#fff", color: "#111" }}>
+                <div>
+                  <p className="rb-kicker">/ COVER LETTER PREVIEW</p>
+                  <h2>ADD TARGET JOB DETAILS.</h2>
+                  <p>Add target job details to generate your matching cover letter.</p>
+                  <a className="rb-button rb-button-primary" href="#included-cover-letter">Build cover-letter preview <span>→</span></a>
+                </div>
+              </div>
+            )}
           </div>
 
           <aside className="rb-review-sidebar">
-            <div className="rb-review-status"><p className="rb-kicker">/ {resume.paid ? "REVIEW + REFINE" : "PREVIEW BEFORE YOU PAY"}</p><h2>{resume.paid ? "MAKE IT SOUND LIKE YOU." : "LIKE WHAT YOU SEE?"}</h2><p className="rb-review-desc">{resume.paid ? "Check names, dates, certifications, job duties, contact information, and your included matching cover letter before downloading." : "Your first resume is ready. Pay once to remove the watermark, unlock the clean PDF and DOCX, generate the matching cover letter, and receive up to three shared corrections."}</p>
+            <div className="rb-review-status"><p className="rb-kicker">/ {resume.paid ? "REVIEW + REFINE" : "PREVIEW BEFORE YOU PAY"}</p><h2>{resume.paid ? "MAKE IT SOUND LIKE YOU." : "REVIEW THE WHOLE PACKAGE."}</h2><p className="rb-review-desc">{resume.paid ? "Check names, dates, certifications, job duties, contact information, and your included matching cover letter before downloading." : "Your resume is ready. Build the included matching cover-letter preview, review both tabs, then pay once to remove the watermarks and unlock the clean PDF + DOCX files."}</p>
               <span className="rb-theme-label">Resume style</span>
               {renderThemePicker()}
               <small className="rb-theme-note">Switch between Classic Black and Red Accent without using an AI correction run. Your resume and generated cover letter keep the same professional style.</small>
@@ -381,11 +426,12 @@ export function ResumeReview() {
               </section>
             ) : null}
 
-            {resume.paid && resume.coverLetter ? (
+            {coverLetter ? (
               <CoverLetterPanel
                 resumeId={resumeId}
-                coverLetter={resume.coverLetter}
-                onRefresh={async () => { await load(resumeId); }}
+                coverLetter={coverLetter}
+                paid={resume.paid}
+                onRefresh={async () => { await load(resumeId); setActivePreview("cover-letter"); }}
                 onMessage={setMessage}
               />
             ) : null}
@@ -400,7 +446,7 @@ export function ResumeReview() {
               <div className="rb-unpaid-card">
                 <p className="rb-kicker">/ ONE-TIME PURCHASE</p>
                 <h2>UNLOCK THE FULL PACKAGE.</h2>
-                <p>Pay $9.99 once. No subscription. Get the clean resume PDF + editable DOCX, an on-demand matching cover letter in PDF + DOCX, and up to three shared corrections.</p>
+                <p>Pay $9.99 once. No subscription. Review the resume and matching cover letter first, then unlock the clean resume PDF + DOCX, clean cover-letter PDF + DOCX, and up to three shared corrections.</p>
                 <button className="rb-button rb-button-primary rb-button-full" type="button" disabled={checkingOut} onClick={() => void startCheckout()}>{checkingOut ? "Opening secure checkout…" : "Unlock resume + cover letter — $9.99"} <span>↗</span></button>
               </div>
             )}

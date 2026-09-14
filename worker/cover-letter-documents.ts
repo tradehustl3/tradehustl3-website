@@ -7,7 +7,7 @@ import {
   TextRun,
 } from "docx";
 import fontkit from "@pdf-lib/fontkit";
-import { PDFDocument, PDFFont, PDFPage, rgb } from "pdf-lib";
+import { degrees, PDFDocument, PDFFont, PDFPage, rgb } from "pdf-lib";
 import {
   decodeFont,
   ROBOTO_BOLD_BASE64,
@@ -189,9 +189,26 @@ function writeCentered(writer: PdfWriter, text: string, font: PDFFont, size: num
   writer.y -= size * 1.35 + after;
 }
 
+function drawPreviewWatermark(document: PDFDocument, font: PDFFont): void {
+  for (const page of document.getPages()) {
+    for (const y of [180, 410, 640]) {
+      page.drawText("TRADE HUSTL3 PREVIEW", {
+        x: 70,
+        y,
+        size: 32,
+        font,
+        color: rgb(0.45, 0.45, 0.45),
+        opacity: 0.14,
+        rotate: degrees(32),
+      });
+    }
+  }
+}
+
 export async function createCoverLetterPdf(
   letter: GeneratedCoverLetter,
   theme: ResumeTheme = "plain",
+  watermarked = false,
 ): Promise<Uint8Array> {
   const document = await PDFDocument.create();
   document.registerFontkit(fontkit);
@@ -234,5 +251,6 @@ export async function createCoverLetterPdf(
   writeLines(writer, letter.closing, { after: 8 });
   writeLines(writer, letter.basics.fullName, { font: writer.bold, after: 0 });
 
+  if (watermarked) drawPreviewWatermark(document, writer.bold);
   return document.save();
 }
