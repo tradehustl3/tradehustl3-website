@@ -2,8 +2,8 @@
 
 import Script from "next/script";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
-import { TRACKING_PREFERENCE_KEY } from "./marketing-pixels";
+import { useSyncExternalStore } from "react";
+import { optionalTrackingAllowed, subscribeToTrackingPreference } from "./marketing-pixels";
 
 const DEFAULT_MEASUREMENT_ID = "G-PHLN0C7BWF";
 const PRIVATE_PREFIXES = [
@@ -15,23 +15,17 @@ const PRIVATE_PREFIXES = [
 
 function analyticsAllowed(pathname: string): boolean {
   if (PRIVATE_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(prefix + "/"))) return false;
-  try {
-    const navigatorWithGpc = navigator as Navigator & { globalPrivacyControl?: boolean };
-    if (navigatorWithGpc.globalPrivacyControl === true) return false;
-    return window.localStorage.getItem(TRACKING_PREFERENCE_KEY) !== "disabled";
-  } catch {
-    return false;
-  }
+  return optionalTrackingAllowed();
 }
 
 export function GoogleAnalytics() {
   const pathname = usePathname();
   const measurementId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || DEFAULT_MEASUREMENT_ID;
-  const [allowed, setAllowed] = useState(false);
-
-  useEffect(() => {
-    setAllowed(analyticsAllowed(pathname));
-  }, [pathname]);
+  const allowed = useSyncExternalStore(
+    subscribeToTrackingPreference,
+    () => analyticsAllowed(pathname),
+    () => false,
+  );
 
   if (!allowed) return null;
 
