@@ -1,0 +1,62 @@
+name: Production Smoke
+
+permissions:
+  contents: read
+
+on:
+  check_run:
+    types: [completed]
+
+concurrency:
+  group: production-smoke
+  cancel-in-progress: false
+
+jobs:
+  smoke:
+    if: >-
+      github.event.check_run.name == 'Workers Builds: tradehustl3-website' &&
+      github.event.check_run.conclusion == 'success' &&
+      github.event.check_run.app.slug == 'cloudflare-workers-and-pages' &&
+      github.event.check_run.check_suite.head_branch == 'main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Verify production health
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --location \
+            --retry 8 --retry-delay 5 --retry-all-errors \
+            https://tradehustl3.com/api/health \
+            --output /tmp/health.json
+          node - <<'NODE'
+          const fs = require('node:fs');
+          const health = JSON.parse(fs.readFileSync('/tmp/health.json', 'utf8'));
+          if (health.ok !== true) {
+            console.error('Production health is not operational:', JSON.stringify(health));
+            process.exit(1);
+          }
+          if (!['healthy', 'degraded'].includes(health.status)) {
+            console.error('Unexpected production health status:', health.status);
+            process.exit(1);
+          }
+          console.log(`Production health: ${health.status}`);
+          NODE
+
+      - name: Verify public homepage
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --location \
+            --retry 5 --retry-delay 3 --retry-all-errors \
+            https://tradehustl3.com/ \
+            --output /dev/null
+
+      - name: Verify Resume Builder entry point
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --location \
+            --retry 5 --retry-delay 3 --retry-all-errors \
+            https://tradehustl3.com/resume-builder \
+            --output /dev/null
