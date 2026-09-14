@@ -456,9 +456,7 @@ async function generateCoverLetter(
   if (!hasTrustedOrigin(request)) return json({ ok: false, message: "Request origin rejected." }, 403);
   const probe = await probeResume(request, env, resumeId, dependencies);
   if (probe instanceof Response) return probe;
-  if (!probe.resume.paid) {
-    return json({ ok: false, action: "complete_payment", message: "Unlock the $9.99 resume package before generating the included cover letter." }, 402);
-  }
+  const paid = Boolean(probe.resume.paid);
   const verifiedResume = generatedResume(probe.record.generated_json);
   if (!verifiedResume) return json({ ok: false, message: "Finish your resume before generating the cover letter." }, 409);
   const body = await readJsonBody(request, COVER_BODY_MAX_BYTES);
@@ -471,6 +469,13 @@ async function generateCoverLetter(
   if (!existing && correctionRequest) {
     return json({ ok: false, message: "Generate the included cover letter before requesting a correction." }, 400);
   }
+  if (existing && correctionRequest && !paid) {
+    return json({
+      ok: false,
+      action: "complete_payment",
+      message: "Your protected cover-letter preview is ready. Unlock the $9.99 package before using the three shared corrections.",
+    }, 402);
+  }
 
   const companyName = cleanText(body.companyName, 160) || existing?.context.companyName || "";
   const hiringManager = cleanText(body.hiringManager, 160) || existing?.context.hiringManager || "";
@@ -480,6 +485,14 @@ async function generateCoverLetter(
   const jobPosting = cleanText(body.jobPosting, COVER_JOB_POSTING_MAX_CHARS)
     || existing?.context.jobPosting
     || cleanText(probe.record.target_job_posting, COVER_JOB_POSTING_MAX_CHARS);
+
+  if (!targetJobTitle) {
+    return json({
+      ok: false,
+      action: "return_to_intake",
+      message: "Add target job details to generate your matching cover letter.",
+    }, 422);
+  }
 
   const configuredGlobalLimit = Number.parseInt(env.RESUME_AI_DAILY_ATTEMPT_LIMIT ?? "", 10);
   const globalLimit = Number.isSafeInteger(configuredGlobalLimit) && configuredGlobalLimit > 0
@@ -568,7 +581,9 @@ async function generateCoverLetter(
       runConsumed: Boolean(existing),
       message: existing
         ? "Cover letter correction applied. It used one of your three package corrections."
-        : "Matching cover letter created. The included first cover-letter build did not use a correction.",
+        : paid
+          ? "Matching cover letter created. The included first cover-letter build did not use a correction."
+          : "Matching cover letter preview created. Review the protected copy before checkout.",
     });
   } catch (error) {
     console.error("Cover letter generation failed", error);
@@ -594,14 +609,35 @@ async function serveCoverLetterFile(
   if (request.method !== "GET") return json({ ok: false, message: "Method not allowed." }, 405, { Allow: "GET" });
   const probe = await probeResume(request, env, resumeId, dependencies);
   if (probe instanceof Response) return probe;
-  if (!probe.resume.paid) return json({ ok: false, message: "File not found." }, 404);
-  const storedFormat: CoverFormat = format === "docx" ? "cover_docx" : "cover_pdf";
+  const paid = Boolean(probe.resume.paid);
+  const isDocx = format === "docx";
+  const showInline = format === "pdf" && new URL(request.url).searchParams.get("view") === "1";
+
+  if (!paid) {
+    if (isDocx || !showInline) return json({ ok: false, message: "File not found." }, 404);
+    const stored = await loadStoredCoverLetter(env, probe.record.user_id, resumeId);
+    if (!stored) return json({ ok: false, message: "File not found." }, 404);
+    try {
+      const preview = await createCoverLetterPdf(stored, normalizeTheme(probe.record.theme), true);
+      const headers = new Headers();
+      headers.set("Content-Type", "application/pdf");
+      headers.set("Content-Disposition", "inline; filename=\"TRADE-HUSTL3-Cover-Letter-Preview.pdf\"");
+      headers.set("Cache-Control", "private, no-store");
+      headers.set("Referrer-Policy", "no-referrer");
+      headers.set("X-Content-Type-Options", "nosniff");
+      headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
+      return new Response(preview, { status: 200, headers });
+    } catch (error) {
+      console.error("Cover letter preview render failed", error);
+      return json({ ok: false, message: "The protected cover-letter preview is temporarily unavailable." }, 503);
+    }
+  }
+
+  const storedFormat: CoverFormat = isDocx ? "cover_docx" : "cover_pdf";
   const row = await findCoverFile(env, probe.record.user_id, resumeId, storedFormat);
   if (!row || !env.BOOKS) return json({ ok: false, message: "File not found." }, 404);
   const object = await env.BOOKS.get(row.object_key);
   if (!object) return json({ ok: false, message: "File not found." }, 404);
-  const isDocx = format === "docx";
-  const showInline = format === "pdf" && new URL(request.url).searchParams.get("view") === "1";
   const headers = new Headers();
   headers.set("Content-Type", isDocx
     ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
@@ -639,8 +675,8 @@ export async function augmentResumeWithCoverLetter(
   const resume = resumeValue as Record<string, unknown>;
   const paid = Boolean(resume.paid);
   const userRow = await env.DB.prepare(
-    "SELECT user_id FROM resumes WHERE resume_id = ? AND deleted_at IS NULL LIMIT 1",
-  ).bind(resumeId).first<{ user_id: string }>();
+    "SELECT user_id, generated_json, target_job_posting FROM resumes WHERE resume_id = ? AND deleted_at IS NULL LIMIT 1",
+  ).bind(resumeId).first<{ user_id: string; generated_json: string | null; target_job_posting: string | null }>();
   if (!userRow) return response;
   const [jsonRow, pdfRow, docxRow] = await Promise.all([
     findCoverFile(env, userRow.user_id, resumeId, "cover_json"),
@@ -649,23 +685,27 @@ export async function augmentResumeWithCoverLetter(
   ]);
   const generated = Boolean(jsonRow && pdfRow && docxRow);
   const stored = generated ? await loadStoredCoverLetter(env, userRow.user_id, resumeId) : null;
+  const sourceResume = generatedResume(userRow.generated_json);
+  const targetJobTitle = stored?.context.targetJobTitle || sourceResume?.basics.targetTitle || "";
+  const available = Boolean(resume.previewUrl) || Boolean(sourceResume);
   const next = {
     ...payload,
     resume: {
       ...resume,
       coverLetter: {
         included: true,
-        available: paid,
+        available,
         generated,
         correctionsRemaining: Number(resume.correctionsRemaining) || 0,
-        previewUrl: paid && generated ? `/api/resume-builder/resumes/${resumeId}/cover-letter/files/pdf?view=1` : null,
+        previewUrl: generated ? `/api/resume-builder/resumes/${resumeId}/cover-letter/files/pdf?view=1` : null,
         downloads: paid && generated ? {
           pdf: `/api/resume-builder/resumes/${resumeId}/cover-letter/files/pdf`,
           docx: `/api/resume-builder/resumes/${resumeId}/cover-letter/files/docx`,
         } : null,
         companyName: stored?.context.companyName || "",
         hiringManager: stored?.context.hiringManager || "",
-        targetJobTitle: stored?.context.targetJobTitle || "",
+        targetJobTitle,
+        needsTargetDetails: !targetJobTitle && !cleanText(userRow.target_job_posting, COVER_JOB_POSTING_MAX_CHARS),
       },
     },
   };
