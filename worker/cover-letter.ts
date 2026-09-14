@@ -626,7 +626,7 @@ async function serveCoverLetterFile(
       headers.set("Referrer-Policy", "no-referrer");
       headers.set("X-Content-Type-Options", "nosniff");
       headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
-      return new Response(preview, { status: 200, headers });
+      return new Response(Uint8Array.from(preview).buffer, { status: 200, headers });
     } catch (error) {
       console.error("Cover letter preview render failed", error);
       return json({ ok: false, message: "The protected cover-letter preview is temporarily unavailable." }, 503);
