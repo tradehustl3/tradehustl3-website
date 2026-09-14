@@ -27,12 +27,14 @@ test("production smoke waits for the successful Cloudflare main deployment check
   assert.match(source, /cancel-in-progress:\s*false/);
 });
 
-test("production smoke validates health and the two public entry points", async () => {
+test("production smoke validates the deployed Worker health and entry points", async () => {
   const source = await readFile(smokeWorkflow, "utf8");
-  assert.match(source, /https:\/\/tradehustl3\.com\/api\/health/);
+  assert.match(source, /WORKER_ORIGIN:\s*https:\/\/tradehustl3-website\.tradehustl3\.workers\.dev/);
+  assert.match(source, /"\$WORKER_ORIGIN\/api\/health"/);
   assert.match(source, /health\.ok !== true/);
   assert.match(source, /\['healthy', 'degraded'\]/);
-  assert.match(source, /https:\/\/tradehustl3\.com\//);
-  assert.match(source, /https:\/\/tradehustl3\.com\/resume-builder/);
+  assert.match(source, /"\$WORKER_ORIGIN\/"/);
+  assert.match(source, /"\$WORKER_ORIGIN\/resume-builder"/);
   assert.match(source, /--retry-all-errors/);
+  assert.doesNotMatch(source, /tradehustl3\.com\/api\/health/);
 });

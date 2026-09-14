@@ -21,20 +21,16 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:
-      SMOKE_USER_AGENT: >-
-        Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36
-        (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36
-        TRADE-HUSTL3-Production-Smoke/1.0
+      WORKER_ORIGIN: https://tradehustl3-website.tradehustl3.workers.dev
     steps:
       - name: Verify production health
         shell: bash
         run: |
           set -euo pipefail
           curl --fail --silent --show-error --location \
-            --user-agent "$SMOKE_USER_AGENT" \
             --header 'Accept: application/json' \
             --retry 8 --retry-delay 5 --retry-all-errors \
-            https://tradehustl3.com/api/health \
+            "$WORKER_ORIGIN/api/health" \
             --output /tmp/health.json
           node - <<'NODE'
           const fs = require('node:fs');
@@ -50,24 +46,22 @@ jobs:
           console.log(`Production health: ${health.status}`);
           NODE
 
-      - name: Verify public homepage
+      - name: Verify production homepage
         shell: bash
         run: |
           set -euo pipefail
           curl --fail --silent --show-error --location \
-            --user-agent "$SMOKE_USER_AGENT" \
             --header 'Accept: text/html,application/xhtml+xml' \
             --retry 5 --retry-delay 3 --retry-all-errors \
-            https://tradehustl3.com/ \
+            "$WORKER_ORIGIN/" \
             --output /dev/null
 
-      - name: Verify Resume Builder entry point
+      - name: Verify production Resume Builder entry point
         shell: bash
         run: |
           set -euo pipefail
           curl --fail --silent --show-error --location \
-            --user-agent "$SMOKE_USER_AGENT" \
             --header 'Accept: text/html,application/xhtml+xml' \
             --retry 5 --retry-delay 3 --retry-all-errors \
-            https://tradehustl3.com/resume-builder \
+            "$WORKER_ORIGIN/resume-builder" \
             --output /dev/null
