@@ -242,7 +242,7 @@ test("homepage leads with preview-before-payment proof and the included cover le
   assert.match(html, /No credit card to preview/i);
   assert.match(html, /trade-landings\/trade-hustl3-resume-builder-hero\.webp/i);
   assert.match(html, /optimized\/hustl3-bot\.webp/i);
-  assert.match(html, /500\+ TRADESPEOPLE HELPED — AND COUNTING/i);
+  assert.match(html, /BUILT SPECIFICALLY FOR SKILLED-TRADES JOB SEEKERS/i);
   assert.doesNotMatch(html, /Founder, TRADE HUSTL3/i);
   assert.match(html, /BUILT FOR THE TRADES[\s\S]*READY WHEN YOU ARE/i);
   assert.ok(html.indexOf('id="included-cover-letter"') < html.indexOf('id="guide-title"'));
@@ -373,7 +373,7 @@ test("subscriber endpoint keeps the signup successful when Brevo is unavailable"
     );
     assert.equal(response.status, 200);
     assert.deepEqual(await response.json(), { ok: true, message: "You're on the TRADE HUSTL3 list." });
-    assert.equal(writes, 1);
+    assert.equal(writes, 2);
   } finally {
     globalThis.fetch = originalFetch;
   }
@@ -1009,7 +1009,7 @@ test("server-renders scanner-safe confirmation, intake, payment return, and revi
   assert.match(intake, /name="robots" content="noindex, nofollow"/i);
 
   const payment = await (await renderPath("/resume-builder/payment-confirmed?resume_id=test")).text();
-  assert.match(payment, /Clean PDF \+ DOCX[\s\S]*up to 3 corrections/i);
+  assert.match(payment, /Resume \+ matching cover letter[\s\S]*PDF \+ DOCX[\s\S]*3 shared corrections/i);
 });
 
 test("uses the official navy, red, and gold palette", async () => {
