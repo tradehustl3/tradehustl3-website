@@ -59,9 +59,13 @@ export function FooterEnhancements() {
     mount.className = styles.host;
     mount.dataset.footerEnhancementsHost = "true";
     footer.insertBefore(mount, bottomNav ?? null);
-    setHost(mount);
+    let active = true;
+    queueMicrotask(() => {
+      if (active) setHost(mount);
+    });
 
     return () => {
+      active = false;
       mount.remove();
     };
   }, [pathname]);

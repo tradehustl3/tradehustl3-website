@@ -1,5 +1,6 @@
 import type { GeneratedResume, ResumeCertification, ResumeEducation } from "./resume-documents";
 import {
+  assessIntakeSubstance,
   canonicalSourceRecord,
   scoreResume,
   validateResumeAgainstSource,
@@ -263,6 +264,7 @@ export function evaluateCriticalResumeGate(
   title: string,
 ): CriticalResumeGateResult {
   const source = canonicalSourceRecord(intake, title);
+  const intakeSubstance = assessIntakeSubstance(intake, title);
   const hardened = hardenResumeCriticalFacts(generated, intake, title);
   const deterministicIssues = validateResumeAgainstSource(hardened, source)
     .map((issue) => issue.message);
@@ -270,6 +272,7 @@ export function evaluateCriticalResumeGate(
   const postStructureIssues = validatePostStructure(hardened).map((issue) => issue.message);
   const score = scoreResume(hardened, source);
   const issues = Array.from(new Set([
+    ...intakeSubstance.missing,
     ...deterministicIssues,
     ...criticalIssues,
     ...postStructureIssues,
@@ -277,7 +280,9 @@ export function evaluateCriticalResumeGate(
   ]));
 
   return {
-    ready: criticalIssues.length === 0 && postStructureIssues.length === 0,
+    ready: intakeSubstance.ready
+      && criticalIssues.length === 0
+      && postStructureIssues.length === 0,
     score: score.total,
     issues,
     resume: hardened,

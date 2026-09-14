@@ -112,3 +112,54 @@ test("hard gate replaces corrupted model contact data with verified intake value
   assert.equal(result.resume.basics.phone, "404-555-0100");
   assert.equal(result.resume.basics.location, "Atlanta, GA");
 });
+
+test("hard gate rejects a credential-only intake instead of approving a nearly blank resume", () => {
+  const thinIntake = {
+    contact: { fullName: "Kamyren Ellis", email: "example@example.com" },
+    targetJob: { title: "HVAC" },
+    career: { yearsExperience: "Less than 1 year" },
+    fieldValue: { certifications: ["ASME Section IX"] },
+    experience: [],
+  };
+  const thinResume: GeneratedResume = {
+    basics: { fullName: "Kamyren Ellis", targetTitle: "HVAC", email: "example@example.com" },
+    summary: "HVAC professional with ASME Section IX credential and less than 1 year of experience.",
+    skills: [],
+    certifications: [{ name: "ASME Section IX" }],
+    experience: [],
+    education: [],
+    additionalInformation: [],
+  };
+
+  const result = evaluateCriticalResumeGate(thinResume, thinIntake, "HVAC");
+  assert.equal(result.ready, false);
+  assert.ok(result.issues.some((issue) => /job, apprenticeship, school or lab project/i.test(issue)));
+  assert.ok(result.issues.some((issue) => /at least two real tools/i.test(issue)));
+});
+
+test("hard gate still accepts an entry-level candidate with training and hands-on skills", () => {
+  const entryLevelIntake = {
+    contact: { fullName: "Devon Price" },
+    targetJob: { title: "HVAC Apprentice" },
+    career: {
+      yearsExperience: "No paid experience yet",
+      summaryNotes: "Trade-school graduate with hands-on lab training and a strong safety mindset",
+      skillsAndTools: "Brazing, multimeter",
+      licensesAndCertifications: "OSHA ten",
+    },
+    experience: [],
+    education: "HVAC Certificate — Akron Career Center",
+  };
+  const entryLevelResume: GeneratedResume = {
+    basics: { fullName: "Devon Price", targetTitle: "HVAC Apprentice" },
+    summary: "Trade-school graduate with hands-on lab training and a strong safety mindset.",
+    skills: ["Brazing", "Multimeter"],
+    certifications: [{ name: "OSHA 10" }],
+    experience: [],
+    education: [{ credential: "HVAC Certificate", institution: "Akron Career Center" }],
+    additionalInformation: [],
+  };
+
+  const result = evaluateCriticalResumeGate(entryLevelResume, entryLevelIntake, "HVAC Apprentice");
+  assert.equal(result.ready, true);
+});

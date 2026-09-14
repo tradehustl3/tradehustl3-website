@@ -153,13 +153,16 @@ export async function createResumeDocx(resume: GeneratedResume, theme: ResumeThe
     }
   }
 
-  children.push(
-    sectionHeading("CORE SKILLS", theme),
-    new Paragraph({
-      spacing: { after: 80 },
-      children: [new TextRun({ text: resume.skills.map(clean).filter(Boolean).join("  •  "), size: 21, font: "Arial" })],
-    }),
-  );
+  const skillsText = resume.skills.map(clean).filter(Boolean).join("  •  ");
+  if (skillsText) {
+    children.push(
+      sectionHeading("CORE SKILLS", theme),
+      new Paragraph({
+        spacing: { after: 80 },
+        children: [new TextRun({ text: skillsText, size: 21, font: "Arial" })],
+      }),
+    );
+  }
 
   if (resume.experience.length) {
     children.push(sectionHeading("WORK EXPERIENCE", theme));
@@ -658,9 +661,11 @@ export async function createResumePdf(resume: GeneratedResume, watermarked = fal
   }
 
   const skillsText = resume.skills.map(clean).filter(Boolean).join("  •  ");
-  const skillsHeight = textHeight(writer, skillsText, writer.regular, writer.layout.bodySize, 0, writer.layout.bodyLineHeight, writer.layout.bodyAfter);
-  writeSection(writer, "CORE SKILLS", skillsHeight);
-  writeLines(writer, skillsText, { size: writer.layout.bodySize, lineHeight: writer.layout.bodyLineHeight, after: writer.layout.bodyAfter });
+  if (skillsText) {
+    const skillsHeight = textHeight(writer, skillsText, writer.regular, writer.layout.bodySize, 0, writer.layout.bodyLineHeight, writer.layout.bodyAfter);
+    writeSection(writer, "CORE SKILLS", skillsHeight);
+    writeLines(writer, skillsText, { size: writer.layout.bodySize, lineHeight: writer.layout.bodyLineHeight, after: writer.layout.bodyAfter });
+  }
 
   if (resume.experience.length) {
     const firstJob = resume.experience[0];

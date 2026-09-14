@@ -64,9 +64,14 @@ function fakeDb(options: {
                   trade: "HVAC & Refrigeration",
                   title: "HVAC Resume",
                   intake_json: JSON.stringify({
-                    fullName: "Marcus Reed",
-                    email: "member@example.com",
-                    experience: [{ employer: "Buckeye Comfort Systems" }],
+                    contact: { fullName: "Marcus Reed", email: "member@example.com" },
+                    targetJob: { title: "HVAC Technician" },
+                    career: { skillsAndTools: "Preventive maintenance, multimeter" },
+                    experience: [{
+                      employer: "Buckeye Comfort Systems",
+                      jobTitle: "HVAC Service Helper",
+                      responsibilitiesAndWins: "Supported split-system tune-ups alongside lead technicians",
+                    }],
                   }),
                   generated_json: options.generated ? JSON.stringify(sampleResume) : null,
                   target_job_posting: null,

@@ -81,6 +81,17 @@ test("PDF keeps a naturally one-page resume together with education", async () =
   assert.match(pages[0], /HVAC Technical Certificate/);
 });
 
+test("PDF and DOCX omit the Core Skills heading when there are no skills", async () => {
+  const noSkillsResume = { ...compactFitResume, skills: [] };
+  const pdfText = (await pdfPageText(await createResumePdf(noSkillsResume))).join(" ");
+  assert.doesNotMatch(pdfText, /CORE SKILLS/);
+
+  const zip = await JSZip.loadAsync(await createResumeDocx(noSkillsResume));
+  const xml = await zip.file("word/document.xml")?.async("string");
+  assert.ok(xml);
+  assert.doesNotMatch(xml, /CORE SKILLS/);
+});
+
 test("PDF applies the measured compact profile before allowing a nearly fitting resume onto page two", async () => {
   const nearlyOnePageResume: GeneratedResume = {
     ...compactFitResume,
