@@ -3,8 +3,9 @@ import { handleImageOptimization, DEFAULT_DEVICE_SIZES, DEFAULT_IMAGE_SIZES } fr
 import handler from "vinext/server/app-router-entry";
 import freeSampleDataUrl from "./assets/trade-hustl3-free-sample.pdf?inline";
 import bookSampleDataUrl from "./assets/trade-hustl3-seven-page-book-sample.pdf?inline";
-import { handleResumeBuilderRoute, ResumeBuilderEnv, runResumeBuilderRetention } from "./resume-builder";
+import { handleResumeBuilderRoute, ResumeBuilderEnv, runResumeBuilderRetention } from "./resume-builder-monitored";
 import { handleEbookStripeRoute, runEbookLaunchDelivery, EbookStripeEnv, EBOOK_RELEASE_AT } from "./ebook-stripe";
+import { getOperationsHealth, operationalEvent } from "./operations-monitoring";
 
 interface Env extends ResumeBuilderEnv, EbookStripeEnv {
   ASSETS: Fetcher;
@@ -313,7 +314,7 @@ async function syncBrevoContact(
 
   if (!response.ok) {
     const detail = (await response.text()).slice(0, 500);
-    console.error("Brevo contact sync failed", response.status, detail);
+    console.error(operationalEvent("auth_email", "brevo_contact_sync_failed", "error", { status: response.status, detail }));
     throw new Error("Brevo contact sync failed.");
   }
 }
@@ -424,7 +425,10 @@ async function queueLeadDelivery(
     ).bind(jobId, email, kind, JSON.stringify(payload), Math.floor(Date.now() / 1000) + 300, deliveryError(error)).run();
     return true;
   } catch (queueError) {
-    console.error("Lead delivery could not be queued", { kind, error: deliveryError(queueError) });
+    console.error(operationalEvent("delivery_queue", "lead_delivery_queue_failed", "error", {
+      kind,
+      error: deliveryError(queueError),
+    }));
     return false;
   }
 }
@@ -469,7 +473,9 @@ export async function runLeadDeliveryRetries(env: Env): Promise<void> {
     ).bind(now).all<LeadDeliveryJob>();
     jobs = result.results ?? [];
   } catch (error) {
-    console.error("Lead delivery queue unavailable", deliveryError(error));
+    console.error(operationalEvent("delivery_queue", "lead_delivery_queue_unavailable", "error", {
+      error: deliveryError(error),
+    }));
     return;
   }
 
@@ -489,16 +495,27 @@ export async function runLeadDeliveryRetries(env: Env): Promise<void> {
          SET attempts = ?, status = ?, next_attempt_at = ?, last_error = ?, updated_at = CURRENT_TIMESTAMP
          WHERE job_id = ?`,
       ).bind(attempts, deadLetter ? "dead_letter" : "pending", now + retryDelay, deliveryError(error), job.job_id).run();
-      console.error(deadLetter ? "Lead delivery moved to dead letter" : "Lead delivery retry failed", {
-        jobId: job.job_id,
-        kind: job.kind,
-        attempts,
-        error: deliveryError(error),
-      });
+      console.error(operationalEvent(
+        "delivery_queue",
+        deadLetter ? "lead_delivery_dead_letter" : "lead_delivery_retry_failed",
+        deadLetter ? "error" : "warning",
+        {
+          jobId: job.job_id,
+          kind: job.kind,
+          attempts,
+          error: deliveryError(error),
+        },
+      ));
       failed += 1;
     }
   }
-  if (jobs.length) console.log("Lead delivery sweep complete", { attempted: jobs.length, delivered, failed });
+  if (jobs.length) {
+    console.log(operationalEvent("delivery_queue", "lead_delivery_sweep_complete", failed ? "warning" : "info", {
+      attempted: jobs.length,
+      delivered,
+      failed,
+    }));
+  }
 }
 
 async function subscribe(request: Request, env: Env): Promise<Response> {
@@ -560,8 +577,9 @@ async function subscribe(request: Request, env: Env): Promise<Response> {
         utmCampaign: trackingValue(body.utm_campaign),
       });
     } catch (error) {
-      // D1 remains the source of truth; a durable job retries the Brevo sync.
-      console.error("Brevo contact sync unavailable; signup retained in D1", error);
+      console.error(operationalEvent("auth_email", "subscriber_brevo_sync_deferred", "warning", {
+        error: deliveryError(error),
+      }));
       await queueLeadDelivery(env, email, "brevo_contact", {
         interest,
         source,
@@ -582,7 +600,9 @@ async function subscribe(request: Request, env: Env): Promise<Response> {
         await sendTopTradesDeliveryEmail(env, email, emailedSampleUrl);
       } catch (error) {
         emailDelivered = false;
-        console.error("Top 10 Trades delivery email failed", error);
+        console.error(operationalEvent("auth_email", "top_trades_email_failed", "warning", {
+          error: deliveryError(error),
+        }));
         emailQueued = await queueLeadDelivery(env, email, "top_trades_email", { interest }, error);
       }
 
@@ -617,7 +637,9 @@ async function subscribe(request: Request, env: Env): Promise<Response> {
         await sendBookSampleDeliveryEmail(env, email, downloadUrl);
       } catch (error) {
         emailDelivered = false;
-        console.error("Book sample delivery email failed", error);
+        console.error(operationalEvent("auth_email", "book_sample_email_failed", "warning", {
+          error: deliveryError(error),
+        }));
         emailQueued = await queueLeadDelivery(env, email, "book_sample_email", {}, error);
       }
       return Response.json(
@@ -643,7 +665,9 @@ async function subscribe(request: Request, env: Env): Promise<Response> {
 
     return jsonResponse({ ok: true, message: "You're on the TRADE HUSTL3 list." });
   } catch (error) {
-    console.error("Subscriber signup failed", error);
+    console.error(operationalEvent("auth_email", "subscriber_signup_failed", "error", {
+      error: deliveryError(error),
+    }));
     return jsonResponse({ ok: false, message: "We couldn't save your signup. Please try again." }, 500);
   }
 }
@@ -732,13 +756,23 @@ const worker = {
     if (ebookStripeResponse) return withSecurityHeaders(ebookStripeResponse, url.pathname);
 
     if (url.pathname === "/api/health" && request.method === "GET") {
-      try {
-        await env.DB.prepare("SELECT 1 AS healthy").first();
-        return withSecurityHeaders(jsonResponse({ ok: true, database: "available", timestamp: new Date().toISOString() }), url.pathname);
-      } catch (error) {
-        console.error("Health check failed", deliveryError(error));
-        return withSecurityHeaders(jsonResponse({ ok: false, database: "unavailable", timestamp: new Date().toISOString() }, 503), url.pathname);
+      const health = await getOperationsHealth(env);
+      if (!health.ok) {
+        console.error(operationalEvent("delivery_queue", "operations_health_unhealthy", "error", {
+          status: health.status,
+          pending: health.queue?.pending ?? 0,
+          deadLetter: health.queue?.deadLetter ?? 0,
+        }));
+      } else if (health.status === "degraded") {
+        console.warn(operationalEvent("delivery_queue", "operations_health_degraded", "warning", {
+          pending: health.queue?.pending ?? 0,
+          deadLetter: health.queue?.deadLetter ?? 0,
+        }));
       }
+      return withSecurityHeaders(
+        jsonResponse(health as unknown as Record<string, unknown>, health.ok ? 200 : 503),
+        url.pathname,
+      );
     }
 
     if (url.pathname === "/api/subscribe") {
