@@ -217,7 +217,7 @@ export default function Home() {
       <section className={styles.hero} id="top">
         <div className={styles.heroCopy}>
           <p className={styles.eyebrow}>SKILLED-TRADES CAREER SYSTEM</p>
-          <h1><span className={styles.headlineLead}>Build a trade resume that</span><span>Looks ready for the job.</span></h1>
+          <h1><span className={styles.headlineLead}>Build a trade resume that</span><span>looks ready for the job.</span></h1>
           <p className={styles.heroLead}>Upload your current resume or start from scratch. HUSTL3 BOT turns your real trade experience into a professionally structured resume you can preview before paying.</p>
 
           <div className={styles.priceLine} aria-label="Resume Builder pricing">
@@ -270,7 +270,7 @@ export default function Home() {
               <li>PDF + editable DOCX</li>
             </ul>
             <div className={styles.customerProof}>
-              <strong>500+ TRADESPEOPLE HELPED — AND COUNTING</strong>
+              <strong>BUILT SPECIFICALLY FOR SKILLED-TRADES JOB SEEKERS</strong>
               <p>Real trade experience deserves a resume that gets taken seriously.</p>
             </div>
           </aside>
