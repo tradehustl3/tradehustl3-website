@@ -25,8 +25,8 @@ export function PaymentStatus() {
       if (result.resume?.paid) {
         trackResumePurchase(resumeId.current);
         setStage("ready");
-        setMessage("Payment confirmed. Your clean resume and three correction runs are unlocked.");
-        window.setTimeout(() => window.location.assign(`/resume-builder/review?resume_id=${encodeURIComponent(resumeId.current)}`), 900);
+        setMessage("Payment confirmed. Your resume is unlocked. Next, generate your included matching cover letter.");
+        window.setTimeout(() => window.location.assign(`/resume-builder/review?resume_id=${encodeURIComponent(resumeId.current)}&from=payment#included-cover-letter`), 900);
         return;
       }
       setStage("waiting");
@@ -62,7 +62,7 @@ export function PaymentStatus() {
       <p className="rb-kicker">/ SECURE PAYMENT RETURN</p>
       <h1>{stage === "ready" ? <>PAYMENT <span>CONFIRMED.</span></> : <>LOCKING IN YOUR <span>BUILD.</span></>}</h1>
       <p role="status">{message}</p>
-      <div className="rb-order-summary"><span>Resume Builder</span><strong>$9.99 paid once</strong><small>Clean PDF + DOCX · up to 3 corrections</small></div>
+      <div className="rb-order-summary"><span>Resume Builder</span><strong>$9.99 paid once</strong><small>Resume + matching cover letter · PDF + DOCX · 3 shared corrections</small></div>
       {stage === "waiting" || stage === "error" ? <button className="rb-button rb-button-primary" type="button" onClick={() => { attempts.current = 0; void check(); }}>Check payment status <span>↻</span></button> : null}
       {stage === "error" ? <a className="rb-text-link" href="/resume-builder/intake">Return to your intake</a> : null}
       <small>Do not close this page while confirmation is in progress.</small>

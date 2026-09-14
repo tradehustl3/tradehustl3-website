@@ -52,7 +52,7 @@ Production setup:
 
 - Create the private R2 bucket `tradehustl3books` and bind it to the Worker as `BOOKS`.
 - Upload the customer PDF with the exact object key `TRADE-HUSTL3-COMPLETE-EBOOK.pdf`.
-- Apply the numbered D1 migrations through `drizzle/0003_ebook_refund_safety.sql` in order. Keep `drizzle/0003_ebook_refund_safety_down.sql` as the reviewed rollback procedure; do not run it during deployment.
+- Apply every numbered D1 migration through `drizzle/0005_lead_delivery_queue.sql` in order before deploying the Worker. Keep each matching `_down.sql` file as a reviewed rollback procedure; do not run rollback files during normal deployment.
 - Add `STRIPE_WEBHOOK_SECRET` as an encrypted runtime secret.
 - Add `STRIPE_EBOOK_PAYMENT_LINK_ID` as a regular runtime variable.
 - Create one Stripe webhook at `https://tradehustl3.com/api/stripe/webhook` subscribed to `checkout.session.completed`, `checkout.session.async_payment_succeeded`, and `charge.refunded`.
@@ -67,6 +67,28 @@ Before enabling the public preorder button, run a Stripe test-mode checkout, del
 SELECT stripe_session_id, email
 FROM ebook_orders
 WHERE stripe_payment_intent_id IS NULL;
+```
+
+## Production health and lead-delivery recovery
+
+- Monitor `GET https://tradehustl3.com/api/health`; alert on non-200 responses.
+- The existing five-minute Cron Trigger retries failed Brevo contact syncs and guide/sample emails from `lead_delivery_jobs`.
+- Retries use bounded exponential backoff. After six failed attempts, a job moves to `dead_letter` and requires operator review.
+- Alert on any dead-letter row and inspect it without copying the subscriber email into logs:
+
+```sql
+SELECT job_id, kind, attempts, last_error, updated_at
+FROM lead_delivery_jobs
+WHERE status = 'dead_letter'
+ORDER BY updated_at DESC;
+```
+
+- After correcting the provider/configuration problem, requeue a reviewed job with:
+
+```sql
+UPDATE lead_delivery_jobs
+SET status = 'pending', attempts = 0, next_attempt_at = unixepoch(), updated_at = CURRENT_TIMESTAMP
+WHERE job_id = ?;
 ```
 
 ## Resume generation with Gemini

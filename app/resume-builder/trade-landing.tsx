@@ -153,7 +153,7 @@ export function TradeLandingPage({ content }: { content: TradeLandingContent }) 
               <span>$</span><strong>9</strong><sup>99</sup>
             </div>
             <p>{content.pricing.subhead}</p>
-            <ul>{content.pricing.bullets.slice(0, 4).map((bullet) => <li key={bullet}>✓ {bullet}</li>)}</ul>
+            <ul><li>✓ Matching cover letter included at no extra cost</li>{content.pricing.bullets.slice(0, 3).map((bullet) => <li key={bullet}>✓ {bullet}</li>)}</ul>
             <BuildCta content={content} location={content.ctaLocations.pricing} label={content.pricing.ctaLabel}
               className="rb-button rb-button-primary rb-button-full" />
           </div>

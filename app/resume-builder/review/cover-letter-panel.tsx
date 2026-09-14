@@ -66,10 +66,10 @@ export function CoverLetterPanel({
 
   if (!coverLetter.generated) {
     return (
-      <section className="rb-correction-form" aria-labelledby="cover-letter-title">
-        <p className="rb-kicker">/ INCLUDED WITH YOUR $9.99 PACKAGE</p>
-        <h2 id="cover-letter-title">MATCHING COVER LETTER</h2>
-        <p>Generate one professional cover letter from the same verified facts used in your resume. The first cover-letter build is included and does not use one of your three corrections.</p>
+      <section id="included-cover-letter" className="rb-correction-form" aria-labelledby="cover-letter-title">
+        <p className="rb-kicker">/ FINAL INCLUDED STEP — NO EXTRA CHARGE</p>
+        <h2 id="cover-letter-title">GENERATE YOUR MATCHING COVER LETTER.</h2>
+        <p>Your resume is unlocked. Complete this step to receive the matching cover letter included with your purchase. It uses the same verified facts as your resume, and the first build does not use one of your three shared corrections.</p>
         <form onSubmit={(event) => void submit(event)}>
           <label htmlFor="cover-target-title">Target job title</label>
           <input id="cover-target-title" name="targetJobTitle" maxLength={160} defaultValue={coverLetter.targetJobTitle} placeholder="Example: HVAC Service Technician" />

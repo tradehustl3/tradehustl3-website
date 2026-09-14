@@ -4,6 +4,7 @@ import "./globals.css";
 import "./mobile-header-tune.css";
 import "./proof-section-enhance.css";
 import { GoogleAnalytics } from "./google-analytics";
+import { MarketingPixels } from "./marketing-pixels";
 import { MetaCampaignViewTracker } from "./meta-view-content";
 import { FooterEnhancements } from "./footer-enhancements";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_TITLE, SITE_URL } from "./site";
@@ -176,79 +177,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        {/* Pinterest base tag for page-view attribution */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              !function(e){if(!window.pintrk){window.pintrk=function(){
-              window.pintrk.queue.push(Array.prototype.slice.call(arguments))};
-              var n=window.pintrk;n.queue=[],n.version="3.0";
-              var t=document.createElement("script");t.async=!0;t.src=e;
-              var r=document.getElementsByTagName("script")[0];
-              r.parentNode.insertBefore(t,r)}}("https://s.pinimg.com/ct/core.js");
-              pintrk('load', '2614218071063');
-              pintrk('page');
-            `,
-          }}
-        />
-
-        <noscript
-          dangerouslySetInnerHTML={{
-            __html:
-              '<img height="1" width="1" style="display:none" alt="" src="https://ct.pinterest.com/v3/?event=init&tid=2614218071063&noscript=1" />',
-          }}
-        />
-
       </head>
       <body className={`${display.variable} ${body.variable}`}>
 
-        {/* Meta Pixel */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              !function(f,b,e,v,n,t,s)
-              {
-                if(f.fbq)return;
-                n=f.fbq=function(){
-                  n.callMethod
-                    ? n.callMethod.apply(n,arguments)
-                    : n.queue.push(arguments)
-                };
-
-                if(!f._fbq)f._fbq=n;
-
-                n.push=n;
-                n.loaded=!0;
-                n.version='2.0';
-                n.queue=[];
-
-                t=b.createElement(e);
-                t.async=!0;
-                t.src=v;
-
-                s=b.getElementsByTagName(e)[0];
-                s.parentNode.insertBefore(t,s);
-
-              }(
-                window,
-                document,
-                'script',
-                'https://connect.facebook.net/en_US/fbevents.js'
-              );
-
-              fbq('init', '2260020274539615');
-              fbq('track', 'PageView');
-            `,
-          }}
-        />
-
-        {/* Meta Pixel fallback when JavaScript is disabled */}
-        <noscript
-          dangerouslySetInnerHTML={{
-            __html:
-              '<img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=2260020274539615&ev=PageView&noscript=1" />',
-          }}
-        />
+        <MarketingPixels />
 
         {/* Route-specific Meta ViewContent events for campaign funnels */}
         <MetaCampaignViewTracker />
