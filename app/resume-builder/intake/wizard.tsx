@@ -845,8 +845,8 @@ export function ResumeWizard() {
           <ul>
             <li><strong>$0</strong> to build your protected preview</li>
             <li>Review before paying</li>
-            <li><strong>$9.99</strong> one-time to unlock clean PDF + DOCX</li>
-            <li>3 corrections included</li>
+            <li><strong>$9.99</strong> one-time for the resume + matching cover letter in PDF + DOCX</li>
+            <li>3 shared corrections included</li>
             <li>No subscription</li>
           </ul>
         </div>
@@ -943,7 +943,7 @@ function WizardProgress({ step, percent, onJump }: { step: number; percent: numb
 function ValueRail({ paid }: { paid: boolean }) {
   const items = paid
     ? ["Built for skilled trades", "Your facts stay attached to your verified account", "Payment and corrections unchanged"]
-    : ["Built for skilled trades", "Preview before payment", "$9.99 one-time · no subscription", "3 corrections included", "PDF + DOCX after payment"];
+    : ["Built for skilled trades", "Preview before payment", "$9.99 one-time · no subscription", "Resume + cover letter", "PDF + DOCX", "3 shared corrections"];
   return (
     <div className="rb-value-rail" aria-label="What you get">
       <p>THE OFFER</p>
