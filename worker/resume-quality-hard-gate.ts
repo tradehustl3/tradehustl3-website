@@ -26,7 +26,8 @@ export type PostStructureIssueCode =
   | "duplicate_skill"
   | "duplicate_role_bullet"
   | "role_header_in_bullet"
-  | "duplicate_summary_sentence";
+  | "duplicate_summary_sentence"
+  | "raw_intake_language";
 
 export type PostStructureIssue = {
   code: PostStructureIssueCode;
@@ -124,6 +125,17 @@ function roleIdentities(role: GeneratedResume["experience"][number]): string[] {
   ].filter(Boolean);
 }
 
+// Customers are expected to answer the intake in everyday language. That language
+// is evidence, not finished resume copy. The model may preserve the fact, but the
+// final resume must not leak obvious first-person/chat phrasing back to the customer.
+function hasRawIntakeLanguage(value: string): boolean {
+  const candidate = clean(value);
+  if (!candidate) return false;
+  return /\b(?:i|i'm|i’ve|i've|ive|my|me|we|we're|our|yea|yeah|yep|nah)\b/i.test(candidate)
+    || /\bi\s+was\s+responsibilit(?:y|ies)\s+for\b/i.test(candidate)
+    || /\b(?:gotta|gonna|wanna)\b/i.test(candidate);
+}
+
 export function validatePostStructure(generated: GeneratedResume): PostStructureIssue[] {
   const issues: PostStructureIssue[] = [];
 
@@ -142,6 +154,9 @@ export function validatePostStructure(generated: GeneratedResume): PostStructure
   if (semanticDedupe(summarySentences, 0.86).length !== summarySentences.length) {
     issues.push({ code: "duplicate_summary_sentence", message: "Professional Summary repeats the same supported point." });
   }
+  if (hasRawIntakeLanguage(generated.summary)) {
+    issues.push({ code: "raw_intake_language", message: "Professional Summary contains raw conversational customer wording." });
+  }
 
   generated.experience.forEach((role, roleIndex) => {
     const identities = roleIdentities(role);
@@ -151,7 +166,14 @@ export function validatePostStructure(generated: GeneratedResume): PostStructure
     if (semanticDedupe(role.bullets, 0.84).length !== role.bullets.length) {
       issues.push({ code: "duplicate_role_bullet", roleIndex, message: `Work experience role ${roleIndex + 1} contains duplicate responsibilities.` });
     }
+    if (role.bullets.some(hasRawIntakeLanguage)) {
+      issues.push({ code: "raw_intake_language", roleIndex, message: `Work experience role ${roleIndex + 1} contains raw conversational customer wording.` });
+    }
   });
+
+  if (generated.additionalInformation.some(hasRawIntakeLanguage)) {
+    issues.push({ code: "raw_intake_language", message: "Additional Information contains raw conversational customer wording." });
+  }
 
   return issues;
 }
