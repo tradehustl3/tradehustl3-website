@@ -9,6 +9,23 @@ export const subscribers = sqliteTable("subscribers", {
   createdAt: text("created_at").notNull().default(sql`(CURRENT_TIMESTAMP)`),
 });
 
+export const leadDeliveryJobs = sqliteTable(
+  "lead_delivery_jobs",
+  {
+    jobId: text("job_id").primaryKey(),
+    email: text("email").notNull(),
+    kind: text("kind").notNull(),
+    payloadJson: text("payload_json").notNull(),
+    status: text("status").notNull().default("pending"),
+    attempts: integer("attempts").notNull().default(0),
+    nextAttemptAt: integer("next_attempt_at").notNull(),
+    lastError: text("last_error"),
+    createdAt: text("created_at").notNull().default(sql`(CURRENT_TIMESTAMP)`),
+    updatedAt: text("updated_at").notNull().default(sql`(CURRENT_TIMESTAMP)`),
+  },
+  (table) => [index("lead_delivery_jobs_due_idx").on(table.status, table.nextAttemptAt)],
+);
+
 export const ebookOrders = sqliteTable(
   "ebook_orders",
   {
