@@ -2,9 +2,10 @@
 
 import Script from "next/script";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 
 export const TRACKING_PREFERENCE_KEY = "tradehustl3_optional_tracking";
+export const TRACKING_PREFERENCE_EVENT = "tradehustl3-tracking-preference-change";
 
 const MARKETING_PATHS = new Set([
   "/",
@@ -23,7 +24,7 @@ const MARKETING_PATHS = new Set([
   "/resume-builder/general-labor",
 ]);
 
-function optionalTrackingAllowed(): boolean {
+export function optionalTrackingAllowed(): boolean {
   try {
     const navigatorWithGpc = navigator as Navigator & { globalPrivacyControl?: boolean };
     if (navigatorWithGpc.globalPrivacyControl === true) return false;
@@ -33,13 +34,22 @@ function optionalTrackingAllowed(): boolean {
   }
 }
 
+export function subscribeToTrackingPreference(onChange: () => void): () => void {
+  window.addEventListener("storage", onChange);
+  window.addEventListener(TRACKING_PREFERENCE_EVENT, onChange);
+  return () => {
+    window.removeEventListener("storage", onChange);
+    window.removeEventListener(TRACKING_PREFERENCE_EVENT, onChange);
+  };
+}
+
 export function MarketingPixels() {
   const pathname = usePathname();
-  const [allowed, setAllowed] = useState(false);
-
-  useEffect(() => {
-    setAllowed(MARKETING_PATHS.has(pathname) && optionalTrackingAllowed());
-  }, [pathname]);
+  const allowed = useSyncExternalStore(
+    subscribeToTrackingPreference,
+    () => MARKETING_PATHS.has(pathname) && optionalTrackingAllowed(),
+    () => false,
+  );
 
   if (!allowed) return null;
 
