@@ -13,9 +13,8 @@ const PRIVATE_PREFIXES = [
   "/resume-builder/payment-confirmed",
 ];
 
-function analyticsAllowed(pathname: string): boolean {
-  if (PRIVATE_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(prefix + "/"))) return false;
-  return optionalTrackingAllowed();
+function isPrivateAnalyticsRoute(pathname: string): boolean {
+  return PRIVATE_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(prefix + "/"));
 }
 
 export function GoogleAnalytics() {
@@ -23,11 +22,16 @@ export function GoogleAnalytics() {
   const measurementId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || DEFAULT_MEASUREMENT_ID;
   const allowed = useSyncExternalStore(
     subscribeToTrackingPreference,
-    () => analyticsAllowed(pathname),
+    optionalTrackingAllowed,
     () => false,
   );
+  const privateRoute = isPrivateAnalyticsRoute(pathname);
 
   if (!allowed) return null;
+
+  const config = privateRoute
+    ? `gtag('config', '${measurementId}', { send_page_view: false });`
+    : `gtag('config', '${measurementId}', { page_path: window.location.pathname });`;
 
   return (
     <>
@@ -53,9 +57,10 @@ export function GoogleAnalytics() {
         })();
 
         gtag('js', new Date());
-        // Never forward arbitrary query-string values to GA. Campaign attribution is
-        // intentionally allowlisted above; the page view itself sends pathname only.
-        gtag('config', '${measurementId}', { page_path: window.location.pathname });
+        // Private Resume Builder routes load GA only as an event transport. They do not
+        // send page views, query-string values, or private page paths. Public routes
+        // continue to send pathname-only page views. Tracking preference is respected.
+        ${config}
       `}</Script>
     </>
   );
