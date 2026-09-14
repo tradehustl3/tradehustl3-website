@@ -880,6 +880,56 @@ function buildBody(data: WizardData, email: string) {
   };
 }
 
+function meaningfulIntakeText(value: string, minimumWords = 2): boolean {
+  return value.trim().split(/\s+/).filter(Boolean).length >= minimumWords;
+}
+
+function finalSubstanceErrors(data: WizardData): string[] {
+  const uploadWords = data.sourceResumeText.trim().split(/\s+/).filter(Boolean).length;
+  if (data.sourceProvenance === "upload" && data.sourceResumeText.trim().length >= 80 && uploadWords >= 12) return [];
+
+  const listedRoles = data.roles.filter(roleHasContent);
+  const roleDetails = (role: WizardData["roles"][number]) => [
+    role.responsibilities,
+    role.equipment,
+    role.systems,
+    role.workPerformed,
+    role.leadership,
+    role.workOrders,
+    role.measurable,
+  ].filter((value) => meaningfulIntakeText(value)).length;
+  const documentedRole = listedRoles.some((role) => role.jobTitle.trim() && roleDetails(role) > 0);
+  const incompleteRole = listedRoles.some((role) => role.jobTitle.trim() && roleDetails(role) === 0);
+  const practicalEvidence = new Set([
+    ...data.fieldValue.tools,
+    ...data.fieldValue.equipmentSystems,
+    ...data.fieldValue.technicalSkills,
+    ...data.fieldValue.software,
+    ...data.fieldValue.safety,
+    ...listedRoles.flatMap((role) => [
+      role.responsibilities,
+      role.equipment,
+      role.systems,
+      role.workPerformed,
+      role.leadership,
+      role.workOrders,
+      role.measurable,
+    ]),
+  ].map((value) => value.trim().toLowerCase()).filter((value) => meaningfulIntakeText(value)));
+  const hasTraining = meaningfulIntakeText(data.education);
+  const hasNarrative = meaningfulIntakeText(data.summaryNotes, 8) || meaningfulIntakeText(data.additionalDetails, 6);
+  const errors: string[] = [];
+
+  if (incompleteRole) errors.push("Add at least one specific duty, task, or accomplishment for each listed job.");
+  if (!documentedRole && !(hasTraining || hasNarrative)) {
+    errors.push("Add a job, apprenticeship, school or lab project, hands-on training, or a specific experience description.");
+  }
+  if (!documentedRole && practicalEvidence.size < 2) {
+    errors.push("Add at least two real tools, systems, technical or safety skills, or tasks you can perform.");
+  }
+  return errors;
+}
+
 function validateStep(step: number, data: WizardData, paid: boolean, legalConsent: boolean): string[] {
   const errors: string[] = [];
   if (step === 0 && !isTradeTrack(data.trade)) errors.push("Choose the trade you want the resume built for.");
@@ -894,6 +944,7 @@ function validateStep(step: number, data: WizardData, paid: boolean, legalConsen
     errors.push("Add at least one certification, tool, skill, or system you can back up.");
   }
   if (step === 4 && !data.targetJob.title.trim()) errors.push("Add the job title you are targeting.");
+  if (step === 6) errors.push(...finalSubstanceErrors(data));
   if (step === 6 && !paid && !legalConsent) errors.push("Confirm you are 18+ and agree to the policies.");
   return errors;
 }
