@@ -27,7 +27,7 @@ type HealthEnv = {
   RESUME_AI_BRIDGE_SECRET?: string;
   ANTHROPIC_API_KEY?: string;
   STRIPE_SECRET_KEY?: string;
-  STRIPE_WEBHOOK_SECRET?: string;
+  STRIPE_RESUME_WEBHOOK_SECRET?: string;
 };
 
 function configured(...values: Array<string | undefined>): boolean {
@@ -41,7 +41,7 @@ export async function getOperationsHealth(env: HealthEnv): Promise<OperationsHea
     email: configured(env.BREVO_API_KEY) ? "ok" : "unavailable",
     aiPrimary: configured(env.RESUME_AI_BRIDGE_URL, env.RESUME_AI_BRIDGE_SECRET) ? "ok" : "unavailable",
     aiFallback: configured(env.ANTHROPIC_API_KEY) ? "ok" : "degraded",
-    stripe: configured(env.STRIPE_SECRET_KEY, env.STRIPE_WEBHOOK_SECRET) ? "ok" : "unavailable",
+    stripe: configured(env.STRIPE_SECRET_KEY, env.STRIPE_RESUME_WEBHOOK_SECRET) ? "ok" : "unavailable",
     deliveryQueue: "unavailable",
   };
 
