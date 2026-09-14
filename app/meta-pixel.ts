@@ -17,7 +17,18 @@ type MetaPixelWindow = Window & {
 
 export type MetaLeadTracker = () => boolean;
 
+function optionalTrackingAllowed(): boolean {
+  try {
+    const navigatorWithGpc = navigator as Navigator & { globalPrivacyControl?: boolean };
+    return navigatorWithGpc.globalPrivacyControl !== true
+      && window.localStorage.getItem("tradehustl3_optional_tracking") !== "disabled";
+  } catch {
+    return false;
+  }
+}
+
 function safelyTrack(eventName: AnalyticsEventName, parameters: Record<string, string>, standardMetaEvent?: "Lead" | "ViewContent"): boolean {
+  if (!optionalTrackingAllowed()) return false;
   const analyticsWindow = window as MetaPixelWindow;
   let tracked = false;
 
@@ -84,6 +95,7 @@ export function createMetaLeadTracker(contentName: MetaLeadContentName): MetaLea
  * to generate a new ViewContent event.
  */
 export function trackMetaViewContent(contentName: MetaViewContentName): boolean {
+  if (!optionalTrackingAllowed()) return false;
   const metaWindow = window as MetaPixelWindow;
   const fbq = metaWindow.fbq;
   if (typeof fbq !== "function") return false;
