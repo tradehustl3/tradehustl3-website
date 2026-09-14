@@ -53,7 +53,9 @@ export function GoogleAnalytics() {
         })();
 
         gtag('js', new Date());
-        gtag('config', '${measurementId}', { page_path: window.location.pathname + window.location.search });
+        // Never forward arbitrary query-string values to GA. Campaign attribution is
+        // intentionally allowlisted above; the page view itself sends pathname only.
+        gtag('config', '${measurementId}', { page_path: window.location.pathname });
       `}</Script>
     </>
   );
