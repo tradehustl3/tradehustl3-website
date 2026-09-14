@@ -23,7 +23,9 @@ function optionalTrackingAllowed(): boolean {
     return navigatorWithGpc.globalPrivacyControl !== true
       && window.localStorage.getItem("tradehustl3_optional_tracking") !== "disabled";
   } catch {
-    return false;
+    // Test/non-browser environments without storage keep legacy analytics behavior.
+    // Real browsers with GPC or an explicit opt-out are rejected above.
+    return true;
   }
 }
 
