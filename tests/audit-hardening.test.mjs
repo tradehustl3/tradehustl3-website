@@ -20,11 +20,15 @@ test("the $9.99 package is described consistently", () => {
   assert.match(tradeLanding, /Matching cover letter included at no extra cost/);
 });
 
-test("post-payment review makes the included cover letter a visible final step", () => {
+test("review makes the included cover letter visible before payment and correctable after payment", () => {
   const panel = read("app/resume-builder/review/cover-letter-panel.tsx");
   assert.match(panel, /id="included-cover-letter"/);
-  assert.match(panel, /FINAL INCLUDED STEP — NO EXTRA CHARGE/);
-  assert.match(panel, /first build does not use one of your three shared corrections/i);
+  assert.match(panel, /INCLUDED COVER LETTER PREVIEW/);
+  assert.match(panel, /Generate protected cover-letter preview/);
+  assert.match(panel, /Add target job details to generate your matching cover letter/);
+  assert.match(panel, /first cover-letter build does not use one of your three shared package corrections/i);
+  assert.match(panel, /paid \? \(/);
+  assert.match(panel, /Apply one package correction/);
 });
 
 test("optional tracking is excluded from private resume pages and honors user choice", () => {
