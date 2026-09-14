@@ -3,7 +3,7 @@ import { handleImageOptimization, DEFAULT_DEVICE_SIZES, DEFAULT_IMAGE_SIZES } fr
 import handler from "vinext/server/app-router-entry";
 import freeSampleDataUrl from "./assets/trade-hustl3-free-sample.pdf?inline";
 import bookSampleDataUrl from "./assets/trade-hustl3-seven-page-book-sample.pdf?inline";
-import { handleResumeBuilderRoute, ResumeBuilderEnv, runResumeBuilderRetention } from "./resume-builder";
+import { handleResumeBuilderRoute, ResumeBuilderEnv, runResumeBuilderRetention } from "./resume-builder-monitored";
 import { handleEbookStripeRoute, runEbookLaunchDelivery, EbookStripeEnv, EBOOK_RELEASE_AT } from "./ebook-stripe";
 import { getOperationsHealth, operationalEvent } from "./operations-monitoring";
 
