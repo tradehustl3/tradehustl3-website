@@ -1,4 +1,5 @@
-import { describe, expect, it } from "vitest";
+import assert from "node:assert/strict";
+import test from "node:test";
 import { validatePostStructure } from "../worker/resume-quality-hard-gate";
 import type { GeneratedResume } from "../worker/resume-documents";
 
@@ -21,28 +22,28 @@ function resumeWithBullet(bullet: string): GeneratedResume {
   };
 }
 
-describe("professional resume language gate", () => {
-  it.each([
-    "i lead 4 people on my team",
-    "yea i worked on Salesforce",
-    "I was Responsibilities for preventive maintenance",
-    "I'm gonna fix HVAC equipment",
-  ])("blocks raw customer wording: %s", (bullet) => {
+for (const bullet of [
+  "i lead 4 people on my team",
+  "yea i worked on Salesforce",
+  "I was Responsibilities for preventive maintenance",
+  "I'm gonna fix HVAC equipment",
+]) {
+  test(`blocks raw customer wording: ${bullet}`, () => {
     const issues = validatePostStructure(resumeWithBullet(bullet));
-    expect(issues.some((issue) => issue.code === "raw_intake_language")).toBe(true);
+    assert.equal(issues.some((issue) => issue.code === "raw_intake_language"), true);
   });
+}
 
-  it("accepts a professional rewrite of the same verified fact", () => {
-    const issues = validatePostStructure(resumeWithBullet(
-      "Led a four-person maintenance team and coordinated daily work assignments.",
-    ));
-    expect(issues.some((issue) => issue.code === "raw_intake_language")).toBe(false);
-  });
+test("accepts a professional rewrite of the same verified fact", () => {
+  const issues = validatePostStructure(resumeWithBullet(
+    "Led a four-person maintenance team and coordinated daily work assignments.",
+  ));
+  assert.equal(issues.some((issue) => issue.code === "raw_intake_language"), false);
+});
 
-  it("blocks first-person wording in the professional summary", () => {
-    const resume = resumeWithBullet("Managed preventive maintenance work orders.");
-    resume.summary = "I have experience maintaining commercial building systems.";
-    const issues = validatePostStructure(resume);
-    expect(issues.some((issue) => issue.code === "raw_intake_language")).toBe(true);
-  });
+test("blocks first-person wording in the professional summary", () => {
+  const resume = resumeWithBullet("Managed preventive maintenance work orders.");
+  resume.summary = "I have experience maintaining commercial building systems.";
+  const issues = validatePostStructure(resume);
+  assert.equal(issues.some((issue) => issue.code === "raw_intake_language"), true);
 });
