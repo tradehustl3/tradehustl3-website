@@ -38,7 +38,7 @@ test("optional tracking is excluded from private resume pages and honors user ch
   assert.match(pixels, /globalPrivacyControl/);
   assert.doesNotMatch(pixels, /"\/resume-builder\/review"/);
   assert.match(analytics, /\/resume-builder\/review/);
-  assert.match(analytics, /globalPrivacyControl/);
+  assert.match(analytics, /optionalTrackingAllowed/);
   assert.match(privacy, /Meta\/Facebook Pixel/);
   assert.match(privacy, /<TrackingPreferenceControls \/>/);
 });
