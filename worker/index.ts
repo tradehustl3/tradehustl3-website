@@ -388,6 +388,119 @@ async function sendBookSampleDeliveryEmail(env: Env, email: string, downloadUrl:
   if (!response.ok) throw new Error(`Brevo book-sample delivery failed with status ${response.status}.`);
 }
 
+type LeadDeliveryKind = "brevo_contact" | "top_trades_email" | "book_sample_email";
+
+type LeadDeliveryJob = {
+  job_id: string;
+  email: string;
+  kind: LeadDeliveryKind;
+  payload_json: string;
+  attempts: number;
+};
+
+function deliveryError(error: unknown): string {
+  return (error instanceof Error ? error.message : String(error)).slice(0, 500);
+}
+
+async function queueLeadDelivery(
+  env: Env,
+  email: string,
+  kind: LeadDeliveryKind,
+  payload: Record<string, unknown>,
+  error: unknown,
+): Promise<boolean> {
+  try {
+    const jobId = `${kind}:${await sha256Hex(email)}`;
+    await env.DB.prepare(
+      `INSERT INTO lead_delivery_jobs
+       (job_id, email, kind, payload_json, status, attempts, next_attempt_at, last_error, updated_at)
+       VALUES (?, ?, ?, ?, 'pending', 0, ?, ?, CURRENT_TIMESTAMP)
+       ON CONFLICT(job_id) DO UPDATE SET
+         payload_json = excluded.payload_json,
+         status = 'pending',
+         next_attempt_at = excluded.next_attempt_at,
+         last_error = excluded.last_error,
+         updated_at = CURRENT_TIMESTAMP`,
+    ).bind(jobId, email, kind, JSON.stringify(payload), Math.floor(Date.now() / 1000) + 300, deliveryError(error)).run();
+    return true;
+  } catch (queueError) {
+    console.error("Lead delivery could not be queued", { kind, error: deliveryError(queueError) });
+    return false;
+  }
+}
+
+async function performLeadDelivery(env: Env, job: LeadDeliveryJob): Promise<void> {
+  const payload = JSON.parse(job.payload_json || "{}") as Record<string, unknown>;
+  if (job.kind === "brevo_contact") {
+    await syncBrevoContact(env, {
+      email: job.email,
+      interest: trackingValue(payload.interest),
+      source: trackingValue(payload.source) || "website",
+      utmSource: trackingValue(payload.utmSource),
+      utmMedium: trackingValue(payload.utmMedium),
+      utmCampaign: trackingValue(payload.utmCampaign),
+    });
+    return;
+  }
+  if (job.kind === "top_trades_email") {
+    const secret = env.SAMPLE_TOKEN_SECRET?.trim() || "";
+    if (!secret) throw new Error("Guide delivery is not configured.");
+    const token = await createSampleToken(job.email, secret);
+    await sendTopTradesDeliveryEmail(env, job.email, `${SITE_URL}${FREE_SAMPLE_ROUTE}?token=${encodeURIComponent(token)}`);
+    return;
+  }
+  const secret = bookSampleTokenSecret(env);
+  if (!secret) throw new Error("Book sample delivery is not configured.");
+  const token = await createBookSampleToken(job.email, secret);
+  await sendBookSampleDeliveryEmail(env, job.email, `${SITE_URL}${BOOK_SAMPLE_ROUTE}?token=${encodeURIComponent(token)}`);
+}
+
+export async function runLeadDeliveryRetries(env: Env): Promise<void> {
+  if (!env.DB) return;
+  const now = Math.floor(Date.now() / 1000);
+  let jobs: LeadDeliveryJob[] = [];
+  try {
+    const result = await env.DB.prepare(
+      `SELECT job_id, email, kind, payload_json, attempts
+       FROM lead_delivery_jobs
+       WHERE status = 'pending' AND next_attempt_at <= ?
+       ORDER BY next_attempt_at ASC
+       LIMIT 25`,
+    ).bind(now).all<LeadDeliveryJob>();
+    jobs = result.results ?? [];
+  } catch (error) {
+    console.error("Lead delivery queue unavailable", deliveryError(error));
+    return;
+  }
+
+  let delivered = 0;
+  let failed = 0;
+  for (const job of jobs) {
+    try {
+      await performLeadDelivery(env, job);
+      await env.DB.prepare("DELETE FROM lead_delivery_jobs WHERE job_id = ?").bind(job.job_id).run();
+      delivered += 1;
+    } catch (error) {
+      const attempts = job.attempts + 1;
+      const deadLetter = attempts >= 6;
+      const retryDelay = Math.min(21_600, 300 * (2 ** Math.min(attempts, 6)));
+      await env.DB.prepare(
+        `UPDATE lead_delivery_jobs
+         SET attempts = ?, status = ?, next_attempt_at = ?, last_error = ?, updated_at = CURRENT_TIMESTAMP
+         WHERE job_id = ?`,
+      ).bind(attempts, deadLetter ? "dead_letter" : "pending", now + retryDelay, deliveryError(error), job.job_id).run();
+      console.error(deadLetter ? "Lead delivery moved to dead letter" : "Lead delivery retry failed", {
+        jobId: job.job_id,
+        kind: job.kind,
+        attempts,
+        error: deliveryError(error),
+      });
+      failed += 1;
+    }
+  }
+  if (jobs.length) console.log("Lead delivery sweep complete", { attempted: jobs.length, delivered, failed });
+}
+
 async function subscribe(request: Request, env: Env): Promise<Response> {
   if (request.method !== "POST") {
     return new Response("Method Not Allowed", {
@@ -447,9 +560,15 @@ async function subscribe(request: Request, env: Env): Promise<Response> {
         utmCampaign: trackingValue(body.utm_campaign),
       });
     } catch (error) {
-      // D1 is the source of truth. A transient Brevo outage must not turn a
-      // successful signup into a false failure or prevent resource delivery.
+      // D1 remains the source of truth; a durable job retries the Brevo sync.
       console.error("Brevo contact sync unavailable; signup retained in D1", error);
+      await queueLeadDelivery(env, email, "brevo_contact", {
+        interest,
+        source,
+        utmSource: trackingValue(body.utm_source),
+        utmMedium: trackingValue(body.utm_medium),
+        utmCampaign: trackingValue(body.utm_campaign),
+      }, error);
     }
 
     if (interest === "Top 10 Trades" || interest === "The TRADE HUSTL3 Book") {
@@ -457,18 +576,27 @@ async function subscribe(request: Request, env: Env): Promise<Response> {
       if (!secret) throw new Error("Guide delivery is not configured.");
       const token = await createSampleToken(email, secret);
       const emailedSampleUrl = `${SITE_URL}${FREE_SAMPLE_ROUTE}?token=${encodeURIComponent(token)}`;
+      let emailDelivered = true;
+      let emailQueued = false;
       try {
         await sendTopTradesDeliveryEmail(env, email, emailedSampleUrl);
       } catch (error) {
+        emailDelivered = false;
         console.error("Top 10 Trades delivery email failed", error);
+        emailQueued = await queueLeadDelivery(env, email, "top_trades_email", { interest }, error);
       }
 
-      const message = interest === "The TRADE HUSTL3 Book"
-        ? "You're in. Your free 2026-2027 trade guide preview is ready, and a copy is on its way to your inbox."
-        : "You're in. Your free 2026-2027 Top 10 Trades guide is ready, and a copy is on its way to your inbox.";
+      const guideName = interest === "The TRADE HUSTL3 Book"
+        ? "free 2026-2027 trade guide preview"
+        : "free 2026-2027 Top 10 Trades guide";
+      const message = emailDelivered
+        ? `You're in. Your ${guideName} is ready, and a copy is on its way to your inbox.`
+        : emailQueued
+          ? `You're in. Your ${guideName} is ready below. Email delivery is delayed, so we queued it for another attempt.`
+          : `You're in. Your ${guideName} is ready below, but we could not email the copy. Please use the download link.`;
 
       return Response.json(
-        { ok: true, message, sampleUrl: FREE_SAMPLE_ROUTE },
+        { ok: true, message, sampleUrl: FREE_SAMPLE_ROUTE, emailDelivered, emailQueued },
         {
           headers: {
             "Cache-Control": "no-store",
@@ -483,16 +611,26 @@ async function subscribe(request: Request, env: Env): Promise<Response> {
       if (!secret) throw new Error("Book sample delivery is not configured.");
       const token = await createBookSampleToken(email, secret);
       const downloadUrl = `${SITE_URL}${BOOK_SAMPLE_ROUTE}?token=${encodeURIComponent(token)}`;
+      let emailDelivered = true;
+      let emailQueued = false;
       try {
         await sendBookSampleDeliveryEmail(env, email, downloadUrl);
       } catch (error) {
+        emailDelivered = false;
         console.error("Book sample delivery email failed", error);
+        emailQueued = await queueLeadDelivery(env, email, "book_sample_email", {}, error);
       }
       return Response.json(
         {
           ok: true,
-          message: "You're in. Your free 7-page TRADE HUSTL3 book sample is ready to download, and a copy is on its way to your inbox.",
+          message: emailDelivered
+            ? "You're in. Your free 7-page TRADE HUSTL3 book sample is ready to download, and a copy is on its way to your inbox."
+            : emailQueued
+              ? "Your free 7-page book sample is ready below. Email delivery is delayed, so we queued it for another attempt."
+              : "Your free 7-page book sample is ready below, but we could not email the copy. Please use the download link.",
           sampleUrl: BOOK_SAMPLE_ROUTE,
+          emailDelivered,
+          emailQueued,
         },
         {
           headers: {
@@ -564,7 +702,7 @@ async function serveBookSample(request: Request, env: Env): Promise<Response> {
 const worker = {
   async scheduled(_controller: ScheduledController, env: Env, ctx: ExecutionContext): Promise<void> {
     console.log("eBook launch sweep invoked", new Date().toISOString());
-    const jobs = [runResumeBuilderRetention(env)];
+    const jobs = [runResumeBuilderRetention(env), runLeadDeliveryRetries(env)];
     if (Date.now() >= EBOOK_RELEASE_AT) jobs.push(runEbookLaunchDelivery(env));
     ctx.waitUntil(Promise.all(jobs).then(() => undefined));
   },
@@ -592,6 +730,16 @@ const worker = {
 
     const ebookStripeResponse = await handleEbookStripeRoute(request, env);
     if (ebookStripeResponse) return withSecurityHeaders(ebookStripeResponse, url.pathname);
+
+    if (url.pathname === "/api/health" && request.method === "GET") {
+      try {
+        await env.DB.prepare("SELECT 1 AS healthy").first();
+        return withSecurityHeaders(jsonResponse({ ok: true, database: "available", timestamp: new Date().toISOString() }), url.pathname);
+      } catch (error) {
+        console.error("Health check failed", deliveryError(error));
+        return withSecurityHeaders(jsonResponse({ ok: false, database: "unavailable", timestamp: new Date().toISOString() }, 503), url.pathname);
+      }
+    }
 
     if (url.pathname === "/api/subscribe") {
       return withSecurityHeaders(await subscribe(request, env), url.pathname);
