@@ -488,6 +488,10 @@ async function requestMagicLink(request: Request, env: ResumeBuilderEnv): Promis
     await sendMagicLinkEmail(env, email, confirmationUrl);
   } catch (error) {
     console.error("Resume Builder magic-link request failed", error);
+    return json({
+      ok: false,
+      message: "We could not send the confirmation email. Please wait a minute and try again.",
+    }, 503);
   }
   return json(generic);
 }

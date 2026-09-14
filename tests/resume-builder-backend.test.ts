@@ -234,6 +234,47 @@ test("magic-link email keeps a Cloudflare preview tester on the preview deployme
   assert.doesNotMatch(userInsert, /DO UPDATE SET full_name/i);
 });
 
+test("magic-link request reports a delivery failure instead of claiming the link was sent", async () => {
+  const DB = {
+    prepare(sql: string) {
+      return {
+        bind(...values: unknown[]) {
+          return {
+            sql,
+            values,
+            async first() {
+              if (/RETURNING count/i.test(sql)) return { count: 1 };
+              if (/SELECT user_id FROM users/i.test(sql)) return { user_id: "user-1" };
+              return null;
+            },
+            async run() { return { meta: { changes: 1 } }; },
+          };
+        },
+      };
+    },
+    async batch() { return []; },
+  };
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => new Response("sender rejected", { status: 400 });
+  let response;
+  try {
+    response = await handleResumeBuilderRoute(
+      new Request("https://tradehustl3.com/api/resume-builder/auth/request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Origin: "https://tradehustl3.com" },
+        body: JSON.stringify({ email: "member@example.com", fullName: "Marcus Reed" }),
+      }),
+      { DB: DB as unknown as D1Database, BREVO_API_KEY: "brevo-test" },
+    );
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+  assert.equal(response?.status, 503);
+  const result = await response?.json() as { ok: boolean; message: string };
+  assert.equal(result.ok, false);
+  assert.match(result.message, /could not send the confirmation email/i);
+});
+
 test("resume intake stays behind an authenticated account", async () => {
   const response = await handleResumeBuilderRoute(
     new Request("https://tradehustl3.com/api/resume-builder/resumes", {
