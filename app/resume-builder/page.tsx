@@ -77,12 +77,13 @@ export default function ResumeBuilderPage() {
         </div>
         <div className="rb-package-card">
           <div className="rb-package-price"><span>$</span><strong>9</strong><sup>99</sup></div>
-          <p>Your first resume is built before checkout. Review the protected logo-watermarked preview, then pay once to remove the watermark.</p>
+          <p>Your first resume is built before checkout. Review the protected logo-watermarked preview, then pay once to unlock the complete resume + matching cover letter package.</p>
           <ul>
             <li><span>✓</span> One completed resume · watermarked preview before payment</li>
+            <li><span>✓</span> Matching cover letter included at no extra cost</li>
             <li><span>✓</span> ATS-friendly structure across seven trade tracks</li>
             <li><span>✓</span> Up to 3 corrections within 7 days</li>
-            <li><span>✓</span> Clean PDF + editable DOCX after payment</li>
+            <li><span>✓</span> Clean resume + cover letter PDF and editable DOCX files after payment</li>
             <li><span>✓</span> No subscription · no auto-renewal</li>
           </ul>
         </div>
@@ -121,7 +122,7 @@ export default function ResumeBuilderPage() {
 
       <footer className="rb-footer">
         <strong>TRADE HUSTL<span>3</span></strong>
-        <p>Built by Hustle. Backed by Trades.</p>
+        <p>Built by Trades. Backed by HUSTL3.</p>
         <div className="rb-footer-links"><a href="/privacy">Privacy</a><a href="/terms">Terms</a><a href="/resume-builder/refund-policy">Refunds</a><a href="/resume-builder/ai-disclosure">AI disclosure</a><a href="/data-deletion">Data requests</a><a href="/contact">Support</a></div>
         <small>© 2026 TRADE HUSTL3. All grit reserved.</small>
       </footer>
