@@ -308,30 +308,36 @@ test("an invalid Stripe signature is rejected", async () => {
 });
 
 test("pre-launch: a paid checkout records the order and sends the preorder confirmation, not the download link", async () => {
-  assert.ok(Date.now() < EBOOK_RELEASE_AT, "this test assumes it runs before the Sept 15 2026 launch");
   const db = fakeEbookDb();
   const env = baseEnv(db);
-  const now = Math.floor(Date.now() / 1000);
+  const preLaunch = EBOOK_RELEASE_AT - 60 * 60 * 1000;
+  const originalDateNow = Date.now;
+  Date.now = () => preLaunch;
 
-  await withMockedBrevo(async (calls) => {
-    const response = await postWebhook(env, checkoutCompletedEvent({ email: "PreOrder@Example.com" }), now);
-    assert.equal(response.status, 200);
-    assert.equal(calls.length, 1);
-    assert.equal(calls[0].subject, "Your TRADE HUSTL3 eBook preorder is confirmed");
-  });
+  try {
+    const now = Math.floor(Date.now() / 1000);
+    await withMockedBrevo(async (calls) => {
+      const response = await postWebhook(env, checkoutCompletedEvent({ email: "PreOrder@Example.com" }), now);
+      assert.equal(response.status, 200);
+      assert.equal(calls.length, 1);
+      assert.equal(calls[0].subject, "Your TRADE HUSTL3 eBook preorder is confirmed");
+    });
 
-  assert.equal(db.orders.length, 1);
-  const order = db.orders[0];
-  assert.equal(order.status, "paid");
-  assert.equal(order.email, "preorder@example.com");
-  assert.ok(order.emailed_at, "the preorder confirmation should be recorded as sent");
-  assert.equal(order.launch_emailed_at, null, "the download email must not go out before launch");
+    assert.equal(db.orders.length, 1);
+    const order = db.orders[0];
+    assert.equal(order.status, "paid");
+    assert.equal(order.email, "preorder@example.com");
+    assert.ok(order.emailed_at, "the preorder confirmation should be recorded as sent");
+    assert.equal(order.launch_emailed_at, null, "the download email must not go out before launch");
 
-  const downloadResponse = await handleEbookStripeRoute(
-    new Request(`https://tradehustl3.com/api/ebook-download?token=${encodeURIComponent(order.download_token)}`),
-    env,
-  );
-  assert.equal(downloadResponse?.status, 403, "the download route must stay locked before Sept 15 even for a paid order");
+    const downloadResponse = await handleEbookStripeRoute(
+      new Request(`https://tradehustl3.com/api/ebook-download?token=${encodeURIComponent(order.download_token)}`),
+      env,
+    );
+    assert.equal(downloadResponse?.status, 403, "the download route must stay locked before Sept 15 even for a paid order");
+  } finally {
+    Date.now = originalDateNow;
+  }
 });
 
 test("post-launch: a paid checkout delivers the download link and the file actually downloads", async () => {

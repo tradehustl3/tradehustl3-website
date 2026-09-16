@@ -176,7 +176,7 @@ export default function Home() {
         <div
           aria-hidden="true"
           data-header-motto
-          data-product-positioning="BUILT BY HUSTLE. BACKED BY TRADES."
+          data-product-positioning="BUILT BY TRADES. BACKED BY HUSTL3."
           data-header-accent="yellow-red-blue-both-sides"
           style={{
             display: 'flex',
@@ -198,8 +198,8 @@ export default function Home() {
             <i style={{ display: 'block', width: 'clamp(12px,2vw,28px)', height: '2px', backgroundColor: '#2671a7' }} />
           </span>
           <span style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.04, textAlign: 'center' }}>
-            <strong style={{ color: '#fff' }}>BUILT BY HUSTLE.</strong>
-            <span style={{ color: '#f1c357' }}>BACKED BY TRADES.</span>
+            <strong style={{ color: '#fff' }}>BUILT BY TRADES.</strong>
+            <span style={{ color: '#f1c357' }}>BACKED BY HUSTL3.</span>
           </span>
           <span data-accent-lines style={{ display: 'grid', gap: '2px', flex: '0 0 auto' }}>
             <i style={{ display: 'block', width: 'clamp(12px,2vw,28px)', height: '2px', backgroundColor: '#f1c357' }} />
@@ -394,7 +394,7 @@ export default function Home() {
 
       <footer className={styles.footer} data-site-footer>
         <div className={styles.footerBrand}><Image src="/optimized/trade-hustl3-logo.webp" alt="TRADE HUSTL3 logo" width={44} height={44} /><strong>TRADE HUSTL3 LLC</strong></div>
-        <p>Built by Hustle, Backed by Trades.</p>
+        <p>Built by Trades. Backed by HUSTL3.</p>
         <nav aria-label="Footer links">
           <Link href="/resume-builder">Resume Builder</Link>
           <Link href="/top-10-trades">Top 10 Trades</Link>

@@ -2,6 +2,18 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
+const EBOOK_RELEASE_AT = Date.parse("2026-09-15T04:00:00Z");
+
+async function withFrozenDateNow(now, run) {
+  const originalDateNow = Date.now;
+  Date.now = () => now;
+  try {
+    return await run();
+  } finally {
+    Date.now = originalDateNow;
+  }
+}
+
 async function renderPath(pathname = "/") {
   const worker = await loadWorker();
   return worker.fetch(new Request(`http://localhost${pathname}`, { headers: { accept: "text/html" } }), { ASSETS: { fetch: async () => new Response("Not found", { status: 404 }) } }, { waitUntil() {}, passThroughOnException() {} });
@@ -75,7 +87,7 @@ test("server-renders the corrected TRADE HUSTL3 brand and metadata", async () =>
   assert.match(html, /optimized\/trade-hustl3-logo\.webp/i);
   assert.match(html, /favicon\.svg/i);
   assert.match(html, /alt="TRADE HUSTL3 logo"/i);
-  assert.match(html, /Built by Hustle, Backed by Trades\./i);
+  assert.match(html, /BUILT BY TRADES\. BACKED BY HUSTL3\./);
   assert.match(html, /Skilled-Trades[\s\S]*Resume Builder/i);
 });
 
@@ -594,27 +606,32 @@ test("a Top 10 credential cannot unlock the book sample, and vice versa", async 
 });
 
 test("keeps the direct eBook gated until the September 15 launch", async () => {
-  const html = await (await renderPath("/book")).text();
-  assert.match(html, /DIRECT eBOOK/i);
-  assert.match(html, /\$9\.99/i);
-  assert.doesNotMatch(html, /\$9\.00/i);
-  assert.match(html, /Available September 15/i);
-  assert.match(html, /Secure PDF delivered by email after payment/i);
-  assert.doesNotMatch(html, /href="https:\/\/buy\.stripe\.com\/4gM5kwaQ96EscGf2uKbfO02"/i);
+  await withFrozenDateNow(EBOOK_RELEASE_AT - 60 * 60 * 1000, async () => {
+    const html = await (await renderPath("/book")).text();
+    assert.match(html, /DIRECT eBOOK/i);
+    assert.match(html, /\$9\.99/i);
+    assert.doesNotMatch(html, /\$9\.00/i);
+    assert.match(html, /Available September 15/i);
+    assert.match(html, /Secure PDF delivered by email after payment/i);
+    assert.doesNotMatch(html, /href="https:\/\/buy\.stripe\.com\/4gM5kwaQ96EscGf2uKbfO02"/i);
+  });
 });
 
 test("renders a private order-confirmation page", async () => {
-  const response = await renderPath("/book/order-confirmed");
-  assert.equal(response.status, 200);
-  const html = await response.text();
-  assert.match(html, /PREORDER CONFIRMED/i);
-  assert.match(html, /\$9\.99/i);
-  assert.match(html, /charged today/i);
-  assert.match(html, /September 15, 2026/i);
-  assert.match(html, /name="robots" content="noindex, nofollow"/i);
+  await withFrozenDateNow(EBOOK_RELEASE_AT - 60 * 60 * 1000, async () => {
+    const response = await renderPath("/book/order-confirmed");
+    assert.equal(response.status, 200);
+    const html = await response.text();
+    assert.match(html, /PREORDER CONFIRMED/i);
+    assert.match(html, /\$9\.99/i);
+    assert.match(html, /charged today/i);
+    assert.match(html, /September 15, 2026/i);
+    assert.match(html, /name="robots" content="noindex, nofollow"/i);
+  });
 });
 
 test("records a preorder confirmation without releasing the eBook before launch", async () => {
+  await withFrozenDateNow(EBOOK_RELEASE_AT - 60 * 60 * 1000, async () => {
   const worker = await loadWorker();
   const webhookSecret = "whsec_test_trade_hustl3";
   const paymentLinkId = "plink_trade_hustl3_ebook";
@@ -732,6 +749,7 @@ test("records a preorder confirmation without releasing the eBook before launch"
   );
   assert.equal(ebookResponse.status, 403);
   assert.match(await ebookResponse.text(), /unlock.*September 15, 2026/i);
+  });
 });
 
 test("rejects a signed eBook checkout that is not exactly $9.99", async () => {
@@ -878,7 +896,7 @@ test("reconciles a full refund that arrives before delayed eBook payment succeed
 
 test("launch sweep delivers a pending preorder once after release", async () => {
   const worker = await loadWorker();
-  const release = Date.parse("2026-09-15T04:00:00Z");
+  const postLaunch = EBOOK_RELEASE_AT + 60 * 60 * 1000;
   const originalNow = Date.now;
   const originalFetch = globalThis.fetch;
   const calls = [];
@@ -914,7 +932,7 @@ test("launch sweep delivers a pending preorder once after release", async () => 
     sent.push({ input: String(input), body: JSON.parse(String(init.body)) });
     return new Response(null, { status: 201 });
   };
-  Date.now = () => release;
+  Date.now = () => postLaunch;
   try {
     await worker.scheduled({}, { DB, BOOKS: {}, BREVO_API_KEY: "brevo-test-key" }, {
       waitUntil(promise) { waitPromise = promise; },
@@ -967,11 +985,14 @@ test("server-renders the preview-first Resume Builder account entry and product 
   assert.match(html, /Create account &amp; continue/i);
   assert.match(html, /ACCOUNT · STAGE 1 OF 5/i);
   assert.match(html, /\$9\.99/i);
+  assert.match(html, /One-time · no subscription/i);
   assert.match(html, /One completed resume/i);
   assert.match(html, /watermarked preview before payment/i);
+  assert.match(html, /complete resume \+ matching cover letter package/i);
   assert.match(html, /ATS-friendly structure across seven trade tracks/i);
   assert.match(html, /Up to 3 corrections within 7 days/i);
-  assert.match(html, /Clean PDF \+ editable DOCX after payment/i);
+  assert.match(html, /Matching cover letter included at no extra cost/i);
+  assert.match(html, /Clean resume \+ cover letter PDF and editable DOCX files after payment/i);
   assert.match(html, /No subscription · no auto-renewal/i);
   assert.doesNotMatch(html, /\$89\.99/i);
   for (const track of ["HVAC &amp; Refrigeration", "Electrical", "Plumbing", "Construction &amp; Carpentry", "Facilities Maintenance", "Welding &amp; Fabrication", "General Labor / Trade Helper"]) {
