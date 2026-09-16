@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 
 const analytics = fs.readFileSync("app/resume-builder/funnel-analytics.tsx", "utf8");
+const googleAnalytics = fs.readFileSync("app/google-analytics.tsx", "utf8");
 const builderPage = fs.readFileSync("app/resume-builder/page.tsx", "utf8");
 const intakePage = fs.readFileSync("app/resume-builder/intake/page.tsx", "utf8");
 const reviewPage = fs.readFileSync("app/resume-builder/review/page.tsx", "utf8");
@@ -42,4 +43,18 @@ test("funnel observers are mounted on the actual Resume Builder stages", () => {
   assert.match(reviewPage, /<ResumeReviewAnalytics\s*\/>/);
   assert.match(confirm, /trackResumeFunnelEvent\("sign_up"/);
   assert.match(payment, /trackResumePurchase\(resumeId\.current\)/);
+});
+
+test("private Resume Builder routes keep GA event transport without private page views", () => {
+  for (const prefix of [
+    "/resume-builder/intake",
+    "/resume-builder/review",
+    "/resume-builder/confirm",
+    "/resume-builder/payment-confirmed",
+  ]) {
+    assert.match(googleAnalytics, new RegExp(prefix.replaceAll("/", "\\/")));
+  }
+  assert.match(googleAnalytics, /send_page_view:\s*false/);
+  assert.match(googleAnalytics, /optionalTrackingAllowed/);
+  assert.doesNotMatch(googleAnalytics, /if \(PRIVATE_PREFIXES.*return false/);
 });
