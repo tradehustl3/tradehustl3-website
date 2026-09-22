@@ -266,9 +266,9 @@ export async function createResumeDocx(resume: GeneratedResume, theme: ResumeThe
     addSummary("LEADERSHIP PROFILE");
     addSkills("LEADERSHIP & OPERATIONS COMPETENCIES");
     addExperience();
+    addAdditional("TECHNICAL EXPERTISE & ADDITIONAL QUALIFICATIONS");
     addCertifications();
     addEducation();
-    addAdditional("TECHNICAL & ADDITIONAL QUALIFICATIONS");
   } else {
     addSummary("PROFESSIONAL SUMMARY");
     addSkills("CORE SKILLS");
@@ -820,9 +820,9 @@ export async function createResumePdf(resume: GeneratedResume, watermarked = fal
     addSummary("LEADERSHIP PROFILE");
     addSkills("LEADERSHIP & OPERATIONS COMPETENCIES");
     addExperience();
+    addAdditional("TECHNICAL EXPERTISE & ADDITIONAL QUALIFICATIONS");
     addCertifications();
     addEducation();
-    addAdditional("TECHNICAL & ADDITIONAL QUALIFICATIONS");
   } else {
     addSummary("PROFESSIONAL SUMMARY");
     addSkills("CORE SKILLS");
