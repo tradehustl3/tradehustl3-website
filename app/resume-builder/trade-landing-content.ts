@@ -125,7 +125,7 @@ export function buildTradeLandingJsonLd(content: TradeLandingContent) {
         "@id": `${url}#breadcrumb`,
         itemListElement: [
           { "@type": "ListItem", position: 1, name: "Home", item: SITE_URL },
-          { "@type": "ListItem", position: 2, name: "Resume Builder", item: `${SITE_URL}/resume-builder` },
+          { "@type": "ListItem", position: 2, name: "Resume Builder", item: `${SITE_URL}/#resume-start` },
           { "@type": "ListItem", position: 3, name: content.breadcrumbName, item: url },
         ],
       },
