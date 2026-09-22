@@ -1,9 +1,9 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
+import { FormEvent, useCallback, useEffect, useState } from "react";
 import { CoverLetterPanel } from "./cover-letter-panel";
 
-type ResumeTheme = "plain" | "navy";
+type ResumeTheme = "plain" | "navy" | "lead";
 type PreviewTab = "resume" | "cover-letter";
 
 type Resume = {
@@ -49,11 +49,27 @@ type Resume = {
   }>;
 };
 
-// Keep the persisted "navy" key for compatibility with existing drafts while
-// presenting the two customer-facing choices that matter: black or red accent.
-const THEME_OPTIONS: { value: ResumeTheme; label: string; note: string }[] = [
-  { value: "plain", label: "Classic Black — Default", note: "White background, black text and black dividers. Simple, professional, and ATS-safe." },
-  { value: "navy", label: "TRADE HUSTL3 Red Accent", note: "The same ATS-safe structure with true TRADE HUSTL3 red used only for clean section accents." },
+// Persisted keys stay backward compatible while customers see the three
+// production TRADE HUSTL3 resume systems.
+const THEME_OPTIONS: { value: ResumeTheme; label: string; tagline: string; note: string }[] = [
+  {
+    value: "plain",
+    label: "Field Pro",
+    tagline: "Built for the work.",
+    note: "Hands-on, direct, and ATS-safe. Technical skills, credentials, equipment, and field experience stay easy to scan.",
+  },
+  {
+    value: "navy",
+    label: "Modern Trade",
+    tagline: "Technical. Clean. Professional.",
+    note: "A sharper commercial look with stronger hierarchy, more white space, and polished technical positioning.",
+  },
+  {
+    value: "lead",
+    label: "Lead / Supervisor",
+    tagline: "Built to lead the work.",
+    note: "Leadership-first structure for foremen, leads, supervisors, facilities leaders, and senior tradespeople moving up.",
+  },
 ];
 
 type GenerationFailure = {
@@ -71,7 +87,6 @@ export function ResumeReview() {
   const [resumeId] = useState(() => typeof window === "undefined"
     ? ""
     : new URLSearchParams(window.location.search).get("resume_id") ?? "");
-  const autoBuildFired = useRef(false);
   const [resume, setResume] = useState<Resume | null>(null);
   const [loading, setLoading] = useState(true);
   const [working, setWorking] = useState(false);
@@ -111,17 +126,9 @@ export function ResumeReview() {
     queueMicrotask(() => void load(resumeId));
   }, [load, resumeId]);
 
-  // Any unpaid draft without a preview starts its first protected build here.
-  // This covers direct review links and interrupted navigation without relying
-  // on a fragile query flag.
-  useEffect(() => {
-    if (autoBuildFired.current) return;
-    if (loading || working || !resume) return;
-    if (resume.previewUrl || resume.paid) return;
-    autoBuildFired.current = true;
-    void runGeneration();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loading, working, resume]);
+  // The first preview is intentionally user-triggered. The customer chooses a
+  // resume system first so HUSTL3 BOT can apply that writing profile on the
+  // initial AI build instead of generating a generic default automatically.
 
   async function runGeneration(correctionRequest?: string): Promise<boolean> {
     if (!resumeId) return false;
@@ -229,7 +236,7 @@ export function ResumeReview() {
   function renderThemePicker() {
     if (!resume) return null;
     return (
-      <div className="rb-theme-picker" role="radiogroup" aria-label="Resume template style">
+      <div className="rb-theme-picker" role="radiogroup" aria-label="Resume system">
         {THEME_OPTIONS.map((option) => {
           const selected = resume.theme === option.value;
           return (
@@ -242,7 +249,11 @@ export function ResumeReview() {
               disabled={themeSaving}
               onClick={() => void updateTheme(option.value)}
             >
+              <span className={`rb-theme-preview rb-theme-preview-${option.value}`} aria-hidden="true">
+                <i /><i /><b /><i /><i />
+              </span>
               <span className="rb-trade-card-name">{option.label}</span>
+              <span className="rb-theme-tagline">{option.tagline}</span>
               <span className="rb-trade-card-note">{option.note}</span>
             </button>
           );
@@ -323,8 +334,8 @@ export function ResumeReview() {
       {!hasDraft ? (
         <section className="rb-first-build">
           <div className="rb-blueprint" aria-hidden="true"><span>ATS</span><i /><i /><i /><i /></div>
-          <div><p className="rb-kicker">/ PREVIEW BEFORE YOU PAY</p><h2>READY FOR THE FIRST BUILD.</h2><p>Our AI resume engine will organize only the experience and facts you provided—no invented licenses, employers, or results. You will review a protected, logo-watermarked copy before checkout.</p>
-          <span className="rb-theme-label">Choose your resume style</span>
+          <div><p className="rb-kicker">/ PREVIEW BEFORE YOU PAY</p><h2>CHOOSE YOUR SYSTEM. THEN BUILD.</h2><p>Pick how you want employers to read your experience. HUSTL3 BOT uses the selected writing profile on the first build while staying locked to the facts you provided—no invented licenses, employers, duties, or results.</p>
+          <span className="rb-theme-label">Choose your resume system</span>
           {renderThemePicker()}
           <button className="rb-button rb-button-primary" type="button" disabled={working} onClick={() => void runGeneration()}>{working ? "Building your resume…" : "Build my watermarked preview"} <span>→</span></button></div>
         </section>
@@ -374,9 +385,9 @@ export function ResumeReview() {
 
           <aside className="rb-review-sidebar">
             <div className="rb-review-status"><p className="rb-kicker">/ {resume.paid ? "REVIEW + REFINE" : "PREVIEW BEFORE YOU PAY"}</p><h2>{resume.paid ? "MAKE IT SOUND LIKE YOU." : "REVIEW THE WHOLE PACKAGE."}</h2><p className="rb-review-desc">{resume.paid ? "Check names, dates, certifications, job duties, contact information, and your included matching cover letter before downloading." : "Your resume is ready. Build the included matching cover-letter preview, review both tabs, then pay once to remove the watermarks and unlock the clean PDF + DOCX files."}</p>
-              <span className="rb-theme-label">Resume style</span>
+              <span className="rb-theme-label">Resume system</span>
               {renderThemePicker()}
-              <small className="rb-theme-note">Switch between Classic Black and Red Accent without using an AI correction run. Your resume and generated cover letter keep the same professional style.</small>
+              <small className="rb-theme-note">Your first build uses the selected system's writing profile and layout. After generation, switching systems refreshes the resume and matching cover-letter layout without using an AI correction; your verified written content stays unchanged unless you request a correction.</small>
             </div>
 
             <section className="rb-quality-card" aria-labelledby="resume-quality-title">
