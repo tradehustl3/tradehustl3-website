@@ -3,6 +3,7 @@ import { TRADE_LANDING_PAGES, tradeLandingPath } from "./resume-builder/trade-la
 import { SITE_URL } from "./site";
 
 const CONTENT_REFRESHED_AT = new Date("2026-08-30T23:27:04.000Z");
+const RESUME_BUILDER_REFRESHED_AT = new Date("2026-09-22T00:00:00.000Z");
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const publicPages: MetadataRoute.Sitemap = [
@@ -32,7 +33,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
     {
       url: `${SITE_URL}/resume-builder`,
-      lastModified: CONTENT_REFRESHED_AT,
+      lastModified: RESUME_BUILDER_REFRESHED_AT,
       changeFrequency: "daily",
       priority: 0.9,
     },
