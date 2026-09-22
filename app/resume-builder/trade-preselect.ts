@@ -3,9 +3,9 @@
  *
  * Trade-specific SEO landing pages (for example `/resume-builder/hvac`) send
  * visitors into the *existing* intake flow with their trade already chosen.
- * There is no second intake system: the landing CTA points at the normal hub
- * (`/resume-builder?trade=<slug>`), the hub threads the slug into the
- * "continue" link, and the wizard reads it on load. A short-lived
+ * There is no second intake system: the landing CTA points at the homepage
+ * Resume Builder entry (`/?trade=<slug>#resume-start`), AccountStart threads
+ * the slug into the "continue" link, and the wizard reads it on load. A short-lived
  * `localStorage` note bridges the magic-link email round trip, where the query
  * string cannot survive.
  *
@@ -68,9 +68,9 @@ export function slugForTradeTrack(track: TradeTrack): string {
   return CANONICAL_TRADE_SLUG[track];
 }
 
-/** Hub entry URL that carries a preselected trade (the primary landing-page CTA target). */
+/** Homepage entry URL that carries a preselected trade (the primary landing-page CTA target). */
 export function intakeEntryHref(track: TradeTrack): string {
-  return `/resume-builder?trade=${slugForTradeTrack(track)}`;
+  return `/?trade=${slugForTradeTrack(track)}#resume-start`;
 }
 
 /** Direct intake URL with a preselected trade (used once an account is verified). */
