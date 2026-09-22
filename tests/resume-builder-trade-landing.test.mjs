@@ -228,7 +228,7 @@ for (const page of PAGES) {
 
   test(`${page.slug}: every CTA enters the existing intake with the trade preselected`, async () => {
     const html = await (await renderPath(path)).text();
-    const hrefs = html.match(new RegExp(`href="/resume-builder\\?trade=${page.slug}"`, "g")) ?? [];
+    const hrefs = html.match(new RegExp(`href="/\\?trade=${page.slug}#resume-start"`, "g")) ?? [];
     assert.ok(hrefs.length >= 4, `${page.slug} expected >=4 preselect CTAs, found ${hrefs.length}`);
     assert.match(html, /data-analytics-event="cta_click"/);
     assert.ok(html.includes(`data-location="${page.heroLocation}"`), `${page.slug} hero CTA location`);
