@@ -62,7 +62,7 @@ type ResumeRecord = {
   theme: string;
 };
 
-const RESUME_THEMES: ReadonlySet<string> = new Set(["plain", "navy"]);
+const RESUME_THEMES: ReadonlySet<string> = new Set(["plain", "navy", "lead"]);
 
 function normalizeTheme(value: unknown): ResumeTheme {
   return typeof value === "string" && RESUME_THEMES.has(value) ? value as ResumeTheme : "plain";
@@ -1383,6 +1383,7 @@ Writing rules:
 - Avoid repeating the same wording in the summary and experience bullets.
 - Build the strongest truthful version possible; never manufacture impact to make sparse intake sound stronger.
 - Keep the finished content suitable for a one-to-two-page resume.
+- Follow the supplied RESUME SYSTEM profile for summary length, emphasis, bullet style, and positioning. The system profile changes presentation and emphasis only; it never overrides evidence rules.
 - Return valid JSON only. No markdown and no commentary.
 
 Required JSON shape:
@@ -1505,6 +1506,31 @@ function compactModelValue(value: unknown): unknown {
   return value ?? undefined;
 }
 
+function resumeSystemProfile(theme: ResumeTheme): string {
+  if (theme === "navy") {
+    return `MODERN TRADE
+- Position the candidate as a polished technical professional for commercial, industrial, facilities, or higher-responsibility field work.
+- Professional profile target: 55-85 words. Lead with current trade identity and environment, then technical breadth, specialty, and verified operational contribution.
+- Experience bullets should emphasize technical scope, ownership, diagnostics, systems/equipment, and operational impact. Use verified metrics when supplied.
+- Skills should read as areas of expertise, prioritizing concrete systems, equipment, diagnostics, field operations, and software over generic soft skills.
+- Keep wording contemporary and precise without corporate filler.`;
+  }
+  if (theme === "lead") {
+    return `LEAD / SUPERVISOR
+- Position the candidate as a trades leader who can run the work while retaining hands-on technical credibility.
+- Leadership profile target: 65-95 words. Combine verified trade depth with team leadership, PM/work-order operations, vendors/projects, scheduling, safety, or service ownership when supported.
+- Experience should deliberately balance leadership/operations, verified scope/results, and hands-on technical capability. Do not turn a technician into a manager unless the source proves leadership responsibility.
+- Skills should prioritize verified leadership and operations competencies first, followed by the strongest technical capabilities needed for the target role.
+- Use authoritative, operational language without executive fluff or invented management scope.`;
+  }
+  return `FIELD PRO
+- Position the candidate as a capable hands-on skilled-trades worker. The resume should quickly answer: what can this person work on, diagnose, maintain, install, repair, or operate?
+- Professional summary target: 45-75 words. Lead with trade identity and experience level, then verified equipment/systems, strongest capabilities, credentials, and target value.
+- Prioritize concrete technical skills, tools, equipment, licenses, certifications, preventive maintenance, diagnostics, installation, repair, and field-service work.
+- Experience bullets should usually be 12-28 words and follow action + task/system + technical detail + verified scope/result when available.
+- Avoid generic personality claims and keep the language practical, direct, and field credible.`;
+}
+
 function resumeUserPrompt(
   resume: ResumeRecord,
   intake: unknown,
@@ -1513,10 +1539,11 @@ function resumeUserPrompt(
 ): string {
   const compactIntake = JSON.stringify(compactModelValue(intake));
   const verifiedFacts = JSON.stringify(sourceFactCatalog(canonicalSourceRecord(intake, resume.title), correctionRequest));
+  const systemProfile = resumeSystemProfile(normalizeTheme(resume.theme));
   if (correctionRequest) {
-    return `Revise the current resume using only the requested correction and original intake. Preserve accurate content not affected by the correction.\n\nVERIFIED FACT CATALOG:\n${verifiedFacts}\n\nORIGINAL INTAKE:\n${compactIntake}\n\nTARGET JOB POSTING:\n${resume.target_job_posting ?? ""}\n\nCURRENT RESUME:\n${JSON.stringify(compactModelValue(prior))}\n\nCUSTOMER CORRECTION:\n${correctionRequest}`;
+    return `Revise the current resume using only the requested correction and original intake. Preserve accurate content not affected by the correction.\n\nRESUME SYSTEM:\n${systemProfile}\n\nVERIFIED FACT CATALOG:\n${verifiedFacts}\n\nORIGINAL INTAKE:\n${compactIntake}\n\nTARGET JOB POSTING:\n${resume.target_job_posting ?? ""}\n\nCURRENT RESUME:\n${JSON.stringify(compactModelValue(prior))}\n\nCUSTOMER CORRECTION:\n${correctionRequest}`;
   }
-  return `Create the resume from this verified intake.\n\nTRADE TRACK:\n${resume.trade}\n\nVERIFIED FACT CATALOG:\n${verifiedFacts}\n\nORIGINAL INTAKE:\n${compactIntake}\n\nTARGET JOB POSTING:\n${resume.target_job_posting ?? ""}`;
+  return `Create the resume from this verified intake.\n\nTRADE TRACK:\n${resume.trade}\n\nRESUME SYSTEM:\n${systemProfile}\n\nVERIFIED FACT CATALOG:\n${verifiedFacts}\n\nORIGINAL INTAKE:\n${compactIntake}\n\nTARGET JOB POSTING:\n${resume.target_job_posting ?? ""}`;
 }
 
 function parseModelResume(raw: string): unknown {

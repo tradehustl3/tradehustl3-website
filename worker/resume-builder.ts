@@ -528,7 +528,7 @@ async function reconcileImportedExtraction(
 }
 
 function isResumeTheme(theme: unknown): theme is ResumeTheme {
-  return theme === "plain" || theme === "navy";
+  return theme === "plain" || theme === "navy" || theme === "lead";
 }
 
 function themeOnlyBody(body: Record<string, unknown> | null): body is { theme: ResumeTheme } {
@@ -828,8 +828,8 @@ async function hardenSuccessfulGeneration(
  * Keeps the proven Resume Builder backend intact while adding protections:
  * 1) uploaded resumes establish an immutable canonical source record before AI enrichment;
  * 2) on the Gemini production path, an AI-created unsupported number is retried automatically;
- * 3) switching between Classic Black and Red Accent re-renders the existing PDF/DOCX/preview
- *    without spending an AI correction run or changing any resume content;
+ * 3) switching between Field Pro, Modern Trade, and Lead / Supervisor re-renders the existing
+ *    PDF/DOCX/preview without spending an AI correction run or changing any resume content;
  * 4) the paid $9.99 entitlement includes an on-demand matching cover letter that shares the
  *    existing three-correction package limit instead of creating an unbounded AI-cost path;
  * 5) free-preview rate limits tolerate normal retries while failed generations do not consume
@@ -960,7 +960,7 @@ export async function handleResumeBuilderRoute(
         ? coverLetterRefreshed
           ? "Style updated. Your resume and matching cover letter files were refreshed without using an AI run."
           : "Resume style updated. Your preview, PDF, and DOCX were refreshed without using an AI run."
-        : "Resume style selected. Classic Black remains the default unless you choose Red Accent.",
+        : "Resume system selected. Choose Field Pro, Modern Trade, or Lead / Supervisor before your first build.",
     });
   }
 
