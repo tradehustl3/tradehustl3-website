@@ -37,6 +37,11 @@ async function docxVisibleText(theme: ResumeTheme): Promise<string> {
   return xml
     .replace(/<w:tab\/?\s*>/g, " ")
     .replace(/<[^>]+>/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, """)
+    .replace(/&apos;/g, "'")
     .replace(/\s+/g, " ")
     .trim();
 }
