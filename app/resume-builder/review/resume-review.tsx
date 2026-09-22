@@ -387,7 +387,7 @@ export function ResumeReview() {
             <div className="rb-review-status"><p className="rb-kicker">/ {resume.paid ? "REVIEW + REFINE" : "PREVIEW BEFORE YOU PAY"}</p><h2>{resume.paid ? "MAKE IT SOUND LIKE YOU." : "REVIEW THE WHOLE PACKAGE."}</h2><p className="rb-review-desc">{resume.paid ? "Check names, dates, certifications, job duties, contact information, and your included matching cover letter before downloading." : "Your resume is ready. Build the included matching cover-letter preview, review both tabs, then pay once to remove the watermarks and unlock the clean PDF + DOCX files."}</p>
               <span className="rb-theme-label">Resume system</span>
               {renderThemePicker()}
-              <small className="rb-theme-note">Your first build uses the selected system's writing profile and layout. After generation, switching systems refreshes the resume and matching cover-letter layout without using an AI correction; your verified written content stays unchanged unless you request a correction.</small>
+              <small className="rb-theme-note">Your first build uses the selected system&apos;s writing profile and layout. After generation, switching systems refreshes the resume and matching cover-letter layout without using an AI correction; your verified written content stays unchanged unless you request a correction.</small>
             </div>
 
             <section className="rb-quality-card" aria-labelledby="resume-quality-title">
