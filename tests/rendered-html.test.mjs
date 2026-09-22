@@ -112,7 +112,8 @@ test("publishes a canonical XML sitemap and robots discovery hints", async () =>
   const sitemap = await sitemapResponse.text();
   assert.match(sitemap, /<loc>https:\/\/tradehustl3\.com<\/loc>/i);
   assert.match(sitemap, /<loc>https:\/\/tradehustl3\.com\/book<\/loc>/i);
-  assert.match(sitemap, /<loc>https:\/\/tradehustl3\.com\/resume-builder<\/loc>/i);
+  assert.doesNotMatch(sitemap, /<loc>https:\/\/tradehustl3\.com\/resume-builder<\/loc>/i);
+  assert.match(sitemap, /<loc>https:\/\/tradehustl3\.com\/resume-builder\/hvac<\/loc>/i);
   for (const path of ["privacy", "terms", "contact", "data-deletion", "resume-builder/refund-policy", "book/refund-policy", "resume-builder/ai-disclosure"]) {
     assert.match(sitemap, new RegExp(`<loc>https:\\/\\/tradehustl3\\.com\\/${path.replaceAll("/", "\\/")}<\\/loc>`, "i"));
   }
@@ -216,15 +217,18 @@ test("redirects the production HTTP origin to canonical HTTPS and sends HSTS", a
   assert.equal(response.headers.get("strict-transport-security"), "max-age=31536000");
 });
 
-test("homepage is a traffic director with no signup form", async () => {
+test("homepage is the Resume Builder sales page and verified account entry", async () => {
   const html = await (await render()).text();
-  assert.doesNotMatch(html, /type="email"/i);
-  assert.doesNotMatch(html, /<form\b/i);
+  assert.match(html, /id="resume-start"/i);
+  assert.match(html, /type="email"/i);
+  assert.match(html, /<form\b/i);
+  assert.match(html, /Create account &amp; continue/i);
+  assert.match(html, /ACCOUNT · STAGE 1 OF 5/i);
   assert.match(html, /FREE CAREER GUIDE/i);
   assert.match(html, /href="\/top-10-trades"/i);
   assert.match(html, /href="\/book"/i);
   assert.doesNotMatch(html, /href="\/book\/sample"/i);
-  const resumeLinks = html.match(/href="\/resume-builder"/gi) ?? [];
+  const resumeLinks = html.match(/href="#resume-start"/gi) ?? [];
   assert.ok(resumeLinks.length >= 5);
 });
 
@@ -957,7 +961,9 @@ test("server-renders the focused homepage paths without book promotion", async (
   assert.doesNotMatch(html, /TRADE HUSTL3 Resources/i);
   for (const title of ["Resume Builder", "Top 10 Trades for 2026–2027"]) assert.match(html, new RegExp(title, "i"));
   assert.doesNotMatch(html, /Read 7 Pages Free/i);
-  assert.match(html, /href="\/resume-builder"/i);
+  assert.match(html, /href="#resume-start"/i);
+  assert.match(html, /id="resume-start"/i);
+  assert.match(html, /Create account &amp; continue/i);
   assert.match(html, /href="\/book"/i);
   for (const location of ["sticky_header", "hero", "process", "guide_signup", "footer_cta"]) assert.match(html, new RegExp(`data-location="${location}"`, "i"));
   assert.doesNotMatch(html, /data-location="book_teaser"/i);
@@ -972,33 +978,20 @@ test("routes the branded resume link to the Resume Builder", async () => {
     { waitUntil() {}, passThroughOnException() {} },
   );
   assert.equal(response.status, 308);
-  assert.equal(response.headers.get("location"), "https://tradehustl3.com/resume-builder");
+  assert.equal(response.headers.get("location"), "https://tradehustl3.com/#resume-start");
 });
 
-test("server-renders the preview-first Resume Builder account entry and product rules", async () => {
+test("redirects the redundant Resume Builder landing route into the homepage start point", async () => {
   const response = await renderPath("/resume-builder");
-  assert.equal(response.status, 200);
-  const html = await response.text();
+  assert.equal(response.status, 307);
+  assert.equal(response.headers.get("location"), "/#resume-start");
 
-  assert.match(html, /Skilled Trades Resume Builder \| TRADE HUSTL3/i);
-  assert.match(html, /START YOUR RESUME/i);
-  assert.match(html, /Create account &amp; continue/i);
-  assert.match(html, /ACCOUNT · STAGE 1 OF 5/i);
-  assert.match(html, /\$9\.99/i);
-  assert.match(html, /One-time · no subscription/i);
-  assert.match(html, /One completed resume/i);
-  assert.match(html, /watermarked preview before payment/i);
-  assert.match(html, /complete resume \+ matching cover letter package/i);
-  assert.match(html, /ATS-friendly structure across seven trade tracks/i);
-  assert.match(html, /Up to 3 corrections within 7 days/i);
-  assert.match(html, /Matching cover letter included at no extra cost/i);
-  assert.match(html, /Clean resume \+ cover letter PDF and editable DOCX files after payment/i);
-  assert.match(html, /No subscription · no auto-renewal/i);
-  assert.doesNotMatch(html, /\$89\.99/i);
-  for (const track of ["HVAC &amp; Refrigeration", "Electrical", "Plumbing", "Construction &amp; Carpentry", "Facilities Maintenance", "Welding &amp; Fabrication", "General Labor / Trade Helper"]) {
-    assert.match(html, new RegExp(track, "i"));
-  }
-  assert.equal(html.toUpperCase().includes("TRA" + "D3"), false);
+  const withTrade = await renderPath("/resume-builder?trade=hvac&utm_source=test");
+  assert.equal(withTrade.status, 307);
+  assert.equal(
+    withTrade.headers.get("location"),
+    "/?trade=hvac&utm_source=test#resume-start",
+  );
 });
 
 test("server-renders scanner-safe confirmation, intake, payment return, and review routes", async () => {

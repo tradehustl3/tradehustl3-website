@@ -746,7 +746,9 @@ const worker = {
     }
 
     if (url.pathname === "/resume") {
-      return withSecurityHeaders(Response.redirect(new URL("/resume-builder", request.url).toString(), 308), url.pathname);
+      const target = new URL("/", request.url);
+      target.hash = "resume-start";
+      return withSecurityHeaders(Response.redirect(target.toString(), 308), url.pathname);
     }
 
     const resumeBuilderResponse = await handleResumeBuilderRoute(request, env);

@@ -1,9 +1,19 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { CtaAnalytics } from './cta-analytics';
+import { AccountStart } from './resume-builder/account-start';
+import { ResumeBuilderStartAnalytics } from './resume-builder/funnel-analytics';
 import styles from './home-traffic-director.module.css';
 
-const tradeChips = ['HVAC & Refrigeration', 'Electrical', 'Plumbing', 'Construction & Carpentry', 'Facilities Maintenance', 'Welding & Fabrication', 'General Labor / Maintenance Tech'];
+const tradeChips = [
+  ['HVAC & Refrigeration', '/resume-builder/hvac'],
+  ['Electrical', '/resume-builder/electrician'],
+  ['Plumbing', '/resume-builder/plumbing'],
+  ['Construction & Carpentry', '/resume-builder/construction-carpentry'],
+  ['Facilities Maintenance', '/resume-builder/facilities-maintenance'],
+  ['Welding & Fabrication', '/resume-builder/welding-fabrication'],
+  ['General Labor / Maintenance Tech', '/resume-builder/general-labor'],
+] as const;
 
 const processSteps: { step: string; title: string; copy: string; icon: 'upload' | 'bot' | 'unlock'; accent: 'accentBlue' | 'accentRed' | 'accentGold' }[] = [
   {
@@ -90,6 +100,7 @@ export default function Home() {
   return (
     <main className={styles.page}>
       <CtaAnalytics />
+      <ResumeBuilderStartAnalytics />
       <style>{`
         @media (max-width: 720px) {
           [data-home-header] {
@@ -136,10 +147,10 @@ export default function Home() {
             justify-content: flex-end;
             gap: 0 !important;
           }
-          [data-header-nav] > a:not([href="/resume-builder"]) {
+          [data-header-nav] > a:not([href="#resume-start"]) {
             display: none !important;
           }
-          [data-header-nav] a[href="/resume-builder"] {
+          [data-header-nav] a[href="#resume-start"] {
             display: inline-flex !important;
             width: 100%;
             max-width: 102px;
@@ -210,7 +221,7 @@ export default function Home() {
         <nav className={styles.nav} aria-label="Primary navigation" data-header-nav>
           <Link href="#included-cover-letter">Cover letter included</Link>
           <Link href="/book">The Book</Link>
-          <AnalyticsLink href="/resume-builder" location="sticky_header" className={styles.headerCta}>Build My Free Preview</AnalyticsLink>
+          <AnalyticsLink href="#resume-start" location="sticky_header" className={styles.headerCta}>Build My Free Preview</AnalyticsLink>
         </nav>
       </header>
 
@@ -227,7 +238,7 @@ export default function Home() {
           </div>
 
           <div className={styles.heroActions}>
-            <AnalyticsLink href="/resume-builder" location="hero" className={styles.primaryButton}>Build My Free Preview <span aria-hidden="true">→</span></AnalyticsLink>
+            <AnalyticsLink href="#resume-start" location="hero" className={styles.primaryButton}>Build My Free Preview <span aria-hidden="true">→</span></AnalyticsLink>
             <a href="#included-cover-letter" className={styles.textLink}>See the included cover letter</a>
           </div>
 
@@ -277,14 +288,31 @@ export default function Home() {
         </div>
       </section>
 
-      <section className={styles.tradeStrip} aria-label="Supported trade categories">
+      <section className={styles.tradeStrip} id="trade-guides" aria-label="Supported trade categories">
         <strong>BUILT FOR THE TRADES</strong>
-        <ul>{tradeChips.map((trade) => <li key={trade}>{trade}</li>)}</ul>
+        <ul>{tradeChips.map(([trade, href]) => <li key={trade}><Link href={href}>{trade}</Link></li>)}</ul>
       </section>
 
       <section className={styles.trustStrip} aria-label="Resume Builder purchase protections">
         <p><strong>SEE IT BEFORE YOU BUY IT.</strong> Build your protected preview first. Unlock only when you are happy with the direction.</p>
         <ul>{purchaseTrust.map((item) => <li key={item}>{item}</li>)}</ul>
+      </section>
+
+      <section className={styles.startSection} id="resume-start" aria-labelledby="resume-start-title">
+        <div className={styles.startIntro}>
+          <p className={styles.eyebrow}>START YOUR RESUME</p>
+          <h2 id="resume-start-title">ONE PAGE TO LEARN IT. ONE PLACE TO START IT.</h2>
+          <p>You already know what the Resume Builder does. Start here with your verified account, then go straight into your trade experience, resume system, preview, and download flow.</p>
+          <div className={styles.startPath} aria-label="Resume Builder stages">
+            <span>Account</span><i>→</i><span>Experience</span><i>→</i><span>Choose system</span><i>→</i><span>Preview</span><i>→</i><span>Unlock</span>
+          </div>
+        </div>
+        <aside className={styles.startPanel}>
+          <p className={styles.startIndex}>ACCOUNT · STAGE 1 OF 5</p>
+          <h3>BUILD MY RESUME</h3>
+          <p>Create or verify your account. Your work is saved to your account so you can continue across devices.</p>
+          <AccountStart />
+        </aside>
       </section>
 
       <section className={styles.coverProof} id="included-cover-letter" aria-labelledby="cover-letter-title">
@@ -307,7 +335,7 @@ export default function Home() {
           </ul>
 
           <div className={styles.coverActions}>
-            <AnalyticsLink href="/resume-builder" location="cover_letter_proof" className={styles.primaryButton}>Build My Free Preview <span aria-hidden="true">→</span></AnalyticsLink>
+            <AnalyticsLink href="#resume-start" location="cover_letter_proof" className={styles.primaryButton}>Build My Free Preview <span aria-hidden="true">→</span></AnalyticsLink>
           </div>
           <p className={styles.coverDisclosure}>Example candidate, company, and contact details are fictional and shown for demonstration.</p>
         </div>
@@ -363,7 +391,7 @@ export default function Home() {
             </li>
           ))}
         </ol>
-        <AnalyticsLink href="/resume-builder" location="process" className={styles.secondaryButton}>Start My Resume <span aria-hidden="true">→</span></AnalyticsLink>
+        <AnalyticsLink href="#resume-start" location="process" className={styles.secondaryButton}>Start My Resume <span aria-hidden="true">→</span></AnalyticsLink>
       </section>
 
       <section className={styles.difference} aria-labelledby="difference-title">
@@ -389,14 +417,14 @@ export default function Home() {
         <p className={styles.eyebrow}>READY WHEN YOU ARE</p>
         <h2 id="final-cta-title">Build the resume. See the preview. Decide after.</h2>
         <p>No subscription. No credit card to preview. One $9.99 payment only when you are ready to unlock the clean files.</p>
-        <AnalyticsLink href="/resume-builder" location="footer_cta" className={styles.primaryButton}>Build My Free Preview <span aria-hidden="true">→</span></AnalyticsLink>
+        <AnalyticsLink href="#resume-start" location="footer_cta" className={styles.primaryButton}>Build My Free Preview <span aria-hidden="true">→</span></AnalyticsLink>
       </section>
 
       <footer className={styles.footer} data-site-footer>
         <div className={styles.footerBrand}><Image src="/optimized/trade-hustl3-logo.webp" alt="TRADE HUSTL3 logo" width={44} height={44} /><strong>TRADE HUSTL3 LLC</strong></div>
         <p>Built by Trades. Backed by HUSTL3.</p>
         <nav aria-label="Footer links">
-          <Link href="/resume-builder">Resume Builder</Link>
+          <Link href="#resume-start">Resume Builder</Link>
           <Link href="/top-10-trades">Top 10 Trades</Link>
           <Link href="/book">The Book</Link>
           <Link href="/privacy">Privacy</Link>
@@ -405,7 +433,7 @@ export default function Home() {
         </nav>
       </footer>
 
-      <AnalyticsLink href="/resume-builder" location="mobile_sticky" className={styles.mobileStickyCta}>Build Free Preview <span aria-hidden="true">→</span></AnalyticsLink>
+      <AnalyticsLink href="#resume-start" location="mobile_sticky" className={styles.mobileStickyCta}>Build Free Preview <span aria-hidden="true">→</span></AnalyticsLink>
     </main>
   );
 }

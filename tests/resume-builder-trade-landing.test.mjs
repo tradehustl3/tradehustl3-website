@@ -222,18 +222,18 @@ for (const page of PAGES) {
     assert.match(html, /"@type":"BreadcrumbList"/);
     assert.match(html, /"@type":"FAQPage"/);
     assert.match(html, /"@type":"Question"/);
-    assert.match(html, /"item":"https:\/\/tradehustl3\.com\/resume-builder"/, `${page.slug} breadcrumb hub crumb`);
+    assert.match(html, /"item":"https:\/\/tradehustl3\.com\/#resume-start"/, `${page.slug} breadcrumb homepage Resume Builder crumb`);
     assert.ok(html.includes(`"name":"${page.breadcrumb}"`), `${page.slug} breadcrumb leaf "${page.breadcrumb}"`);
   });
 
   test(`${page.slug}: every CTA enters the existing intake with the trade preselected`, async () => {
     const html = await (await renderPath(path)).text();
-    const hrefs = html.match(new RegExp(`href="/resume-builder\\?trade=${page.slug}"`, "g")) ?? [];
+    const hrefs = html.match(new RegExp(`href="/\\?trade=${page.slug}#resume-start"`, "g")) ?? [];
     assert.ok(hrefs.length >= 4, `${page.slug} expected >=4 preselect CTAs, found ${hrefs.length}`);
     assert.match(html, /data-analytics-event="cta_click"/);
     assert.ok(html.includes(`data-location="${page.heroLocation}"`), `${page.slug} hero CTA location`);
     assert.ok(html.includes(`data-item="${page.analyticsItem}"`), `${page.slug} CTA data-item`);
-    assert.match(html, /href="\/resume-builder"/);
+    assert.match(html, /href="\/#trade-guides"/);
   });
 
   test(`${page.slug}: appears in /sitemap.xml`, async () => {
@@ -243,22 +243,22 @@ for (const page of PAGES) {
   });
 }
 
-test("the Resume Builder hub is a crawlable trade hub linking all seven trade pages", async () => {
-  const html = await (await renderPath("/resume-builder")).text();
+test("the homepage carries the seven-trade discovery links after the hub is removed", async () => {
+  const html = await (await renderPath("/")).text();
   assert.equal(PAGES.length, 7, "expected the full seven-page trade cluster");
   for (const page of PAGES) {
-    assert.match(html, new RegExp(`href="/resume-builder/${page.slug}"`), `hub missing link to ${page.slug}`);
+    assert.match(html, new RegExp(`href="/resume-builder/${page.slug}"`), `homepage missing link to ${page.slug}`);
   }
   for (const label of [
-    "HVAC Resume Builder",
-    "Facilities Maintenance Resume Builder",
-    "Electrician Resume Builder",
-    "Plumbing Resume Builder",
-    "Welding &amp; Fabrication Resume Builder",
-    "Construction &amp; Carpentry Resume Builder",
-    "General Labor Resume Builder",
+    "HVAC &amp; Refrigeration",
+    "Facilities Maintenance",
+    "Electrical",
+    "Plumbing",
+    "Welding &amp; Fabrication",
+    "Construction &amp; Carpentry",
+    "General Labor / Maintenance Tech",
   ]) {
-    assert.ok(html.includes(label), `hub missing descriptive anchor text: ${label}`);
+    assert.ok(html.includes(label), `homepage missing trade label: ${label}`);
   }
 });
 
@@ -280,12 +280,11 @@ test("each trade page cross-links to its six sibling trade guides", async () => 
   assert.doesNotMatch(guideBlock.slice(0, 600), /href="\/resume-builder\/plumbing"/);
 });
 
-test("regression: /resume-builder and /resume-builder/hvac still render on the shared header", async () => {
-  for (const p of ["/resume-builder", "/resume-builder/hvac"]) {
-    const res = await renderPath(p);
-    assert.equal(res.status, 200, `${p} status`);
-    const html = await res.text();
-    assert.match(html, /\/optimized\/resume-builder-logo-header\.webp/, `${p} approved logo`);
-    assert.doesNotMatch(html, /src="[^"]*\/trade-hustl3-logo\.png/, `${p} standalone logo leaked`);
-  }
+test("regression: trade SEO pages keep the shared Resume Builder header", async () => {
+  const p = "/resume-builder/hvac";
+  const res = await renderPath(p);
+  assert.equal(res.status, 200, `${p} status`);
+  const html = await res.text();
+  assert.match(html, /\/optimized\/resume-builder-logo-header\.webp/, `${p} approved logo`);
+  assert.doesNotMatch(html, /src="[^"]*\/trade-hustl3-logo\.png/, `${p} standalone logo leaked`);
 });
