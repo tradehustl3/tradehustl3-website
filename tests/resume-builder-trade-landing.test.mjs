@@ -262,6 +262,43 @@ test("the Resume Builder hub is a crawlable trade hub linking all seven trade pa
   }
 });
 
+test("the Resume Builder hub serves the all-trades examples intent with complete SEO signals", async () => {
+  const html = await (await renderPath("/resume-builder")).text();
+
+  assert.ok(
+    html.includes("<title>Skilled Trades Resume Examples &amp; Builder | TRADE HUSTL3</title>"),
+    "hub exact title",
+  );
+  assert.ok(
+    html.includes(
+      '<meta name="description" content="See skilled trades resume examples for HVAC, electrical, plumbing, carpentry, facilities maintenance, welding, and general labor—then build yours for $9.99 one-time."',
+    ),
+    "hub meta description",
+  );
+  assert.match(html, /<link rel="canonical" href="https:\/\/tradehustl3\.com\/resume-builder"/);
+  assert.match(html, /property="og:url" content="https:\/\/tradehustl3\.com\/resume-builder"/);
+  assert.match(html, /name="twitter:card" content="summary_large_image"/);
+
+  assert.equal((html.match(/<h1[ >]/g) ?? []).length, 1, "hub must have exactly one H1");
+  assert.match(html, /SKILLED TRADES RESUME EXAMPLES/);
+  assert.match(html, /ACTION \+ WORK \+ SCOPE \+ RESULT/);
+  assert.match(html, /preventive maintenance on \[number\] rooftop units/);
+  assert.match(html, /Bent and installed \[feet\] feet of EMT/);
+  assert.match(html, /work orders across plumbing, electrical, HVAC/);
+  assert.match(html, /Fit and welded \[number\] assemblies/);
+  assert.match(html, /does not invent jobs/);
+
+  assert.match(html, /"@type":"WebPage"/);
+  assert.match(html, /"@type":"BreadcrumbList"/);
+  assert.match(html, /"@type":"FAQPage"/);
+  assert.match(html, /"@type":"Question"/);
+  assert.match(html, /What should a skilled trades resume include\?/);
+
+  const startLinks = html.match(/href="#account-title"/g) ?? [];
+  assert.ok(startLinks.length >= 3, `expected >=3 hub start CTAs, found ${startLinks.length}`);
+  assert.match(html, /BUILD MY \$9\.99 RESUME/);
+});
+
 test("each trade page cross-links to its six sibling trade guides", async () => {
   const html = await (await renderPath("/resume-builder/plumbing")).text();
   assert.match(html, /building for a different trade\?/i);
