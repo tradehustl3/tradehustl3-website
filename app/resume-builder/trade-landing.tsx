@@ -12,7 +12,7 @@ import {
 } from "./trade-landing-content";
 import styles from "./trade-landing.module.css";
 
-const HUB_HREF = "/resume-builder";
+const HUB_HREF = "/#trade-guides";
 
 const TRADE_WORKSITE_IMAGES: Record<
   TradeLandingContent["trade"],
