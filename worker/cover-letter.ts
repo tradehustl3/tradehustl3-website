@@ -145,7 +145,8 @@ async function checkRateLimit(
 }
 
 function normalizeTheme(value: unknown): ResumeTheme {
-  return value === "navy" ? "navy" : "plain";
+  if (value === "navy" || value === "lead") return value;
+  return "plain";
 }
 
 function generatedResume(value: string | null): GeneratedResume | null {
