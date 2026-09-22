@@ -40,7 +40,7 @@ async function docxVisibleText(theme: ResumeTheme): Promise<string> {
     .replace(/&amp;/g, "&")
     .replace(/&lt;/g, "<")
     .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, """)
+    .replace(/&quot;/g, '"')
     .replace(/&apos;/g, "'")
     .replace(/\s+/g, " ")
     .trim();
