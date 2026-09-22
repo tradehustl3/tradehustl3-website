@@ -201,6 +201,50 @@
 .rb-tracks-guides li { display: flex; }
 .rb-tracks-guides a { padding: 8px 12px; border: 1px solid var(--rb-line); background: var(--rb-navy-2); color: var(--rb-cream); font-size: 12px; font-weight: 700; }
 .rb-tracks-guides a:hover { border-color: var(--rb-gold); color: var(--rb-gold); }
+.rb-hub-guide, .rb-hub-faq { padding: 100px clamp(26px, 7vw, 112px); background: var(--rb-cream); color: var(--rb-navy); }
+.rb-hub-section-heading { max-width: 940px; }
+.rb-hub-section-heading h2, .rb-hub-examples-heading h2, .rb-hub-closing-cta h2 {
+  font-size: clamp(48px, 6vw, 86px);
+  line-height: .94;
+  text-wrap: balance;
+}
+.rb-hub-section-heading > p:last-child { max-width: 780px; color: var(--rb-ink-soft); font-size: 17px; line-height: 1.7; }
+.rb-hub-eyebrow { margin: 0 0 12px; color: var(--rb-red); font-size: 10px; font-weight: 900; letter-spacing: .15em; text-transform: uppercase; }
+.rb-hub-checklist-grid { display: grid; grid-template-columns: 1.2fr .8fr; gap: 24px; margin-top: 48px; }
+.rb-hub-checklist, .rb-hub-formula { padding: clamp(28px, 4vw, 46px); border-top: 5px solid var(--rb-red); background: white; box-shadow: 12px 12px 0 #071a2b0d; }
+.rb-hub-checklist ul { margin: 22px 0 0; padding: 0; list-style: none; }
+.rb-hub-checklist li { position: relative; padding: 15px 0 15px 30px; border-top: 1px solid #071a2b1a; line-height: 1.55; }
+.rb-hub-checklist li::before { content: "✓"; position: absolute; left: 0; color: var(--rb-gold); font-weight: 900; }
+.rb-hub-formula { border-color: var(--rb-gold); background: var(--rb-navy); color: var(--rb-cream); }
+.rb-hub-formula .rb-hub-eyebrow { color: var(--rb-gold); }
+.rb-hub-formula h3 { max-width: 520px; font-size: clamp(34px, 4vw, 54px); line-height: .96; }
+.rb-hub-formula > p:not(.rb-hub-eyebrow) { color: var(--rb-gray); font-size: 16px; line-height: 1.7; }
+.rb-hub-formula small { display: block; margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--rb-line); color: var(--rb-gold); line-height: 1.55; }
+.rb-hub-examples-heading { display: grid; grid-template-columns: 1fr minmax(280px, .55fr); align-items: end; gap: 40px; margin-top: 90px; }
+.rb-hub-examples-heading > p { margin: 0 0 8px; color: var(--rb-ink-soft); line-height: 1.65; }
+.rb-hub-example-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; margin-top: 38px; }
+.rb-hub-example-card { position: relative; padding: 32px; border: 1px solid #071a2b1f; border-top: 4px solid var(--rb-gold); background: white; }
+.rb-hub-example-card > span { position: absolute; top: 28px; right: 28px; color: var(--rb-gold); font-family: var(--font-display); font-size: 27px; }
+.rb-hub-example-card > p { margin: 0 48px 7px 0; color: var(--rb-red); font-size: 10px; font-weight: 900; letter-spacing: .13em; text-transform: uppercase; }
+.rb-hub-example-card h3 { margin-right: 44px; font-size: 25px; line-height: 1.1; }
+.rb-hub-example-card h3 a { color: var(--rb-navy); text-decoration: underline; text-decoration-color: #d6a52a80; text-underline-offset: 4px; }
+.rb-hub-example-card h3 a:hover { color: var(--rb-red); text-decoration-color: currentColor; }
+.rb-hub-example-card blockquote { margin: 22px 0 0; padding-left: 18px; border-left: 3px solid var(--rb-red); color: var(--rb-ink-soft); font-size: 14px; line-height: 1.65; }
+.rb-hub-disclaimer { max-width: 950px; margin: 28px 0 0; padding: 18px 22px; border-left: 4px solid var(--rb-gold); background: #d6a52a13; color: var(--rb-ink-soft); font-size: 13px; line-height: 1.6; }
+.rb-hub-guide-cta { margin-top: 26px; }
+.rb-hub-faq { background: var(--rb-surface-2); }
+.rb-hub-faq-list { margin-top: 44px; border-top: 4px solid var(--rb-red); }
+.rb-hub-faq-list details { border-bottom: 1px solid #071a2b24; background: white; }
+.rb-hub-faq-list summary { position: relative; padding: 24px 66px 24px 24px; cursor: pointer; font-size: 17px; font-weight: 800; list-style: none; }
+.rb-hub-faq-list summary::-webkit-details-marker { display: none; }
+.rb-hub-faq-list summary::after { content: "+"; position: absolute; top: 20px; right: 24px; color: var(--rb-red); font-family: var(--font-display); font-size: 28px; }
+.rb-hub-faq-list details[open] summary::after { content: "−"; }
+.rb-hub-faq-list details p { max-width: 920px; margin: 0; padding: 0 66px 26px 24px; color: var(--rb-ink-soft); line-height: 1.7; }
+.rb-hub-closing-cta { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 48px; margin-top: 48px; padding: clamp(30px, 5vw, 56px); border-left: 5px solid var(--rb-red); background: var(--rb-navy); color: var(--rb-cream); }
+.rb-hub-closing-cta h2 { max-width: 760px; font-size: clamp(40px, 5vw, 68px); }
+.rb-hub-closing-cta > div > p:last-child { max-width: 720px; color: var(--rb-gray); line-height: 1.65; }
+.rb-hub-closing-cta .rb-hub-eyebrow { color: var(--rb-gold); }
+.rb-hub-closing-cta .rb-button { min-width: 230px; }
 .rb-footer { display: grid; grid-template-columns: 1fr auto; gap: 8px 24px; padding: 50px clamp(26px, 7vw, 112px); border-top: 1px solid var(--rb-line); background: var(--rb-navy-3); }
 .rb-footer strong { font-family: var(--font-display); font-size: 26px; letter-spacing: .05em; }
 .rb-footer p { margin: 0; color: var(--rb-gray); font-size: 12px; }
@@ -361,6 +405,7 @@
   .rb-form-section { grid-template-columns: 1fr; }
   .rb-job-note, .rb-job-list { grid-column: 1; }
   .rb-review-grid { grid-template-columns: 1fr; }
+  .rb-hub-checklist-grid, .rb-hub-examples-heading, .rb-hub-closing-cta { grid-template-columns: 1fr; }
   .rb-preview-panel { min-height: 650px; }.rb-preview-panel iframe { height: 584px; }
 }
 
@@ -399,7 +444,13 @@
   }
   .rb-proof-row strong { line-height: 1; white-space: nowrap; }
   .rb-proof-row span { line-height: 1.45; }
-  .rb-package, .rb-tracks { padding: 72px 22px; }
+  .rb-package, .rb-tracks, .rb-hub-guide, .rb-hub-faq { padding: 72px 22px; }
+  .rb-hub-checklist, .rb-hub-formula, .rb-hub-example-card { padding: 25px 21px; }
+  .rb-hub-examples-heading { margin-top: 68px; }
+  .rb-hub-example-grid { grid-template-columns: 1fr; }
+  .rb-hub-example-card > span { top: 22px; right: 20px; }
+  .rb-hub-closing-cta { gap: 28px; }
+  .rb-hub-closing-cta .rb-button { min-width: 0; width: 100%; }
   .rb-footer { grid-template-columns: 1fr; }.rb-footer small { grid-column: 1; grid-row: auto; }
   .rb-centered-stage { padding: 34px 14px; }
   .rb-confirm-card, .rb-payment-card { padding: 34px 24px; box-shadow: 8px 8px 0 #d7192026; }
