@@ -30,12 +30,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "daily",
       priority: 0.9,
     },
-    {
-      url: `${SITE_URL}/resume-builder`,
-      lastModified: CONTENT_REFRESHED_AT,
-      changeFrequency: "daily",
-      priority: 0.9,
-    },
     ...TRADE_LANDING_PAGES.map((page) => ({
       url: `${SITE_URL}${tradeLandingPath(page)}`,
       lastModified: CONTENT_REFRESHED_AT,
