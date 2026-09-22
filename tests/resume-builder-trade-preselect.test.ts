@@ -40,10 +40,10 @@ test("every trade track has a canonical slug that round-trips", () => {
 });
 
 test("intake hrefs carry the preselected trade slug", () => {
-  assert.equal(intakeEntryHref("HVAC & Refrigeration"), "/resume-builder?trade=hvac");
+  assert.equal(intakeEntryHref("HVAC & Refrigeration"), "/?trade=hvac#resume-start");
   assert.equal(intakeWizardHref("HVAC & Refrigeration"), "/resume-builder/intake?trade=hvac");
-  assert.equal(intakeEntryHref("Electrical"), "/resume-builder?trade=electrician");
-  assert.equal(intakeEntryHref("Facilities Maintenance"), "/resume-builder?trade=facilities-maintenance");
+  assert.equal(intakeEntryHref("Electrical"), "/?trade=electrician#resume-start");
+  assert.equal(intakeEntryHref("Facilities Maintenance"), "/?trade=facilities-maintenance#resume-start");
 });
 
 test("every published trade landing page preselects a real, resolvable trade", () => {
@@ -66,7 +66,7 @@ test("every published trade landing page preselects a real, resolvable trade", (
     assert.equal(slugForTradeTrack(page.trade), page.slug, `${page.slug} slug/track mismatch`);
     assert.equal(resolveTradeParam(page.slug), page.trade, `${page.slug} does not resolve`);
     // the CTA target every page renders round-trips back to the same trade
-    assert.equal(intakeEntryHref(page.trade), `/resume-builder?trade=${page.slug}`);
+    assert.equal(intakeEntryHref(page.trade), `/?trade=${page.slug}#resume-start`);
     assert.equal(resolveTradeParam(new URL(`https://x${intakeEntryHref(page.trade)}`).searchParams.get("trade")), page.trade);
     // metadata sanity
     assert.ok(page.seoTitle.includes("TRADE HUSTL3"), `${page.slug} title missing brand`);
