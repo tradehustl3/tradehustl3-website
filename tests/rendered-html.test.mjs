@@ -978,13 +978,13 @@ test("routes the branded resume link to the Resume Builder", async () => {
     { waitUntil() {}, passThroughOnException() {} },
   );
   assert.equal(response.status, 308);
-  assert.equal(response.headers.get("location"), "/#resume-start");
+  assert.equal(response.headers.get("location"), "https://tradehustl3.com/#resume-start");
 });
 
 test("redirects the redundant Resume Builder landing route into the homepage start point", async () => {
   const response = await renderPath("/resume-builder");
   assert.equal(response.status, 307);
-  assert.equal(response.headers.get("location"), "https://tradehustl3.com/#resume-start");
+  assert.equal(response.headers.get("location"), "/#resume-start");
 
   const withTrade = await renderPath("/resume-builder?trade=hvac&utm_source=test");
   assert.equal(withTrade.status, 307);
