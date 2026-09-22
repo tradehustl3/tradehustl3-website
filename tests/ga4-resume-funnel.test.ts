@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 
 const analytics = fs.readFileSync("app/resume-builder/funnel-analytics.tsx", "utf8");
+const homePage = fs.readFileSync("app/page.tsx", "utf8");
 const builderPage = fs.readFileSync("app/resume-builder/page.tsx", "utf8");
 const intakePage = fs.readFileSync("app/resume-builder/intake/page.tsx", "utf8");
 const reviewPage = fs.readFileSync("app/resume-builder/review/page.tsx", "utf8");
@@ -18,7 +19,7 @@ test("Resume Builder funnel exposes the core GA4 milestones", () => {
     "begin_checkout",
     "purchase",
   ]) {
-    const corpus = [analytics, builderPage, intakePage, reviewPage, confirm, payment].join("\n");
+    const corpus = [analytics, homePage, builderPage, intakePage, reviewPage, confirm, payment].join("\n");
     assert.match(corpus, new RegExp(eventName));
   }
 });
@@ -37,7 +38,7 @@ test("purchase tracking is deduplicated by resume transaction id", () => {
 });
 
 test("funnel observers are mounted on the actual Resume Builder stages", () => {
-  assert.match(builderPage, /<ResumeBuilderStartAnalytics\s*\/>/);
+  assert.match(homePage, /<ResumeBuilderStartAnalytics\s*\/>/);
   assert.match(intakePage, /<ResumeIntakeAnalytics\s*\/>/);
   assert.match(reviewPage, /<ResumeReviewAnalytics\s*\/>/);
   assert.match(confirm, /trackResumeFunnelEvent\("sign_up"/);
