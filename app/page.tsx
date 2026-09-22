@@ -2,6 +2,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { CtaAnalytics } from './cta-analytics';
 import { AccountStart } from './resume-builder/account-start';
+import { ResumeBuilderStartAnalytics } from './resume-builder/funnel-analytics';
 import styles from './home-traffic-director.module.css';
 
 const tradeChips = [
@@ -99,6 +100,7 @@ export default function Home() {
   return (
     <main className={styles.page}>
       <CtaAnalytics />
+      <ResumeBuilderStartAnalytics />
       <style>{`
         @media (max-width: 720px) {
           [data-home-header] {
