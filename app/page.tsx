@@ -286,7 +286,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className={styles.tradeStrip} aria-label="Supported trade categories">
+      <section className={styles.tradeStrip} id="trade-guides" aria-label="Supported trade categories">
         <strong>BUILT FOR THE TRADES</strong>
         <ul>{tradeChips.map(([trade, href]) => <li key={trade}><Link href={href}>{trade}</Link></li>)}</ul>
       </section>
