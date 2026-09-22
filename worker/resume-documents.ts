@@ -55,35 +55,44 @@ export type GeneratedResume = {
   additionalInformation: string[];
 };
 
-// Two customer-facing styles share the exact same ATS-safe structure.
-// "plain" is Classic Black and remains the default. The persisted "navy"
-// key is retained for backward compatibility, but now renders the optional
-// TRADE HUSTL3 Red Accent style instead of the retired navy/gold treatment.
-export type ResumeTheme = "plain" | "navy";
+// Three production resume systems share one verified content object.
+// Persisted "plain" and "navy" values remain backward compatible:
+// plain = Field Pro, navy = Modern Trade, lead = Lead / Supervisor.
+export type ResumeTheme = "plain" | "navy" | "lead";
 
 const BRAND_BLACK = "111111";
 const BRAND_BLACK_RGB = rgb(0x11 / 255, 0x11 / 255, 0x11 / 255);
 const BRAND_RED = "D71920";
 const BRAND_RED_RGB = rgb(0xd7 / 255, 0x19 / 255, 0x20 / 255);
+const BRAND_NAVY = "071A2B";
+const BRAND_NAVY_RGB = rgb(0x07 / 255, 0x1a / 255, 0x2b / 255);
 
 function clean(value: string | undefined): string {
   return (value ?? "").replace(/\s+/g, " ").trim();
 }
 
+function themeAccentHex(theme: ResumeTheme): string {
+  if (theme === "navy") return BRAND_RED;
+  if (theme === "lead") return BRAND_NAVY;
+  return BRAND_BLACK;
+}
+
 function sectionHeading(text: string, theme: ResumeTheme): Paragraph {
-  const accent = theme === "navy" ? BRAND_RED : BRAND_BLACK;
+  const accent = themeAccentHex(theme);
+  const size = theme === "lead" ? 23 : theme === "navy" ? 22 : 23;
+  const before = theme === "plain" ? 190 : 235;
   return new Paragraph({
     heading: HeadingLevel.HEADING_2,
     border: {
-      bottom: { color: accent, size: 6, style: BorderStyle.SINGLE },
+      bottom: { color: accent, size: theme === "lead" ? 8 : 6, style: BorderStyle.SINGLE },
     },
-    spacing: { before: 220, after: 80 },
+    spacing: { before, after: theme === "plain" ? 65 : 80 },
     children: [new TextRun({
       text,
       bold: true,
-      size: 24,
+      size,
       font: "Arial",
-      color: theme === "navy" ? BRAND_RED : undefined,
+      color: theme === "plain" ? undefined : accent,
     })],
   });
 }
@@ -110,21 +119,39 @@ function certificationBullet(certification: ResumeCertification): Paragraph {
   });
 }
 
-function headerParagraphs(resume: GeneratedResume, contactLine: string): Paragraph[] {
+function headerParagraphs(resume: GeneratedResume, contactLine: string, theme: ResumeTheme): Paragraph[] {
+  const centered = theme === "plain";
+  const alignment = centered ? AlignmentType.CENTER : AlignmentType.LEFT;
+  const accent = themeAccentHex(theme);
+  const nameSize = theme === "plain" ? 42 : 46;
+  const titleColor = theme === "navy" ? BRAND_RED : theme === "lead" ? BRAND_NAVY : undefined;
   return [
     new Paragraph({
-      alignment: AlignmentType.CENTER,
-      spacing: { after: 20 },
-      children: [new TextRun({ text: clean(resume.basics.fullName), bold: true, size: 42, font: "Arial" })],
+      alignment,
+      spacing: { after: theme === "plain" ? 20 : 10 },
+      children: [new TextRun({
+        text: clean(resume.basics.fullName),
+        bold: true,
+        size: nameSize,
+        font: "Arial",
+        color: theme === "lead" ? BRAND_NAVY : undefined,
+      })],
     }),
     new Paragraph({
-      alignment: AlignmentType.CENTER,
+      alignment,
       spacing: { after: 20 },
-      children: [new TextRun({ text: clean(resume.basics.targetTitle), size: 24, font: "Arial" })],
+      children: [new TextRun({
+        text: clean(resume.basics.targetTitle),
+        bold: theme === "lead",
+        size: theme === "lead" ? 26 : 24,
+        font: "Arial",
+        color: titleColor,
+      })],
     }),
     new Paragraph({
-      alignment: AlignmentType.CENTER,
-      spacing: { after: 160 },
+      alignment,
+      border: centered ? undefined : { bottom: { color: accent, size: 7, style: BorderStyle.SINGLE } },
+      spacing: { after: centered ? 145 : 175 },
       children: [new TextRun({ text: contactLine, size: 20, font: "Arial" })],
     }),
   ];
@@ -138,42 +165,45 @@ export async function createResumeDocx(resume: GeneratedResume, theme: ResumeThe
   ].filter(Boolean).join("  |  ");
 
   const children: Paragraph[] = [
-    ...headerParagraphs(resume, contactLine),
-    sectionHeading("PROFESSIONAL SUMMARY", theme),
-    new Paragraph({
-      spacing: { after: 80 },
-      children: [new TextRun({ text: clean(resume.summary), size: 21, font: "Arial" })],
-    }),
+    ...headerParagraphs(resume, contactLine, theme),
   ];
 
-  if (resume.certifications.length) {
-    children.push(sectionHeading("CERTIFICATIONS & LICENSES", theme));
-    for (const certification of resume.certifications) {
-      children.push(certificationBullet(certification));
-    }
-  }
-
-  const skillsText = resume.skills.map(clean).filter(Boolean).join("  •  ");
-  if (skillsText) {
+  const addSummary = (label: string) => {
     children.push(
-      sectionHeading("CORE SKILLS", theme),
+      sectionHeading(label, theme),
+      new Paragraph({
+        spacing: { after: 80 },
+        children: [new TextRun({ text: clean(resume.summary), size: 21, font: "Arial" })],
+      }),
+    );
+  };
+  const addSkills = (label: string) => {
+    const skillsText = resume.skills.map(clean).filter(Boolean).join("  •  ");
+    if (!skillsText) return;
+    children.push(
+      sectionHeading(label, theme),
       new Paragraph({
         spacing: { after: 80 },
         children: [new TextRun({ text: skillsText, size: 21, font: "Arial" })],
       }),
     );
-  }
-
-  if (resume.experience.length) {
-    children.push(sectionHeading("WORK EXPERIENCE", theme));
+  };
+  const addCertifications = () => {
+    if (!resume.certifications.length) return;
+    children.push(sectionHeading("CERTIFICATIONS & LICENSES", theme));
+    for (const certification of resume.certifications) children.push(certificationBullet(certification));
+  };
+  const addExperience = () => {
+    if (!resume.experience.length) return;
+    children.push(sectionHeading(theme === "lead" ? "PROFESSIONAL EXPERIENCE" : "WORK EXPERIENCE", theme));
     for (const job of resume.experience) {
       const dates = [clean(job.startDate), clean(job.endDate)].filter(Boolean).join(" – ");
       const organizationLine = [clean(job.employer), clean(job.location)].filter(Boolean).join(" — ");
       children.push(new Paragraph({
         keepNext: true,
-        spacing: { before: 80, after: 20 },
+        spacing: { before: theme === "plain" ? 70 : 90, after: 20 },
         children: [
-          new TextRun({ text: clean(job.jobTitle), bold: true, size: 22, font: "Arial" }),
+          new TextRun({ text: clean(job.jobTitle), bold: true, size: theme === "lead" ? 23 : 22, font: "Arial" }),
           ...(dates ? [new TextRun({ text: `  |  ${dates}`, size: 21, font: "Arial" })] : []),
         ],
       }));
@@ -183,9 +213,11 @@ export async function createResumeDocx(resume: GeneratedResume, theme: ResumeThe
           spacing: { after: 30 },
           children: [new TextRun({
             text: organizationLine,
-            italics: true,
+            italics: theme !== "lead",
+            bold: theme === "lead",
             size: 21,
             font: "Arial",
+            color: theme === "lead" ? BRAND_NAVY : undefined,
           })],
         }));
       }
@@ -193,9 +225,9 @@ export async function createResumeDocx(resume: GeneratedResume, theme: ResumeThe
         children.push(bullet(item, index < job.bullets.length - 1));
       }
     }
-  }
-
-  if (resume.education.length) {
+  };
+  const addEducation = () => {
+    if (!resume.education.length) return;
     children.push(sectionHeading("EDUCATION & TRAINING", theme));
     for (const education of resume.education) {
       children.push(new Paragraph({
@@ -216,28 +248,49 @@ export async function createResumeDocx(resume: GeneratedResume, theme: ResumeThe
         })],
       }));
     }
-  }
-
-  if (resume.additionalInformation.length) {
-    children.push(sectionHeading("ADDITIONAL INFORMATION", theme));
+  };
+  const addAdditional = (label: string) => {
+    if (!resume.additionalInformation.length) return;
+    children.push(sectionHeading(label, theme));
     for (const item of resume.additionalInformation) children.push(bullet(item));
+  };
+
+  if (theme === "navy") {
+    addSummary("PROFESSIONAL PROFILE");
+    addSkills("AREAS OF EXPERTISE");
+    addExperience();
+    addCertifications();
+    addAdditional("TECHNICAL TOOLS, SYSTEMS & TRAINING");
+    addEducation();
+  } else if (theme === "lead") {
+    addSummary("LEADERSHIP PROFILE");
+    addSkills("LEADERSHIP & OPERATIONS COMPETENCIES");
+    addExperience();
+    addCertifications();
+    addEducation();
+    addAdditional("TECHNICAL & ADDITIONAL QUALIFICATIONS");
+  } else {
+    addSummary("PROFESSIONAL SUMMARY");
+    addSkills("CORE SKILLS");
+    addCertifications();
+    addExperience();
+    addEducation();
+    addAdditional("ADDITIONAL INFORMATION");
   }
 
+  const margin = theme === "plain" ? 864 : theme === "navy" ? 1008 : 1080;
   const document = new Document({
     styles: {
       default: {
         document: {
           run: { font: "Arial", size: 21, color: BRAND_BLACK },
-          paragraph: { spacing: { line: 260 } },
+          paragraph: { spacing: { line: theme === "plain" ? 250 : 270 } },
         },
       },
     },
     sections: [{
       properties: {
-        page: {
-          // 0.7in margins (twentieths of a point: 1440 per inch) — within the 0.6-0.75in spec range.
-          margin: { top: 1008, right: 1008, bottom: 1008, left: 1008 },
-        },
+        page: { margin: { top: margin, right: margin, bottom: margin, left: margin } },
       },
       children,
     }],
@@ -281,57 +334,100 @@ type PdfLayout = {
 };
 
 const STANDARD_PDF_LAYOUT: PdfLayout = {
-  margin: 50,
-  nameSize: 21,
-  targetSize: 12,
-  contactSize: 10,
-  contactAfter: 10,
-  sectionBefore: 7,
-  sectionSize: 12,
-  sectionLineGap: 6,
-  bodySize: 10.7,
-  bodyLineHeight: 13.2,
-  bodyAfter: 4,
+  margin: 44,
+  nameSize: 22,
+  targetSize: 11.8,
+  contactSize: 9.7,
+  contactAfter: 8,
+  sectionBefore: 6,
+  sectionSize: 11.6,
+  sectionLineGap: 5,
+  bodySize: 10.5,
+  bodyLineHeight: 12.7,
+  bodyAfter: 3,
   jobTitleSize: 10.7,
+  organizationSize: 10.4,
+  bulletSize: 10.4,
+  bulletLineHeight: 12.6,
+  bulletAfter: 1.2,
+  jobAfter: 1.5,
+};
+
+const MODERN_PDF_LAYOUT: PdfLayout = {
+  margin: 50,
+  nameSize: 24,
+  targetSize: 12,
+  contactSize: 9.8,
+  contactAfter: 12,
+  sectionBefore: 8,
+  sectionSize: 11.5,
+  sectionLineGap: 6,
+  bodySize: 10.5,
+  bodyLineHeight: 13,
+  bodyAfter: 4,
+  jobTitleSize: 10.8,
+  organizationSize: 10.4,
+  bulletSize: 10.4,
+  bulletLineHeight: 12.8,
+  bulletAfter: 1.5,
+  jobAfter: 2,
+};
+
+const LEAD_PDF_LAYOUT: PdfLayout = {
+  margin: 54,
+  nameSize: 25,
+  targetSize: 12.5,
+  contactSize: 9.8,
+  contactAfter: 13,
+  sectionBefore: 8,
+  sectionSize: 11.6,
+  sectionLineGap: 6,
+  bodySize: 10.5,
+  bodyLineHeight: 13,
+  bodyAfter: 4,
+  jobTitleSize: 11,
   organizationSize: 10.5,
-  bulletSize: 10.5,
-  bulletLineHeight: 12.9,
+  bulletSize: 10.4,
+  bulletLineHeight: 12.8,
   bulletAfter: 1.5,
   jobAfter: 2,
 };
 
 // Used only when measurement proves the complete resume will fit on one page.
-// Body copy remains 10.5pt; the fit comes from margins and vertical rhythm.
 const COMPACT_ONE_PAGE_LAYOUT: PdfLayout = {
-  margin: 44,
+  margin: 40,
   nameSize: 20,
-  targetSize: 11.5,
-  contactSize: 9.5,
-  contactAfter: 7,
-  sectionBefore: 5,
-  sectionSize: 11.5,
-  sectionLineGap: 4.5,
-  bodySize: 10.5,
-  bodyLineHeight: 12.4,
+  targetSize: 11.3,
+  contactSize: 9.3,
+  contactAfter: 6,
+  sectionBefore: 4.5,
+  sectionSize: 11,
+  sectionLineGap: 4,
+  bodySize: 10.2,
+  bodyLineHeight: 12.1,
   bodyAfter: 2,
-  jobTitleSize: 10.5,
-  organizationSize: 10.5,
-  bulletSize: 10.5,
-  bulletLineHeight: 12.4,
-  bulletAfter: 1,
+  jobTitleSize: 10.3,
+  organizationSize: 10.2,
+  bulletSize: 10.2,
+  bulletLineHeight: 12.1,
+  bulletAfter: 0.8,
   jobAfter: 1,
 };
 
 function themeAccentColor(theme: ResumeTheme): ReturnType<typeof rgb> {
-  return theme === "navy" ? BRAND_RED_RGB : BRAND_BLACK_RGB;
+  if (theme === "navy") return BRAND_RED_RGB;
+  if (theme === "lead") return BRAND_NAVY_RGB;
+  return BRAND_BLACK_RGB;
 }
 
 function themeSectionTitleColor(theme: ResumeTheme): ReturnType<typeof rgb> {
-  return theme === "navy" ? BRAND_RED_RGB : rgb(0.03, 0.03, 0.03);
+  if (theme === "navy") return BRAND_RED_RGB;
+  if (theme === "lead") return BRAND_NAVY_RGB;
+  return rgb(0.03, 0.03, 0.03);
 }
 
 function themeBulletColor(theme: ResumeTheme): ReturnType<typeof rgb> {
-  return theme === "navy" ? BRAND_RED_RGB : rgb(0, 0, 0);
+  return theme === "lead" ? BRAND_NAVY_RGB : rgb(0, 0, 0);
 }
 
 function newPdfPage(writer: Pick<PdfWriter, "document">): PDFPage {
@@ -486,7 +582,7 @@ function writeLines(
   writer.y -= after;
 }
 
-function writeCentered(writer: PdfWriter, text: string, font: PDFFont, size: number, after: number): void {
+function writeCentered(writer: PdfWriter, text: string, font: PDFFont, size: number, after: number, color = rgb(0.05, 0.05, 0.05)): void {
   ensureSpace(writer, size * 1.3 + after);
   const width = font.widthOfTextAtSize(clean(text), size);
   writer.page.drawText(clean(text), {
@@ -494,7 +590,19 @@ function writeCentered(writer: PdfWriter, text: string, font: PDFFont, size: num
     y: writer.y - size,
     size,
     font,
-    color: rgb(0.05, 0.05, 0.05),
+    color,
+  });
+  writer.y -= size * 1.3 + after;
+}
+
+function writeLeft(writer: PdfWriter, text: string, font: PDFFont, size: number, after: number, color = rgb(0.05, 0.05, 0.05)): void {
+  ensureSpace(writer, size * 1.3 + after);
+  writer.page.drawText(clean(text), {
+    x: writer.layout.margin,
+    y: writer.y - size,
+    size,
+    font,
+    color,
   });
   writer.y -= size * 1.3 + after;
 }
@@ -622,72 +730,106 @@ function writeJob(writer: PdfWriter, job: ResumeExperience, keepWholeWhenPossibl
 export async function createResumePdf(resume: GeneratedResume, watermarked = false, theme: ResumeTheme = "plain"): Promise<Uint8Array> {
   const document = await PDFDocument.create();
   document.registerFontkit(fontkit);
+  const baseLayout = theme === "navy" ? MODERN_PDF_LAYOUT : theme === "lead" ? LEAD_PDF_LAYOUT : STANDARD_PDF_LAYOUT;
   const writer: PdfWriter = {
     document,
     page: newPdfPage({ document }),
     regular: await document.embedFont(decodeFont(ROBOTO_REGULAR_BASE64), { subset: true }),
     bold: await document.embedFont(decodeFont(ROBOTO_BOLD_BASE64), { subset: true }),
     italic: await document.embedFont(decodeFont(ROBOTO_ITALIC_BASE64), { subset: true }),
-    y: PDF_HEIGHT - STANDARD_PDF_LAYOUT.margin,
+    y: PDF_HEIGHT - baseLayout.margin,
     theme,
-    layout: STANDARD_PDF_LAYOUT,
+    layout: baseLayout,
   };
 
   const standardHeight = resumeHeight(writer, resume);
-  if (standardHeight > onePageCapacity(STANDARD_PDF_LAYOUT)) {
+  if (standardHeight > onePageCapacity(baseLayout)) {
     writer.layout = COMPACT_ONE_PAGE_LAYOUT;
     const compactHeight = resumeHeight(writer, resume);
-    if (compactHeight > onePageCapacity(COMPACT_ONE_PAGE_LAYOUT)) writer.layout = STANDARD_PDF_LAYOUT;
+    if (compactHeight > onePageCapacity(COMPACT_ONE_PAGE_LAYOUT)) writer.layout = baseLayout;
   }
   writer.y = PDF_HEIGHT - writer.layout.margin;
 
-  writeCentered(writer, resume.basics.fullName, writer.bold, writer.layout.nameSize, 0);
-  writeCentered(writer, resume.basics.targetTitle, writer.regular, writer.layout.targetSize, 0);
-  writeCentered(
-    writer,
-    [resume.basics.location, resume.basics.phone, resume.basics.email].map(clean).filter(Boolean).join("  |  "),
-    writer.regular,
-    writer.layout.contactSize,
-    writer.layout.contactAfter,
-  );
+  const contactLine = [resume.basics.location, resume.basics.phone, resume.basics.email].map(clean).filter(Boolean).join("  |  ");
+  if (theme === "plain") {
+    writeCentered(writer, resume.basics.fullName, writer.bold, writer.layout.nameSize, 0);
+    writeCentered(writer, resume.basics.targetTitle, writer.regular, writer.layout.targetSize, 0);
+    writeCentered(writer, contactLine, writer.regular, writer.layout.contactSize, writer.layout.contactAfter);
+  } else {
+    const nameColor = theme === "lead" ? BRAND_NAVY_RGB : rgb(0.05, 0.05, 0.05);
+    const titleColor = theme === "navy" ? BRAND_RED_RGB : BRAND_NAVY_RGB;
+    writeLeft(writer, resume.basics.fullName, writer.bold, writer.layout.nameSize, 0, nameColor);
+    writeLeft(writer, resume.basics.targetTitle, theme === "lead" ? writer.bold : writer.regular, writer.layout.targetSize, 0, titleColor);
+    writeLeft(writer, contactLine, writer.regular, writer.layout.contactSize, 4);
+    writer.page.drawLine({
+      start: { x: writer.layout.margin, y: writer.y },
+      end: { x: PDF_WIDTH - writer.layout.margin, y: writer.y },
+      thickness: theme === "lead" ? 1.4 : 1,
+      color: themeAccentColor(theme),
+    });
+    writer.y -= writer.layout.contactAfter;
+  }
 
-  const summaryHeight = textHeight(writer, resume.summary, writer.regular, writer.layout.bodySize, 0, writer.layout.bodyLineHeight, writer.layout.bodyAfter);
-  writeSection(writer, "PROFESSIONAL SUMMARY", summaryHeight);
-  writeLines(writer, resume.summary, { size: writer.layout.bodySize, lineHeight: writer.layout.bodyLineHeight, after: writer.layout.bodyAfter });
-
-  if (resume.certifications.length) {
+  const addSummary = (label: string) => {
+    const height = textHeight(writer, resume.summary, writer.regular, writer.layout.bodySize, 0, writer.layout.bodyLineHeight, writer.layout.bodyAfter);
+    writeSection(writer, label, height);
+    writeLines(writer, resume.summary, { size: writer.layout.bodySize, lineHeight: writer.layout.bodyLineHeight, after: writer.layout.bodyAfter });
+  };
+  const addSkills = (label: string) => {
+    const skillsText = resume.skills.map(clean).filter(Boolean).join("  •  ");
+    if (!skillsText) return;
+    const height = textHeight(writer, skillsText, writer.regular, writer.layout.bodySize, 0, writer.layout.bodyLineHeight, writer.layout.bodyAfter);
+    writeSection(writer, label, height);
+    writeLines(writer, skillsText, { size: writer.layout.bodySize, lineHeight: writer.layout.bodyLineHeight, after: writer.layout.bodyAfter });
+  };
+  const addCertifications = () => {
+    if (!resume.certifications.length) return;
     writeSection(writer, "CERTIFICATIONS & LICENSES", certificationHeight(writer, resume.certifications[0]));
     for (const certification of resume.certifications) writeCertificationBullet(writer, certification);
-  }
-
-  const skillsText = resume.skills.map(clean).filter(Boolean).join("  •  ");
-  if (skillsText) {
-    const skillsHeight = textHeight(writer, skillsText, writer.regular, writer.layout.bodySize, 0, writer.layout.bodyLineHeight, writer.layout.bodyAfter);
-    writeSection(writer, "CORE SKILLS", skillsHeight);
-    writeLines(writer, skillsText, { size: writer.layout.bodySize, lineHeight: writer.layout.bodyLineHeight, after: writer.layout.bodyAfter });
-  }
-
-  if (resume.experience.length) {
+  };
+  const addExperience = () => {
+    if (!resume.experience.length) return;
     const firstJob = resume.experience[0];
     const firstJobIntro = jobHeadingHeight(writer, firstJob) + (firstJob.bullets.length ? bulletHeight(writer, firstJob.bullets[0]) : 0);
-    writeSection(writer, "WORK EXPERIENCE", firstJobIntro);
-    for (const [index, job] of resume.experience.entries()) {
-      writeJob(writer, job, index > 0);
-    }
-  }
-
-  if (resume.education.length) {
+    writeSection(writer, theme === "lead" ? "PROFESSIONAL EXPERIENCE" : "WORK EXPERIENCE", firstJobIntro);
+    for (const [index, job] of resume.experience.entries()) writeJob(writer, job, index > 0);
+  };
+  const addEducation = () => {
+    if (!resume.education.length) return;
     writeSection(writer, "EDUCATION & TRAINING", educationHeight(writer, resume.education[0]));
     for (const education of resume.education) {
       ensureSpace(writer, educationHeight(writer, education));
       writeLines(writer, [education.credential, education.year].map(clean).filter(Boolean).join("  |  "), { font: writer.bold, size: writer.layout.jobTitleSize, lineHeight: writer.layout.bodyLineHeight, after: 0 });
       writeLines(writer, [education.institution, education.location].map(clean).filter(Boolean).join(" — "), { font: writer.italic, size: writer.layout.organizationSize, lineHeight: writer.layout.bodyLineHeight, after: 1 });
     }
-  }
-
-  if (resume.additionalInformation.length) {
-    writeSection(writer, "ADDITIONAL INFORMATION", bulletHeight(writer, resume.additionalInformation[0]));
+  };
+  const addAdditional = (label: string) => {
+    if (!resume.additionalInformation.length) return;
+    writeSection(writer, label, bulletHeight(writer, resume.additionalInformation[0]));
     for (const item of resume.additionalInformation) writeBullet(writer, item);
+  };
+
+  if (theme === "navy") {
+    addSummary("PROFESSIONAL PROFILE");
+    addSkills("AREAS OF EXPERTISE");
+    addExperience();
+    addCertifications();
+    addAdditional("TECHNICAL TOOLS, SYSTEMS & TRAINING");
+    addEducation();
+  } else if (theme === "lead") {
+    addSummary("LEADERSHIP PROFILE");
+    addSkills("LEADERSHIP & OPERATIONS COMPETENCIES");
+    addExperience();
+    addCertifications();
+    addEducation();
+    addAdditional("TECHNICAL & ADDITIONAL QUALIFICATIONS");
+  } else {
+    addSummary("PROFESSIONAL SUMMARY");
+    addSkills("CORE SKILLS");
+    addCertifications();
+    addExperience();
+    addEducation();
+    addAdditional("ADDITIONAL INFORMATION");
   }
 
   if (watermarked) {
