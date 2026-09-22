@@ -33,8 +33,10 @@ export type GeneratedCoverLetter = {
 
 const BRAND_BLACK = "111111";
 const BRAND_RED = "D71920";
+const BRAND_NAVY = "071A2B";
 const BRAND_BLACK_RGB = rgb(0x11 / 255, 0x11 / 255, 0x11 / 255);
 const BRAND_RED_RGB = rgb(0xd7 / 255, 0x19 / 255, 0x20 / 255);
+const BRAND_NAVY_RGB = rgb(0x07 / 255, 0x1a / 255, 0x2b / 255);
 const PDF_WIDTH = 612;
 const PDF_HEIGHT = 792;
 const PDF_MARGIN = 54;
@@ -44,11 +46,15 @@ function clean(value: string | undefined): string {
 }
 
 function accentHex(theme: ResumeTheme): string {
-  return theme === "navy" ? BRAND_RED : BRAND_BLACK;
+  if (theme === "navy") return BRAND_RED;
+  if (theme === "lead") return BRAND_NAVY;
+  return BRAND_BLACK;
 }
 
 function accentRgb(theme: ResumeTheme): ReturnType<typeof rgb> {
-  return theme === "navy" ? BRAND_RED_RGB : BRAND_BLACK_RGB;
+  if (theme === "navy") return BRAND_RED_RGB;
+  if (theme === "lead") return BRAND_NAVY_RGB;
+  return BRAND_BLACK_RGB;
 }
 
 export async function createCoverLetterDocx(
@@ -59,15 +65,22 @@ export async function createCoverLetterDocx(
     .map(clean)
     .filter(Boolean)
     .join("  |  ");
+  const headerAlignment = theme === "plain" ? AlignmentType.CENTER : AlignmentType.LEFT;
   const children: Paragraph[] = [
     new Paragraph({
-      alignment: AlignmentType.CENTER,
+      alignment: headerAlignment,
       spacing: { after: 30 },
-      children: [new TextRun({ text: clean(letter.basics.fullName), bold: true, size: 38, font: "Arial" })],
+      children: [new TextRun({
+        text: clean(letter.basics.fullName),
+        bold: true,
+        size: theme === "plain" ? 38 : 42,
+        font: "Arial",
+        color: theme === "lead" ? BRAND_NAVY : undefined,
+      })],
     }),
     new Paragraph({
-      alignment: AlignmentType.CENTER,
-      border: { bottom: { color: accentHex(theme), size: 8, style: BorderStyle.SINGLE } },
+      alignment: headerAlignment,
+      border: { bottom: { color: accentHex(theme), size: theme === "lead" ? 10 : 8, style: BorderStyle.SINGLE } },
       spacing: { after: 260 },
       children: [new TextRun({ text: contactLine, size: 20, font: "Arial" })],
     }),
@@ -83,7 +96,13 @@ export async function createCoverLetterDocx(
   if (clean(letter.targetJobTitle)) {
     children.push(new Paragraph({
       spacing: { after: 180 },
-      children: [new TextRun({ text: `Re: ${clean(letter.targetJobTitle)}`, bold: true, size: 21, font: "Arial", color: theme === "navy" ? BRAND_RED : undefined })],
+      children: [new TextRun({
+        text: `Re: ${clean(letter.targetJobTitle)}`,
+        bold: true,
+        size: 21,
+        font: "Arial",
+        color: theme === "navy" ? BRAND_RED : theme === "lead" ? BRAND_NAVY : undefined,
+      })],
     }));
   }
 
@@ -225,8 +244,18 @@ export async function createCoverLetterPdf(
     .filter(Boolean)
     .join("  |  ");
 
-  writeCentered(writer, letter.basics.fullName, writer.bold, 20, 2);
-  writeCentered(writer, contactLine, writer.regular, 9.8, 8);
+  if (theme === "plain") {
+    writeCentered(writer, letter.basics.fullName, writer.bold, 20, 2);
+    writeCentered(writer, contactLine, writer.regular, 9.8, 8);
+  } else {
+    writeLines(writer, letter.basics.fullName, {
+      font: writer.bold,
+      size: 21.5,
+      after: 2,
+      color: theme === "lead" ? BRAND_NAVY_RGB : BRAND_BLACK_RGB,
+    });
+    writeLines(writer, contactLine, { size: 9.8, after: 8 });
+  }
   writer.page.drawLine({
     start: { x: PDF_MARGIN, y: writer.y },
     end: { x: PDF_WIDTH - PDF_MARGIN, y: writer.y },
@@ -240,7 +269,7 @@ export async function createCoverLetterPdf(
   if (clean(letter.companyName)) writeLines(writer, letter.companyName!, { after: 10 });
   writeLines(writer, `Re: ${letter.targetJobTitle}`, {
     font: writer.bold,
-    color: theme === "navy" ? BRAND_RED_RGB : BRAND_BLACK_RGB,
+    color: theme === "navy" ? BRAND_RED_RGB : theme === "lead" ? BRAND_NAVY_RGB : BRAND_BLACK_RGB,
     after: 14,
   });
   writeLines(writer, letter.salutation, { after: 10 });
