@@ -112,7 +112,8 @@ test("publishes a canonical XML sitemap and robots discovery hints", async () =>
   const sitemap = await sitemapResponse.text();
   assert.match(sitemap, /<loc>https:\/\/tradehustl3\.com<\/loc>/i);
   assert.match(sitemap, /<loc>https:\/\/tradehustl3\.com\/book<\/loc>/i);
-  assert.match(sitemap, /<loc>https:\/\/tradehustl3\.com\/resume-builder<\/loc>/i);
+  assert.doesNotMatch(sitemap, /<loc>https:\/\/tradehustl3\.com\/resume-builder<\/loc>/i);
+  assert.match(sitemap, /<loc>https:\/\/tradehustl3\.com\/resume-builder\/hvac<\/loc>/i);
   for (const path of ["privacy", "terms", "contact", "data-deletion", "resume-builder/refund-policy", "book/refund-policy", "resume-builder/ai-disclosure"]) {
     assert.match(sitemap, new RegExp(`<loc>https:\\/\\/tradehustl3\\.com\\/${path.replaceAll("/", "\\/")}<\\/loc>`, "i"));
   }
@@ -216,15 +217,18 @@ test("redirects the production HTTP origin to canonical HTTPS and sends HSTS", a
   assert.equal(response.headers.get("strict-transport-security"), "max-age=31536000");
 });
 
-test("homepage is a traffic director with no signup form", async () => {
+test("homepage is the Resume Builder sales page and verified account entry", async () => {
   const html = await (await render()).text();
-  assert.doesNotMatch(html, /type="email"/i);
-  assert.doesNotMatch(html, /<form\b/i);
+  assert.match(html, /id="resume-start"/i);
+  assert.match(html, /type="email"/i);
+  assert.match(html, /<form\b/i);
+  assert.match(html, /Create account &amp; continue/i);
+  assert.match(html, /ACCOUNT · STAGE 1 OF 5/i);
   assert.match(html, /FREE CAREER GUIDE/i);
   assert.match(html, /href="\/top-10-trades"/i);
   assert.match(html, /href="\/book"/i);
   assert.doesNotMatch(html, /href="\/book\/sample"/i);
-  const resumeLinks = html.match(/href="\/resume-builder"/gi) ?? [];
+  const resumeLinks = html.match(/href="#resume-start"/gi) ?? [];
   assert.ok(resumeLinks.length >= 5);
 });
 
@@ -974,7 +978,7 @@ test("routes the branded resume link to the Resume Builder", async () => {
     { waitUntil() {}, passThroughOnException() {} },
   );
   assert.equal(response.status, 308);
-  assert.equal(response.headers.get("location"), "https://tradehustl3.com/#resume-start");
+  assert.equal(response.headers.get("location"), "/#resume-start");
 });
 
 test("redirects the redundant Resume Builder landing route into the homepage start point", async () => {
@@ -986,7 +990,7 @@ test("redirects the redundant Resume Builder landing route into the homepage sta
   assert.equal(withTrade.status, 307);
   assert.equal(
     withTrade.headers.get("location"),
-    "https://tradehustl3.com/?trade=hvac&utm_source=test#resume-start",
+    "/?trade=hvac&utm_source=test#resume-start",
   );
 });
 
