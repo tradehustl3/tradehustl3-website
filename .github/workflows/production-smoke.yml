@@ -21,7 +21,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:
-      WORKER_ORIGIN: https://tradehustl3-website.tradehustl3.workers.dev
       CUSTOM_ORIGIN: https://tradehustl3.com
     steps:
       - name: Verify production health
@@ -31,7 +30,7 @@ jobs:
           curl --fail --silent --show-error --location \
             --header 'Accept: application/json' \
             --retry 8 --retry-delay 5 --retry-all-errors \
-            "$WORKER_ORIGIN/api/health" \
+            "$CUSTOM_ORIGIN/api/health" \
             --output /tmp/health.json
           node - <<'NODE'
           const fs = require('node:fs');
@@ -54,7 +53,7 @@ jobs:
           curl --fail --silent --show-error --location \
             --header 'Accept: text/html,application/xhtml+xml' \
             --retry 5 --retry-delay 3 --retry-all-errors \
-            "$WORKER_ORIGIN/" \
+            "$CUSTOM_ORIGIN/" \
             --output /dev/null
 
       - name: Verify production Resume Builder entry point
@@ -64,10 +63,10 @@ jobs:
           curl --fail --silent --show-error --location \
             --header 'Accept: text/html,application/xhtml+xml' \
             --retry 5 --retry-delay 3 --retry-all-errors \
-            "$WORKER_ORIGIN/resume-builder" \
+            "$CUSTOM_ORIGIN/resume-builder" \
             --output /dev/null
 
-      - name: Verify custom-domain Resume Builder is current
+      - name: Verify current Resume Builder UI
         shell: bash
         run: |
           set -euo pipefail
