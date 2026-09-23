@@ -117,7 +117,7 @@ export async function handleResumeAiBridge(request, env = process.env, dependenc
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       body: JSON.stringify(vertexRequest),
-      signal: AbortSignal.timeout(45_000),
+      signal: AbortSignal.timeout(85_000),
     });
     const responseBody = await response.text();
     return new Response(responseBody, {

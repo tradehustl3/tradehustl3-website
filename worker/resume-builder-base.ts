@@ -85,7 +85,8 @@ const RESUME_TOTAL_AI_RUNS = 4;
 const INITIAL_PREVIEW_RUNS = 1;
 const DEFAULT_CLAUDE_MODEL = "claude-sonnet-5";
 const DEFAULT_GEMINI_MODEL = "gemini-3.8-flash";
-const GEMINI_MAX_OUTPUT_TOKENS = 4_000;
+// Multi-role uploads need room for every job, bullets, and source references.
+const GEMINI_MAX_OUTPUT_TOKENS = 8_000;
 const INTAKE_PATH = "/resume-builder/intake";
 // The guided intake collects an unbounded number of work-history roles plus
 // structured field-value groups. These bounds stay well within Worker limits
@@ -1848,7 +1849,7 @@ async function callGemini(
         thinkingConfig: { thinkingLevel: "LOW", includeThoughts: false },
       },
     }),
-    signal: AbortSignal.timeout(45_000),
+    signal: AbortSignal.timeout(90_000),
   });
   const payload = await response.json() as {
     candidates?: Array<{
@@ -1915,7 +1916,7 @@ async function callAnthropic(
       system: resumeSystemPrompt(),
       messages: [{ role: "user", content: userPrompt }],
     }),
-    signal: AbortSignal.timeout(45_000),
+    signal: AbortSignal.timeout(90_000),
   });
   const payload = await response.json() as {
     content?: Array<{ type?: unknown; text?: unknown }>;
@@ -2193,6 +2194,7 @@ async function generateResume(
       generated = await callResumeModel(env, resume, correctionRequest, dependencies);
     } catch (error) {
       if (error instanceof ResumeGenerationError) throw error;
+      console.error("Resume model stage failed", error);
       throw new ResumeGenerationError("MODEL_OUTPUT_ERROR", "Model output error.");
     }
 
@@ -2206,7 +2208,8 @@ async function generateResume(
         (dependencies.createPdf ?? createResumePdf)(generated.resume, false, theme),
         (dependencies.createPdf ?? createResumePdf)(generated.resume, true, theme),
       ]);
-    } catch {
+    } catch (error) {
+      console.error("Resume document render failed", error);
       throw new ResumeGenerationError("DOCUMENT_RENDER_ERROR", "Document render error.");
     }
 
@@ -2222,6 +2225,7 @@ async function generateResume(
       storeResumeFile(env, user.userId, resumeId, generationId, "preview", preview),
     ]);
     if (uploadResults.some((result) => result.status === "rejected")) {
+      console.error("Resume file storage failed", uploadResults.filter((result) => result.status === "rejected"));
       throw new ResumeGenerationError("FILE_STORAGE_ERROR", "File storage error.");
     }
     const fileStatements = uploadResults.map(
