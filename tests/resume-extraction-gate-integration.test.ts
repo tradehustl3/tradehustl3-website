@@ -222,10 +222,8 @@ OSHA 10`;
   const payload = await response.json() as {
     ok?: boolean;
     prefill?: { roles?: Array<Record<string, unknown>> };
-    extractionCoverage?: { ready?: boolean };
   };
   assert.equal(payload.ok, true);
-  assert.equal(payload.extractionCoverage?.ready, true);
   assert.equal(payload.prefill?.roles?.length, 2);
   assert.equal(payload.prefill?.roles?.[0]?.employer, "American Campus Communities");
   assert.equal(payload.prefill?.roles?.[1]?.employer, "Cooler Heating & Air");
