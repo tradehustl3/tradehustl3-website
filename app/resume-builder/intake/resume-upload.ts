@@ -1,10 +1,114 @@
-import { EXPERIENCE_LEVELS, isTradeTrack } from "../trade-content";
+import { EXPERIENCE_LEVELS, isTradeTrack, type TradeTrack } from "../trade-content";
 import { type WizardData } from "./wizard-data";
 
 export const RESUME_UPLOAD_MAX_BYTES = 4 * 1024 * 1024;
 export const RESUME_UPLOAD_MAX_TEXT_CHARS = 100_000;
 
 export type ResumeUploadKind = "pdf" | "docx";
+
+
+export type UploadedResumeIssue = {
+  id: string;
+  kind: "trade" | "contact" | "role";
+  message: string;
+  field?: "fullName" | "phone" | "cityState" | "employer" | "jobTitle" | "startDate" | "endDate";
+  roleIndex?: number;
+};
+
+const TRADE_SIGNALS: Array<{ trade: TradeTrack; terms: Array<[string, number]> }> = [
+  {
+    trade: "HVAC & Refrigeration",
+    terms: [["hvac", 5], ["refrigeration", 5], ["epa 608", 5], ["rooftop unit", 4], ["rtu", 3], ["heat pump", 3], ["refrigerant", 3], ["compressor", 2], ["air handler", 2], ["furnace", 2]],
+  },
+  {
+    trade: "Electrical",
+    terms: [["electrician", 5], ["electrical technician", 5], ["nec", 4], ["conduit", 3], ["panelboard", 3], ["switchgear", 3], ["motor control", 3], ["breaker", 2], ["wiring", 2]],
+  },
+  {
+    trade: "Plumbing",
+    terms: [["plumber", 5], ["plumbing", 5], ["dwv", 4], ["backflow", 3], ["water heater", 3], ["drain cleaning", 3], ["pex", 2], ["copper pipe", 2]],
+  },
+  {
+    trade: "Welding & Fabrication",
+    terms: [["welder", 5], ["welding", 5], ["fabrication", 4], ["mig", 3], ["tig", 3], ["smaw", 3], ["fcaw", 3], ["aws d1.1", 4], ["fit-up", 2]],
+  },
+  {
+    trade: "Construction & Carpentry",
+    terms: [["carpenter", 5], ["carpentry", 5], ["framing", 4], ["finish carpentry", 4], ["formwork", 3], ["drywall", 2], ["construction", 2], ["millwork", 3]],
+  },
+  {
+    trade: "Facilities Maintenance",
+    terms: [["maintenance supervisor", 5], ["facilities maintenance", 5], ["facility maintenance", 5], ["maintenance technician", 4], ["work order", 2], ["cmms", 3], ["make-ready", 3], ["preventive maintenance", 2], ["vendor coordination", 2]],
+  },
+  {
+    trade: "General Labor / Trade Helper",
+    terms: [["general labor", 5], ["laborer", 5], ["trade helper", 5], ["material handling", 3], ["site cleanup", 3], ["demolition", 2], ["pallet jack", 2]],
+  },
+];
+
+export function inferResumeTrade(sourceText: string): TradeTrack | "" {
+  const source = sourceText.toLowerCase().replace(/\s+/g, " ");
+  if (!source.trim()) return "";
+  const scored = TRADE_SIGNALS
+    .map(({ trade, terms }) => ({
+      trade,
+      score: terms.reduce((total, [term, weight]) => total + (source.includes(term) ? weight : 0), 0),
+    }))
+    .sort((a, b) => b.score - a.score);
+  const top = scored[0];
+  const next = scored[1];
+  if (!top || top.score < 4) return "";
+  if (next && top.score === next.score) return "";
+  return top.trade;
+}
+
+function yearFromDate(value: string): number | null {
+  const match = value.match(/\b(19|20)\d{2}\b/);
+  return match ? Number(match[0]) : null;
+}
+
+export function uploadedResumeIssues(data: WizardData): UploadedResumeIssue[] {
+  const issues: UploadedResumeIssue[] = [];
+  if (!isTradeTrack(data.trade)) {
+    issues.push({ id: "trade", kind: "trade", message: "We could not confidently identify the trade direction. Choose the closest match." });
+  }
+  if (!data.contact.fullName.trim()) {
+    issues.push({ id: "contact-fullName", kind: "contact", field: "fullName", message: "We could not find your full name." });
+  }
+  if (!data.contact.phone.trim()) {
+    issues.push({ id: "contact-phone", kind: "contact", field: "phone", message: "We could not find a phone number employers can use." });
+  }
+
+  data.roles.forEach((role, roleIndex) => {
+    const hasRole = Boolean(role.employer.trim() || role.jobTitle.trim() || role.responsibilities.trim());
+    if (!hasRole) return;
+    if (!role.employer.trim()) {
+      issues.push({ id: `role-${roleIndex}-employer`, kind: "role", roleIndex, field: "employer", message: `Job ${roleIndex + 1} is missing an employer name.` });
+    }
+    if (!role.jobTitle.trim()) {
+      issues.push({ id: `role-${roleIndex}-jobTitle`, kind: "role", roleIndex, field: "jobTitle", message: `Job ${roleIndex + 1} is missing a job title.` });
+    }
+    if (!role.startDate.trim()) {
+      issues.push({ id: `role-${roleIndex}-startDate`, kind: "role", roleIndex, field: "startDate", message: `Job ${roleIndex + 1} is missing a start date.` });
+    }
+    if (!role.current && !role.endDate.trim()) {
+      issues.push({ id: `role-${roleIndex}-endDate`, kind: "role", roleIndex, field: "endDate", message: `Job ${roleIndex + 1} is missing an end date.` });
+    }
+    const startYear = yearFromDate(role.startDate);
+    const endYear = role.current ? null : yearFromDate(role.endDate);
+    if (startYear && endYear && endYear < startYear) {
+      issues.push({
+        id: `role-${roleIndex}-date-order`,
+        kind: "role",
+        roleIndex,
+        field: "endDate",
+        message: `Job ${roleIndex + 1} has an end date before its start date. Confirm the dates.`,
+      });
+    }
+  });
+
+  return issues;
+}
 
 let lastExtractedResumeText = "";
 
@@ -129,13 +233,14 @@ export function mergeResumePrefill(current: WizardData, prefill: unknown, source
   const importedPhone = stringValue(contact.phone, 100) || extractResumePhone(effectiveSourceText);
   const targetJobTitle = stringValue(root.targetJobTitle, 200) || roles[0]?.jobTitle || current.targetJob.title;
   const importedTrade = stringValue(root.trade, 100);
+  const inferredTrade = inferResumeTrade(effectiveSourceText);
   const importedExperience = stringValue(root.experienceLevel, 40);
 
   return {
     ...current,
     sourceProvenance: "upload",
     sourceResumeText: effectiveSourceText || current.sourceResumeText,
-    trade: isTradeTrack(importedTrade) ? importedTrade : current.trade,
+    trade: isTradeTrack(importedTrade) ? importedTrade : inferredTrade || current.trade,
     experienceLevel: (EXPERIENCE_LEVELS as readonly string[]).includes(importedExperience)
       ? importedExperience as WizardData["experienceLevel"]
       : current.experienceLevel,
