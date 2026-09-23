@@ -291,7 +291,7 @@ test("Gemini generation uses structured output, bounded thinking, and the authen
     contents: Array<{ parts: Array<{ text: string }> }>;
   };
   assert.equal(body.model, "gemini-3.8-flash");
-  assert.equal(body.generationConfig.maxOutputTokens, 4_000);
+  assert.equal(body.generationConfig.maxOutputTokens, 8_000);
   assert.equal(body.generationConfig.candidateCount, 1);
   assert.equal(body.generationConfig.responseMimeType, "application/json");
   assert.equal(body.generationConfig.responseSchema.type, "OBJECT");
