@@ -230,7 +230,7 @@ OSHA 10`;
   assert.equal(calls, 1);
 });
 
-test("generation is blocked before the model or run reservation when saved upload coverage is incomplete", async () => {
+test("generation asks for exception review before model use when saved upload has unresolved job identity or date gaps", async () => {
   const savedIntake = {
     contact: { fullName: "Alex Morgan", email: "alex@example.com", phone: "404-555-0199", cityState: "Atlanta, GA" },
     career: { yearsExperience: "6–10 years", summaryNotes: "Facilities maintenance experience." },
@@ -273,7 +273,7 @@ test("generation is blocked before the model or run reservation when saved uploa
   assert.ok(response);
   assert.equal(response.status, 422);
   const payload = await response.json() as { code?: string; runConsumed?: boolean; extractedRoles?: number; sourceRoleSignals?: number };
-  assert.equal(payload.code, "EXTRACTION_COVERAGE_FAILED");
+  assert.equal(payload.code, "EXTRACTION_REVIEW_REQUIRED");
   assert.equal(payload.runConsumed, false);
   assert.equal(payload.extractedRoles, 1);
   assert.equal(payload.sourceRoleSignals, 3);
