@@ -503,6 +503,41 @@
 .rb-resume-import-divider::before,
 .rb-resume-import-divider::after { content: ""; flex: 1; height: 1px; background: var(--rb-field-border); }
 
+
+/* uploaded-resume fast path: extract once, surface only exceptions */
+.rb-wiz-step h1 > span { color: var(--rb-red); }
+.rb-scratch-heading { margin: 0 0 16px; color: var(--rb-navy); font-family: var(--font-display), Impact, sans-serif; font-size: clamp(22px, 2.4vw, 32px); line-height: 1; }
+.rb-upload-result { display: grid; gap: 20px; padding: clamp(20px, 3vw, 30px); border: 1px solid #c7d2d9; border-top: 5px solid var(--rb-gold); background: #fff; box-shadow: 14px 14px 0 #071a2b0d; }
+.rb-upload-result-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; }
+.rb-upload-result-head h2 { margin: 0; font-family: var(--font-display), Impact, sans-serif; font-size: clamp(28px, 3.5vw, 44px); line-height: .98; }
+.rb-upload-result-count { flex: 0 0 auto; padding: 8px 11px; border: 1px solid #287a45; background: #e9f5ed; color: #185d32; font-size: 10px; font-weight: 950; letter-spacing: .12em; }
+.rb-upload-result-count-warn { border-color: #b78212; background: #fff5d8; color: #6d4d08; }
+.rb-upload-snapshot { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border: 1px solid #d9e1e6; background: #f7f9fa; }
+.rb-upload-snapshot > div { min-width: 0; padding: 14px 15px; border-right: 1px solid #d9e1e6; border-bottom: 1px solid #d9e1e6; }
+.rb-upload-snapshot > div:nth-child(3n) { border-right: 0; }
+.rb-upload-snapshot > div:nth-last-child(-n+3) { border-bottom: 0; }
+.rb-upload-snapshot span, .rb-upload-snapshot strong { display: block; }
+.rb-upload-snapshot span { margin-bottom: 5px; color: var(--rb-ink-soft); font-size: 9px; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; }
+.rb-upload-snapshot strong { overflow-wrap: anywhere; color: var(--rb-navy); font-size: 14px; line-height: 1.35; }
+.rb-upload-result .rb-resume-import-success,
+.rb-upload-result .rb-resume-import-error { margin: 0; padding: 11px 13px; font-size: 12px; font-weight: 800; line-height: 1.5; }
+.rb-upload-result .rb-resume-import-success { border-left: 3px solid #287a45; background: #e9f5ed; color: #185d32; }
+.rb-upload-result .rb-resume-import-error { border-left: 3px solid var(--rb-red); background: var(--rb-red-tint); color: var(--rb-red-deep); }
+.rb-upload-clean { padding: 18px; border-left: 4px solid #287a45; background: #f0f8f2; }
+.rb-upload-clean strong { display: block; margin-bottom: 5px; color: #185d32; font-size: 11px; letter-spacing: .1em; }
+.rb-upload-clean p { margin: 0; color: #40584a; font-size: 13px; line-height: 1.55; }
+.rb-upload-exceptions { display: grid; gap: 14px; }
+.rb-upload-exceptions-head { padding: 16px 18px; border-left: 4px solid #b78212; background: #fff7e2; }
+.rb-upload-exceptions-head strong { display: block; color: #74520b; font-size: 11px; letter-spacing: .11em; }
+.rb-upload-exceptions-head p { margin: 5px 0 0; color: #5f5a4d; font-size: 13px; line-height: 1.5; }
+.rb-upload-issue { display: grid; gap: 12px; padding: 17px; border: 1px solid #ead6b1; background: #fffbf2; }
+.rb-upload-issue > p { margin: 0; color: #514632; font-size: 13px; line-height: 1.5; }
+.rb-upload-issue > p strong { color: var(--rb-red-deep); font-size: 10px; letter-spacing: .1em; }
+.rb-upload-issue .rb-trade-grid { grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
+.rb-upload-result > .rb-legal-consent { margin: 0; background: #f7f9fa; }
+.rb-upload-result .rb-resume-import-actions { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); padding-top: 0; }
+.rb-upload-result > .rb-resume-import-button { justify-self: start; min-width: 0; }
+
 /* trade + level cards ---------------------------------------- */
 .rb-trade-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; }
 .rb-trade-card { display: flex; flex-direction: column; gap: 8px; padding: 20px; border: 1px solid var(--rb-field-border); border-left: 4px solid var(--rb-field-border); background: var(--rb-field); text-align: left; cursor: pointer; transition: border-color .18s, transform .18s, box-shadow .18s; }
@@ -639,4 +674,17 @@
   .rb-wiz-nav .rb-button-primary { margin-left: 0; }
   .rb-save-state { flex-basis: 100%; order: 3; text-align: center; }
   .rb-role-end { flex-direction: column; align-items: stretch; }
+}
+
+@media (max-width: 700px) {
+  .rb-upload-result { padding: 18px 14px; }
+  .rb-upload-result-head { flex-direction: column; }
+  .rb-upload-snapshot { grid-template-columns: 1fr 1fr; }
+  .rb-upload-snapshot > div,
+  .rb-upload-snapshot > div:nth-child(3n),
+  .rb-upload-snapshot > div:nth-last-child(-n+3) { border-right: 1px solid #d9e1e6; border-bottom: 1px solid #d9e1e6; }
+  .rb-upload-snapshot > div:nth-child(2n) { border-right: 0; }
+  .rb-upload-snapshot > div:nth-last-child(-n+2) { border-bottom: 0; }
+  .rb-upload-result .rb-resume-import-actions { grid-template-columns: 1fr; }
+  .rb-upload-result > .rb-resume-import-button { width: 100%; }
 }

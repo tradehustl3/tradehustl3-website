@@ -18,11 +18,12 @@ export default function IntakePage() {
       <section className="rb-flow-intro rb-wiz-intro">
         <div>
           <p className="rb-kicker">/ BUILD</p>
-          <h1>SEVEN QUICK STEPS.<br /><span>ONE TRADE-READY RESUME.</span></h1>
+          <h1>UPLOAD IT OR START FRESH.<br /><span>WE HANDLE THE REST.</span></h1>
         </div>
         <p>
-          One question at a time. Give real tools, systems, responsibilities, and results — HUSTL3 BOT guides each step
-          for your trade. Your answers autosave to your verified account, so you can leave and pick up where you stopped.
+          Already have a resume? Upload it once and HUSTL3 BOT pulls the facts from it, flags only what needs your
+          attention, then sends you to your resume-system choices. Starting from scratch still uses the guided trade intake.
+          Your work autosaves to your verified account.
         </p>
       </section>
       <ResumeWizard />
