@@ -4,8 +4,10 @@ import { emptyWizardData, toIntake } from "../app/resume-builder/intake/wizard-d
 import {
   extractResumeEmail,
   extractResumePhone,
+  inferResumeTrade,
   mergeResumePrefill,
   resumeUploadKind,
+  uploadedResumeIssues,
 } from "../app/resume-builder/intake/resume-upload";
 import { handleResumeBuilderRoute, type ResumeBuilderDependencies } from "../worker/resume-builder";
 
@@ -71,6 +73,51 @@ test("resume contact extraction finds email and phone directly from uploaded tex
   const text = "Candidate Name • Atlanta, GA • 404-555-0188 • candidate@example.com";
   assert.equal(extractResumeEmail(text), "candidate@example.com");
   assert.equal(extractResumePhone(text), "404-555-0188");
+});
+
+test("trade direction is inferred from the uploaded resume when the model leaves it blank", () => {
+  assert.equal(
+    inferResumeTrade("EPA 608 Universal HVAC technician servicing RTUs, heat pumps, refrigerant circuits, and compressors."),
+    "HVAC & Refrigeration",
+  );
+  assert.equal(
+    inferResumeTrade("Journeyman electrician installing conduit, panelboards, breakers, wiring, and motor controls to NEC requirements."),
+    "Electrical",
+  );
+});
+
+test("uploaded resume fast path only flags missing or obviously inconsistent facts", () => {
+  const clean = emptyWizardData();
+  clean.sourceProvenance = "upload";
+  clean.sourceResumeText = "Sample resume source";
+  clean.trade = "Facilities Maintenance";
+  clean.contact = { fullName: "Jordan Smith", email: "jordan@example.com", phone: "404-555-0100", cityState: "Atlanta, GA" };
+  clean.roles = [{
+    employer: "Campus Housing",
+    jobTitle: "Maintenance Technician",
+    location: "Atlanta, GA",
+    employmentType: "Full-time",
+    startDate: "Jan 2023",
+    endDate: "Aug 2026",
+    current: false,
+    responsibilities: "Completed preventive maintenance and work orders.",
+    equipment: "",
+    systems: "",
+    workPerformed: "",
+    leadership: "",
+    workOrders: "",
+    measurable: "",
+  }];
+  assert.deepEqual(uploadedResumeIssues(clean), []);
+
+  const broken = {
+    ...clean,
+    contact: { ...clean.contact, phone: "" },
+    roles: [{ ...clean.roles[0], startDate: "2025", endDate: "2023" }],
+  };
+  const issues = uploadedResumeIssues(broken);
+  assert.ok(issues.some((issue) => issue.id === "contact-phone"));
+  assert.ok(issues.some((issue) => issue.id === "role-0-date-order"));
 });
 
 test("persisted intake uses uploaded resume email before the account login email", () => {
