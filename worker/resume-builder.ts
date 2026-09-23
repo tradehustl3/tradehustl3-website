@@ -1,3 +1,4 @@
+import { errorKind } from "./resume-safe-log";
 import {
   handleResumeBuilderRoute as handleBaseResumeBuilderRoute,
   type ResumeBuilderDependencies,
@@ -15,6 +16,7 @@ import {
   rerenderCoverLetterTheme,
 } from "./cover-letter";
 import { hardenGeneratedResumePackage } from "./resume-package-hardener";
+import { serverUploadReview } from "./resume-upload-requirements";
 import { assessIntakeSubstance } from "./resume-quality";
 import {
   assessResumeExtractionCoverage,
@@ -192,6 +194,10 @@ async function responseJson(response: Response): Promise<Record<string, unknown>
   } catch {
     return null;
   }
+}
+
+function recordOf(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
 }
 
 function rewrittenJson(response: Response, body: Record<string, unknown>, status = response.status): Response {
@@ -460,7 +466,7 @@ async function reconcileImportedExtraction(
   const retry = await handleBaseResumeBuilderRoute(
     retryRequest,
     env,
-    reconciliationDependencies(dependencies),
+    { ...reconciliationDependencies(dependencies), importRateLimitAlreadyChecked: true },
   );
   if (!retry || !retry.ok) {
     const fallback = repairResumeExtractionFromSource(sourceText, payload.prefill);
@@ -670,6 +676,7 @@ async function enforceUploadExtractionCoverageBeforeGeneration(
   const probe = await authenticatedResumeProbe(request, env, dependencies, resumeId);
   if (!probe || !probe.ok) return probe;
 
+  const probeResume = recordOf((await responseJson(probe.clone()))?.resume);
   const record = await env.DB.prepare(
     "SELECT intake_json FROM resumes WHERE resume_id = ? AND deleted_at IS NULL LIMIT 1",
   ).bind(resumeId).first<{ intake_json: string }>();
@@ -685,15 +692,23 @@ async function enforceUploadExtractionCoverageBeforeGeneration(
   try {
     const intake = JSON.parse(record.intake_json) as unknown;
     const coverage = assessSavedIntakeExtractionCoverage(intake);
-    if (coverage.ready) return null;
+    // Required-field states are recomputed here from the saved intake; nothing the
+    // browser reported about confidence or completeness is trusted.
+    const review = serverUploadReview(intake, {
+      trade: typeof probeResume.trade === "string" ? probeResume.trade : "",
+      title: typeof probeResume.title === "string" ? probeResume.title : "",
+    });
 
     // Raw uploaded text remains authoritative evidence during generation. Do not
     // block a customer because a secondary extraction missed education,
     // credentials, skills, software, training, or narrative detail that is still
-    // present in sourceResumeText. Only role identity/date gaps require the
-    // customer to fix the structured record before generation.
+    // present in sourceResumeText. Only role identity/date gaps and the required
+    // contact/target fields require the customer to fix the record first.
     const blockingCodes = new Set(["jobs", "employers", "job_titles", "dates"]);
-    const blockingIssues = coverage.issues.filter((issue) => blockingCodes.has(issue.code));
+    const blockingIssues: Array<{ code: string; message: string }> = [
+      ...coverage.issues.filter((issue) => blockingCodes.has(issue.code)),
+      ...review.issues.map((issue) => ({ code: `required_${issue.kind}`, message: issue.message })),
+    ];
     if (blockingIssues.length === 0) return null;
 
     return rewrittenJson(probe, {
@@ -708,10 +723,10 @@ async function enforceUploadExtractionCoverageBeforeGeneration(
       sourceRoleSignals: coverage.sourceRoleSignals,
       extractedRoles: coverage.extractedRoles,
       intakeUrl: `/resume-builder/intake?resume_id=${encodeURIComponent(resumeId)}`,
-      message: "A work-history identity or date still needs confirmation before HUSTL3 BOT builds the preview. Everything else remains backed by your uploaded resume.",
+      message: "A required detail still needs confirmation before HUSTL3 BOT builds the preview. Everything else remains backed by your uploaded resume.",
     }, 422);
-  } catch (error) {
-    console.error("Resume extraction coverage preflight failed", error);
+  } catch {
+    console.error("Resume extraction coverage preflight failed");
     return rewrittenJson(probe, {
       ok: false,
       code: "EXTRACTION_COVERAGE_ERROR",
@@ -769,8 +784,8 @@ async function enforceIntakeSubstanceBeforeGeneration(
       intakeUrl: `/resume-builder/intake?resume_id=${encodeURIComponent(resumeId)}`,
       message: "There is not enough verified information to build a paid-quality resume yet. Add real work, apprenticeship, training, project, tool, or task details. No AI run was used and no weak preview was created.",
     }, 422);
-  } catch (error) {
-    console.error("Resume intake substance preflight failed", error);
+  } catch {
+    console.error("Resume intake substance preflight failed");
     return rewrittenJson(probe, {
       ok: false,
       code: "INTAKE_QUALITY_GATE_ERROR",
@@ -804,7 +819,7 @@ async function enforceCheckoutQualityGate(
       message: "This resume is not eligible for checkout yet. HUSTL3 BOT must produce a complete, verified resume before payment can open.",
     }, 409);
   } catch (error) {
-    console.error("Resume checkout quality preflight failed", error);
+    console.error("Resume checkout quality preflight failed", errorKind(error));
     return rewrittenJson(probe, {
       ok: false,
       code: "QUALITY_GATE_ERROR",
@@ -848,7 +863,7 @@ async function hardenSuccessfulGeneration(
       message: "Your protected preview passed the final completeness gate and is ready to review.",
     });
   } catch (error) {
-    console.error("Resume post-generation hardening failed", error);
+    console.error("Resume post-generation hardening failed", errorKind(error));
     return rewrittenJson(response, {
       ok: false,
       code: "QUALITY_GATE_ERROR",
@@ -896,7 +911,6 @@ export async function handleResumeBuilderRoute(
   const importCoverageCopy = importPath ? request.clone() : null;
   const importRetryCopy = importPath ? request.clone() : null;
   const importCanonicalCopy = importPath ? request.clone() : null;
-  const canonicalImportPlan = importCanonicalCopy ? await prepareCanonicalImport(importCanonicalCopy) : null;
   const retryRequest = generatePath && shouldAutoRetryNumericGuard(env) ? request.clone() : null;
 
   if (request.method === "POST" && generationPathMatch) {
@@ -942,6 +956,8 @@ export async function handleResumeBuilderRoute(
     await refundUnpaidPreviewLimitOnFailure(first, env, firstRateLimitPolicy);
   }
 
+  const canonicalImportPlan = importCanonicalCopy && (first.ok || first.status >= 500)
+    ? await prepareCanonicalImport(importCanonicalCopy) : null;
   if (importPath && canonicalImportPlan && importContactCopy) {
     if (canonicalImportPlan.canonical.coverage.ready) {
       const sourceFirst = await finalizeSourceFirstImport(first, canonicalImportPlan);
@@ -984,12 +1000,12 @@ export async function handleResumeBuilderRoute(
         coverLetterRefreshed = await rerenderCoverLetterTheme(env, resumePathMatch[1], themeChange.theme);
         await rerenderResumeTheme(env, dependencies, resumePathMatch[1], themeChange.theme);
       } catch (error) {
-        console.error("Resume package theme rerender failed", error);
+        console.error("Resume package theme rerender failed", errorKind(error));
         if (coverLetterRefreshed && previousTheme) {
           try {
             await rerenderCoverLetterTheme(env, resumePathMatch[1], previousTheme);
           } catch (rollbackError) {
-            console.error("Cover letter theme rollback failed", rollbackError);
+            console.error("Cover letter theme rollback failed", errorKind(rollbackError));
           }
         }
         if (previousTheme) {

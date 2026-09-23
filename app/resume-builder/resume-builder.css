@@ -737,3 +737,15 @@
   .rb-upload-result .rb-resume-import-actions { grid-template-columns: 1fr; }
   .rb-upload-result > .rb-resume-import-button { width: 100%; }
 }
+
+/* Upload field states: missing (required), conflicting, and low-confidence are visibly distinct. */
+.rb-upload-badge { justify-self: start; padding: 3px 8px; border: 1px solid currentColor; font-size: 10px; font-weight: 800; letter-spacing: .1em; }
+.rb-upload-badge-missing { color: #9b1c1c; background: #fdecec; }
+.rb-upload-badge-conflicting { color: #8a4b00; background: #fff1dc; }
+.rb-upload-badge-low { color: #1f4f7a; background: #e8f1fa; }
+.rb-upload-issue-missing { border-left: 4px solid #b42318; }
+.rb-upload-issue-conflicting { border-left: 4px solid #d98200; border-style: dashed solid dashed solid; }
+.rb-wiz-page:has(.rb-upload-result) .rb-upload-issue-missing { border-left-color: #b42318; }
+.rb-wiz-page:has(.rb-upload-result) .rb-upload-issue-conflicting { border-left-color: #d98200; }
+.rb-upload-conflicts { display: grid; gap: 10px; }
+.rb-upload-low-confidence { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding-block: 6px; }

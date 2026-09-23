@@ -2,13 +2,20 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { trackResumePurchase } from "../funnel-analytics";
+import { intakeReturnUrl } from "../return-urls";
 
 type Stage = "checking" | "waiting" | "ready" | "error";
+
+/** Shown when payment confirmation fails; it must return to the same draft. */
+export function PaymentErrorReturnLink({ resumeId }: { resumeId: string }) {
+  return <a className="rb-text-link" href={intakeReturnUrl(resumeId)}>Return to your intake</a>;
+}
 
 export function PaymentStatus() {
   const [stage, setStage] = useState<Stage>("checking");
   const [message, setMessage] = useState("Confirming your payment with the secure checkout provider…");
   const resumeId = useRef("");
+  const [returnId, setReturnId] = useState("");
   const attempts = useRef(0);
 
   const check = useCallback(async () => {
@@ -39,6 +46,7 @@ export function PaymentStatus() {
 
   useEffect(() => {
     resumeId.current = new URLSearchParams(window.location.search).get("resume_id") ?? "";
+    setReturnId(resumeId.current);
     if (!resumeId.current) {
       setStage("error");
       setMessage("This payment return is missing the resume reference.");
@@ -64,7 +72,7 @@ export function PaymentStatus() {
       <p role="status">{message}</p>
       <div className="rb-order-summary"><span>Resume Builder</span><strong>$9.99 paid once</strong><small>Resume + matching cover letter · PDF + DOCX · 3 shared corrections</small></div>
       {stage === "waiting" || stage === "error" ? <button className="rb-button rb-button-primary" type="button" onClick={() => { attempts.current = 0; void check(); }}>Check payment status <span>↻</span></button> : null}
-      {stage === "error" ? <a className="rb-text-link" href="/resume-builder/intake">Return to your intake</a> : null}
+      {stage === "error" ? <PaymentErrorReturnLink resumeId={returnId} /> : null}
       <small>Do not close this page while confirmation is in progress.</small>
     </div>
   );

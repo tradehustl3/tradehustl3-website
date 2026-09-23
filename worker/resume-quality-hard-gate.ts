@@ -2,6 +2,7 @@ import type { GeneratedResume, ResumeCertification, ResumeEducation } from "./re
 import {
   assessIntakeSubstance,
   canonicalSourceRecord,
+  isResumeIdentityTerm,
   scoreResume,
   validateResumeAgainstSource,
 } from "./resume-quality";
@@ -188,6 +189,7 @@ export function hardenResumeStructure(
   intake: unknown,
   title: string,
 ): GeneratedResume {
+  const source = canonicalSourceRecord(intake, title);
   const expectedCredentials = expectedCredentialNames(intake, title);
   const certifications = dedupeCertifications(generated.certifications
     .filter((item) => isCredentialEntity(item.name)));
@@ -210,7 +212,9 @@ export function hardenResumeStructure(
   });
 
   const summary = semanticDedupe(splitSummarySentences(generated.summary), 0.86).join(" ");
-  const skills = dedupeSkillTerms(generated.skills).slice(0, 24);
+  const skills = dedupeSkillTerms(generated.skills)
+    .filter((skill) => !isResumeIdentityTerm(skill, source))
+    .slice(0, 24);
   const additionalInformation = semanticDedupe(
     generated.additionalInformation.map(clean).filter((item) => item && !isCredentialEntity(item)),
     0.88,
@@ -263,7 +267,7 @@ export function hardenResumeCriticalFacts(
     basics: {
       ...hardened.basics,
       fullName: source.contact.fullName || hardened.basics.fullName,
-      targetTitle: hardened.basics.targetTitle || source.targetTitle,
+      targetTitle: source.targetTitle || hardened.basics.targetTitle,
       email: source.contact.email || undefined,
       phone: source.contact.phone || undefined,
       location: source.contact.location || undefined,

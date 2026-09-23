@@ -31,8 +31,12 @@ import {
   type WizardData,
 } from "./wizard-data";
 import {
+  LEGAL_CONSENT_ERROR,
   RESUME_UPLOAD_MAX_BYTES,
   extractResumeText,
+  uploadContinueErrors,
+  uploadStepErrors,
+  uploadTextOutcome,
   mergeResumePrefill,
   recoverImportedResume,
   sourceFirstResumePrefill,
@@ -40,6 +44,9 @@ import {
   uploadedResumeIssues,
   type UploadedResumeIssue,
 } from "./resume-upload";
+
+import { createDraftSaver, UPLOAD_SAVE_DEBOUNCE_MS } from "./draft-save";
+import { fieldStates, recordUserCorrections, uploadValues } from "./upload-field-state";
 
 type User = { email: string; fullName: string | null };
 type ResumeStatus = {
@@ -62,7 +69,7 @@ function classSet(...parts: Array<string | false | undefined>): string {
 
 export function ResumeWizard() {
   const [user, setUser] = useState<User | null>(null);
-  const [resumeId, setResumeId] = useState("");
+  const [, setResumeId] = useState("");
   const [paid, setPaid] = useState(false);
   const [data, setData] = useState<WizardData>(emptyWizardData);
   const [step, setStep] = useState(0);
@@ -77,10 +84,21 @@ export function ResumeWizard() {
   const [importConsent, setImportConsent] = useState(false);
   const [editingImportedDetails, setEditingImportedDetails] = useState(false);
 
+  const saveSequence = useRef(0);
   const headingRef = useRef<HTMLHeadingElement | null>(null);
-  const saveInFlight = useRef(false);
-  const pendingSave = useRef(false);
-  const lastSaved = useRef("");
+  const [draftSaver] = useState(() => createDraftSaver(async (serialized, id) => {
+    const response = await fetch(id ? `/api/resume-builder/resumes/${encodeURIComponent(id)}` : "/api/resume-builder/resumes", {
+      method: id ? "PUT" : "POST", credentials: "same-origin",
+      headers: { "Content-Type": "application/json" }, body: serialized,
+    });
+    const result = await response.json() as { resumeId?: string; message?: string };
+    if (!response.ok || !result.resumeId) throw new Error(result.message || "We could not save your progress.");
+    setResumeId(result.resumeId);
+    const url = new URL(window.location.href);
+    url.searchParams.set("resume_id", result.resumeId);
+    window.history.replaceState(null, "", url.toString());
+    return result.resumeId;
+  }));
   const dataRef = useRef(data);
   useEffect(() => {
     dataRef.current = data;
@@ -147,7 +165,7 @@ export function ResumeWizard() {
             ? `We pulled your resume. ${issueCount} item${issueCount === 1 ? "" : "s"} need your confirmation before you continue.`
             : "We pulled the information from your resume. Nothing needs to be re-entered.");
         }
-        lastSaved.current = JSON.stringify(buildBody(nextData, account.user.email));
+        draftSaver.hydrate(existingId, existingId ? JSON.stringify(buildBody(nextData, account.user.email)) : "");
       } catch (loadError) {
         if (active) setError(loadError instanceof Error ? loadError.message : "We could not load your workspace.");
       } finally {
@@ -157,71 +175,58 @@ export function ResumeWizard() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [draftSaver]);
 
   const update = useCallback((patch: Partial<WizardData> | ((prev: WizardData) => WizardData)) => {
-    setData((prev) => (typeof patch === "function" ? patch(prev) : { ...prev, ...patch }));
+    setData((prev) => {
+      const next = recordUserCorrections(prev, typeof patch === "function" ? patch(prev) : { ...prev, ...patch });
+      dataRef.current = next;
+      return next;
+    });
   }, []);
 
-  // ---- autosave (debounced, single-flight) --------------------------------
-  const saveRef = useRef<(next: WizardData) => Promise<string | null>>(async () => null);
-  useEffect(() => {
-    saveRef.current = async (nextData: WizardData): Promise<string | null> => {
-      if (!user || !isTradeTrack(nextData.trade)) return null;
-      const body = buildBody(nextData, user.email);
-      const serialized = JSON.stringify(body);
-      if (serialized === lastSaved.current) return resumeId || null;
-      if (saveInFlight.current) {
-        pendingSave.current = true;
-        return resumeId || null;
-      }
-      saveInFlight.current = true;
-      setSaveState("saving");
-      try {
-        const endpoint = resumeId
-          ? `/api/resume-builder/resumes/${encodeURIComponent(resumeId)}`
-          : "/api/resume-builder/resumes";
-        const response = await fetch(endpoint, {
-          method: resumeId ? "PUT" : "POST",
-          credentials: "same-origin",
-          headers: { "Content-Type": "application/json" },
-          body: serialized,
-        });
-        const result = (await response.json()) as { resumeId?: string; message?: string };
-        if (!response.ok) throw new Error(result.message || "We could not save your progress.");
-        const savedId = result.resumeId || resumeId;
-        if (savedId && savedId !== resumeId) {
-          setResumeId(savedId);
-          const url = new URL(window.location.href);
-          url.searchParams.set("resume_id", savedId);
-          window.history.replaceState(null, "", url.toString());
-        }
-        lastSaved.current = serialized;
-        setSaveState("saved");
-        return savedId || null;
-      } catch (saveError) {
-        setSaveState("error");
-        setError(saveError instanceof Error ? saveError.message : "We could not save your progress.");
-        return null;
-      } finally {
-        saveInFlight.current = false;
-        if (pendingSave.current) {
-          pendingSave.current = false;
-          void saveRef.current(dataRef.current);
-        }
-      }
-    };
-  });
+  // One serialized writer owns the draft ID; callers await their own snapshot.
+  const persist = useCallback(async (next: WizardData): Promise<string | null> => {
+    if (!user) return null;
+    if (!isTradeTrack(next.trade) && next.sourceProvenance !== "upload") return null;
+    const sequence = ++saveSequence.current;
+    setSaveState("saving");
+    try {
+      const id = await draftSaver.save(JSON.stringify(buildBody(next, user.email)));
+      if (sequence === saveSequence.current) { setSaveState("saved"); setError(""); }
+      return id;
+    } catch (saveError) {
+      if (sequence === saveSequence.current) setSaveState("error");
+      setError(saveError instanceof Error ? saveError.message : "We could not save your progress.");
+      return null;
+    }
+  }, [draftSaver, user]);
 
-  const persist = useCallback((next: WizardData) => saveRef.current(next), []);
+  async function persistLatest(lastStep: number): Promise<string | null> {
+    let snapshot: WizardData;
+    let id: string | null;
+    do {
+      snapshot = dataRef.current;
+      id = await persist({ ...snapshot, lastStep });
+      if (!id) return null;
+    } while (snapshot !== dataRef.current);
+    return id;
+  }
 
   useEffect(() => {
-    if (initializing || !user) return;
-    if (importState === "reading" || importState === "analyzing" || importState === "done"
-      || importState === "building" || importState === "build-error") return;
-    const timer = setTimeout(() => void saveRef.current({ ...dataRef.current, lastStep: step }), 1500);
+    if (initializing || !user || importState === "reading" || importState === "analyzing" || importState === "building") return;
+    // Imported edits save after a short pause (not per keystroke); Continue and
+    // navigation still flush and await the latest snapshot via persistLatest.
+    const timer = setTimeout(() => void persist({ ...dataRef.current, lastStep: step }), data.sourceProvenance === "upload" ? UPLOAD_SAVE_DEBOUNCE_MS : 1500);
     return () => clearTimeout(timer);
-  }, [data, step, importState, initializing, user]);
+  }, [data, step, importState, initializing, user, persist]);
+
+  useEffect(() => {
+    if (saveState !== "saving" && saveState !== "error") return;
+    const warnUnsaved = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ""; };
+    window.addEventListener("beforeunload", warnUnsaved);
+    return () => window.removeEventListener("beforeunload", warnUnsaved);
+  }, [saveState]);
 
   // ---- step navigation ----------------------------------------------------
   useEffect(() => {
@@ -241,7 +246,7 @@ export function ResumeWizard() {
       setAttemptedNext(true);
       return;
     }
-    await persist({ ...data, lastStep: Math.min(step + 1, LAST_STEP) });
+    if (!await persistLatest(Math.min(step + 1, LAST_STEP))) return;
     resetStepUi();
     setStep((value) => Math.min(value + 1, LAST_STEP));
   }
@@ -263,8 +268,7 @@ export function ResumeWizard() {
     }
     setSubmitting(true);
     setError("");
-    const savedId = await persist({ ...data, lastStep: LAST_STEP });
-    const id = savedId || resumeId;
+    const id = await persistLatest(LAST_STEP);
     if (!id) {
       setSubmitting(false);
       setError("We could not save your intake. Check your connection and try again.");
@@ -275,6 +279,7 @@ export function ResumeWizard() {
 
   async function importResume(file: File | null) {
     if (!file || importState === "reading" || importState === "analyzing" || importState === "building") return;
+    if (dataRef.current.sourceProvenance === "upload" && !window.confirm("Replace the uploaded resume with this file? Your explicitly corrected or confirmed values will be kept.")) return;
     setImportMessage("");
     const kind = resumeUploadKind(file);
     if (!kind) {
@@ -284,20 +289,28 @@ export function ResumeWizard() {
     }
     if (file.size > RESUME_UPLOAD_MAX_BYTES) {
       setImportState("error");
-      setImportMessage("That file is larger than 4 MB. Choose a smaller resume file.");
+      setImportMessage("That file is larger than 5 MB. Choose a smaller resume file.");
       return;
     }
     try {
       setImportState("reading");
       const text = await extractResumeText(file, kind);
-      if (text.length < 80) {
-        throw new Error("We could not read enough text from that resume. Try a text-based PDF or DOCX file.");
+      const outcome = uploadTextOutcome(text);
+      if (outcome.route === "manual") {
+        // Scanned/image-only file: no OCR. Keep the customer in the guided wizard.
+        setImportState("error");
+        setImportMessage(outcome.message);
+        setEditingImportedDetails(true);
+        setStep(0);
+        return;
       }
       const sourcePrefill = sourceFirstResumePrefill(text);
       if (sourcePrefill) {
         const nextData = mergeResumePrefill(dataRef.current, sourcePrefill, text);
         const issueCount = uploadedResumeIssues(nextData).length;
+        dataRef.current = nextData;
         setData(nextData);
+        if (!await persist(nextData)) { setImportState("build-error"); setImportMessage("Your import is available below, but could not be saved. Retry saving before leaving this page."); return; }
         setEditingImportedDetails(false);
         setStep(0);
         setImportState("done");
@@ -319,7 +332,9 @@ export function ResumeWizard() {
       }
       const nextData = mergeResumePrefill(dataRef.current, result.prefill, text);
       const issueCount = uploadedResumeIssues(nextData).length;
+      dataRef.current = nextData;
       setData(nextData);
+      if (!await persist(nextData)) { setImportState("build-error"); setImportMessage("Your import is available below, but could not be saved. Retry saving before leaving this page."); return; }
       setEditingImportedDetails(false);
       setStep(0);
       setImportState("done");
@@ -334,21 +349,20 @@ export function ResumeWizard() {
 
   async function continueImportedResume() {
     if (importState !== "done" && importState !== "build-error") return;
-    const issues = uploadedResumeIssues(data);
-    if (issues.length) {
+    const blockers = uploadContinueErrors(data, importConsent);
+    if (blockers.issues.length) {
       setImportState("build-error");
-      setImportMessage(`Fix the ${issues.length} highlighted item${issues.length === 1 ? "" : "s"} below. Everything else stays exactly as HUSTL3 BOT pulled it from your resume.`);
+      setImportMessage(`Fix the ${blockers.issues.length} highlighted item${blockers.issues.length === 1 ? "" : "s"} below. Everything else stays exactly as HUSTL3 BOT pulled it from your resume.`);
       return;
     }
-    if (!importConsent) {
+    if (blockers.consent) {
       setImportState("build-error");
       setImportMessage("Check the agreement box before continuing to your resume-system choices.");
       return;
     }
     setImportState("building");
     setImportMessage("Resume facts verified. Opening your resume-system choices…");
-    const savedId = await persist({ ...data, lastStep: LAST_STEP });
-    const id = savedId || resumeId;
+    const id = await persistLatest(LAST_STEP);
     if (!id) {
       setImportState("build-error");
       setImportMessage("We could not save the imported resume. Check your connection and try again.");
@@ -479,6 +493,18 @@ export function ResumeWizard() {
       const contactIssues = issues.filter((issue) => issue.kind === "contact");
       const needsTrade = issues.some((issue) => issue.kind === "trade");
       const needsHistory = issues.some((issue) => issue.kind === "history");
+      const states = fieldStates(data);
+      const values = uploadValues(data);
+      // Low confidence: Confirm/Edit, never blocking. Conflicting optional values
+      // (e.g. an unreadable end date) are flagged but do not block either; required
+      // missing/conflicting values appear as the blocking issues above.
+      const uncertain = Object.entries(states).filter(([, state]) => state.status === "low_confidence");
+      const optionalConflicts = Object.entries(states).filter(([path, state]) => state.status === "conflicting" && !state.required
+        && !issues.some((issue) => issue.roleIndex !== undefined && path === `roles.${issue.roleIndex}.${issue.field}`));
+      const editStepFor = (path: string) => path.startsWith("roles.") || path.startsWith("contact.") || path === "summaryNotes" ? 2 : path === "trade" ? 0 : path === "experienceLevel" ? 1 : path.startsWith("targetJob.") ? 4 : 3;
+      const issueBadge = (status: UploadedResumeIssue["status"]) => (
+        <span className={`rb-upload-badge rb-upload-badge-${status}`}>{status === "conflicting" ? "CONFLICT · CHECK THIS VALUE" : "MISSING · REQUIRED"}</span>
+      );
       const roleCount = data.roles.filter(roleHasContent).length;
       const skillCount = new Set([
         ...data.fieldValue.tools,
@@ -500,7 +526,8 @@ export function ResumeWizard() {
         };
         const field = issue.field as "employer" | "jobTitle" | "startDate" | "endDate";
         return (
-          <div className="rb-upload-issue" key={issue.id}>
+          <div className={`rb-upload-issue rb-upload-issue-${issue.status}`} data-status={issue.status} key={issue.id}>
+            {issueBadge(issue.status)}
             <p>{field === "endDate" && issue.id.endsWith("date-order") ? "This job shows an end date earlier than the start date. Review the dates below and correct them." : issue.message}</p>
             {issue.id.endsWith("date-order") ? <Text label={`Start date · Job ${roleIndex + 1}`} value={role.startDate} onChange={(value) => patchRole(roleIndex, { startDate: value })} placeholder="Example: Jan 2022" invalid /> : null}
             <Text
@@ -559,8 +586,10 @@ export function ResumeWizard() {
                 </div>
 
                 {needsTrade ? (
-                  <div className="rb-upload-issue">
-                    <h3>CHOOSE YOUR TARGET TRADE</h3>
+                  <div className="rb-upload-issue rb-upload-issue-missing" data-status="missing">
+                    {issueBadge("missing")}
+                    <h3>CHOOSE YOUR TARGET TRADE OR JOB TITLE</h3>
+                    <Text label="Target job title" value={data.targetJob.title} onChange={(title) => update((prev) => ({ ...prev, targetJob: { ...prev.targetJob, title } }))} />
                     <p>Your resume shows experience across more than one area. Choose the trade direction you want this resume to target.</p>
                     <p>This helps HUSTL3 BOT build the strongest version of your resume.</p>
                     <div className="rb-trade-grid" role="radiogroup" aria-label="Trade track">
@@ -585,13 +614,17 @@ export function ResumeWizard() {
                 ) : null}
 
                 {contactIssues.map((issue) => (
-                  <div className="rb-upload-issue" key={issue.id}>
+                  <div className={`rb-upload-issue rb-upload-issue-${issue.status}`} data-status={issue.status} key={issue.id}>
+                    {issueBadge(issue.status)}
                     <p>{issue.message}</p>
                     {issue.field === "fullName" ? (
                       <Text label="Full name" value={data.contact.fullName} onChange={(value) => update((prev) => ({ ...prev, contact: { ...prev.contact, fullName: value } }))} invalid autoComplete="name" />
                     ) : null}
                     {issue.field === "phone" ? (
-                      <Text label="Phone number" value={data.contact.phone} onChange={(value) => update((prev) => ({ ...prev, contact: { ...prev.contact, phone: value } }))} invalid autoComplete="tel" />
+                      <>
+                        <Text label="Phone number (or email below)" value={data.contact.phone} onChange={(value) => update((prev) => ({ ...prev, contact: { ...prev.contact, phone: value } }))} autoComplete="tel" />
+                        <Text label="Email (or phone above)" value={data.contact.email ?? ""} onChange={(value) => update((prev) => ({ ...prev, contact: { ...prev.contact, email: value } }))} autoComplete="email" />
+                      </>
                     ) : null}
                     {issue.field === "cityState" ? (
                       <Text label="City + state" value={data.contact.cityState} onChange={(value) => update((prev) => ({ ...prev, contact: { ...prev.contact, cityState: value } }))} invalid autoComplete="address-level2" />
@@ -601,7 +634,8 @@ export function ResumeWizard() {
 
                 {roleIssues.map(renderRoleIssue)}
                 {needsHistory ? (
-                  <div className="rb-upload-issue">
+                  <div className="rb-upload-issue rb-upload-issue-missing" data-status="missing">
+                    {issueBadge("missing")}
                     <h3>ADD OR CONFIRM YOUR WORK HISTORY</h3>
                     <p>We were not able to pull enough work-history detail from your upload. Add or confirm your job information below so we can continue.</p>
                     <Text label="Employer" value={data.roles[0]?.employer ?? ""} onChange={(value) => patchRole(0, { employer: value })} />
@@ -620,6 +654,30 @@ export function ResumeWizard() {
               </div>
             )}
 
+            {optionalConflicts.length > 0 ? (
+              <div className="rb-upload-conflicts" role="note">
+                <strong>CHECK THESE VALUES (OPTIONAL)</strong>
+                {optionalConflicts.map(([path]) => (
+                  <div className="rb-upload-issue rb-upload-issue-conflicting" data-status="conflicting" key={path}>
+                    {issueBadge("conflicting")}
+                    <p>{uploadFieldLabel(path)}: “{String(values[path])}” could not be read as a date. It will not block your resume.</p>
+                    <button type="button" className="rb-text-link" onClick={() => { setEditingImportedDetails(true); setStep(editStepFor(path)); }}>Edit</button>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+            {uncertain.length > 0 ? <details className="rb-upload-confirmations">
+              <summary>Confirm {uncertain.length} extracted detail{uncertain.length === 1 ? "" : "s"} (optional)</summary>
+              {uncertain.map(([path]) => <div className="rb-upload-low-confidence" data-status="low_confidence" key={path}>
+                <span className="rb-upload-badge rb-upload-badge-low">PLEASE CONFIRM</span>
+                <span>{uploadFieldLabel(path)}: {Array.isArray(values[path]) ? (values[path] as string[]).join(", ") : String(values[path])}</span>{" "}
+                <button type="button" onClick={() => setData((prev) => {
+                  const next = recordUserCorrections(prev, prev, [path]); dataRef.current = next; return next;
+                })}>Confirm</button>{" "}
+                <button type="button" onClick={() => { setEditingImportedDetails(true); setStep(editStepFor(path)); }}>Edit</button>
+              </div>)}
+            </details> : null}
+            {saveState === "error" ? <button type="button" onClick={() => void persistLatest(step)}>Retry saving</button> : null}
             <label className="rb-legal-consent rb-resume-import-consent">
               <input
                 type="checkbox"
@@ -706,7 +764,7 @@ export function ResumeWizard() {
                   ? "UPLOAD A DIFFERENT RESUME"
                   : "UPLOAD EXISTING RESUME"}
           </label>
-          <small>PDF or DOCX · 4 MB maximum · original file is not stored</small>
+          <small>PDF or DOCX · 5 MB maximum · original file is not stored</small>
           {importMessage ? (
             <p className={importState === "done" ? "rb-resume-import-success" : "rb-resume-import-error"} role="status">
               {importMessage}
@@ -1102,6 +1160,7 @@ function finalSubstanceErrors(data: WizardData): string[] {
 
 function validateStep(step: number, data: WizardData, paid: boolean, legalConsent: boolean): string[] {
   const errors: string[] = [];
+  if (data.sourceProvenance === "upload") return uploadStepErrors(step, data, paid, legalConsent);
   if (step === 0 && !isTradeTrack(data.trade)) errors.push("Choose the trade you want the resume built for.");
   if (step === 1 && !data.experienceLevel) errors.push("Pick the field-experience range that matches your real history.");
   if (step === 2) {
@@ -1115,8 +1174,19 @@ function validateStep(step: number, data: WizardData, paid: boolean, legalConsen
   }
   if (step === 4 && !data.targetJob.title.trim()) errors.push("Add the job title you are targeting.");
   if (step === 6) errors.push(...finalSubstanceErrors(data));
-  if (step === 6 && !paid && !legalConsent) errors.push("Confirm you are 18+ and agree to the policies.");
+  if (step === 6 && !paid && !legalConsent) errors.push(LEGAL_CONSENT_ERROR);
   return errors;
+}
+
+function uploadFieldLabel(path: string): string {
+  const role = path.match(/^roles\.(\d+)\.(\w+)$/);
+  const names: Record<string, string> = {
+    employer: "employer", jobTitle: "job title", location: "location", startDate: "start date", endDate: "end date", current: "current role",
+    "contact.fullName": "Full name", "contact.email": "Email", "contact.phone": "Phone", "contact.cityState": "City + state",
+    trade: "Trade", "targetJob.title": "Target job title", "fieldValue.certifications": "Certifications",
+    "fieldValue.licenses": "Licenses", education: "Education",
+  };
+  return role ? `Job ${Number(role[1]) + 1} ${names[role[2]] ?? role[2]}` : names[path] ?? path;
 }
 
 function dedupe(values: string[]): string[] {

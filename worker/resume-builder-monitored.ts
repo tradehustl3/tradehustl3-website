@@ -45,7 +45,7 @@ export async function handleResumeBuilderRoute(
     }
     return response;
   } catch (error) {
-    const message = error instanceof Error ? error.message.slice(0, 240) : "Unhandled Resume Builder error";
+    const message = "Unhandled Resume Builder error";
     console.error(operationalEvent("document_storage", "resume_builder_unhandled_failure", "error", {
       path: pathname.slice(0, 180),
       message,

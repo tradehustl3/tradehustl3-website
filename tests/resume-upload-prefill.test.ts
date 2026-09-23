@@ -137,8 +137,12 @@ test("uploaded resume fast path only flags missing or obviously inconsistent fac
     roles: [{ ...clean.roles[0], startDate: "2025", endDate: "2023" }],
   };
   const issues = uploadedResumeIssues(broken);
-  assert.ok(issues.some((issue) => issue.id === "contact-phone"));
+  // Phase 2 rule: phone OR email is required, so the uploaded email satisfies it...
+  assert.equal(issues.some((issue) => issue.id === "contact-phone"), false);
   assert.ok(issues.some((issue) => issue.id === "role-0-date-order"));
+  // ...but with neither phone nor email, the contact question is still raised.
+  const noContact = { ...broken, contact: { ...broken.contact, email: "" } };
+  assert.ok(uploadedResumeIssues(noContact).some((issue) => issue.id === "contact-phone"));
 });
 
 test("persisted intake uses uploaded resume email before the account login email", () => {

@@ -124,8 +124,8 @@ export async function handleResumeAiBridge(request, env = process.env, dependenc
       status: response.status,
       headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
     });
-  } catch (error) {
-    console.error("Resume AI bridge request failed", error instanceof Error ? error.message : "Unknown error");
+  } catch {
+    console.error("Resume AI bridge request failed");
     return json({ ok: false, message: "Resume generation service unavailable." }, 502);
   }
 }

@@ -1,3 +1,5 @@
+import type { ConfirmedValue } from "../../../worker/resume-upload-requirements";
+import { isCurrentDate } from "../../../worker/resume-dates";
 /**
  * Wizard state <-> intake JSON mapping.
  *
@@ -28,6 +30,8 @@ export type RoleEntry = {
 };
 
 export type WizardData = {
+  confirmedFields?: Record<string, ConfirmedValue>;
+  roleOrigins?: Record<string, RoleEntry>;
   sourceProvenance: "guided_intake" | "upload";
   sourceResumeText: string;
   trade: TradeTrack | "";
@@ -155,6 +159,16 @@ export function toIntake(data: WizardData, accountEmail: string): Record<string,
   ]);
   const safetyTraining = chips(data.fieldValue.safety);
 
+  // Persisted job indexes follow `experience`, which omits empty wizard rows;
+  // correction paths are re-keyed so the server and a reload see the same job.
+  const persistedIndex = new Map<number, number>();
+  data.roles.forEach((role, index) => { if (roleHasContent(role)) persistedIndex.set(index, persistedIndex.size); });
+  const rekey = <T,>(entries: Record<string, T>) => Object.fromEntries(Object.entries(entries).flatMap(([path, value]) => {
+    const match = path.match(/^roles\.(\d+)(\..+)?$/);
+    if (!match) return [[path, value]];
+    const index = persistedIndex.get(Number(match[1]));
+    return index === undefined ? [] : [[`roles.${index}${match[2] ?? ""}`, value]];
+  }));
   const experience = data.roles.filter(roleHasContent).map((role) => ({
     employer: role.employer.trim(),
     jobTitle: role.jobTitle.trim(),
@@ -208,6 +222,10 @@ export function toIntake(data: WizardData, accountEmail: string): Record<string,
     },
     meta: {
       wizardVersion: 4,
+      // Explicit customer corrections. Field confidence states are computed by the
+      // server from the saved intake, never supplied by the browser.
+      confirmedFields: rekey(Object.fromEntries(Object.entries(data.confirmedFields ?? {}).map(([path, value]) => [path, typeof value === "string" ? value.trim() : Array.isArray(value) ? value.map((item) => item.trim()) : value]))),
+      roleOrigins: rekey(Object.fromEntries(Object.entries(data.roleOrigins ?? {}).map(([index, role]) => [`roles.${index}`, role]))),
       lastStep: data.lastStep,
       source: data.sourceProvenance,
       importedResume: data.sourceProvenance === "upload",
@@ -237,6 +255,11 @@ export function fromIntake(
   const targetJob = (root.targetJob ?? {}) as Record<string, unknown>;
   const meta = (root.meta ?? {}) as Record<string, unknown>;
 
+  data.confirmedFields = meta.confirmedFields && typeof meta.confirmedFields === "object" && !Array.isArray(meta.confirmedFields)
+    ? meta.confirmedFields as WizardData["confirmedFields"] : {};
+  const roleOrigins = meta.roleOrigins && typeof meta.roleOrigins === "object" && !Array.isArray(meta.roleOrigins)
+    ? meta.roleOrigins as Record<string, RoleEntry> : {};
+  data.roleOrigins = Object.fromEntries(Object.entries(roleOrigins).map(([key, role]) => [key.replace(/^roles\./, ""), role]));
   data.sourceProvenance = meta.importedResume === true || asString(meta.source) === "upload"
     ? "upload"
     : "guided_intake";
@@ -300,7 +323,7 @@ export function fromIntake(
           endDate = rest.join(" ").trim();
         }
         next.startDate = startDate;
-        next.current = /^(present|current|now)$/i.test(endDate.trim()) || role.current === true;
+        next.current = isCurrentDate(endDate) || role.current === true;
         next.endDate = next.current ? "" : endDate;
         next.responsibilities = asString(role.responsibilities) || asString(role.responsibilitiesAndWins);
         next.equipment = asString(role.equipment);

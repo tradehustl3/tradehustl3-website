@@ -1,3 +1,5 @@
+import { DATE_RANGE_SOURCE, normalizeDateSeparators } from "./resume-dates";
+import { STATE_CODES } from "./resume-location";
 export type ResumeSourceSection =
   | "header"
   | "summary"
@@ -24,9 +26,7 @@ export type ResumeSectionClassification = {
   skillEntities: string[];
 };
 
-const MONTH = "(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)";
-const DATE = `(?:${MONTH}\\s+)?(?:19|20)\\d{2}`;
-const DATE_RANGE_RE = new RegExp(`\\b${DATE}\\s*(?:-|to|through|thru)\\s*(?:${DATE}|present|current|now)\\b`, "i");
+const DATE_RANGE_RE = new RegExp(DATE_RANGE_SOURCE, "i");
 
 const HEADING_RULES: Array<[RegExp, ResumeSourceSection]> = [
   [/^(?:professional\s+summary|summary|profile|professional\s+profile|career\s+summary|objective)$/i, "summary"],
@@ -53,7 +53,7 @@ function cleanLine(value: string): string {
 export function normalizeResumeValue(value: string): string {
   return value
     .toLowerCase()
-    .replace(/[\u2012-\u2015]/g, "-")
+    .replace(/[\u2010-\u2015\u2212]/g, "-")
     .replace(/&/g, " and ")
     .replace(/\bpreventative\b/g, "preventive")
     .replace(/\ba\s*\/\s*c\b/g, "air conditioning")
@@ -96,7 +96,10 @@ function credentialEntitiesInLine(value: string): string[] {
   return splitCredentialLine(value).filter((part) => isCredentialEntity(part));
 }
 
-function credentialCanonicalName(value: string): string {
+// Industry credentials that stay credentials even when listed under Education.
+const INDUSTRY_CREDENTIAL_RE = /\b(?:epa\s*(?:section\s*)?608|osha\s*(?:10|30)|nccer|journeyman|master\s+(?:electrician|plumber)|licen[cs]e[ds]?)\b/i;
+
+export function credentialCanonicalName(value: string): string {
   const cleaned = cleanLine(value);
   if (/\bepa\s*(?:section\s*)?608\b/i.test(cleaned)) {
     return /\buniversal\b/i.test(cleaned) ? "EPA 608 Universal Certification" : "EPA 608 Certification";
@@ -107,9 +110,26 @@ function credentialCanonicalName(value: string): string {
   return cleaned.replace(/[.;:,]+$/, "").trim();
 }
 
+/** One identity per credential: "EPA 608 Universal" and "EPA 608 Universal Certification" share a key. */
+export function credentialKey(value: string): string {
+  return normalizeResumeValue(credentialCanonicalName(value))
+    .replace(/\b(?:certification|certificate|certified|card)\b/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+export function dedupeCredentials(values: string[]): string[] {
+  const seen = new Map<string, string>();
+  for (const value of values.map((item) => credentialCanonicalName(item)).filter(Boolean)) {
+    const key = credentialKey(value);
+    if (key && !seen.has(key)) seen.set(key, value);
+  }
+  return Array.from(seen.values());
+}
+
 function isEducationLine(value: string, activeSection: ResumeSourceSection): boolean {
   const cleaned = cleanLine(value);
-  if (!cleaned || DATE_RANGE_RE.test(cleaned)) return false;
+  if (!cleaned || DATE_RANGE_RE.test(normalizeDateSeparators(cleaned))) return false;
   if (activeSection === "education") return INSTITUTION_RE.test(cleaned) || EDUCATION_CREDENTIAL_RE.test(cleaned) || /^[A-Za-z .'-]+,\s*[A-Z]{2}$/.test(cleaned);
   return INSTITUTION_RE.test(cleaned) && EDUCATION_CREDENTIAL_RE.test(cleaned);
 }
@@ -122,9 +142,20 @@ function splitSkillLine(value: string): string[] {
     .filter((item) => item.length >= 2 && item.length <= 80);
 }
 
+const CONTACT_FRAGMENT_RE = new RegExp(
+  `[^\\s@]+@[^\\s@]+\\.[^\\s@]+|(?:\\+?1[\\s.-]?)?\\(?\\d{3}\\)?[\\s.-]?\\d{3}[\\s.-]?\\d{4}\\b|\\b[A-Z][A-Za-z.'-]*(?: [A-Z][A-Za-z.'-]*)*,\\s*(?:${STATE_CODES})\\b(?!\\s*[A-Za-z])|https?:\\/\\/|www\\.`,
+);
+
+// A header/contact row such as "Title | Trade | City, ST | phone | email" is
+// pipe-separated like a skill row but carries identity, not skills.
+function hasContactFragment(value: string): boolean {
+  return CONTACT_FRAGMENT_RE.test(value);
+}
+
 function looksLikeSkillLine(value: string, activeSection: ResumeSourceSection): boolean {
   const cleaned = cleanLine(value);
-  if (!cleaned || credentialEntitiesInLine(cleaned).length > 0 || DATE_RANGE_RE.test(cleaned)) return false;
+  if (!cleaned || credentialEntitiesInLine(cleaned).length > 0 || DATE_RANGE_RE.test(normalizeDateSeparators(cleaned))) return false;
+  if (hasContactFragment(cleaned)) return false;
   const parts = splitSkillLine(cleaned);
   if (activeSection === "skills") return parts.length >= 1 && !/[.!?]$/.test(cleaned);
   return parts.length >= 3 && !/[.!?]$/.test(cleaned) && wordCount(cleaned) <= 24;
@@ -146,6 +177,7 @@ export function dedupeSkillTerms(values: string[]): string[] {
   const byKey = new Map<string, string>();
   for (const raw of values) {
     for (const part of splitSkillLine(raw)) {
+      if (hasContactFragment(part) || /^[+()\d\s.-]{7,}$/.test(part)) continue;
       const key = skillKey(part);
       if (!key || key.length < 2) continue;
       if (!byKey.has(key)) byKey.set(key, cleanLine(part));
@@ -157,13 +189,13 @@ export function dedupeSkillTerms(values: string[]): string[] {
 function roleHeaderIndexes(lines: string[]): Set<number> {
   const indexes = new Set<number>();
   for (let index = 0; index < lines.length; index += 1) {
-    if (!DATE_RANGE_RE.test(cleanLine(lines[index]))) continue;
+    if (!DATE_RANGE_RE.test(normalizeDateSeparators(cleanLine(lines[index])))) continue;
     indexes.add(index);
     let captured = 0;
     for (let cursor = index - 1; cursor >= 0 && captured < 3; cursor -= 1) {
       const previous = cleanLine(lines[cursor]);
       if (!previous) continue;
-      if (headingSection(previous) || DATE_RANGE_RE.test(previous) || /[.!?]$/.test(previous)) break;
+      if (headingSection(previous) || DATE_RANGE_RE.test(normalizeDateSeparators(previous)) || /[.!?]$/.test(previous)) break;
       indexes.add(cursor);
       captured += 1;
       if (TITLE_SIGNAL_RE.test(previous)) continue;
@@ -253,14 +285,19 @@ export function classifyResumeSections(source: string): ResumeSectionClassificat
     // Split combined credential rows before canonicalization. This prevents a
     // row such as "EPA 608 | OSHA 10 | HVAC Technical Certificate" from being
     // collapsed into the first credential only.
-    for (const credential of credentialParts) credentials.push(credentialCanonicalName(credential));
+    // An education line (degree, diploma, school certificate program) is education,
+    // not a certification, unless it names a recognized industry credential.
+    for (const credential of credentialParts) {
+      if (kind === "education" && !INDUSTRY_CREDENTIAL_RE.test(credential)) continue;
+      credentials.push(credentialCanonicalName(credential));
+    }
     if (kind === "skill") skillValues.push(...splitSkillLine(value));
   }
 
   return {
     lines: classified,
     sections,
-    credentialEntities: Array.from(new Map(credentials.map((value) => [normalizeResumeValue(value), value])).values()),
+    credentialEntities: dedupeCredentials(credentials),
     skillEntities: dedupeSkillTerms(skillValues),
   };
 }

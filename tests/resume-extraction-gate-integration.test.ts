@@ -158,11 +158,13 @@ test("source-first import restores complete structure before accepting AI enrich
   assert.equal(payload.prefill?.roles?.[1]?.employer, "Cooler Heating & Air");
   assert.equal(payload.prefill?.roles?.[2]?.employer, "Metro Facilities");
   assert.match(payload.prefill?.education ?? "", /Atlanta Technical College/);
+  // "HVAC Technical Certificate" appears only as the Atlanta Technical College
+  // education entry; Phase 2 keeps education out of certifications.
   assert.deepEqual(payload.prefill?.fieldValue?.certifications, [
-    "HVAC Technical Certificate",
     "EPA 608 Universal Certification",
     "OSHA 10",
   ]);
+  assert.match(payload.prefill?.education ?? "", /HVAC Technical Certificate/);
   assert.equal(calls, 1);
 });
 
