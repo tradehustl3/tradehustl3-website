@@ -22,6 +22,7 @@ jobs:
     timeout-minutes: 5
     env:
       WORKER_ORIGIN: https://tradehustl3-website.tradehustl3.workers.dev
+      CUSTOM_ORIGIN: https://tradehustl3.com
     steps:
       - name: Verify production health
         shell: bash
@@ -65,3 +66,27 @@ jobs:
             --retry 5 --retry-delay 3 --retry-all-errors \
             "$WORKER_ORIGIN/resume-builder" \
             --output /dev/null
+
+      - name: Verify custom-domain Resume Builder is current
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --location \
+            --header 'Accept: text/html,application/xhtml+xml' \
+            --header 'Cache-Control: no-cache' \
+            --retry 8 --retry-delay 5 --retry-all-errors \
+            "$CUSTOM_ORIGIN/" \
+            --output /tmp/custom-home.html
+          grep -Fq 'Continue with email' /tmp/custom-home.html
+          if grep -Fq 'Create account &amp; continue' /tmp/custom-home.html; then
+            echo 'Custom domain is serving the old Resume Builder account screen.'
+            exit 1
+          fi
+
+          curl --fail --silent --show-error --location \
+            --header 'Accept: text/html,application/xhtml+xml' \
+            --header 'Cache-Control: no-cache' \
+            --retry 8 --retry-delay 5 --retry-all-errors \
+            "$CUSTOM_ORIGIN/resume-builder/intake" \
+            --output /tmp/custom-intake.html
+          grep -Fq 'UPLOAD IT OR START FRESH' /tmp/custom-intake.html
