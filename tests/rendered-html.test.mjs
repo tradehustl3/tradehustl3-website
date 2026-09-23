@@ -997,7 +997,7 @@ test("redirects the redundant Resume Builder landing route into the homepage sta
 test("server-renders scanner-safe confirmation, intake, payment return, and review routes", async () => {
   const routes = [
     ["/resume-builder/confirm?token=test", /CONFIRM THIS[\s\S]*SIGN-IN/i],
-    ["/resume-builder/intake", /SEVEN QUICK STEPS[\s\S]*ONE TRADE-READY RESUME/i],
+    ["/resume-builder/intake", /UPLOAD IT OR START FRESH[\s\S]*WE HANDLE THE REST/i],
     ["/resume-builder/payment-confirmed?resume_id=test", /LOCKING IN YOUR[\s\S]*BUILD/i],
     ["/resume-builder/review?resume_id=test", /Loading your secure workspace/i],
   ];
@@ -1018,8 +1018,8 @@ test("server-renders scanner-safe confirmation, intake, payment return, and revi
 
   const intake = await (await renderPath("/resume-builder/intake")).text();
   assert.match(intake, /Loading your secure workspace/i);
-  assert.match(intake, /HUSTL3 BOT guides each step/i);
-  assert.match(intake, /autosave to your verified account/i);
+  assert.match(intake, /flags only what needs your[\s\S]*attention/i);
+  assert.match(intake, /autosaves to your verified account/i);
   assert.match(intake, /name="robots" content="noindex, nofollow"/i);
 
   const payment = await (await renderPath("/resume-builder/payment-confirmed?resume_id=test")).text();
