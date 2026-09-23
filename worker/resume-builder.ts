@@ -686,19 +686,29 @@ async function enforceUploadExtractionCoverageBeforeGeneration(
     const intake = JSON.parse(record.intake_json) as unknown;
     const coverage = assessSavedIntakeExtractionCoverage(intake);
     if (coverage.ready) return null;
+
+    // Raw uploaded text remains authoritative evidence during generation. Do not
+    // block a customer because a secondary extraction missed education,
+    // credentials, skills, software, training, or narrative detail that is still
+    // present in sourceResumeText. Only role identity/date gaps require the
+    // customer to fix the structured record before generation.
+    const blockingCodes = new Set(["jobs", "employers", "job_titles", "dates"]);
+    const blockingIssues = coverage.issues.filter((issue) => blockingCodes.has(issue.code));
+    if (blockingIssues.length === 0) return null;
+
     return rewrittenJson(probe, {
       ok: false,
-      code: "EXTRACTION_COVERAGE_FAILED",
-      retryable: true,
-      action: "retry_import",
+      code: "EXTRACTION_REVIEW_REQUIRED",
+      retryable: false,
+      action: "review_exceptions",
       paymentSafe: true,
       runConsumed: false,
-      issues: coverage.issues,
-      missing: coverage.issues.map((issue) => issue.message),
+      issues: blockingIssues,
+      missing: blockingIssues.map((issue) => issue.message),
       sourceRoleSignals: coverage.sourceRoleSignals,
       extractedRoles: coverage.extractedRoles,
       intakeUrl: `/resume-builder/intake?resume_id=${encodeURIComponent(resumeId)}`,
-      message: "HUSTL3 BOT stopped generation because the uploaded resume was not fully captured in the saved intake. No AI generation run was used and no weak preview was produced.",
+      message: "A work-history identity or date still needs confirmation before HUSTL3 BOT builds the preview. Everything else remains backed by your uploaded resume.",
     }, 422);
   } catch (error) {
     console.error("Resume extraction coverage preflight failed", error);
