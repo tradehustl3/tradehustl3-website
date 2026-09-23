@@ -1671,7 +1671,7 @@ async function callResumeImportModel(
           thinkingConfig: { thinkingLevel: "LOW", includeThoughts: false },
         },
       }),
-      signal: AbortSignal.timeout(90_000),
+      signal: AbortSignal.timeout(45_000),
     });
     const payload = await response.json() as {
       candidates?: Array<{ content?: { parts?: Array<{ text?: unknown; thought?: unknown }> } }>;
@@ -1696,7 +1696,7 @@ async function callResumeImportModel(
         system: resumeImportSystemPrompt(),
         messages: [{ role: "user", content: userPrompt }],
       }),
-      signal: AbortSignal.timeout(90_000),
+      signal: AbortSignal.timeout(45_000),
     });
     const payload = await response.json() as {
       content?: Array<{ type?: unknown; text?: unknown }>;
