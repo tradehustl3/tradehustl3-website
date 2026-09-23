@@ -9,7 +9,7 @@ export type ResumeUploadKind = "pdf" | "docx";
 
 export type UploadedResumeIssue = {
   id: string;
-  kind: "trade" | "contact" | "role";
+  kind: "trade" | "contact" | "role" | "history";
   message: string;
   field?: "fullName" | "phone" | "cityState" | "employer" | "jobTitle" | "startDate" | "endDate";
   roleIndex?: number;
@@ -77,6 +77,12 @@ export function uploadedResumeIssues(data: WizardData): UploadedResumeIssue[] {
   }
   if (!data.contact.phone.trim()) {
     issues.push({ id: "contact-phone", kind: "contact", field: "phone", message: "We could not find a phone number employers can use." });
+  }
+  if (!data.contact.cityState.trim()) {
+    issues.push({ id: "contact-cityState", kind: "contact", field: "cityState", message: "We could not clearly identify your city and state. Add it below so employers know your location." });
+  }
+  if (!data.roles.some((role) => role.employer.trim() || role.jobTitle.trim() || role.responsibilities.trim())) {
+    issues.push({ id: "work-history", kind: "history", message: "We were not able to pull enough work-history detail from your upload." });
   }
 
   data.roles.forEach((role, roleIndex) => {
