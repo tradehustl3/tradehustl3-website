@@ -234,6 +234,18 @@ function bookSampleTokenSecret(env: Env): string {
   return env.BOOK_SAMPLE_TOKEN_SECRET?.trim() || "";
 }
 
+// Promise.any settles on the first *fulfilled* check, including a `false` from
+// the wrong secret, so a valid token could be rejected depending on timing.
+async function verifiedByAnySecret(
+  token: string,
+  secrets: string[],
+  verify: (token: string, secret: string) => Promise<boolean>,
+): Promise<boolean> {
+  if (!token) return false;
+  const results = await Promise.all(secrets.map((secret) => verify(token, secret).catch(() => false)));
+  return results.some(Boolean);
+}
+
 function sampleTokenSecrets(env: Env): string[] {
   // BREVO_API_KEY remains verification-only for the seven-day lifetime of
   // legacy links. Newly minted credentials always use the dedicated secret.
@@ -675,9 +687,9 @@ async function subscribe(request: Request, env: Env): Promise<Response> {
 async function serveFreeSample(request: Request, env: Env): Promise<Response> {
   const url = new URL(request.url);
   const cookieToken = cookieValue(request, SAMPLE_COOKIE_NAME);
-  const cookieGranted = Boolean(cookieToken && (await Promise.any(sampleTokenSecrets(env).map((secret) => isValidSampleToken(cookieToken, secret))).catch(() => false)));
+  const cookieGranted = await verifiedByAnySecret(cookieToken, sampleTokenSecrets(env), isValidSampleToken);
   const token = url.searchParams.get("token") || "";
-  const tokenGranted = Boolean(token && (await Promise.any(sampleTokenSecrets(env).map((secret) => isValidSampleToken(token, secret))).catch(() => false)));
+  const tokenGranted = await verifiedByAnySecret(token, sampleTokenSecrets(env), isValidSampleToken);
 
   if (!cookieGranted && !tokenGranted) {
     return Response.redirect(`${SITE_URL}/top-10-trades#get-guide`, 302);
@@ -699,8 +711,8 @@ async function serveBookSample(request: Request, env: Env): Promise<Response> {
   const cookieToken = cookieValue(request, BOOK_SAMPLE_COOKIE_NAME);
   const token = url.searchParams.get("token") || "";
   const secrets = [env.BOOK_SAMPLE_TOKEN_SECRET?.trim(), env.BREVO_API_KEY?.trim()].filter((secret): secret is string => Boolean(secret));
-  const cookieGranted = Boolean(cookieToken && (await Promise.any(secrets.map((secret) => isValidBookSampleToken(cookieToken, secret))).catch(() => false)));
-  const tokenGranted = Boolean(token && (await Promise.any(secrets.map((secret) => isValidBookSampleToken(token, secret))).catch(() => false)));
+  const cookieGranted = await verifiedByAnySecret(cookieToken, secrets, isValidBookSampleToken);
+  const tokenGranted = await verifiedByAnySecret(token, secrets, isValidBookSampleToken);
 
   if (!cookieGranted && !tokenGranted) {
     return Response.redirect(`${SITE_URL}${BOOK_SAMPLE_PAGE}`, 302);
