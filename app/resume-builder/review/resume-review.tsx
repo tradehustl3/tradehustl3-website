@@ -142,7 +142,7 @@ export function ResumeReview() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(correctionRequest ? { correctionRequest } : {}),
       });
-      const result = await response.json() as GenerationFailure;
+      const result = await response.json() as GenerationFailure & { sourceRecovery?: boolean };
       if (!response.ok) {
         if (response.status === 401) {
           window.location.assign("/resume-builder");
@@ -161,7 +161,9 @@ export function ResumeReview() {
         throw new Error(`${result.message || "We could not complete this AI run."}${reference}`);
       }
       await load(resumeId);
-      setMessage(correctionRequest ? "Correction applied. Review the updated watermarked copy." : "Your first resume is ready for review.");
+      setMessage(result.sourceRecovery
+        ? "Your preview was built from the verified details in your upload because the AI rewrite was unavailable. Review it before continuing."
+        : correctionRequest ? "Correction applied. Review the updated watermarked copy." : "Your first resume is ready for review.");
       return true;
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "We could not complete this AI run.");
