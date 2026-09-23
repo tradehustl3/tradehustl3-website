@@ -1956,6 +1956,53 @@ async function callResumeModel(
   }
 }
 
+// An uploaded resume already contains verified facts. If the AI service cannot
+// return a usable draft, preserve those facts in a reviewable source-first copy.
+// Never use this path for sparse guided intake or a paid AI correction.
+function recoverUploadedResume(resume: ResumeRecord): ResumeModelResult | null {
+  const intake = JSON.parse(resume.intake_json) as unknown;
+  const source = canonicalSourceRecord(intake, resume.title);
+  if (source.provenance !== "upload" || !source.contact.fullName || !source.targetTitle
+    || !source.roles.length || source.roles.some((role) => !role.jobTitle || !role.bullets.length)) return null;
+
+  const skills = Array.from(new Set([
+    ...source.technicalSkills, ...source.tools, ...source.equipmentSystems, ...source.software,
+  ])).slice(0, 24);
+  const draft: GeneratedResume = {
+    basics: {
+      fullName: source.contact.fullName,
+      targetTitle: source.targetTitle,
+      location: source.contact.location || undefined,
+      phone: source.contact.phone || undefined,
+      email: source.contact.email || undefined,
+    },
+    summary: source.narrativeFacts[0] || `${source.roles[0].jobTitle} with documented skilled trades experience.`,
+    skills,
+    certifications: Array.from(new Set([...source.certifications, ...source.licenses]))
+      .map((name) => ({ name })),
+    experience: source.roles.map((role) => ({
+      jobTitle: role.jobTitle,
+      employer: role.employer || undefined,
+      location: role.location || undefined,
+      startDate: role.startDate || undefined,
+      endDate: role.endDate || undefined,
+      bullets: role.bullets,
+    })),
+    education: [],
+    additionalInformation: [source.education, ...source.safety].filter(Boolean),
+  };
+  const checked = validateGeneratedResume(draft);
+  if (!checked.ok || validateResumeAgainstSource(checked.resume, source).length) return null;
+  return {
+    resume: { ...checked.resume, grounding: groundingAuditFromSource(checked.resume, source, [], true, null) },
+    model: "verified-source-recovery",
+    inputTokens: 0,
+    outputTokens: 0,
+    guardFlags: [],
+  };
+}
+
+
 async function storeResumeFile(
   env: ResumeBuilderEnv,
   userId: string,
@@ -2193,9 +2240,13 @@ async function generateResume(
     try {
       generated = await callResumeModel(env, resume, correctionRequest, dependencies);
     } catch (error) {
-      if (error instanceof ResumeGenerationError) throw error;
       console.error("Resume model stage failed", error);
-      throw new ResumeGenerationError("MODEL_OUTPUT_ERROR", "Model output error.");
+      const recovered = !isCorrection ? recoverUploadedResume(resume) : null;
+      if (!recovered) {
+        if (error instanceof ResumeGenerationError) throw error;
+        throw new ResumeGenerationError("MODEL_OUTPUT_ERROR", "Model output error.");
+      }
+      generated = recovered;
     }
 
     let docx: Uint8Array;
@@ -2265,6 +2316,7 @@ async function generateResume(
       runsTotal: RESUME_TOTAL_AI_RUNS,
       correctionsRemaining: entitlement ? Math.max(0, RESUME_TOTAL_AI_RUNS - runsUsed) : 0,
       previewUrl: `/api/resume-builder/resumes/${resumeId}/files/preview`,
+      sourceRecovery: generated.model === "verified-source-recovery",
       downloads: entitlement ? {
         pdf: `/api/resume-builder/resumes/${resumeId}/files/pdf`,
         docx: `/api/resume-builder/resumes/${resumeId}/files/docx`,
