@@ -12,7 +12,8 @@
     "test": "npm run build && node --import tsx --test tests/*.test.mjs tests/*.test.ts",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
     "typecheck": "tsc --noEmit",
-    "db:generate": "drizzle-kit generate"
+    "db:generate": "drizzle-kit generate",
+    "calibrate:resume": "node --import tsx scripts/calibrate-resume.mts"
   },
   "dependencies": {
     "@fontsource/roboto": "5.3.0",
