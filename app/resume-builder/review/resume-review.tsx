@@ -157,7 +157,8 @@ export function ResumeReview() {
           setIntakeNotice(result);
           return false;
         }
-        throw new Error(result.message || "We could not complete this AI run.");
+        const reference = result.code ? ` (error: ${result.code})` : "";
+        throw new Error(`${result.message || "We could not complete this AI run."}${reference}`);
       }
       await load(resumeId);
       setMessage(correctionRequest ? "Correction applied. Review the updated watermarked copy." : "Your first resume is ready for review.");
