@@ -222,7 +222,8 @@ test("homepage is the Resume Builder sales page and verified account entry", asy
   assert.match(html, /id="resume-start"/i);
   assert.match(html, /type="email"/i);
   assert.match(html, /<form\b/i);
-  assert.match(html, /Create account &amp; continue/i);
+  assert.match(html, /Continue with email/i);
+  assert.doesNotMatch(html, /name="fullName"/i);
   assert.match(html, /ACCOUNT · STAGE 1 OF 5/i);
   assert.match(html, /FREE CAREER GUIDE/i);
   assert.match(html, /href="\/top-10-trades"/i);
@@ -963,7 +964,7 @@ test("server-renders the focused homepage paths without book promotion", async (
   assert.doesNotMatch(html, /Read 7 Pages Free/i);
   assert.match(html, /href="#resume-start"/i);
   assert.match(html, /id="resume-start"/i);
-  assert.match(html, /Create account &amp; continue/i);
+  assert.match(html, /Continue with email/i);
   assert.match(html, /href="\/book"/i);
   for (const location of ["sticky_header", "hero", "process", "guide_signup", "footer_cta"]) assert.match(html, new RegExp(`data-location="${location}"`, "i"));
   assert.doesNotMatch(html, /data-location="book_teaser"/i);
