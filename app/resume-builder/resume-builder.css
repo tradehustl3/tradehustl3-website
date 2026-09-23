@@ -2,7 +2,7 @@
  * Resume Builder shares the TRADE HUSTL3 brand system used by app/page-shell.css
  * (book + policy + order-confirmed pages): deep navy ground, cream content
  * surfaces, gold hairlines / premium accents, red for primary conversion, cool
- * gray for muted copy. No secondary blue/teal/green palette.
+ * gray for muted copy. Intake and confirmation use the shared light theme below.
  */
 .rb-page {
   --rb-navy: #071a2b;
@@ -538,55 +538,6 @@
 .rb-upload-result .rb-resume-import-actions { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); padding-top: 0; }
 .rb-upload-result > .rb-resume-import-button { justify-self: start; min-width: 0; }
 
-/* Uploaded-resume confirmation: bright workspace with a restrained blue gradient. */
-.rb-wiz-page:has(.rb-upload-result) {
-  background: radial-gradient(circle at 88% 20%, #dceefc 0, transparent 34%),
-    linear-gradient(145deg, #fff 16%, #f4faff 57%, #e8f3fb 100%);
-  color: #15354f;
-}
-.rb-wiz-page:has(.rb-upload-result) .rb-header { background: #12527c; }
-.rb-wiz-page:has(.rb-upload-result) .rb-steps { background: #fff; border-bottom-color: #c8dcea; }
-.rb-wiz-page:has(.rb-upload-result) .rb-step { color: #42627b; }
-.rb-wiz-page:has(.rb-upload-result) .rb-step-current { color: #12527c; }
-.rb-wiz-page:has(.rb-upload-result) .rb-flow-intro {
-  background: linear-gradient(112deg, #fff 30%, #eaf5fc 100%);
-  color: #102e46;
-  border-bottom: 1px solid #c9dfee;
-}
-.rb-wiz-page:has(.rb-upload-result) .rb-flow-intro > p { color: #3c5b72; border-left-color: #3c8fc2; }
-.rb-wiz-page:has(.rb-upload-result) .rb-flow-intro .rb-kicker,
-.rb-wiz-page:has(.rb-upload-result) .rb-wiz-main > .rb-kicker { color: #126496; }
-.rb-wiz-page:has(.rb-upload-result) .rb-wiz-main {
-  background: #fff;
-  border-top-color: #247aaa;
-  box-shadow: 0 18px 45px #12527c17;
-}
-.rb-wiz-page:has(.rb-upload-result) .rb-flow-intro h1,
-.rb-wiz-page:has(.rb-upload-result) .rb-wiz-step h1,
-.rb-wiz-page:has(.rb-upload-result) .rb-upload-result-head h2 {
-  font-family: var(--font-body), Arial, sans-serif;
-  font-weight: 800;
-  line-height: 1.08;
-  letter-spacing: -.045em;
-}
-.rb-wiz-page:has(.rb-upload-result) .rb-wiz-step h1 { font-size: clamp(30px, 3.4vw, 46px); }
-.rb-wiz-page:has(.rb-upload-result) .rb-upload-result-head h2 { font-size: clamp(24px, 2.9vw, 38px); }
-.rb-wiz-page:has(.rb-upload-result) .rb-upload-result { border-top-color: #247aaa; box-shadow: 0 12px 28px #12527c12; }
-.rb-wiz-page:has(.rb-upload-result) .rb-upload-snapshot { background: #f3f9fd; }
-.rb-wiz-page:has(.rb-upload-result) .rb-upload-exceptions-head { background: #f1f8fd; border-left-color: #247aaa; }
-.rb-wiz-page:has(.rb-upload-result) .rb-upload-exceptions-head strong { color: #12527c; }
-.rb-wiz-page:has(.rb-upload-result) .rb-upload-issue { background: #fff; border-color: #c8dcea; }
-.rb-wiz-page:has(.rb-upload-result) .rb-upload-issue > p { color: #38546a; }
-.rb-wiz-page:has(.rb-upload-result) .rb-bot,
-.rb-wiz-page:has(.rb-upload-result) .rb-bot-body,
-.rb-wiz-page:has(.rb-upload-result) .rb-value-rail { background: #fff; border-color: #c8dcea; }
-.rb-wiz-page:has(.rb-upload-result) .rb-bot-name,
-.rb-wiz-page:has(.rb-upload-result) .rb-bot-toggle,
-.rb-wiz-page:has(.rb-upload-result) .rb-value-rail p { color: #12527c; }
-.rb-wiz-page:has(.rb-upload-result) .rb-bot-tips li,
-.rb-wiz-page:has(.rb-upload-result) .rb-bot-trade,
-.rb-wiz-page:has(.rb-upload-result) .rb-value-rail li { color: #38546a; }
-
 /* trade + level cards ---------------------------------------- */
 .rb-trade-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; }
 .rb-trade-card { display: flex; flex-direction: column; gap: 8px; padding: 20px; border: 1px solid var(--rb-field-border); border-left: 4px solid var(--rb-field-border); background: var(--rb-field); text-align: left; cursor: pointer; transition: border-color .18s, transform .18s, box-shadow .18s; }
@@ -737,3 +688,86 @@
   .rb-upload-result .rb-resume-import-actions { grid-template-columns: 1fr; }
   .rb-upload-result > .rb-resume-import-button { width: 100%; }
 }
+
+/* Shared intake and confirmation theme, independent of resume upload state. */
+:is(.rb-wiz-page, .rb-flow-page) {
+  background: radial-gradient(circle at 88% 20%, #dceefc 0, transparent 34%),
+    linear-gradient(145deg, #fff 16%, #f4faff 57%, #e8f3fb 100%);
+  color: #15354f;
+}
+:is(.rb-wiz-page, .rb-flow-page) .rb-header { background: #12527c; }
+:is(.rb-wiz-page, .rb-flow-page) .rb-steps { background: #fff; border-bottom-color: #c8dcea; }
+:is(.rb-wiz-page, .rb-flow-page) .rb-step { color: #42627b; }
+:is(.rb-wiz-page, .rb-flow-page) .rb-step-current { color: #12527c; }
+:is(.rb-wiz-page, .rb-flow-page) .rb-flow-intro {
+  background: linear-gradient(112deg, #fff 30%, #eaf5fc 100%);
+  color: #102e46;
+  border-bottom: 1px solid #c9dfee;
+}
+:is(.rb-wiz-page, .rb-flow-page) .rb-flow-intro > p { color: #3c5b72; border-left-color: #3c8fc2; }
+:is(.rb-wiz-page, .rb-flow-page) .rb-flow-intro .rb-kicker,
+:is(.rb-wiz-page, .rb-flow-page) .rb-wiz-main > .rb-kicker { color: #126496; }
+:is(.rb-wiz-page, .rb-flow-page) .rb-wiz-main {
+  background: #fff;
+  border-top-color: #247aaa;
+  box-shadow: 0 18px 45px #12527c17;
+}
+:is(.rb-wiz-page, .rb-flow-page) .rb-flow-intro h1,
+:is(.rb-wiz-page, .rb-flow-page) .rb-wiz-step h1,
+:is(.rb-wiz-page, .rb-flow-page) .rb-upload-result-head h2 {
+  font-family: var(--font-body), Arial, sans-serif;
+  font-weight: 800;
+  line-height: 1.08;
+  letter-spacing: -.045em;
+}
+:is(.rb-wiz-page, .rb-flow-page) .rb-wiz-step h1 { font-size: clamp(30px, 3.4vw, 46px); }
+:is(.rb-wiz-page, .rb-flow-page) .rb-upload-result-head h2 { font-size: clamp(24px, 2.9vw, 38px); }
+:is(.rb-wiz-page, .rb-flow-page) .rb-upload-result { border-top-color: #247aaa; box-shadow: 0 12px 28px #12527c12; }
+:is(.rb-wiz-page, .rb-flow-page) .rb-upload-snapshot { background: #f3f9fd; }
+:is(.rb-wiz-page, .rb-flow-page) .rb-upload-exceptions-head { background: #f1f8fd; border-left-color: #247aaa; }
+:is(.rb-wiz-page, .rb-flow-page) .rb-upload-exceptions-head strong { color: #12527c; }
+:is(.rb-wiz-page, .rb-flow-page) .rb-upload-issue { background: #fff; border-color: #c8dcea; }
+:is(.rb-wiz-page, .rb-flow-page) .rb-upload-issue > p { color: #38546a; }
+:is(.rb-wiz-page, .rb-flow-page) .rb-bot,
+:is(.rb-wiz-page, .rb-flow-page) .rb-bot-body,
+:is(.rb-wiz-page, .rb-flow-page) .rb-value-rail { background: #fff; border-color: #c8dcea; }
+:is(.rb-wiz-page, .rb-flow-page) .rb-bot-name,
+:is(.rb-wiz-page, .rb-flow-page) .rb-bot-toggle,
+:is(.rb-wiz-page, .rb-flow-page) .rb-value-rail p { color: #12527c; }
+:is(.rb-wiz-page, .rb-flow-page) .rb-bot-tips li,
+:is(.rb-wiz-page, .rb-flow-page) .rb-bot-trade,
+:is(.rb-wiz-page, .rb-flow-page) .rb-value-rail li { color: #38546a; }
+
+/* Keep all headings and helper surfaces consistent with the uploaded-resume view. */
+:is(.rb-wiz-page, .rb-flow-page) {
+  --font-display: var(--font-body), Arial, sans-serif;
+  --rb-cream: #f4faff;
+  --rb-surface: #f3f9fd;
+  --rb-field: #fff;
+  --rb-field-border: #c8dcea;
+  --rb-line: #c8dcea;
+  --rb-gray: #38546a;
+}
+:is(.rb-wiz-page, .rb-flow-page) :is(h1, h2, h3, .rb-trade-card-name, .rb-bot-name) {
+  text-shadow: none;
+  font-family: var(--font-body), Arial, sans-serif;
+  font-weight: 800;
+  line-height: 1.08;
+  letter-spacing: -.045em;
+}
+:is(.rb-wiz-page, .rb-flow-page) .rb-header { color: #fff; }
+:is(.rb-wiz-page, .rb-flow-page) :is(.rb-header-tagline, .rb-exit) { color: #fff; }
+:is(.rb-wiz-page, .rb-flow-page) :is(.rb-confirm-card, .rb-payment-card) {
+  background: #fff;
+  border-color: #c8dcea;
+  border-top: 4px solid #247aaa;
+  box-shadow: 0 18px 45px #12527c17;
+}
+:is(.rb-wiz-page, .rb-flow-page) .rb-kicker { color: #126496; }
+.rb-wiz-page :is(.rb-wiz-dot-current button, .rb-wiz-loading) { color: #12527c; }
+.rb-wiz-page .rb-wiz-progress-head span:first-child { color: #126496; }
+.rb-wiz-page .rb-wiz-loading span { border-color: #c8dcea; border-top-color: #247aaa; }
+.rb-wiz-page .rb-resume-import { background: #f3f9fd; border-color: #c8dcea; border-left-color: #247aaa; }
+.rb-wiz-page .rb-value-reminder { background: #f3f9fd; color: #15354f; }
+.rb-wiz-page .rb-value-reminder strong { color: #126496; }
+.rb-wiz-page .rb-bot-avatar-lg { filter: drop-shadow(0 10px 18px #12527c17); }
