@@ -6,9 +6,25 @@ import {
   extractResumePhone,
   inferResumeTrade,
   mergeResumePrefill,
+  recoverImportedResume,
   resumeUploadKind,
   uploadedResumeIssues,
 } from "../app/resume-builder/intake/resume-upload";
+
+test("saved DOCX text restores location and dated jobs without re-entry", () => {
+  const source = `Jordan Taylor\nAtlanta, GA | 404-555-0100\nPROFESSIONAL EXPERIENCE\nMaintenance Technician | Campus HousingAtlanta, GA | January 2022 - July 2024\n• Maintained HVAC equipment and completed preventive maintenance work orders.\nService Technician | Acme Heating & AirResidential Service | March 2020 - December 2021\n• Diagnosed and repaired residential heating and cooling systems.`;
+  const saved = emptyWizardData();
+  saved.sourceProvenance = "upload";
+  saved.sourceResumeText = source;
+  saved.trade = "Facilities Maintenance";
+  saved.contact.fullName = "Jordan Taylor";
+  saved.contact.phone = "404-555-0100";
+  const recovered = recoverImportedResume(saved);
+  assert.equal(recovered.contact.cityState, "Atlanta, GA");
+  assert.deepEqual(recovered.roles.map((role) => role.employer), ["Campus Housing", "Acme Heating & Air"]);
+  assert.deepEqual(uploadedResumeIssues(recovered), []);
+  assert.equal(saved.contact.cityState, "");
+});
 import { handleResumeBuilderRoute, type ResumeBuilderDependencies } from "../worker/resume-builder";
 
 const sessionCookie = "tradehustl3_resume_session=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
