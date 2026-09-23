@@ -189,6 +189,49 @@ test("Gemini uploaded-resume enhancement repairs an invented metric without forc
   assert.doesNotMatch(JSON.stringify(h.state.generatedJson), /35 percent/i);
 });
 
+test("uploaded multi-job resume produces a verified preview when the model service fails", async () => {
+  const h = harness({
+    ...intake,
+    experience: [...intake.experience, {
+      employer: "Cooler Heating & Air",
+      jobTitle: "HVAC Technician",
+      location: "Marietta, GA",
+      startDate: "April 2017",
+      endDate: "December 2019",
+      responsibilities: "Serviced compressors, motors, contactors, capacitors, transformers, and control boards.",
+    }],
+    meta: { source: "upload", importedResume: true },
+  });
+  let rendered: GeneratedResume | null = null;
+  const response = await handleResumeBuilderRoute(
+    new Request("https://tradehustl3.com/api/resume-builder/resumes/resume-1/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Cookie: sessionCookie, Origin: "https://tradehustl3.com" },
+      body: "{}",
+    }),
+    {
+      DB: h.DB as unknown as D1Database,
+      BOOKS: h.BOOKS as unknown as R2Bucket,
+      RESUME_AI_PROVIDER: "gemini",
+      RESUME_AI_BRIDGE_URL: "https://resume-ai-bridge.example.run.app",
+      RESUME_AI_BRIDGE_SECRET: "bridge-secret",
+    },
+    {
+      geminiFetch: (async () => { throw new Error("AI bridge unavailable"); }) as typeof fetch,
+      createDocx: async (generated) => { rendered = generated; return encoder.encode("DOCX"); },
+      createPdf: async () => encoder.encode("PDF"),
+    },
+  );
+  assert.equal(response?.status, 200);
+  const result = await response?.json() as { sourceRecovery?: boolean };
+  assert.equal(result.sourceRecovery, true);
+  assert.ok(h.objects.size >= 3);
+  assert.equal(h.state.status, "ready");
+  assert.deepEqual((rendered as GeneratedResume | null)?.experience.map((role) => role.employer), ["Campus Housing Company", "Cooler Heating & Air"]);
+  assert.equal((rendered as GeneratedResume | null)?.basics.location, "Marietta, GA");
+});
+
+
 test("a multi-job uploaded HVAC resume cannot collapse into summary, certifications, and skills", async () => {
   const multiJobIntake = {
     ...intake,
