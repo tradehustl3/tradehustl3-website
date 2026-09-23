@@ -35,6 +35,7 @@ import {
   extractResumeText,
   mergeResumePrefill,
   recoverImportedResume,
+  sourceFirstResumePrefill,
   resumeUploadKind,
   uploadedResumeIssues,
   type UploadedResumeIssue,
@@ -291,6 +292,19 @@ export function ResumeWizard() {
       const text = await extractResumeText(file, kind);
       if (text.length < 80) {
         throw new Error("We could not read enough text from that resume. Try a text-based PDF or DOCX file.");
+      }
+      const sourcePrefill = sourceFirstResumePrefill(text);
+      if (sourcePrefill) {
+        const nextData = mergeResumePrefill(dataRef.current, sourcePrefill, text);
+        const issueCount = uploadedResumeIssues(nextData).length;
+        setData(nextData);
+        setEditingImportedDetails(false);
+        setStep(0);
+        setImportState("done");
+        setImportMessage(issueCount
+          ? `We found ${issueCount} item${issueCount === 1 ? "" : "s"} that need your confirmation. The other facts came from your resume.`
+          : "Your resume facts are ready. Continue to choose your resume style.");
+        return;
       }
       setImportState("analyzing");
       const response = await fetch("/api/resume-builder/resume-import", {
