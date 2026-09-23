@@ -1,4 +1,4 @@
-const steps = ["Account", "Build", "Preview", "Unlock", "Download"];
+const steps = ["Account", "Experience", "Preview", "Unlock", "Download"];
 
 export function FlowSteps({ current }: { current: number }) {
   return (
