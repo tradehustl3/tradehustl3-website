@@ -7,6 +7,7 @@ import {
   inferResumeTrade,
   mergeResumePrefill,
   recoverImportedResume,
+  sourceFirstResumePrefill,
   resumeUploadKind,
   uploadedResumeIssues,
 } from "../app/resume-builder/intake/resume-upload";
@@ -24,6 +25,10 @@ test("saved DOCX text restores location and dated jobs without re-entry", () => 
   assert.deepEqual(recovered.roles.map((role) => role.employer), ["Campus Housing", "Acme Heating & Air"]);
   assert.deepEqual(uploadedResumeIssues(recovered), []);
   assert.equal(saved.contact.cityState, "");
+  const prefill = sourceFirstResumePrefill(source);
+  assert.ok(prefill);
+  assert.equal((prefill.contact as { cityState: string }).cityState, "Atlanta, GA");
+  assert.equal((prefill.roles as unknown[]).length, 2);
 });
 import { handleResumeBuilderRoute, type ResumeBuilderDependencies } from "../worker/resume-builder";
 
