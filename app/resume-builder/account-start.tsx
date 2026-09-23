@@ -11,9 +11,9 @@ import {
 type User = { email: string; fullName: string | null };
 
 /**
- * Where "Continue to experience" points. A trade landing page (e.g.
+ * Where the verified-account CTA points. A trade landing page (e.g.
  * /resume-builder/hvac) sends visitors here with ?trade=<slug>; carry that
- * straight into the wizard, falling back to the magic-link bridge value. This
+ * straight into the intake, falling back to the magic-link bridge value. This
  * link only ever renders after the account check resolves on the client, so
  * reading `window` here is safe.
  */
@@ -67,10 +67,9 @@ export function AccountStart() {
         method: "POST",
         credentials: "same-origin",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          fullName: String(form.get("fullName") ?? "").trim(),
-          email,
-        }),
+        // Email is the only fact required to create/verify the account.
+        // Name comes from an uploaded resume or the scratch intake later.
+        body: JSON.stringify({ email }),
       });
       const result = await response.json() as { message?: string };
       if (!response.ok) throw new Error(result.message || "We could not send the confirmation link.");
@@ -92,7 +91,7 @@ export function AccountStart() {
           <strong>{user.fullName || user.email}</strong>
           <small>{user.email}</small>
         </div>
-        <a className="rb-button rb-button-primary" href={intakeHref()}>Continue to experience <span>→</span></a>
+        <a className="rb-button rb-button-primary" href={intakeHref()}>Upload resume or start fresh <span>→</span></a>
       </div>
     );
   }
@@ -114,17 +113,13 @@ export function AccountStart() {
   return (
     <form className="rb-account-form" onSubmit={submit}>
       <div className="rb-field">
-        <label htmlFor="fullName">Full name</label>
-        <input id="fullName" name="fullName" autoComplete="name" maxLength={120} required placeholder="Your first and last name" />
-      </div>
-      <div className="rb-field">
         <label htmlFor="email">Email address</label>
         <input id="email" name="email" type="email" autoComplete="email" maxLength={254} required placeholder="you@example.com" />
       </div>
       <button className="rb-button rb-button-primary rb-button-full" type="submit" disabled={submitting || checking}>
-        {submitting ? "Sending secure link…" : "Create account & continue"} <span>→</span>
+        {submitting ? "Sending secure link…" : "Continue with email"} <span>→</span>
       </button>
-      <p className="rb-form-note"><span aria-hidden="true">◆</span> No password. We’ll email a secure confirmation link.</p>
+      <p className="rb-form-note"><span aria-hidden="true">◆</span> No password. We only use your email to verify your account. If you upload a resume, your name and resume facts come from that file.</p>
       {message ? <p className="rb-inline-error" role="alert">{message}</p> : null}
     </form>
   );
