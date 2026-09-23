@@ -34,6 +34,7 @@ import {
   RESUME_UPLOAD_MAX_BYTES,
   extractResumeText,
   mergeResumePrefill,
+  recoverImportedResume,
   resumeUploadKind,
   uploadedResumeIssues,
   type UploadedResumeIssue,
@@ -134,6 +135,7 @@ export function ResumeWizard() {
         }
 
         if (!active) return;
+        nextData = recoverImportedResume(nextData);
         const loadedUpload = nextData.sourceProvenance === "upload" && Boolean(nextData.sourceResumeText.trim());
         setData(nextData);
         setStep(loadedUpload ? 0 : Math.min(nextData.lastStep, LAST_STEP));
