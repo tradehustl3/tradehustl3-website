@@ -4,6 +4,7 @@ import test from "node:test";
 
 const testWorkflow = new URL("../.github/workflows/test.yml", import.meta.url);
 const smokeWorkflow = new URL("../.github/workflows/production-smoke.yml", import.meta.url);
+const viteConfig = new URL("../vite.config.ts", import.meta.url);
 
 test("main and pull requests are protected by the repository test workflow", async () => {
   const source = await readFile(testWorkflow, "utf8");
@@ -27,14 +28,25 @@ test("production smoke waits for the successful Cloudflare main deployment check
   assert.match(source, /cancel-in-progress:\s*false/);
 });
 
-test("production smoke validates the deployed Worker health and entry points", async () => {
+test("production smoke validates the deployed Worker and the real custom domain", async () => {
   const source = await readFile(smokeWorkflow, "utf8");
   assert.match(source, /WORKER_ORIGIN:\s*https:\/\/tradehustl3-website\.tradehustl3\.workers\.dev/);
+  assert.match(source, /CUSTOM_ORIGIN:\s*https:\/\/tradehustl3\.com/);
   assert.match(source, /"\$WORKER_ORIGIN\/api\/health"/);
   assert.match(source, /health\.ok !== true/);
   assert.match(source, /\['healthy', 'degraded'\]/);
   assert.match(source, /"\$WORKER_ORIGIN\/"/);
   assert.match(source, /"\$WORKER_ORIGIN\/resume-builder"/);
+  assert.match(source, /"\$CUSTOM_ORIGIN\/"/);
+  assert.match(source, /"\$CUSTOM_ORIGIN\/resume-builder\/intake"/);
+  assert.match(source, /Continue with email/);
+  assert.match(source, /UPLOAD IT OR START FRESH/);
   assert.match(source, /--retry-all-errors/);
   assert.doesNotMatch(source, /tradehustl3\.com\/api\/health/);
+});
+
+test("Cloudflare Worker deployment owns the production custom domain", async () => {
+  const source = await readFile(viteConfig, "utf8");
+  assert.match(source, /pattern:\s*"tradehustl3\.com"/);
+  assert.match(source, /custom_domain:\s*true/);
 });
