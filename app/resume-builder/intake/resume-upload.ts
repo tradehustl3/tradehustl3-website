@@ -1,5 +1,6 @@
 import { EXPERIENCE_LEVELS, isTradeTrack, type TradeTrack } from "../trade-content";
 import { type WizardData } from "./wizard-data";
+import { buildCanonicalSourceRecord } from "../../../worker/resume-source-canonical";
 
 export const RESUME_UPLOAD_MAX_BYTES = 4 * 1024 * 1024;
 export const RESUME_UPLOAD_MAX_TEXT_CHARS = 100_000;
@@ -137,6 +138,28 @@ function normalizeExtractedText(value: string): string {
     .slice(0, RESUME_UPLOAD_MAX_TEXT_CHARS);
 }
 
+/** Older DOCX imports lost soft line breaks between an employer and location. */
+function restoreDocxHeaderBreaks(value: string): string {
+  return value
+    .replace(/([a-z])([A-Z][a-z]+(?: [A-Za-z]+)?,\s*[A-Z]{2}\s*\|)/g, "$1\n$2")
+    .replace(/([a-z])((?:Residential|Commercial) Service\s*\|)/g, "$1\n$2");
+}
+
+export function recoverImportedResume(data: WizardData): WizardData {
+  if (data.sourceProvenance !== "upload" || !data.sourceResumeText.trim()) return data;
+  const needsLocation = !data.contact.cityState.trim();
+  const needsJobs = !data.roles.some((role) => role.employer.trim() || role.jobTitle.trim() || role.responsibilities.trim());
+  if (!needsLocation && !needsJobs) return data;
+  const canonical = buildCanonicalSourceRecord(restoreDocxHeaderBreaks(data.sourceResumeText)).prefill;
+  const contact = canonical.contact as { cityState?: string };
+  const roles = canonical.roles as WizardData["roles"];
+  return {
+    ...data,
+    contact: { ...data.contact, cityState: data.contact.cityState || contact.cityState || "" },
+    roles: needsJobs && roles.length ? roles : data.roles,
+  };
+}
+
 function rememberExtractedText(value: string): string {
   const normalized = normalizeExtractedText(value);
   lastExtractedResumeText = normalized;
@@ -147,8 +170,16 @@ export async function extractResumeText(file: File, kind: ResumeUploadKind): Pro
   const arrayBuffer = await file.arrayBuffer();
   if (kind === "docx") {
     const mammoth = (await import("mammoth")).default;
-    const result = await mammoth.extractRawText({ arrayBuffer });
-    return rememberExtractedText(result.value);
+    const result = await mammoth.convertToHtml({ arrayBuffer });
+    const document = new DOMParser().parseFromString(result.value, "text/html");
+    const paragraphs = Array.from(document.body.querySelectorAll("p"));
+    const extracted = paragraphs.map((paragraph) => {
+      paragraph.querySelectorAll("br").forEach((breakElement) => breakElement.replaceWith("\n"));
+      return paragraph.textContent?.trim() ?? "";
+    }).filter(Boolean).join("\n\n");
+    if (extracted) return rememberExtractedText(extracted);
+    const fallback = await mammoth.extractRawText({ arrayBuffer });
+    return rememberExtractedText(fallback.value);
   }
 
   const { default: pdfWorkerUrl } = await import("pdfjs-dist/legacy/build/pdf.worker.min.mjs?url");
@@ -213,7 +244,13 @@ export function mergeResumePrefill(current: WizardData, prefill: unknown, source
   const importedRoles = Array.isArray(root.roles)
     ? root.roles.filter((role): role is Record<string, unknown> => Boolean(role && typeof role === "object"))
     : [];
-  const roles = importedRoles.slice(0, 12).map((role) => ({
+  const recovered = buildCanonicalSourceRecord(restoreDocxHeaderBreaks(effectiveSourceText)).prefill;
+  const recoveredContact = recovered.contact as Record<string, unknown>;
+  const sourceRoles = importedRoles.length >= (recovered.roles as Record<string, unknown>[]).length
+    && importedRoles.some((role) => stringValue(role.employer, 200) || stringValue(role.jobTitle, 200))
+    ? importedRoles
+    : recovered.roles as Record<string, unknown>[];
+  const roles = sourceRoles.slice(0, 12).map((role) => ({
     employer: stringValue(role.employer, 200),
     jobTitle: stringValue(role.jobTitle, 200),
     location: stringValue(role.location, 200),
@@ -254,7 +291,7 @@ export function mergeResumePrefill(current: WizardData, prefill: unknown, source
       fullName: stringValue(contact.fullName, 200) || current.contact.fullName,
       email: importedEmail || current.contact.email,
       phone: importedPhone || current.contact.phone,
-      cityState: stringValue(contact.cityState, 200) || current.contact.cityState,
+      cityState: stringValue(contact.cityState, 200) || stringValue(recoveredContact.cityState, 200) || current.contact.cityState,
     },
     summaryNotes: stringValue(root.summaryNotes, 3000) || current.summaryNotes,
     roles: roles.length ? roles : current.roles,
