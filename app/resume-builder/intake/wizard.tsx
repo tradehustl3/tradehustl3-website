@@ -362,7 +362,7 @@ export function ResumeWizard() {
 
       <div className="rb-wiz-shell">
         <div className="rb-wiz-main">
-          <p className="rb-kicker">{uploadVerificationMode ? "/ RESUME READ · FIX ONLY WHAT NEEDS IT" : `/ BUILD · STEP ${step + 1} OF ${WIZARD_STEPS.length}`}</p>
+          <p className="rb-kicker">{uploadVerificationMode ? "/ RESUME UPLOAD · FIX ONLY WHAT NEEDS ATTENTION" : `/ BUILD · STEP ${step + 1} OF ${WIZARD_STEPS.length}`}</p>
 
           <div className="rb-wiz-step" key={activeStep.key}>
             {step === 0 ? renderTrade() : null}
@@ -391,7 +391,7 @@ export function ResumeWizard() {
                 onChange={(event) => setLegalConsent(event.target.checked)}
               />
               <span>
-                I am at least 18 years old and agree to the{" "}
+                I confirm this resume belongs to me, that the corrected information is accurate, and that I am at least 18 years old. I also agree to the{" "}
                 <a href="/terms" target="_blank" rel="noreferrer">Terms of Service</a>,{" "}
                 <a href="/privacy" target="_blank" rel="noreferrer">Privacy Policy</a>,{" "}
                 <a href="/resume-builder/refund-policy" target="_blank" rel="noreferrer">Refund Policy</a>, and{" "}
@@ -462,6 +462,7 @@ export function ResumeWizard() {
       const roleIssues = issues.filter((issue) => issue.kind === "role");
       const contactIssues = issues.filter((issue) => issue.kind === "contact");
       const needsTrade = issues.some((issue) => issue.kind === "trade");
+      const needsHistory = issues.some((issue) => issue.kind === "history");
       const roleCount = data.roles.filter(roleHasContent).length;
       const skillCount = new Set([
         ...data.fieldValue.tools,
@@ -484,13 +485,14 @@ export function ResumeWizard() {
         const field = issue.field as "employer" | "jobTitle" | "startDate" | "endDate";
         return (
           <div className="rb-upload-issue" key={issue.id}>
-            <p><strong>CHECK THIS:</strong> {issue.message}</p>
+            <p>{field === "endDate" && issue.id.endsWith("date-order") ? "This job shows an end date earlier than the start date. Review the dates below and correct them." : issue.message}</p>
+            {issue.id.endsWith("date-order") ? <Text label={`Start date · Job ${roleIndex + 1}`} value={role.startDate} onChange={(value) => patchRole(roleIndex, { startDate: value })} placeholder="Example: Jan 2022" invalid /> : null}
             <Text
               label={`${labels[field]} · Job ${roleIndex + 1}`}
               value={role[field]}
               onChange={(value) => patchRole(roleIndex, { [field]: value })}
               invalid
-              placeholder={field.includes("Date") ? "Example: Jan 2022" : undefined}
+              placeholder={field === "startDate" ? "Example: Jan 2022" : field === "endDate" ? "Example: Aug 2024" : undefined}
             />
           </div>
         );
@@ -498,20 +500,21 @@ export function ResumeWizard() {
 
       return (
         <>
-          <h1 ref={headingRef} tabIndex={-1}>WE READ YOUR RESUME.<br /><span>DON&apos;T RE-TYPE IT.</span></h1>
+          <h1 ref={headingRef} tabIndex={-1}>WE READ YOUR RESUME.<br /><span>{issues.length ? "NOW LET’S FIX A FEW THINGS." : "DON’T RE-TYPE IT."}</span></h1>
           <p className="rb-wiz-lead">
-            HUSTL3 BOT pulled the information already on your file. We only stop you for something that is missing,
-            unclear, or looks wrong. Then you go straight to Field Pro, Modern Trade, and Lead / Supervisor.
+            {issues.length
+              ? "HUSTL3 BOT pulled the information from your uploaded resume. A few details need your confirmation before you continue. Everything else is already filled in."
+              : "HUSTL3 BOT pulled the information from your uploaded resume. Review the details below, then continue to your resume style options."}
           </p>
 
           <section className="rb-upload-result" aria-labelledby="upload-result-title">
             <div className="rb-upload-result-head">
               <div>
                 <p className="rb-resume-import-kicker">RESUME IMPORT COMPLETE</p>
-                <h2 id="upload-result-title">{issues.length ? "A FEW THINGS NEED YOUR EYES." : "WE HAVE WHAT WE NEED."}</h2>
+                <h2 id="upload-result-title">{issues.length ? "ALMOST READY. JUST VERIFY A FEW DETAILS." : "YOUR RESUME IS READY FOR THE NEXT STEP."}</h2>
               </div>
               <span className={issues.length ? "rb-upload-result-count rb-upload-result-count-warn" : "rb-upload-result-count"}>
-                {issues.length ? `${issues.length} TO CHECK` : "READY"}
+                {issues.length ? "ACTION NEEDED" : "READY"}
               </span>
             </div>
 
@@ -524,7 +527,7 @@ export function ResumeWizard() {
               <div><span>Education / training</span><strong>{data.education.trim() ? "Found" : "Not listed"}</strong></div>
             </div>
 
-            {importMessage ? (
+            {importMessage && (!issues.length || importState === "build-error") ? (
               <p className={issues.length ? "rb-resume-import-error" : "rb-resume-import-success"} role="status">
                 {importMessage}
               </p>
@@ -532,14 +535,18 @@ export function ResumeWizard() {
 
             {issues.length ? (
               <div className="rb-upload-exceptions">
+                <p className="rb-resume-import-error">We found a few details that need review before we can move to your resume style options.</p>
+                <p>{`We found ${issues.length} item${issues.length === 1 ? "" : "s"} that need${issues.length === 1 ? "s" : ""} your confirmation before you continue.`}</p>
                 <div className="rb-upload-exceptions-head">
                   <strong>FIX ONLY THESE ITEMS</strong>
-                  <p>Everything not shown here is already filled from your uploaded resume.</p>
+                  <p>You do not need to re-enter your full resume. Only review the items shown below.</p>
                 </div>
 
                 {needsTrade ? (
                   <div className="rb-upload-issue">
-                    <p><strong>CHECK THIS:</strong> We could not confidently identify the trade direction.</p>
+                    <h3>CHOOSE YOUR TARGET TRADE</h3>
+                    <p>Your resume shows experience across more than one area. Choose the trade direction you want this resume to target.</p>
+                    <p>This helps HUSTL3 BOT build the strongest version of your resume.</p>
                     <div className="rb-trade-grid" role="radiogroup" aria-label="Trade track">
                       {TRADE_TRACKS.map((trade) => {
                         const selected = data.trade === trade;
@@ -563,12 +570,12 @@ export function ResumeWizard() {
 
                 {contactIssues.map((issue) => (
                   <div className="rb-upload-issue" key={issue.id}>
-                    <p><strong>CHECK THIS:</strong> {issue.message}</p>
+                    <p>{issue.message}</p>
                     {issue.field === "fullName" ? (
                       <Text label="Full name" value={data.contact.fullName} onChange={(value) => update((prev) => ({ ...prev, contact: { ...prev.contact, fullName: value } }))} invalid autoComplete="name" />
                     ) : null}
                     {issue.field === "phone" ? (
-                      <Text label="Phone" value={data.contact.phone} onChange={(value) => update((prev) => ({ ...prev, contact: { ...prev.contact, phone: value } }))} invalid autoComplete="tel" />
+                      <Text label="Phone number" value={data.contact.phone} onChange={(value) => update((prev) => ({ ...prev, contact: { ...prev.contact, phone: value } }))} invalid autoComplete="tel" />
                     ) : null}
                     {issue.field === "cityState" ? (
                       <Text label="City + state" value={data.contact.cityState} onChange={(value) => update((prev) => ({ ...prev, contact: { ...prev.contact, cityState: value } }))} invalid autoComplete="address-level2" />
@@ -577,6 +584,18 @@ export function ResumeWizard() {
                 ))}
 
                 {roleIssues.map(renderRoleIssue)}
+                {needsHistory ? (
+                  <div className="rb-upload-issue">
+                    <h3>ADD OR CONFIRM YOUR WORK HISTORY</h3>
+                    <p>We were not able to pull enough work-history detail from your upload. Add or confirm your job information below so we can continue.</p>
+                    <Text label="Employer" value={data.roles[0]?.employer ?? ""} onChange={(value) => patchRole(0, { employer: value })} />
+                    <Text label="Job title" value={data.roles[0]?.jobTitle ?? ""} onChange={(value) => patchRole(0, { jobTitle: value })} />
+                    <Text label="Start date" value={data.roles[0]?.startDate ?? ""} onChange={(value) => patchRole(0, { startDate: value })} placeholder="Example: Jan 2022" />
+                    <Text label="End date" value={data.roles[0]?.endDate ?? ""} onChange={(value) => patchRole(0, { endDate: value })} placeholder="Example: Aug 2024" />
+                    <label><input type="checkbox" checked={data.roles[0]?.current ?? false} onChange={(event) => patchRole(0, { current: event.target.checked, endDate: event.target.checked ? "" : data.roles[0]?.endDate ?? "" })} /> This is my current role</label>
+                  </div>
+                ) : null}
+                <div className="rb-upload-clean"><strong>YOU DO NOT HAVE TO START OVER.</strong><p>Everything not shown here has already been pulled from your resume. Only fix the items listed on this screen.</p></div>
               </div>
             ) : (
               <div className="rb-upload-clean">
@@ -593,7 +612,7 @@ export function ResumeWizard() {
                 disabled={importBusy}
               />
               <span>
-                I am at least 18 years old and agree to the <a href="/terms" target="_blank" rel="noreferrer">Terms</a>,{" "}
+                I confirm this resume belongs to me, that the corrected information is accurate, and that I am at least 18 years old. I also agree to the <a href="/terms" target="_blank" rel="noreferrer">Terms</a>,{" "}
                 <a href="/privacy" target="_blank" rel="noreferrer">Privacy Policy</a>, and{" "}
                 <a href="/resume-builder/ai-disclosure" target="_blank" rel="noreferrer">AI Disclosure</a>.
               </span>
@@ -604,9 +623,9 @@ export function ResumeWizard() {
                 type="button"
                 className="rb-button rb-button-primary"
                 onClick={() => void continueImportedResume()}
-                disabled={importBusy || issues.length > 0}
+                disabled={importBusy}
               >
-                {importState === "building" ? "SAVING VERIFIED FACTS…" : "CHOOSE MY RESUME SYSTEM"} <span aria-hidden="true">→</span>
+                {importState === "building" ? "SAVING VERIFIED FACTS…" : issues.length ? "SAVE AND CONTINUE" : "CHOOSE MY RESUME SYSTEM"} <span aria-hidden="true">→</span>
               </button>
               <button
                 type="button"
@@ -617,7 +636,7 @@ export function ResumeWizard() {
                 }}
                 disabled={importBusy}
               >
-                REVIEW EVERYTHING HUSTL3 BOT PULLED <span aria-hidden="true">→</span>
+                REVIEW IMPORTED DETAILS <span aria-hidden="true">→</span>
               </button>
             </div>
 
@@ -744,7 +763,7 @@ export function ResumeWizard() {
           <legend>Your details</legend>
           <div className="rb-field-grid rb-field-grid-3">
             <Text label="Full name" value={data.contact.fullName} onChange={(v) => update((p) => ({ ...p, contact: { ...p.contact, fullName: v } }))} required invalid={attemptedNext && !data.contact.fullName.trim()} autoComplete="name" />
-            <Text label="Phone" value={data.contact.phone} onChange={(v) => update((p) => ({ ...p, contact: { ...p.contact, phone: v } }))} required invalid={attemptedNext && !data.contact.phone.trim()} autoComplete="tel" placeholder="(555) 555-0123" />
+            <Text label="Phone number" value={data.contact.phone} onChange={(v) => update((p) => ({ ...p, contact: { ...p.contact, phone: v } }))} required invalid={attemptedNext && !data.contact.phone.trim()} autoComplete="tel" placeholder="(555) 555-0123" />
             <Text label="City + state" value={data.contact.cityState} onChange={(v) => update((p) => ({ ...p, contact: { ...p.contact, cityState: v } }))} required invalid={attemptedNext && !data.contact.cityState.trim()} autoComplete="address-level2" placeholder="Atlanta, GA" />
           </div>
           <TextArea
@@ -993,7 +1012,7 @@ export function ResumeWizard() {
   function patchRole(index: number, patch: Partial<WizardData["roles"][number]>) {
     update((prev) => ({
       ...prev,
-      roles: prev.roles.map((role, i) => (i === index ? { ...role, ...patch } : role)),
+      roles: (prev.roles.length ? prev.roles : [emptyRole()]).map((role, i) => (i === index ? { ...role, ...patch } : role)),
     }));
   }
   function patchFieldValue(patch: Partial<WizardData["fieldValue"]>) {
