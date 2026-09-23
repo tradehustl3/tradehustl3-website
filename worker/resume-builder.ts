@@ -376,19 +376,21 @@ async function finalizeSourceFirstImport(
 
   if (!plan.canonical.coverage.ready) {
     return rewrittenJson(response, {
-      ok: false,
-      code: "CANONICAL_SOURCE_PARSE_FAILED",
-      retryable: true,
-      action: "review_import",
+      ok: true,
+      code: "CANONICAL_SOURCE_PARTIAL",
+      retryable: false,
+      action: "review_exceptions",
       runConsumed: false,
       sourceFirst: true,
       parserVersion: plan.canonical.parserVersion,
+      prefill: plan.canonical.prefill,
+      needsReview: true,
       issues: plan.canonical.coverage.issues,
       warnings: plan.canonical.coverage.warnings,
       sourceRoleSignals: plan.canonical.coverage.sourceRoleSignals,
       extractedRoles: plan.canonical.coverage.extractedRoles,
-      message: "HUSTL3 BOT could not establish a complete source record from this resume. AI was not allowed to replace or invent the missing structure.",
-    }, 422);
+      message: "Your resume was read and preserved. We could not structure every line automatically, so only the uncertain items need review; the original resume text remains available to HUSTL3 BOT.",
+    }, 200);
   }
 
   const payload = response.ok ? await responseJson(response) : null;
@@ -401,20 +403,23 @@ async function finalizeSourceFirstImport(
 
   if (!immutability.valid || !coverage.ready) {
     return rewrittenJson(response, {
-      ok: false,
-      code: "CANONICAL_SOURCE_INTEGRITY_FAILED",
-      retryable: true,
-      action: "review_import",
+      ...(payload ?? {}),
+      ok: true,
+      code: "CANONICAL_SOURCE_PARTIAL",
+      retryable: false,
+      action: "review_exceptions",
       runConsumed: false,
       sourceFirst: true,
       parserVersion: plan.canonical.parserVersion,
+      prefill: merged,
+      needsReview: true,
       immutableIssues: immutability.issues,
       issues: coverage.issues,
       warnings: coverage.warnings,
       sourceRoleSignals: coverage.sourceRoleSignals,
       extractedRoles: coverage.extractedRoles,
-      message: "HUSTL3 BOT stopped because the canonical source facts did not survive import verification unchanged. Nothing was generated.",
-    }, 422);
+      message: "Your resume was read and preserved. HUSTL3 BOT found a few extraction uncertainties, so only those items need review before generation.",
+    }, 200);
   }
 
   return rewrittenJson(response, {
@@ -458,28 +463,46 @@ async function reconcileImportedExtraction(
     reconciliationDependencies(dependencies),
   );
   if (!retry || !retry.ok) {
+    const fallback = repairResumeExtractionFromSource(sourceText, payload.prefill);
+    const fallbackCoverage = assessResumeExtractionCoverage(sourceText, fallback.structured);
     return rewrittenJson(response, {
-      ok: false,
-      code: "EXTRACTION_COVERAGE_FAILED",
-      retryable: true,
-      action: "retry_import",
+      ...payload,
+      ok: true,
+      code: "EXTRACTION_PARTIAL",
+      retryable: false,
+      action: "review_exceptions",
       runConsumed: false,
-      issues: firstCoverage.issues,
-      message: "HUSTL3 BOT found resume details that were not fully captured. It retried the extraction, but the resume still needs another upload attempt before generation.",
-    }, 422);
+      prefill: fallback.structured,
+      needsReview: true,
+      issues: fallbackCoverage.issues.length ? fallbackCoverage.issues : firstCoverage.issues,
+      warnings: fallbackCoverage.warnings,
+      sourceRoleSignals: fallbackCoverage.sourceRoleSignals,
+      extractedRoles: fallbackCoverage.extractedRoles,
+      deterministicFallbackApplied: fallback.repaired,
+      message: "Your resume was read and preserved. HUSTL3 BOT could not structure every line automatically, so only the uncertain items need review.",
+    }, 200);
   }
 
   const retryPayload = await responseJson(retry);
   if (!retryPayload || !retryPayload.prefill || typeof retryPayload.prefill !== "object" || Array.isArray(retryPayload.prefill)) {
+    const fallback = repairResumeExtractionFromSource(sourceText, payload.prefill);
+    const fallbackCoverage = assessResumeExtractionCoverage(sourceText, fallback.structured);
     return rewrittenJson(retry, {
-      ok: false,
-      code: "EXTRACTION_COVERAGE_FAILED",
-      retryable: true,
-      action: "retry_import",
+      ...(retryPayload ?? payload),
+      ok: true,
+      code: "EXTRACTION_PARTIAL",
+      retryable: false,
+      action: "review_exceptions",
       runConsumed: false,
-      issues: firstCoverage.issues,
-      message: "HUSTL3 BOT could not verify the uploaded resume extraction. Nothing was generated.",
-    }, 422);
+      prefill: fallback.structured,
+      needsReview: true,
+      issues: fallbackCoverage.issues.length ? fallbackCoverage.issues : firstCoverage.issues,
+      warnings: fallbackCoverage.warnings,
+      sourceRoleSignals: fallbackCoverage.sourceRoleSignals,
+      extractedRoles: fallbackCoverage.extractedRoles,
+      deterministicFallbackApplied: fallback.repaired,
+      message: "Your resume was read and preserved. HUSTL3 BOT could not structure every line automatically, so only the uncertain items need review.",
+    }, 200);
   }
 
   const retryCoverage = assessResumeExtractionCoverage(sourceText, retryPayload.prefill);
@@ -488,18 +511,22 @@ async function reconcileImportedExtraction(
     const fallbackCoverage = assessResumeExtractionCoverage(sourceText, fallback.structured);
     if (!fallbackCoverage.ready) {
       return rewrittenJson(retry, {
-        ok: false,
-        code: "EXTRACTION_COVERAGE_FAILED",
-        retryable: true,
-        action: "retry_import",
+        ...retryPayload,
+        ok: true,
+        code: "EXTRACTION_PARTIAL",
+        retryable: false,
+        action: "review_exceptions",
         runConsumed: false,
+        prefill: fallback.structured,
+        needsReview: true,
         issues: fallbackCoverage.issues,
         warnings: fallbackCoverage.warnings,
         sourceRoleSignals: fallbackCoverage.sourceRoleSignals,
         extractedRoles: fallbackCoverage.extractedRoles,
         deterministicFallbackAttempted: true,
-        message: "HUSTL3 BOT stopped because the uploaded resume was still not completely extracted after AI reconciliation and deterministic source recovery. Nothing was generated.",
-      }, 422);
+        deterministicFallbackApplied: fallback.repaired,
+        message: "Your resume was read and preserved. HUSTL3 BOT could not structure every line automatically, so only the uncertain items need review.",
+      }, 200);
     }
 
     return rewrittenJson(retry, {
