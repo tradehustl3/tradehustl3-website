@@ -44,6 +44,12 @@ const localBindingConfig = {
   main: "./worker/index.ts",
   compatibility_flags: ["nodejs_compat"],
   keep_vars: true,
+  routes: [
+    {
+      pattern: "tradehustl3.com",
+      custom_domain: true,
+    },
+  ],
   triggers: {
     crons: ["*/5 * * * *"],
   },
