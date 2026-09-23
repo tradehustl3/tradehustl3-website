@@ -145,6 +145,12 @@ function restoreDocxHeaderBreaks(value: string): string {
     .replace(/([a-z])((?:Residential|Commercial) Service\s*\|)/g, "$1\n$2");
 }
 
+/** Use facts already present in the uploaded text before asking an AI extractor. */
+export function sourceFirstResumePrefill(sourceText: string): Record<string, unknown> | null {
+  const canonical = buildCanonicalSourceRecord(restoreDocxHeaderBreaks(sourceText));
+  return canonical.coverage.ready && canonical.roles.length > 0 ? canonical.prefill : null;
+}
+
 export function recoverImportedResume(data: WizardData): WizardData {
   if (data.sourceProvenance !== "upload" || !data.sourceResumeText.trim()) return data;
   const needsLocation = !data.contact.cityState.trim();
