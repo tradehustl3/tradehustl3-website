@@ -166,6 +166,70 @@ test("source-first import restores complete structure before accepting AI enrich
   assert.equal(calls, 1);
 });
 
+test("valid AI extraction rescues a resume layout the deterministic canonical parser cannot structure", async () => {
+  const h = sessionAndRateLimitDb();
+  const unusualSource = `ALEX MORGAN
+Atlanta, GA
+404-555-0199
+
+PROFESSIONAL EXPERIENCE
+June 2024 - July 2026
+American Campus Communities
+Maintenance Supervisor
+Led preventive maintenance, HVAC diagnostics, vendor coordination, and Salesforce work orders.
+
+April 2019 - May 2024
+Cooler Heating & Air
+HVAC Technician
+Diagnosed split systems, replaced motors and contactors, performed recovery and vacuum procedures.
+
+CERTIFICATIONS
+EPA 608 Universal
+OSHA 10`;
+
+  const extracted = {
+    ...completePrefill,
+    roles: completePrefill.roles.slice(0, 2),
+    education: "",
+    fieldValue: {
+      ...completePrefill.fieldValue,
+      certifications: ["EPA 608 Universal", "OSHA 10"],
+    },
+  };
+  let calls = 0;
+  const response = await handleResumeBuilderRoute(
+    new Request("https://tradehustl3.com/api/resume-builder/resume-import", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Cookie: sessionCookie, Origin: "https://tradehustl3.com" },
+      body: JSON.stringify({ fileName: "resume.pdf", fileType: "pdf", text: unusualSource }),
+    }),
+    {
+      DB: h.DB as unknown as D1Database,
+      RESUME_AI_PROVIDER: "gemini",
+      RESUME_AI_BRIDGE_URL: "https://resume-ai-bridge.example.run.app",
+      RESUME_AI_BRIDGE_SECRET: "bridge-secret",
+    },
+    {
+      geminiFetch: (async () => {
+        calls += 1;
+        return geminiResponse(extracted);
+      }) as typeof fetch,
+    },
+  );
+
+  assert.ok(response);
+  assert.equal(response.status, 200);
+  const payload = await response.json() as {
+    ok?: boolean;
+    prefill?: { roles?: Array<Record<string, unknown>> };
+  };
+  assert.equal(payload.ok, true);
+  assert.equal(payload.prefill?.roles?.length, 2);
+  assert.equal(payload.prefill?.roles?.[0]?.employer, "American Campus Communities");
+  assert.equal(payload.prefill?.roles?.[1]?.employer, "Cooler Heating & Air");
+  assert.equal(calls, 1);
+});
+
 test("generation is blocked before the model or run reservation when saved upload coverage is incomplete", async () => {
   const savedIntake = {
     contact: { fullName: "Alex Morgan", email: "alex@example.com", phone: "404-555-0199", cityState: "Atlanta, GA" },

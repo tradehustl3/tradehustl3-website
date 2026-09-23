@@ -906,13 +906,29 @@ export async function handleResumeBuilderRoute(
   }
 
   if (importPath && canonicalImportPlan && importContactCopy) {
-    const sourceFirst = await finalizeSourceFirstImport(first, canonicalImportPlan);
-    return preserveImportedContact(importContactCopy, sourceFirst);
+    if (canonicalImportPlan.canonical.coverage.ready) {
+      const sourceFirst = await finalizeSourceFirstImport(first, canonicalImportPlan);
+      return preserveImportedContact(importContactCopy, sourceFirst);
+    }
+
+    // Some legitimate resumes do not match the deterministic source parser's
+    // preferred layout. Do not make the customer re-enter the resume because
+    // of parser shape alone. Let the factual extraction model read the same
+    // source text, reconcile coverage, and only surface genuine missing facts.
+    if (importCoverageCopy && importRetryCopy) {
+      const reconciled = await reconcileImportedExtraction(
+        importCoverageCopy,
+        importRetryCopy as unknown as BaseResumeRequest,
+        first,
+        env,
+        dependencies,
+      );
+      return preserveImportedContact(importContactCopy, reconciled);
+    }
   }
 
-  // Legacy reconciliation remains only as a compatibility path for malformed
-  // requests that did not yield source text. Normal PDF/DOCX imports never let
-  // AI own job identity, dates, education, credentials, or contact facts.
+  // Compatibility path for requests that did not yield a canonical source
+  // plan. Coverage reconciliation still has to pass before the import is used.
   if (importPath && importContactCopy && importCoverageCopy && importRetryCopy) {
     const reconciled = await reconcileImportedExtraction(
       importCoverageCopy,
