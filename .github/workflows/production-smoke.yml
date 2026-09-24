@@ -22,51 +22,94 @@ jobs:
     timeout-minutes: 5
     env:
       CUSTOM_ORIGIN: https://tradehustl3.com
+      SMOKE_BYPASS_TOKEN: ${{ secrets.SMOKE_BYPASS_TOKEN }}
     steps:
+      - name: Prepare smoke request helper
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > "$RUNNER_TEMP/smoke-fetch.sh" <<'SH'
+          # smoke_fetch URL OUTPUT ATTEMPTS DELAY [extra curl args...]
+          # Fails unless the final response is below HTTP 400. On failure it
+          # prints only safe response metadata, never the body or cookies.
+          smoke_fetch() {
+            local url="$1" output="$2" attempts="$3" delay="$4"
+            shift 4
+            local work status attempt
+            work="$(mktemp -d)"
+            local -a auth=()
+            if [ -n "${SMOKE_BYPASS_TOKEN:-}" ]; then
+              (umask 077; printf 'X-Smoke-Token: %s\n' "$SMOKE_BYPASS_TOKEN" > "$work/auth-header")
+              auth=(--header "@$work/auth-header")
+            fi
+            for attempt in $(seq 1 "$attempts"); do
+              status="$(curl --silent --show-error --location \
+                --header 'Accept: text/html,application/xhtml+xml' \
+                --header 'User-Agent: Mozilla/5.0 (compatible; TRADE-HUSTL3-Production-Smoke/1.0)' \
+                "${auth[@]}" "$@" \
+                --dump-header "$work/headers" --output "$work/body" \
+                --write-out '%{http_code}' "$url")" || status="000"
+              if [ "$status" -ge 200 ] && [ "$status" -lt 400 ]; then
+                cp "$work/body" "$output"
+                rm -rf "$work"
+                return 0
+              fi
+              echo "Attempt $attempt/$attempts: $url failed with HTTP $status"
+              if [ -s "$work/headers" ]; then
+                # Keep only the final response's headers after redirects.
+                awk 'BEGIN{IGNORECASE=1} /^HTTP\//{block=""} {block=block $0 "\n"} END{printf "%s", block}' \
+                  "$work/headers" | tr -d '\r' \
+                  | grep -iE '^(server|cf-ray|cf-mitigated|content-type):' \
+                  | sed 's/^/  /' || true
+              fi
+              if grep -qiE '^cf-mitigated:[[:space:]]*challenge' "$work/headers" 2>/dev/null \
+                || grep -qiE 'Just a moment\.\.\.|/cdn-cgi/challenge-platform|cf-chl-|Attention Required! \| Cloudflare' "$work/body" 2>/dev/null; then
+                echo "  cloudflare-challenge-page: yes"
+              else
+                echo "  cloudflare-challenge-page: no"
+              fi
+              if [ "$attempt" -lt "$attempts" ]; then
+                sleep "$delay"
+              fi
+            done
+            rm -rf "$work"
+            echo "::error::Production smoke request failed: $url (HTTP $status)"
+            return 1
+          }
+          SH
+          if [ -n "${SMOKE_BYPASS_TOKEN:-}" ]; then
+            echo 'SMOKE_BYPASS_TOKEN is configured; sending X-Smoke-Token.'
+          else
+            echo 'SMOKE_BYPASS_TOKEN is not configured; no X-Smoke-Token sent.'
+          fi
+
       - name: Verify production homepage
         shell: bash
         run: |
           set -euo pipefail
-          curl --fail --silent --show-error --location \
-            --header 'Accept: text/html,application/xhtml+xml' \
-            --header 'User-Agent: Mozilla/5.0 (compatible; TRADE-HUSTL3-Production-Smoke/1.0)' \
-            --retry 5 --retry-delay 3 --retry-all-errors \
-            "$CUSTOM_ORIGIN/" \
-            --output /dev/null
+          source "$RUNNER_TEMP/smoke-fetch.sh"
+          smoke_fetch "$CUSTOM_ORIGIN/" /dev/null 6 3
 
       - name: Verify production Resume Builder entry point
         shell: bash
         run: |
           set -euo pipefail
-          curl --fail --silent --show-error --location \
-            --header 'Accept: text/html,application/xhtml+xml' \
-            --header 'User-Agent: Mozilla/5.0 (compatible; TRADE-HUSTL3-Production-Smoke/1.0)' \
-            --retry 5 --retry-delay 3 --retry-all-errors \
-            "$CUSTOM_ORIGIN/resume-builder" \
-            --output /dev/null
+          source "$RUNNER_TEMP/smoke-fetch.sh"
+          smoke_fetch "$CUSTOM_ORIGIN/resume-builder" /dev/null 6 3
 
       - name: Verify current Resume Builder UI
         shell: bash
         run: |
           set -euo pipefail
-          curl --fail --silent --show-error --location \
-            --header 'Accept: text/html,application/xhtml+xml' \
-            --header 'User-Agent: Mozilla/5.0 (compatible; TRADE-HUSTL3-Production-Smoke/1.0)' \
-            --header 'Cache-Control: no-cache' \
-            --retry 8 --retry-delay 5 --retry-all-errors \
-            "$CUSTOM_ORIGIN/" \
-            --output /tmp/custom-home.html
+          source "$RUNNER_TEMP/smoke-fetch.sh"
+          smoke_fetch "$CUSTOM_ORIGIN/" /tmp/custom-home.html 9 5 \
+            --header 'Cache-Control: no-cache'
           grep -Fq 'Continue with email' /tmp/custom-home.html
           if grep -Fq 'Create account &amp; continue' /tmp/custom-home.html; then
             echo 'Custom domain is serving the old Resume Builder account screen.'
             exit 1
           fi
 
-          curl --fail --silent --show-error --location \
-            --header 'Accept: text/html,application/xhtml+xml' \
-            --header 'User-Agent: Mozilla/5.0 (compatible; TRADE-HUSTL3-Production-Smoke/1.0)' \
-            --header 'Cache-Control: no-cache' \
-            --retry 8 --retry-delay 5 --retry-all-errors \
-            "$CUSTOM_ORIGIN/resume-builder/intake" \
-            --output /tmp/custom-intake.html
+          smoke_fetch "$CUSTOM_ORIGIN/resume-builder/intake" /tmp/custom-intake.html 9 5 \
+            --header 'Cache-Control: no-cache'
           grep -Fq 'UPLOAD IT OR START FRESH' /tmp/custom-intake.html
