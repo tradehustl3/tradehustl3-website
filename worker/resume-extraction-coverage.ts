@@ -156,16 +156,28 @@ function inlineTitleEmployerHeader(lines: string[]): { employer: string; jobTitl
   return null;
 }
 
+/** Structural signs of an organization name: an acronym ("ABC"), "&", or a possessive ("Joe's"). */
+function organizationMarker(value: string): boolean {
+  return /(?:^|\s)[A-Z]{2,}(?:\s|$)/.test(value.replace(TITLE_SIGNAL_RE, "")) || /&|\b\w+'s\b/.test(value);
+}
+
 function chooseHeaderFields(lines: string[]): { employer: string; jobTitle: string; location: string } {
   const explicitInline = inlineTitleEmployerHeader(lines);
   if (explicitInline) return explicitInline;
 
-  const candidates = lines.flatMap(splitHeaderParts).filter((part) => !DATE_RANGE_LINE_RE.test(part));
+  // A date is never an employer or a title, whether a range or a lone "Jan 2019".
+  const candidates = lines.flatMap(splitHeaderParts).filter((part) => !DATE_RANGE_LINE_RE.test(part) && !parseResumeDate(part));
   const location = candidates.find(looksLikeLocation) ?? "";
   const nonLocation = candidates.filter((part) => part !== location);
 
   let jobTitle = nonLocation.find((part) => TITLE_SIGNAL_RE.test(part) && !EMPLOYER_SIGNAL_RE.test(part)) ?? "";
   let employer = nonLocation.find((part) => part !== jobTitle && EMPLOYER_SIGNAL_RE.test(part)) ?? "";
+  if (!jobTitle && !employer && nonLocation.length === 2) {
+    // No title or employer keyword on either part: an organization marker names
+    // the employer; otherwise the first part is the title ("Laborer" above "ABC Builders").
+    const titleIndex = organizationMarker(nonLocation[0]) && !organizationMarker(nonLocation[1]) ? 1 : 0;
+    return { jobTitle: nonLocation[titleIndex], employer: nonLocation[1 - titleIndex], location };
+  }
   if (!jobTitle) jobTitle = nonLocation.find((part) => TITLE_SIGNAL_RE.test(part)) ?? "";
   if (!employer) employer = nonLocation.find((part) => part !== jobTitle) ?? "";
   if (!jobTitle && nonLocation.length >= 2) jobTitle = nonLocation[1];
@@ -182,18 +194,57 @@ function looksLikeNarrative(line: string): boolean {
   return line.startsWith("•") || /[.!?]$/.test(cleaned) || cleaned.length > 120;
 }
 
+/** A standalone title line: one short part that is not a heading, date, bullet, location, or contact detail. */
+function titleOnlyLine(line: string | undefined): line is string {
+  if (!line || TOP_LEVEL_SECTION_RE.test(line) || parseDateRange(line) || parseResumeDate(line) || looksLikeNarrative(line)) return false;
+  if (/^[-*–—]\s/.test(line) || /[@\d]/.test(line) || looksLikeLocation(line) || splitHeaderParts(line).length !== 1) return false;
+  // "Acme Services" is an employer line; "HVAC Service Technician" is still a title.
+  return line.split(/\s+/).length <= 8 && (TITLE_SIGNAL_RE.test(line) || !EMPLOYER_SIGNAL_RE.test(line));
+}
+
+/** True when an "Employer — City, ST" style line already names a job title. */
+function carriesTitle(line: string): boolean {
+  return splitHeaderParts(line).some((part) => !looksLikeLocation(part) && TITLE_SIGNAL_RE.test(part) && !EMPLOYER_SIGNAL_RE.test(part));
+}
+
+/**
+ * Title directly above a title-less "Employer — Location" line:
+ *   Building Equipment Mechanic
+ *   Northgate Medical Center — Portland, OR
+ *   Mar 2021 - Present
+ * Titles without a known title word must start a block so a previous job's
+ * trailing line is never read as the next job's title.
+ */
+function stackedTitleAbove(lines: string[], employerIndex: number): boolean {
+  const title = lines[employerIndex - 1];
+  if (!titleOnlyLine(title) || carriesTitle(lines[employerIndex])) return false;
+  const before = lines[employerIndex - 2];
+  return TITLE_SIGNAL_RE.test(title) || !before || TOP_LEVEL_SECTION_RE.test(before) || Boolean(parseDateRange(before)) || looksLikeNarrative(before);
+}
+
 function roleHeaderStart(lines: string[], dateIndex: number): number {
   let start = dateIndex;
   let seen = 0;
   for (let index = dateIndex - 1; index >= 0 && seen < 3; index -= 1) {
     const line = lines[index];
     if (!line) continue;
-    if (TOP_LEVEL_SECTION_RE.test(line) || parseDateRange(line) || looksLikeNarrative(line)) break;
+    if (TOP_LEVEL_SECTION_RE.test(line) || parseDateRange(line) || parseResumeDate(line) || looksLikeNarrative(line)) break;
     start = index;
     seen += 1;
-    if (splitHeaderParts(line).length >= 2) break;
+    if (splitHeaderParts(line).length >= 2) {
+      if (stackedTitleAbove(lines, index)) start = index - 1;
+      break;
+    }
   }
   return start;
+}
+
+/** Header fields when the first header line is a stacked title above a multi-part employer line. */
+function stackedHeaderFields(headerLines: string[]): { employer: string; jobTitle: string; location: string } | null {
+  const [title, employerLine] = headerLines;
+  if (!titleOnlyLine(title) || !employerLine || splitHeaderParts(employerLine).length < 2 || carriesTitle(employerLine)) return null;
+  const { employer, location } = chooseHeaderFields(headerLines.slice(1));
+  return employer ? { employer, jobTitle: title, location } : null;
 }
 
 function parseRolesDeterministically(source: string): ParsedRole[] {
@@ -213,6 +264,14 @@ function parseRolesDeterministically(source: string): ParsedRole[] {
     if (!inExperience || anchors.some((anchor) => index >= anchor.headerStart && index <= anchor.index)) continue;
     const parts = splitHeaderParts(line);
     if (parts.length < 2 || looksLikeNarrative(line)) continue;
+    // Undated stacked header ("Title" above "Employer — City, ST", date missing):
+    // keep it as its own job rather than folding it into the previous job's duties.
+    const before = lines[index - 2];
+    if (stackedTitleAbove(lines, index) && (!before || TOP_LEVEL_SECTION_RE.test(before) || looksLikeNarrative(before))
+      && !anchors.some((anchor) => index - 1 >= anchor.headerStart && index - 1 <= anchor.index)) {
+      anchors.push({ index, headerStart: index - 1, range: { startDate: "", endDate: "", match: "" } });
+      continue;
+    }
     const header = chooseHeaderFields([line]);
     if (!header.employer || !header.jobTitle || !TITLE_SIGNAL_RE.test(header.jobTitle)) continue;
     const next = lines[index + 1]?.trim() ?? "";
@@ -221,12 +280,23 @@ function parseRolesDeterministically(source: string): ParsedRole[] {
       range: { startDate: singleDate, endDate: "", match: singleDate } });
   }
   anchors.sort((a, b) => a.headerStart - b.headerStart);
+  // Employer heading shared by later title-only positions ("Employer / Title / Dates", then "Title / Dates").
+  let groupEmployer: { employer: string; location: string } | null = null;
   return anchors.map((anchor, anchorIndex) => {
     const headerLines = lines.slice(anchor.headerStart, anchor.index + 1)
       // Remove only the date text, then any delimiter it leaves dangling.
       .map((line) => (anchor.range.match ? line.replace(anchor.range.match, "") : line).replace(/^[\s|•·,;-]+|[\s|•·,;-]+$/g, "").trim())
       .filter(Boolean);
-    const header = chooseHeaderFields(headerLines);
+    let header = stackedHeaderFields(headerLines) ?? chooseHeaderFields(headerLines);
+    const previousEnd = anchors[anchorIndex - 1]?.index ?? anchor.headerStart;
+    const sameSection = !lines.slice(previousEnd + 1, anchor.headerStart).some((line) => TOP_LEVEL_SECTION_RE.test(line));
+    if (!header.employer && header.jobTitle && headerLines.length === 1 && groupEmployer && sameSection) {
+      header = { ...header, employer: groupEmployer.employer, location: header.location || groupEmployer.location };
+    } else {
+      const employerFirst = headerLines.length >= 2 && Boolean(header.employer) && Boolean(header.jobTitle)
+        && headerLines[0].includes(header.employer) && !headerLines[0].includes(header.jobTitle);
+      groupEmployer = employerFirst ? { employer: header.employer, location: header.location } : null;
+    }
     const nextHeaderStart = anchors[anchorIndex + 1]?.headerStart ?? lines.length;
     const responsibilityLines: string[] = [];
 
