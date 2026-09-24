@@ -63,7 +63,7 @@ test("the bridge uses attached identity and re-enforces Gemini cost controls", a
   assert.match(calls[1].url, /projects\/trade-hustl3-resume-ai\/locations\/global\/publishers\/google\/models\/gemini-3\.8-flash:generateContent$/);
   assert.equal(new Headers(calls[1].init.headers).get("authorization"), "Bearer short-lived-token");
   const forwarded = JSON.parse(String(calls[1].init.body));
-  assert.equal(forwarded.generationConfig.maxOutputTokens, 4_000);
+  assert.equal(forwarded.generationConfig.maxOutputTokens, 8_000);
   assert.equal(forwarded.generationConfig.candidateCount, 1);
   assert.equal(forwarded.generationConfig.responseMimeType, "application/json");
   assert.deepEqual(forwarded.generationConfig.thinkingConfig, { thinkingLevel: "LOW", includeThoughts: false });
@@ -79,3 +79,18 @@ test("the bridge prevents callers from selecting a different model", async () =>
   assert.equal(response.status, 400);
   assert.equal(fetchCalls, 0);
 });
+
+for (const [requested, expected] of [[8_000, 8_000], [3_200, 3_200], [99_999, 8_000], [undefined, 4_000], [null, 4_000], [-1, 4_000], [1.5, 4_000], ["8000", 4_000]]) {
+  test(`bridge bounds output budget ${requested} to ${expected}`, async () => {
+    resetAccessTokenCacheForTests();
+    let forwarded;
+    await handleResumeAiBridge(request(`Bearer ${secret}`, {
+      ...generationRequest, generationConfig: { ...generationRequest.generationConfig, maxOutputTokens: requested },
+    }), env, { fetch: async (url, init) => {
+      if (String(url).startsWith("http://metadata.google.internal/")) return Response.json({ access_token: "token" });
+      forwarded = JSON.parse(init.body);
+      return Response.json({ candidates: [] });
+    } });
+    assert.equal(forwarded.generationConfig.maxOutputTokens, expected);
+  });
+}
