@@ -138,23 +138,39 @@ function phoneLike(value: string): boolean {
   return /^[+()\d\s.-]+$/.test(value) && value.replace(/\D/g, "").length >= 7;
 }
 
-/**
- * Header identity (name, target title, trade, city/state, phone, email) belongs
- * in the resume header only. It is never a professional skill, even when a
- * contact line such as "Title | Trade | City, ST | phone | email" was split
- * into list items upstream.
- */
-export function isResumeIdentityTerm(
-  value: string,
-  identity: { contact: CanonicalSourceRecord["contact"]; targetTitle: string },
-  trade = "",
-): boolean {
-  const cleaned = value.replace(/\s+/g, " ").trim();
-  if (!cleaned) return true;
-  if (EMAIL_TERM_RE.test(cleaned) || URL_TERM_RE.test(cleaned) || phoneLike(cleaned) || PHONE_FRAGMENT_RE.test(cleaned)
-    || CITY_STATE_TERM_RE.test(cleaned)) return true;
+type ResumeIdentity = {
+  contact: CanonicalSourceRecord["contact"];
+  targetTitle: string;
+  roles?: ReadonlyArray<{ jobTitle: string }>;
+};
+
+// Title and trade labels are compared singular/plural-insensitively so
+// "Facilities" and "Facility Maintenance" match the same identity.
+function identityKey(value: string): string {
+  return normalized(value).split(" ")
+    .map((word) => word.length > 4 && word.endsWith("ies") ? `${word.slice(0, -3)}y`
+      : word.length > 3 && word.endsWith("s") && !word.endsWith("ss") ? word.slice(0, -1) : word)
+    .join(" ");
+}
+
+// Trade / department labels. Standalone, "Plumbing" or "Electrical" can be a real
+// capability; next to a job title they are identity ("Service Supervisor · HVAC").
+const TRADE_LABEL_KEYS = new Set([
+  "hvac", "hvac r", "hvacr", "refrigeration", "hvac and refrigeration", "hvac refrigeration", "heating and cooling",
+  "electrical", "plumbing", "mechanical", "construction", "carpentry", "construction and carpentry",
+  "facility", "facility maintenance", "maintenance", "building engineering", "welding", "fabrication",
+  "welding and fabrication", "welding fabrication", "general labor", "trade helper", "general labor trade helper",
+].map(identityKey));
+
+// A segment whose final word is a role noun is a job title, not a capability.
+const ROLE_NOUN_RE = /\b(?:technician|tech|mechanic|supervisor|manager|foreman|forewoman|foreperson|superintendent|electrician|plumber|pipefitter|fitter|steamfitter|carpenter|welder|fabricator|installer|operator|engineer|specialist|director|lead|helper|apprentice|journeyman|journeyperson|laborer|labourer|custodian|janitor|porter|millwright|estimator|inspector|coordinator|administrator|assistant|associate|worker|handyman)\s*(?:i{1,3}|iv|[1-4])?$/;
+
+// Separators that join header identity ("Title | Trade", "Title · Trade", "Trade / Title").
+const IDENTITY_SEPARATOR_RE = /\s*[|·•▪◦●/]\s*|\s+[—–-]\s+/;
+
+function exactIdentityKeys(identity: ResumeIdentity, trade: string): Set<string> {
   const locationParts = identity.contact.location.split(",").map((part) => part.trim());
-  const identities = [
+  return new Set([
     identity.contact.fullName,
     identity.contact.email,
     identity.contact.phone,
@@ -162,8 +178,160 @@ export function isResumeIdentityTerm(
     ...locationParts,
     identity.targetTitle,
     trade,
-  ].map(normalized).filter(Boolean);
-  return identities.includes(normalized(cleaned));
+    ...trade.split(/\s*(?:&|\/|\band\b)\s*/i),
+    ...(identity.roles ?? []).map((role) => role.jobTitle),
+  ].map(identityKey).filter(Boolean));
+}
+
+function contactLike(value: string): boolean {
+  return EMAIL_TERM_RE.test(value) || URL_TERM_RE.test(value) || phoneLike(value) || PHONE_FRAGMENT_RE.test(value)
+    || CITY_STATE_TERM_RE.test(value);
+}
+
+function titleLike(value: string): boolean {
+  return ROLE_NOUN_RE.test(normalized(value));
+}
+
+/**
+ * Splits a skill candidate into the capability segments that may render as
+ * competencies. Returns [] when the whole value is header identity (contact,
+ * target title, trade, a verified job title, or a composite of those such as
+ * "Building Equipment Mechanic · HVAC"). A value with no identity segment is
+ * kept intact, so "Plumbing / Building Maintenance" stays one competency.
+ */
+export function competencySegments(value: string, identity: ResumeIdentity, trade = ""): string[] {
+  const cleaned = value.replace(/\s+/g, " ").trim();
+  if (!cleaned || contactLike(cleaned)) return [];
+  const exact = exactIdentityKeys(identity, trade);
+  if (exact.has(identityKey(cleaned)) || titleLike(cleaned)) return [];
+  const segments = cleaned.split(IDENTITY_SEPARATOR_RE).map((part) => part.trim()).filter(Boolean);
+  if (segments.length < 2) return [cleaned];
+  const anchored = segments.some((part) => contactLike(part) || exact.has(identityKey(part)) || titleLike(part));
+  if (!anchored) return [cleaned];
+  return segments.filter((part) => !contactLike(part) && !exact.has(identityKey(part)) && !titleLike(part)
+    && !TRADE_LABEL_KEYS.has(identityKey(part)));
+}
+
+/**
+ * Header identity (name, target title, trade, city/state, phone, email) and
+ * verified job titles belong in the header or work history only. They are never
+ * a professional skill, even when a contact line such as
+ * "Title | Trade | City, ST | phone | email" was split into list items upstream
+ * or a composite such as "Building Equipment Mechanic · HVAC" survived intact.
+ */
+export function isResumeIdentityTerm(value: string, identity: ResumeIdentity, trade = ""): boolean {
+  return competencySegments(value, identity, trade).length === 0;
+}
+
+// Evidence-backed competency labels. A label is offered only when one verified
+// work-history or skill fact matches every pattern in one of its evidence sets.
+const HVAC_EVIDENCE = /\b(?:hvac|heating|cooling|air[- ]?condition\w*|a\/c|heat pumps?|rooftop units?|rtus?|furnaces?|boilers?|chillers?|refrigeration|split systems?|air handlers?)\b/i;
+const COMPETENCY_RULES: ReadonlyArray<{ label: string; evidence: RegExp[][] }> = [
+  { label: "HVAC Diagnostics", evidence: [[HVAC_EVIDENCE, /\b(?:diagnos\w*|troublesho\w*)/i]] },
+  { label: "Preventive Maintenance", evidence: [[/\bprevent(?:at)?ive\s+maintenance\b/i], [/\bPMs?\b/]] },
+  { label: "Electrical Troubleshooting", evidence: [[/\belectrical\b/i, /\b(?:troublesho\w*|diagnos\w*|repair\w*)/i]] },
+  { label: "Plumbing / Building Maintenance", evidence: [[/\bplumbing\b/i, /\b(?:buildings?|facilit(?:y|ies)|propert(?:y|ies)|apartments?|units?|maintenance)\b/i]] },
+  { label: "Refrigerant Service", evidence: [[/\brefrigerants?\b/i, /\b(?:recover\w*|charg\w*|recharg\w*|leak\w*|handl\w*|servic\w*|evacuat\w*)/i]] },
+  { label: "Equipment Installation", evidence: [[/\binstall\w*/i, /\b(?:equipment|units?|systems?|fixtures?|motors?|pumps?|compressors?|thermostats?|appliances?|panels?|controls?|condensers?)\b/i]] },
+  { label: "Emergency Response", evidence: [[/\b(?:emergenc\w*|after[- ]hours|on[- ]call)\b/i]] },
+  { label: "Facility Maintenance", evidence: [[/\b(?:facilit(?:y|ies)|buildings?|propert(?:y|ies)|campus|apartments?|communit(?:y|ies))\b/i, /\b(?:maint\w*|repair\w*|upkeep)/i]] },
+  { label: "Work Order Management", evidence: [[/\bwork[- ]orders?\b/i]] },
+  { label: "Vendor Coordination", evidence: [[/\b(?:vendors?|contractors?|subcontractors?)\b/i, /\b(?:coordinat\w*|schedul\w*|manag\w*|oversaw|oversee\w*|supervis\w*|liaison|worked with)/i]] },
+  { label: "Team Leadership", evidence: [[/\b(?:led|leads?|leading|supervis\w*|manag\w*|mentor\w*|train\w*|direct\w*|oversaw)\b/i, /\b(?:teams?|technicians?|techs|staff|crews?|mechanics?|employees|workers|apprentices|helpers)\b/i]] },
+  { label: "Blueprint Reading", evidence: [[/\b(?:blueprints?|schematics?|drawings)\b/i, /\b(?:read\w*|interpret\w*|follow\w*|review\w*)/i]] },
+  { label: "Wiring & Conduit Installation", evidence: [[/\b(?:conduit|wiring|circuits?)\b/i, /\b(?:install\w*|ran|run|pull\w*|bend\w*)/i]] },
+  { label: "MIG Welding", evidence: [[/\bMIG\b/]] },
+  { label: "TIG Welding", evidence: [[/\bTIG\b/]] },
+  { label: "Metal Fabrication", evidence: [[/\bfabricat\w*/i, /\b(?:metal|steel|aluminum|parts?|brackets?|frames?)\b/i]] },
+  { label: "Framing & Carpentry", evidence: [[/\bfram(?:e|ed|es|ing)\b/i, /\b(?:walls?|studs?|build\w*|built|install\w*)/i]] },
+  { label: "Equipment Operation", evidence: [[/\boperat\w*/i, /\b(?:forklifts?|machinery|lifts?|excavators?|loaders?|heavy equipment)\b/i]] },
+  { label: "Safety Compliance", evidence: [[/\b(?:osha|lockout|tagout|loto|safety)\b/i, /\b(?:complian\w*|follow\w*|enforc\w*|programs?|procedures?|inspect\w*|standards?)/i]] },
+];
+
+const MIN_COMPETENCIES = 6;
+const MAX_DERIVED_COMPETENCIES = 12;
+
+function competencyEvidenceTexts(source: CanonicalSourceRecord): string[] {
+  // The header line of sourceResumeText carries title/trade identity, so derive
+  // only from structured, verified facts.
+  return [
+    ...source.roles.flatMap((role) => role.bullets),
+    ...source.technicalSkills,
+    ...source.tools,
+    ...source.equipmentSystems,
+    ...source.software,
+    ...source.safety,
+    ...source.narrativeFacts,
+  ].filter(Boolean);
+}
+
+function competencyMatches(label: string, fact: string): boolean {
+  const rule = COMPETENCY_RULES.find((item) => item.label === label);
+  return Boolean(rule?.evidence.some((set) => set.every((pattern) => pattern.test(fact))));
+}
+
+function derivedCompetencySupported(skill: string, source: CanonicalSourceRecord): boolean {
+  const key = normalized(skill);
+  const rule = COMPETENCY_RULES.find((item) => normalized(item.label) === key);
+  return Boolean(rule && competencyEvidenceTexts(source).some((fact) => competencyMatches(rule.label, fact)));
+}
+
+function stemWords(value: string): string[] {
+  return significantWords(value).map((word) => word.slice(0, 6));
+}
+
+// "Preventive Maintenance" is already covered by "HVAC Preventive Maintenance".
+function competencyCovered(label: string, existing: string[]): boolean {
+  const words = stemWords(label);
+  return existing.some((skill) => {
+    const present = new Set(stemWords(skill));
+    return normalized(skill) === normalized(label) || (words.length > 0 && words.every((word) => present.has(word)));
+  });
+}
+
+/** Competency labels supported by verified work-history and skill facts. */
+export function derivedCompetencies(source: CanonicalSourceRecord): string[] {
+  const facts = competencyEvidenceTexts(source);
+  return COMPETENCY_RULES
+    .filter((rule) => facts.some((fact) => competencyMatches(rule.label, fact)))
+    .map((rule) => rule.label);
+}
+
+function hasSourceFacts(identity: ResumeIdentity | CanonicalSourceRecord): identity is CanonicalSourceRecord {
+  const candidate = identity as Partial<CanonicalSourceRecord>;
+  return Array.isArray(candidate.roles) && Array.isArray(candidate.technicalSkills) && Array.isArray(candidate.narrativeFacts);
+}
+
+/**
+ * Competencies hold capabilities only. Identity and composite title/trade values
+ * are removed; when that leaves a thin section, verified source facts supply
+ * evidence-backed competency labels. Nothing is added without source support.
+ * Backfill is off for customer corrections, which may have removed a skill on purpose.
+ */
+export function groundedCompetencies(
+  skills: string[],
+  identity: ResumeIdentity | CanonicalSourceRecord,
+  trade = "",
+  backfill = true,
+): string[] {
+  const kept: string[] = [];
+  for (const skill of skills) {
+    for (const segment of competencySegments(skill, identity, trade)) {
+      if (!kept.some((item) => normalized(item) === normalized(segment))) kept.push(segment);
+    }
+  }
+  if (!backfill || !hasSourceFacts(identity)) return kept;
+  const strong = kept.filter((skill) => skillSupported(skill, identity));
+  if (strong.length >= MIN_COMPETENCIES) return kept;
+  const additions: string[] = [];
+  for (const label of derivedCompetencies(identity)) {
+    if (additions.length >= MAX_DERIVED_COMPETENCIES) break;
+    // Skip a label that is (even partly) the candidate's trade, e.g. "Plumbing / ..." for a plumber.
+    const segments = competencySegments(label, identity, trade);
+    if (segments.length !== 1 || segments[0] !== label || competencyCovered(label, [...kept, ...additions])) continue;
+    additions.push(label);
+  }
+  return [...kept, ...additions];
 }
 
 /**
@@ -172,13 +340,14 @@ export function isResumeIdentityTerm(
  */
 export function mapResumeHeaderAndSkills<T extends GeneratedResume>(
   generated: T,
-  identity: { contact: CanonicalSourceRecord["contact"]; targetTitle: string },
+  identity: ResumeIdentity | CanonicalSourceRecord,
   trade = "",
+  backfill = true,
 ): T {
   return {
     ...generated,
     basics: { ...generated.basics, targetTitle: identity.targetTitle || generated.basics.targetTitle },
-    skills: generated.skills.filter((skill) => !isResumeIdentityTerm(skill, identity, trade)),
+    skills: groundedCompetencies(generated.skills, identity, trade, backfill).slice(0, 24),
   };
 }
 
@@ -283,7 +452,7 @@ export function canonicalSourceRecord(intake: unknown, targetTitle = "", tradeTr
       || text(targetTitle, 120),
   };
   const trade = text(root.trade, 120) || text(tradeTrack, 120);
-  const skillList = (values: string[]) => values.filter((value) => !isResumeIdentityTerm(value, identity, trade));
+  const skillList = (values: string[]) => values.flatMap((value) => competencySegments(value, { ...identity, roles }, trade));
   const source: Omit<CanonicalSourceRecord, "factProvenance"> = {
     ...identity,
     roles,
@@ -474,7 +643,8 @@ function skillSupported(skill: string, source: CanonicalSourceRecord): boolean {
     source.sourceResumeText,
   ].filter(Boolean).some((claim) => normalized(claim).includes(normalized(skill))
     || normalized(skill).includes(normalized(claim))
-    || (overlap(skill, claim) >= 0.5 && claimSupported(skill, [claim])));
+    || (overlap(skill, claim) >= 0.5 && claimSupported(skill, [claim])))
+    || derivedCompetencySupported(skill, source);
 }
 
 function educationSupported(item: GeneratedResume["education"][number], source: CanonicalSourceRecord): boolean {
@@ -577,6 +747,7 @@ export function repairResumeFromSource(
   generated: GeneratedResume,
   source: CanonicalSourceRecord,
   preserveGeneratedDates = false,
+  options: { trade?: string; backfillCompetencies?: boolean } = {},
 ): GeneratedResume {
   const experience = source.roles.map((sourceRole) => {
     const existing = findGeneratedRole(sourceRole, generated);
@@ -638,7 +809,7 @@ export function repairResumeFromSource(
       email: source.contact.email || generated.basics.email,
     },
     certifications: supportedCertifications,
-    skills: supportedSkills.slice(0, 24),
+    skills: groundedCompetencies(supportedSkills, source, options.trade, options.backfillCompetencies ?? true).slice(0, 24),
     experience: source.roles.length ? experience : generated.experience,
     summary: generated.summary && claimSupported(generated.summary, summarySources(source)) ? generated.summary : safeSummary,
     education: generated.education.filter((item) => educationSupported(item, source)),
@@ -703,7 +874,8 @@ function evidenceIdsForClaim(path: string, generated: GeneratedResume, catalog: 
   const eligible = roleMatch
     ? catalog.filter((fact) => fact.roleIndex === Number(roleMatch[1]) || fact.roleIndex === undefined)
     : catalog;
-  const direct = eligible.filter((fact) => claimSupported(claim, [fact.value]));
+  const direct = eligible.filter((fact) => claimSupported(claim, [fact.value])
+    || (path.startsWith("skills.") && competencyMatches(claim, fact.value)));
   if (direct.length) return direct.slice(0, 8).map((fact) => fact.id);
   const combined: SourceFact[] = [];
   for (const fact of eligible) {

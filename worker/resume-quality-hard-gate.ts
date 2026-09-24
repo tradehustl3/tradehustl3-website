@@ -2,7 +2,7 @@ import type { GeneratedResume, ResumeCertification, ResumeEducation } from "./re
 import {
   assessIntakeSubstance,
   canonicalSourceRecord,
-  isResumeIdentityTerm,
+  groundedCompetencies,
   scoreResume,
   validateResumeAgainstSource,
 } from "./resume-quality";
@@ -212,9 +212,8 @@ export function hardenResumeStructure(
   });
 
   const summary = semanticDedupe(splitSummarySentences(generated.summary), 0.86).join(" ");
-  const skills = dedupeSkillTerms(generated.skills)
-    .filter((skill) => !isResumeIdentityTerm(skill, source))
-    .slice(0, 24);
+  // Filter only: this pass also runs after customer corrections, so it never adds skills.
+  const skills = groundedCompetencies(dedupeSkillTerms(generated.skills), source, "", false).slice(0, 24);
   const additionalInformation = semanticDedupe(
     generated.additionalInformation.map(clean).filter((item) => item && !isCredentialEntity(item)),
     0.88,

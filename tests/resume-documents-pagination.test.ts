@@ -3,7 +3,8 @@ import test from "node:test";
 import JSZip from "jszip";
 import { getDocument } from "pdfjs-dist/legacy/build/pdf.mjs";
 import { createResumeDocx, createResumePdf } from "../worker/resume-documents";
-import type { GeneratedResume } from "../worker/resume-documents";
+import type { GeneratedResume, ResumeTheme } from "../worker/resume-documents";
+import { fixtureModelDraft } from "./helpers/production-resume-fixture";
 
 const compactFitResume: GeneratedResume = {
   basics: {
@@ -130,7 +131,7 @@ test("PDF never starts a continuation page with job bullets lacking their job he
   }
 });
 
-test("DOCX marks job bullets to stay together and prevents a bullet from splitting across pages", async () => {
+test("DOCX binds a job heading to its employer and first bullet only; later bullets paginate normally", async () => {
   const zip = await JSZip.loadAsync(await createResumeDocx(compactFitResume));
   const xml = await zip.file("word/document.xml")?.async("string");
   assert.ok(xml);
@@ -138,6 +139,73 @@ test("DOCX marks job bullets to stay together and prevents a bullet from splitti
   const paragraphs = Array.from(xml.matchAll(/<w:p(?:\s[^>]*)?>([\s\S]*?)<\/w:p>/g));
   const jobParagraphs = paragraphs.filter((paragraph) => /Coordinated preventive maintenance|Diagnosed HVAC|Documented completed work/.test(paragraph[1]));
   assert.equal(jobParagraphs.length, 3);
-  assert.ok(jobParagraphs.every((paragraph) => /<w:keepLines\/?\s*>/.test(paragraph[1])));
-  assert.ok(jobParagraphs.slice(0, -1).every((paragraph) => /<w:keepNext\/?\s*>/.test(paragraph[1])));
+  assert.ok(jobParagraphs.every((paragraph) => /<w:keepLines\/?\s*>/.test(paragraph[1])), "a single bullet never splits across pages");
+  assert.ok(jobParagraphs.every((paragraph) => !/<w:keepNext\/?\s*>/.test(paragraph[1])), "bullets are not chained together");
 });
+
+const THEMES: ResumeTheme[] = ["plain", "navy", "lead"];
+
+const productionLikeResume: GeneratedResume = {
+  ...fixtureModelDraft(),
+  skills: [
+    "HVAC Diagnostics", "Preventive Maintenance", "Electrical Troubleshooting", "Plumbing / Building Maintenance",
+    "Refrigerant Service", "Equipment Installation", "Emergency Response", "Facility Maintenance",
+    "Work Order Management", "Vendor Coordination", "Team Leadership", "Safety Compliance",
+  ],
+};
+
+function pagesContaining(pages: string[], needle: string): number[] {
+  return pages.flatMap((page, index) => page.includes(needle) ? [index + 1] : []);
+}
+
+for (const theme of THEMES) {
+  test(`${theme} PDF: a later job splits after its first bullet instead of moving whole to page two`, async () => {
+    const pages = (await pdfPageText(await createResumePdf(productionLikeResume, false, theme)))
+      .map((page) => page.replace(/\s+/g, " "));
+    assert.equal(pages.length, 2, "substantial experience renders as a balanced two-page resume");
+    const all = pages.join(" ");
+
+    let splitJobs = 0;
+    for (const job of productionLikeResume.experience) {
+      assert.ok(all.includes(job.employer!), `${job.employer} is present`);
+      for (const item of job.bullets) assert.ok(all.includes(item), `bullet preserved: ${item.slice(0, 50)}`);
+
+      const headingPage = pagesContaining(pages, `${job.employer} — ${job.location}`)[0];
+      const bulletPages = job.bullets.map((item) => pagesContaining(pages, item)[0]);
+      assert.equal(bulletPages[0], headingPage, `${job.employer}: heading, employer, and first bullet stay together`);
+      if (new Set(bulletPages).size > 1) {
+        splitJobs += 1;
+        const continuedPage = pages[bulletPages[bulletPages.length - 1] - 1];
+        const continued = continuedPage.indexOf(`${job.jobTitle} | ${job.startDate} – ${job.endDate} (continued)`);
+        const firstContinuedBullet = continuedPage.indexOf(job.bullets[bulletPages.indexOf(bulletPages[bulletPages.length - 1])]);
+        assert.ok(continued >= 0 && continued < firstContinuedBullet, `${job.employer}: continued heading precedes its bullets on the next page`);
+      }
+    }
+    assert.equal(splitJobs, 1, "the job crossing the page break starts on page one and continues on page two");
+
+    const [, , thirdJob] = productionLikeResume.experience;
+    assert.equal(pagesContaining(pages, thirdJob.bullets[0])[0], 1, "the third job is not pushed whole to page two");
+    assert.equal(pagesContaining(pages, thirdJob.bullets[thirdJob.bullets.length - 1])[0], 2);
+  });
+
+  test(`${theme} DOCX: only heading → employer → first bullet use keepNext for every job`, async () => {
+    const zip = await JSZip.loadAsync(await createResumeDocx(productionLikeResume, theme));
+    const xml = await zip.file("word/document.xml")?.async("string");
+    assert.ok(xml);
+    const paragraphs = Array.from(xml.matchAll(/<w:p(?:\s[^>]*)?>([\s\S]*?)<\/w:p>/g)).map((match) => match[1]);
+    const textOf = (paragraph: string) => Array.from(paragraph.matchAll(/<w:t(?:\s[^>]*)?>([^<]*)<\/w:t>/g)).map((match) => match[1]).join("");
+    const keepNext = (paragraph: string) => /<w:keepNext\/?\s*>/.test(paragraph);
+
+    for (const job of productionLikeResume.experience) {
+      const headingIndex = paragraphs.findIndex((paragraph) => textOf(paragraph).startsWith(`${job.jobTitle}  |  ${job.startDate}`)
+        && textOf(paragraphs[paragraphs.indexOf(paragraph) + 1]).startsWith(job.employer!));
+      assert.ok(headingIndex >= 0, `${job.employer} heading rendered`);
+      assert.ok(keepNext(paragraphs[headingIndex]), `${job.employer}: heading keeps with employer`);
+      assert.ok(keepNext(paragraphs[headingIndex + 1]), `${job.employer}: employer keeps with first bullet`);
+      const bullets = paragraphs.slice(headingIndex + 2, headingIndex + 2 + job.bullets.length);
+      assert.deepEqual(bullets.map(textOf), job.bullets, `${job.employer}: every bullet preserved in order`);
+      assert.ok(bullets.every((paragraph) => /<w:keepLines\/?\s*>/.test(paragraph)), `${job.employer}: bullets never split mid-line`);
+      assert.ok(bullets.every((paragraph) => !keepNext(paragraph)), `${job.employer}: bullets are free to paginate`);
+    }
+  });
+}

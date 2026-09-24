@@ -11,7 +11,26 @@ import {
 } from "../worker/resume-documents";
 import { classifyResumeSections } from "../worker/resume-section-classifier";
 import { buildCanonicalSourceRecord } from "../worker/resume-source-canonical";
-import { canonicalSourceRecord, isResumeIdentityTerm } from "../worker/resume-quality";
+import {
+  canonicalSourceRecord,
+  competencySegments,
+  derivedCompetencies,
+  isResumeIdentityTerm,
+  validateResumeAgainstSource,
+} from "../worker/resume-quality";
+import {
+  FIXTURE_CITY_STATE,
+  FIXTURE_COMPOSITE_IDENTITY,
+  FIXTURE_EMAIL,
+  FIXTURE_NAME,
+  FIXTURE_PHONE,
+  FIXTURE_ROLES,
+  FIXTURE_TARGET_TITLE,
+  FIXTURE_TRADE,
+  fixtureModelDraft,
+  fixtureUploadedIntake,
+} from "./helpers/production-resume-fixture";
+import { generateThroughRoute, modelFails as recoveryFetch, modelReturns as returnsDraft } from "./helpers/resume-generation-harness";
 
 const sessionCookie = "tradehustl3_resume_session=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
 const encoder = new TextEncoder();
@@ -368,3 +387,105 @@ test("all three templates preserve identical employers, titles, dates, and certi
   assert.deepEqual([...navy].sort(), [...plain].sort());
   assert.deepEqual([...lead].sort(), [...plain].sort());
 });
+
+// Production defect: "BUILDING EQUIPMENT MECHANIC · HVAC" rendered as the only competency.
+const COMPOSITE_IDENTITIES = [
+  "Building Equipment Mechanic · HVAC",
+  "Maintenance Supervisor | Facilities",
+  "HVAC / HVAC Technician",
+  "Service Supervisor · HVAC",
+];
+const HVAC_CAPABILITIES = [
+  "HVAC Diagnostics",
+  "HVAC Preventive Maintenance",
+  "HVAC Controls",
+  "HVAC Installation",
+  "Refrigerant Service",
+  "Plumbing / Building Maintenance",
+];
+const EXPECTED_FIXTURE_COMPETENCIES = [
+  "HVAC Diagnostics",
+  "Preventive Maintenance",
+  "Electrical Troubleshooting",
+  "Plumbing / Building Maintenance",
+  "Refrigerant Service",
+  "Equipment Installation",
+  "Emergency Response",
+  "Facility Maintenance",
+  "Work Order Management",
+  "Vendor Coordination",
+  "Team Leadership",
+  "Safety Compliance",
+];
+
+test("composite title/trade identity strings are rejected while HVAC capabilities are kept", () => {
+  const identity = {
+    contact: { fullName: FIXTURE_NAME, email: FIXTURE_EMAIL, phone: FIXTURE_PHONE, location: FIXTURE_CITY_STATE },
+    targetTitle: FIXTURE_TARGET_TITLE,
+  };
+  for (const term of COMPOSITE_IDENTITIES) assert.equal(isResumeIdentityTerm(term, identity, FIXTURE_TRADE), true, term);
+  for (const skill of HVAC_CAPABILITIES) {
+    assert.equal(isResumeIdentityTerm(skill, identity, FIXTURE_TRADE), false, skill);
+    assert.deepEqual(competencySegments(skill, identity, FIXTURE_TRADE), [skill], `${skill} stays one competency`);
+  }
+  // A capability joined to a title keeps only the capability.
+  assert.deepEqual(competencySegments("HVAC Technician | Preventive Maintenance", identity, FIXTURE_TRADE), ["Preventive Maintenance"]);
+});
+
+test("verified work-history job titles are never standalone competencies", () => {
+  const source = canonicalSourceRecord(fixtureUploadedIntake(), FIXTURE_TARGET_TITLE, FIXTURE_TRADE);
+  for (const role of FIXTURE_ROLES) assert.equal(isResumeIdentityTerm(role.jobTitle, source, FIXTURE_TRADE), true, role.jobTitle);
+  assert.deepEqual(source.technicalSkills, [], "the echoed header line is not a verified skill");
+});
+
+test("derived competencies come only from verified facts and pass source grounding", () => {
+  const source = canonicalSourceRecord(fixtureUploadedIntake(), FIXTURE_TARGET_TITLE, FIXTURE_TRADE);
+  assert.deepEqual(derivedCompetencies(source), EXPECTED_FIXTURE_COMPETENCIES);
+  const draft = { ...fixtureModelDraft(), skills: EXPECTED_FIXTURE_COMPETENCIES };
+  assert.deepEqual(validateResumeAgainstSource(draft, source).filter((issue) => issue.code === "unsupported_skill"), []);
+
+  // Nothing is invented: a plumbing-only history yields no HVAC, refrigerant, or leadership labels.
+  const plumbingOnly = canonicalSourceRecord({
+    contact: { fullName: "Sam Ortiz", email: "sam@example.com", phone: "", cityState: "Austin, TX" },
+    experience: [{
+      employer: "Ortiz Plumbing",
+      jobTitle: "Plumber",
+      startDate: "2019",
+      endDate: "2024",
+      responsibilities: "Completed plumbing repairs on residential fixtures and drain lines.\nInstalled water heaters and fixtures.",
+    }],
+    targetJob: { title: "Plumber" },
+  }, "Plumber", "Plumbing");
+  assert.deepEqual(derivedCompetencies(plumbingOnly), ["Equipment Installation"]);
+});
+
+for (const [label, fetcher] of [["model draft", returnsDraft(fixtureModelDraft())], ["verified-source recovery", recoveryFetch]] as const) {
+  test(`${label}: "${FIXTURE_COMPOSITE_IDENTITY}" never renders as a competency in any template`, async () => {
+    const generated = await generateThroughRoute(fixtureUploadedIntake(), FIXTURE_TARGET_TITLE, FIXTURE_TRADE, fetcher);
+    assert.equal(generated.basics.targetTitle, FIXTURE_TARGET_TITLE);
+    assert.deepEqual(generated.skills, EXPECTED_FIXTURE_COMPETENCIES);
+
+    for (const theme of THEMES) {
+      const paragraphs = await docxParagraphs(generated, theme);
+      assert.equal(paragraphs[0], FIXTURE_NAME, `${theme}: name first`);
+      assert.equal(paragraphs[1], FIXTURE_TARGET_TITLE, `${theme}: target title directly under the name`);
+      assert.equal(paragraphs[2], `${FIXTURE_CITY_STATE} | ${FIXTURE_PHONE} | ${FIXTURE_EMAIL}`, `${theme}: contact only in header`);
+
+      const competencies = competencyText(paragraphs, theme);
+      assert.ok(!competencies.includes("·"), `${theme}: no composite identity`);
+      assert.doesNotMatch(competencies, /Building Equipment Mechanic|Technician|Supervisor|HVAC & Refrigeration/, `${theme}: no titles or trade labels`);
+      assert.doesNotMatch(competencies, /@|\(\d{3}\)|\d{3}-\d{4}|Portland|\bOR\b|Whitfield/, `${theme}: no contact identity`);
+      for (const skill of EXPECTED_FIXTURE_COMPETENCIES) assert.ok(competencies.includes(skill), `${theme}: keeps ${skill}`);
+      // The title is still used where it belongs: the header and the matching job.
+      assert.ok(paragraphs.some((paragraph) => paragraph.startsWith(`${FIXTURE_TARGET_TITLE} | Mar 2021`)), `${theme}: job title kept in work history`);
+
+      const pdf = await pdfText(generated, theme);
+      const start = pdf.indexOf(COMPETENCY_HEADING[theme]) + COMPETENCY_HEADING[theme].length;
+      const next = pdf.slice(start).search(/\b(?:CERTIFICATIONS|WORK EXPERIENCE|PROFESSIONAL EXPERIENCE)\b/);
+      const pdfCompetencies = pdf.slice(start, start + next);
+      assert.ok(!pdfCompetencies.includes(FIXTURE_TARGET_TITLE) && !pdfCompetencies.includes("·"), `${theme} PDF: no composite identity`);
+      assert.ok(pdfCompetencies.includes("Vendor Coordination"), `${theme} PDF: verified competencies render`);
+      assert.equal(occurrences(pdf, FIXTURE_EMAIL), 1, `${theme} PDF: email only in header`);
+    }
+  });
+}
