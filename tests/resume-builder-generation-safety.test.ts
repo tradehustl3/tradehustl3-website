@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { handleResumeAiBridge, resetAccessTokenCacheForTests } from "../services/resume-ai-bridge/app.mjs";
 import { handleResumeBuilderRoute } from "../worker/resume-builder";
+import { handleResumeBuilderRoute as handleBaseResumeBuilderRoute } from "../worker/resume-builder-base";
 import type { ResumeBuilderDependencies } from "../worker/resume-builder";
 import type { GeneratedResume } from "../worker/resume-documents";
 
@@ -58,6 +60,7 @@ type HarnessOptions = {
   total?: number;
   intake?: unknown;
   entitled?: boolean;
+  theme?: "plain" | "navy" | "lead";
 };
 
 function harness(options: HarnessOptions = {}) {
@@ -92,6 +95,7 @@ function harness(options: HarnessOptions = {}) {
             generated_json: state.generatedJson,
             target_job_posting: null,
             status: state.status,
+            theme: options.theme ?? "plain",
           };
         }
         if (/FROM entitlements/i.test(sql)) {
@@ -649,4 +653,197 @@ test("a paid owner can update intake without replacing payment or generated outp
   const update = h.writes.find((item) => /UPDATE resumes SET trade = \?/i.test(item.sql));
   assert.ok(update);
   assert.doesNotMatch(update.sql, /generated_json|status\s*=/i);
+});
+
+for (const provider of ["gemini", "anthropic"] as const) {
+  for (const theme of ["plain", "navy", "lead"] as const) {
+    test(`${provider} ${theme}: split JSON text reaches the preview without corrupting string values`, async () => {
+      const h = harness({ theme });
+      const raw = JSON.stringify(entryLevelResume);
+      const split = raw.indexOf("Devon") + 3;
+      const parts = [raw.slice(0, split), raw.slice(split)];
+      // This is the response immediately before the old adapter's failing parse.
+      assert.deepEqual(JSON.parse(parts.join("")), entryLevelResume);
+      assert.throws(() => JSON.parse(parts.join("\n")), SyntaxError);
+      const modelFetch = (async () => new Response(JSON.stringify(provider === "gemini"
+        ? { candidates: [{ finishReason: "STOP", content: { parts: parts.map((text) => ({ text })) } }] }
+        : { stop_reason: "end_turn", content: parts.map((text) => ({ type: "text", text })) }
+      ))) as typeof fetch;
+      const response = await handleResumeBuilderRoute(request(), {
+        DB: h.DB as unknown as D1Database, BOOKS: h.BOOKS as unknown as R2Bucket,
+        RESUME_AI_PROVIDER: provider, RESUME_AI_BRIDGE_URL: "https://bridge.example",
+        RESUME_AI_BRIDGE_SECRET: "test-secret", ANTHROPIC_API_KEY: "test-key",
+      }, { ...dependenciesFor(entryLevelResume), geminiFetch: modelFetch, anthropicFetch: modelFetch });
+      assert.equal(response?.status, 200, await response?.clone().text());
+      assert.equal(h.state.creditsUsed, 1);
+      assert.equal(h.objects.size, 3);
+      assert.equal(JSON.parse(h.state.generatedJson!).basics.fullName, "Devon Price");
+    });
+  }
+}
+
+for (const theme of ["plain", "navy", "lead"] as const) {
+  test(`${theme}: the generation token budget survives the real bridge and a complete response renders`, async () => {
+    resetAccessTokenCacheForTests();
+    const h = harness({ theme });
+    const secret = "0123456789abcdef0123456789abcdef";
+    let forwardedBudget = 0;
+    const geminiFetch = (async (url, init) => handleResumeAiBridge(new Request(String(url), init), {
+      RESUME_AI_BRIDGE_SECRET: secret, GOOGLE_CLOUD_PROJECT_ID: "test-project", NODE_ENV: "test",
+    }, { fetch: async (url: string, init?: RequestInit) => {
+      if (url.startsWith("http://metadata.google.internal/")) {
+        return Response.json({ access_token: "test-token", expires_in: 3600 });
+      }
+      forwardedBudget = JSON.parse(String(init?.body)).generationConfig.maxOutputTokens;
+      // A provider fixture needing more than the old hardcoded 4,000-token ceiling.
+      const truncated = forwardedBudget < 8_000;
+      return Response.json({ candidates: [{ finishReason: truncated ? "MAX_TOKENS" : "STOP",
+        content: { parts: [{ text: truncated ? '{"basics":' : JSON.stringify(entryLevelResume) }] } }] });
+    } })) as typeof fetch;
+    const response = await handleResumeBuilderRoute(request(), {
+      DB: h.DB as unknown as D1Database, BOOKS: h.BOOKS as unknown as R2Bucket,
+      RESUME_AI_PROVIDER: "gemini", RESUME_AI_BRIDGE_URL: "https://bridge.example",
+      RESUME_AI_BRIDGE_SECRET: secret,
+    }, { ...dependenciesFor(entryLevelResume), geminiFetch });
+    assert.equal(response?.status, 200, await response?.clone().text());
+    assert.equal(forwardedBudget, 8_000);
+    assert.equal(h.state.creditsUsed, 1);
+    assert.equal(h.objects.size, 3);
+  });
+}
+
+for (const provider of ["gemini", "anthropic"] as const) {
+  const envelope = (text: string, stop?: string) => provider === "gemini"
+    ? { candidates: [{ finishReason: stop ?? "STOP", content: { parts: [{ text }] } }] }
+    : { stop_reason: stop ?? "end_turn", content: [{ type: "text", text }] };
+  const cases = [
+    { stage: "http", body: "private upstream message", status: 503 },
+    { stage: "provider_json", body: "private invalid envelope" },
+    { stage: "provider_envelope", body: JSON.stringify({ content: {}, candidates: {} }) },
+    { stage: "empty_output", body: JSON.stringify(envelope("")) },
+    { stage: "resume_json", body: JSON.stringify(envelope('{"private":"truncated')) },
+    { stage: "truncated", body: JSON.stringify(envelope(JSON.stringify(entryLevelResume), provider === "gemini" ? "MAX_TOKENS" : "max_tokens")) },
+  ];
+  for (const item of cases) {
+    test(`${provider} ${item.stage}: rejected correction preserves files, refunds run, and records only safe telemetry`, async () => {
+      const h = harness({ generated: entryLevelResume, used: 1 });
+      const prior = h.state.generatedJson;
+      h.objects.set("prior-preview", encoder.encode("PRIOR"));
+      h.filePointers.set("preview", "prior-preview");
+      const modelFetch = (async () => new Response(item.body, { status: item.status ?? 200 })) as typeof fetch;
+      const response = await handleResumeBuilderRoute(request({ correctionRequest: "Keep verified facts" }), {
+        DB: h.DB as unknown as D1Database, BOOKS: h.BOOKS as unknown as R2Bucket,
+        RESUME_AI_PROVIDER: provider, RESUME_AI_BRIDGE_URL: "https://bridge.example",
+        RESUME_AI_BRIDGE_SECRET: "test-secret", ...(provider === "anthropic" ? { ANTHROPIC_API_KEY: "test-key" } : {}),
+      }, { ...dependenciesFor(entryLevelResume), geminiFetch: modelFetch, anthropicFetch: modelFetch });
+      assert.equal(response?.status, 502);
+      const payload = await response!.json() as Record<string, unknown>;
+      assert.equal(payload.code, "MODEL_OUTPUT_ERROR");
+      assert.equal(payload.runConsumed, false);
+      assert.equal(h.state.creditsUsed, 1);
+      assert.equal(h.state.generatedJson, prior);
+      assert.equal(h.state.status, "ready");
+      assert.equal(h.objects.size, 1);
+      assert.equal(h.filePointers.get("preview"), "prior-preview");
+      const log = h.batched.find((entry) => /INSERT INTO resume_generations/i.test(entry.sql));
+      assert.ok(log);
+      const telemetry = JSON.parse(String(log.values[5]));
+      assert.equal(telemetry.stage, item.stage);
+      assert.equal(telemetry.provider, provider);
+      assert.doesNotMatch(JSON.stringify(telemetry), /private|Devon|test-secret|test-key/);
+      assert.equal(payload.stage, undefined);
+    });
+  }
+}
+
+test("Gemini schema rejection does not call a fallback model or consume an AI run", async () => {
+  const h = harness();
+  let fallbackCalls = 0;
+  const response = await handleResumeBuilderRoute(request(), {
+    DB: h.DB as unknown as D1Database, BOOKS: h.BOOKS as unknown as R2Bucket,
+    RESUME_AI_PROVIDER: "gemini", RESUME_AI_BRIDGE_URL: "https://bridge.example",
+    RESUME_AI_BRIDGE_SECRET: "test-secret", ANTHROPIC_API_KEY: "test-key",
+  }, { ...dependenciesFor(entryLevelResume),
+    geminiFetch: (async () => Response.json({ candidates: [{ finishReason: "STOP",
+      content: { parts: [{ text: JSON.stringify(emptyOutput) }] } }] })) as typeof fetch,
+    anthropicFetch: (async () => { fallbackCalls++; return Response.json({}); }) as typeof fetch,
+  });
+  assert.equal(response?.status, 422);
+  assert.equal(fallbackCalls, 0);
+  assert.equal(h.state.creditsUsed, 0);
+  assert.equal(h.objects.size, 0);
+});
+
+test("malformed uploaded-resume output cannot turn source recovery into a consumed run", async () => {
+  const h = harness({ intake: {
+    contact: { fullName: "Rosa Delgado" },
+    career: { summaryNotes: selfEmployedResume.summary, skillsAndTools: "Drywall repair, basic plumbing" },
+    experience: [{ jobTitle: "Self-Employed Handyman", responsibilitiesAndWins: selfEmployedResume.experience[0].bullets[0] }],
+    meta: { source: "upload", importedResume: true },
+  } });
+  const response = await handleBaseResumeBuilderRoute(request(), {
+    DB: h.DB as unknown as D1Database, BOOKS: h.BOOKS as unknown as R2Bucket, ANTHROPIC_API_KEY: "test-key",
+  }, { ...dependenciesFor(selfEmployedResume),
+    anthropicFetch: (async () => Response.json({ content: [{ type: "text", text: '{"summary":' }] })) as typeof fetch,
+  });
+  assert.ok(response);
+  const payload = await response.json() as Record<string, unknown>;
+  assert.equal(response.status, 502);
+  assert.equal(payload.runConsumed, false);
+  assert.equal(h.state.creditsUsed, 0);
+  assert.equal(h.state.generatedJson, null);
+  assert.equal(h.objects.size, 0);
+});
+
+test("unsupported correction dates remain rejected with no provider fallback and no consumed correction", async () => {
+  const safe = { ...selfEmployedResume, experience: [{ ...selfEmployedResume.experience[0], startDate: "2020", endDate: "2021" }] };
+  const unsafe = { ...safe, experience: [{ ...safe.experience[0], endDate: "2099" }] };
+  const h = harness({ generated: safe, used: 1, intake: {
+    contact: { fullName: "Rosa Delgado" },
+    career: { summaryNotes: safe.summary, skillsAndTools: "Drywall repair, basic plumbing" },
+    experience: [{ jobTitle: "Self-Employed Handyman", startDate: "2020", endDate: "2021",
+      responsibilitiesAndWins: safe.experience[0].bullets[0] }],
+  } });
+  let fallbackCalls = 0;
+  const prior = h.state.generatedJson;
+  const response = await handleResumeBuilderRoute(request({ correctionRequest: "Improve wording using the same verified facts" }), {
+    DB: h.DB as unknown as D1Database, BOOKS: h.BOOKS as unknown as R2Bucket,
+    RESUME_AI_PROVIDER: "gemini", RESUME_AI_BRIDGE_URL: "https://bridge.example",
+    RESUME_AI_BRIDGE_SECRET: "test-secret", ANTHROPIC_API_KEY: "test-key",
+  }, { ...dependenciesFor(safe),
+    geminiFetch: (async () => Response.json({ candidates: [{ finishReason: "STOP",
+      content: { parts: [{ text: JSON.stringify(unsafe) }] } }] })) as typeof fetch,
+    anthropicFetch: (async () => { fallbackCalls++; return Response.json({}); }) as typeof fetch,
+  });
+  const payload = await response!.json() as Record<string, unknown>;
+  assert.equal(payload.code, "UNSUPPORTED_NUMERIC_CLAIM");
+  assert.equal(payload.runConsumed, false);
+  assert.equal(fallbackCalls, 0);
+  assert.equal(h.state.creditsUsed, 1);
+  assert.equal(h.state.generatedJson, prior);
+  assert.equal(h.objects.size, 0);
+});
+
+test("rejected Gemini output followed by a fallback outage cannot consume an uploaded-resume run", async () => {
+  const h = harness({ intake: {
+    contact: { fullName: "Rosa Delgado" },
+    career: { summaryNotes: selfEmployedResume.summary, skillsAndTools: "Drywall repair, basic plumbing" },
+    experience: [{ jobTitle: "Self-Employed Handyman", responsibilitiesAndWins: selfEmployedResume.experience[0].bullets[0] }],
+    meta: { source: "upload", importedResume: true },
+  } });
+  const response = await handleBaseResumeBuilderRoute(request(), {
+    DB: h.DB as unknown as D1Database, BOOKS: h.BOOKS as unknown as R2Bucket,
+    RESUME_AI_PROVIDER: "gemini", RESUME_AI_BRIDGE_URL: "https://bridge.example",
+    RESUME_AI_BRIDGE_SECRET: "test-secret", ANTHROPIC_API_KEY: "test-key",
+  }, { ...dependenciesFor(selfEmployedResume),
+    geminiFetch: (async () => Response.json({ candidates: [{ finishReason: "STOP",
+      content: { parts: [{ text: '{"summary":' }] } }] })) as typeof fetch,
+    anthropicFetch: (async () => { throw new Error("private provider outage"); }) as typeof fetch,
+  });
+  assert.equal(response?.status, 502);
+  assert.equal(h.state.creditsUsed, 0);
+  assert.equal(h.state.generatedJson, null);
+  assert.equal(h.objects.size, 0);
+  const log = h.batched.find((entry) => /INSERT INTO resume_generations/i.test(entry.sql));
+  assert.equal(JSON.parse(String(log!.values[5])).stage, "resume_json");
 });

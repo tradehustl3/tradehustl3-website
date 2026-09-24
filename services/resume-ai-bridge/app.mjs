@@ -1,7 +1,8 @@
 import { timingSafeEqual } from "node:crypto";
 
 const MAX_REQUEST_BYTES = 128 * 1024;
-const MAX_OUTPUT_TOKENS = 4_000;
+const MAX_OUTPUT_TOKENS = 8_000;
+const DEFAULT_OUTPUT_TOKENS = 4_000;
 const DEFAULT_MODEL = "gemini-3.8-flash";
 const DEFAULT_LOCATION = "global";
 const METADATA_TOKEN_URL = "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token";
@@ -94,12 +95,16 @@ export async function handleResumeAiBridge(request, env = process.env, dependenc
   const projectId = env.GOOGLE_CLOUD_PROJECT_ID?.trim();
   const location = env.GOOGLE_CLOUD_LOCATION?.trim() || DEFAULT_LOCATION;
   if (!projectId) return json({ ok: false, message: "Google Cloud project is not configured." }, 503);
+  const requestedOutputTokens = payload?.generationConfig?.maxOutputTokens;
+  const maxOutputTokens = Number.isSafeInteger(requestedOutputTokens) && requestedOutputTokens > 0
+    ? Math.min(requestedOutputTokens, MAX_OUTPUT_TOKENS)
+    : DEFAULT_OUTPUT_TOKENS;
   const vertexRequest = {
     systemInstruction: payload.systemInstruction,
     contents: payload.contents,
     generationConfig: {
       candidateCount: 1,
-      maxOutputTokens: MAX_OUTPUT_TOKENS,
+      maxOutputTokens,
       temperature: 0.2,
       seed: 17,
       responseMimeType: "application/json",

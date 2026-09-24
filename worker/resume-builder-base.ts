@@ -233,6 +233,63 @@ export class ResumeGenerationError extends Error {
   }
 }
 
+type ModelFailureStage = "configuration" | "transport" | "http" | "provider_json"
+  | "provider_envelope" | "truncated" | "provider_stop" | "empty_output" | "resume_json";
+
+class ResumeModelFailure extends ResumeGenerationError {
+  constructor(readonly stage: ModelFailureStage, provider: ResumeAiProvider, status?: number) {
+    super("MODEL_OUTPUT_ERROR", "Model output error.", [], {
+      code: "model_output_error", stage, provider, ...(status === undefined ? {} : { status }),
+    });
+  }
+}
+
+// Never log provider bodies, parser messages, intake, or generated candidate facts.
+async function fetchGenerationResponse(
+  provider: ResumeAiProvider, fetchImpl: typeof fetch, endpoint: string, init: RequestInit,
+): Promise<Record<string, unknown>> {
+  let response: Response;
+  try {
+    response = await fetchImpl(endpoint, init);
+  } catch {
+    throw new ResumeModelFailure("transport", provider);
+  }
+  if (!response.ok) throw new ResumeModelFailure("http", provider, response.status);
+  let payload: unknown;
+  try {
+    payload = await response.json();
+  } catch {
+    throw new ResumeModelFailure("provider_json", provider);
+  }
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+    throw new ResumeModelFailure("provider_envelope", provider);
+  }
+  return payload as Record<string, unknown>;
+}
+
+function generationText(parts: unknown, provider: ResumeAiProvider): string {
+  if (!Array.isArray(parts) || parts.some((part) => !part || typeof part !== "object" || Array.isArray(part))) {
+    throw new ResumeModelFailure("provider_envelope", provider);
+  }
+  // Parts are fragments of one JSON document. Adding separators can corrupt a
+  // string or escape sequence spanning two parts. Thoughts never enter the JSON.
+  const raw = parts.filter((part) => provider === "gemini" ? part.thought !== true : part.type === "text")
+    .map((part) => {
+      if (typeof part.text !== "string") throw new ResumeModelFailure("provider_envelope", provider);
+      return part.text;
+    }).join("");
+  if (!raw.trim()) throw new ResumeModelFailure("empty_output", provider);
+  return raw;
+}
+
+function parseGenerationResume(raw: string, provider: ResumeAiProvider): unknown {
+  try {
+    return parseModelResume(raw);
+  } catch {
+    throw new ResumeModelFailure("resume_json", provider);
+  }
+}
+
 function isRetryableFailure(code: ResumeFailureCode): boolean {
   return !NON_RETRYABLE_FAILURES.has(code);
 }
@@ -1847,6 +1904,7 @@ function validateModelResume(
       "INTAKE_INFORMATION_REQUIRED",
       "The generated resume did not contain enough supported information.",
       validation.missing,
+      { code: "model_schema_rejected", stage: "resume_schema", missing: validation.missing },
     );
   }
   const source = canonicalSourceRecord(intake, resume.title, resume.trade);
@@ -1906,14 +1964,14 @@ async function callGemini(
 ): Promise<ResumeModelResult> {
   const bridgeUrl = env.RESUME_AI_BRIDGE_URL?.trim().replace(/\/$/, "");
   const bridgeSecret = env.RESUME_AI_BRIDGE_SECRET?.trim();
-  if (!bridgeUrl || !bridgeSecret) throw new Error("Gemini is not configured.");
+  if (!bridgeUrl || !bridgeSecret) throw new ResumeModelFailure("configuration", "gemini");
   const model = env.GEMINI_MODEL?.trim() || DEFAULT_GEMINI_MODEL;
   const intake = JSON.parse(resume.intake_json) as unknown;
   const prior = resume.generated_json ? JSON.parse(resume.generated_json) as unknown : null;
   const userPrompt = resumeUserPrompt(resume, intake, prior, correctionRequest);
   const geminiFetch = dependencies.geminiFetch ?? fetch;
   const endpoint = `${bridgeUrl}/generate`;
-  const response = await geminiFetch(endpoint, {
+  const payload = await fetchGenerationResponse("gemini", geminiFetch, endpoint, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -1934,8 +1992,7 @@ async function callGemini(
       },
     }),
     signal: AbortSignal.timeout(90_000),
-  });
-  const payload = await response.json() as {
+  }) as {
     candidates?: Array<{
       content?: { parts?: Array<{ text?: unknown; thought?: unknown }> };
       finishReason?: unknown;
@@ -1947,16 +2004,14 @@ async function callGemini(
     };
     error?: { message?: unknown };
   };
-  if (!response.ok) {
-    console.error("Gemini resume generation failed", response.status);
-    throw new Error("Gemini resume generation failed.");
+  if (!Array.isArray(payload.candidates) || !payload.candidates[0]) {
+    throw new ResumeModelFailure("provider_envelope", "gemini");
   }
-  const candidate = payload.candidates?.[0];
-  if (candidate?.finishReason === "MAX_TOKENS") throw new Error("Gemini resume output exceeded the token limit.");
-  const raw = candidate?.content?.parts
-    ?.filter((part) => part.thought !== true && typeof part.text === "string")
-    .map((part) => part.text as string).join("\n") ?? "";
-  const validated = validateModelResume(parseModelResume(raw), intake, resume, correctionRequest);
+  const candidate = payload.candidates[0];
+  if (candidate.finishReason === "MAX_TOKENS") throw new ResumeModelFailure("truncated", "gemini");
+  if (candidate.finishReason && candidate.finishReason !== "STOP") throw new ResumeModelFailure("provider_stop", "gemini");
+  const raw = generationText(candidate.content?.parts, "gemini");
+  const validated = validateModelResume(parseGenerationResume(raw, "gemini"), intake, resume, correctionRequest);
   const visibleOutputTokens = typeof payload.usageMetadata?.candidatesTokenCount === "number"
     ? payload.usageMetadata.candidatesTokenCount
     : 0;
@@ -1980,14 +2035,14 @@ async function callAnthropic(
   dependencies: ResumeBuilderDependencies,
 ): Promise<ResumeModelResult> {
   const apiKey = env.ANTHROPIC_API_KEY?.trim();
-  if (!apiKey) throw new Error("Claude is not configured.");
+  if (!apiKey) throw new ResumeModelFailure("configuration", "anthropic");
   const model = env.CLAUDE_MODEL?.trim() || DEFAULT_CLAUDE_MODEL;
   const intake = JSON.parse(resume.intake_json) as unknown;
   const prior = resume.generated_json ? JSON.parse(resume.generated_json) as unknown : null;
   const userPrompt = resumeUserPrompt(resume, intake, prior, correctionRequest);
 
   const anthropicFetch = dependencies.anthropicFetch ?? fetch;
-  const response = await anthropicFetch("https://api.anthropic.com/v1/messages", {
+  const payload = await fetchGenerationResponse("anthropic", anthropicFetch, "https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -2001,19 +2056,18 @@ async function callAnthropic(
       messages: [{ role: "user", content: userPrompt }],
     }),
     signal: AbortSignal.timeout(90_000),
-  });
-  const payload = await response.json() as {
+  }) as {
     content?: Array<{ type?: unknown; text?: unknown }>;
+    stop_reason?: unknown;
     usage?: { input_tokens?: unknown; output_tokens?: unknown };
     error?: { message?: unknown };
   };
-  if (!response.ok) {
-    console.error("Claude resume generation failed", response.status);
-    throw new Error("Claude resume generation failed.");
+  if (payload.stop_reason === "max_tokens") throw new ResumeModelFailure("truncated", "anthropic");
+  if (payload.stop_reason && payload.stop_reason !== "end_turn" && payload.stop_reason !== "stop_sequence") {
+    throw new ResumeModelFailure("provider_stop", "anthropic");
   }
-  const raw = payload.content?.filter((item) => item.type === "text" && typeof item.text === "string")
-    .map((item) => item.text as string).join("\n") ?? "";
-  const validated = validateModelResume(parseModelResume(raw), intake, resume, correctionRequest);
+  const raw = generationText(payload.content, "anthropic");
+  const validated = validateModelResume(parseGenerationResume(raw, "anthropic"), intake, resume, correctionRequest);
   return {
     ...validated,
     model,
@@ -2034,9 +2088,19 @@ async function callResumeModel(
   try {
     return await callGemini(env, resume, correctionRequest, dependencies);
   } catch (primaryError) {
-    if (!env.ANTHROPIC_API_KEY?.trim()) throw primaryError;
-    console.warn("Gemini resume generation unavailable; using configured Anthropic fallback.");
-    return callAnthropic(env, resume, correctionRequest, dependencies);
+    // A source/quality rejection must never be bypassed by another model call.
+    if (!(primaryError instanceof ResumeModelFailure) || !env.ANTHROPIC_API_KEY?.trim()) throw primaryError;
+    console.warn("Gemini resume generation unavailable; using configured Anthropic fallback.", primaryError.guardTelemetry);
+    try {
+      return await callAnthropic(env, resume, correctionRequest, dependencies);
+    } catch (fallbackError) {
+      // Do not turn rejected primary output plus a fallback outage into a
+      // chargeable source-recovery result. Preserve the primary diagnostic.
+      if (!["transport", "http", "configuration"].includes(primaryError.stage)
+        && fallbackError instanceof ResumeModelFailure
+        && ["transport", "http", "configuration"].includes(fallbackError.stage)) throw primaryError;
+      throw fallbackError;
+    }
   }
 }
 
@@ -2325,11 +2389,15 @@ async function generateResume(
     try {
       generated = await callResumeModel(env, resume, correctionRequest, dependencies);
     } catch (error) {
-      console.error("Resume model stage failed");
-      const recovered = !isCorrection ? recoverUploadedResume(resume) : null;
+      console.error("Resume model stage failed", error instanceof ResumeGenerationError
+        ? error.guardTelemetry ?? { code: error.code } : { stage: "unclassified" });
+      // Source recovery is only for service unavailability, never rejected output.
+      const unavailable = error instanceof ResumeModelFailure
+        && ["transport", "http", "configuration"].includes(error.stage);
+      const recovered = !isCorrection && unavailable ? recoverUploadedResume(resume) : null;
       if (!recovered) {
         if (error instanceof ResumeGenerationError) throw error;
-        throw new ResumeGenerationError("MODEL_OUTPUT_ERROR", "Model output error.");
+        throw new ResumeGenerationError("MODEL_OUTPUT_ERROR", "Model output error.", [], { stage: "unclassified" });
       }
       generated = recovered;
     }
