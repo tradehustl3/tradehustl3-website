@@ -1,3 +1,7 @@
+import { extractContactLocation, locationInLine } from "./resume-location";
+import { groundResumePrefill } from "./resume-extraction-grounding";
+import { isResumeIdentityTerm } from "./resume-quality";
+import { isCurrentDate, parseResumeDate } from "./resume-dates";
 import {
   assessResumeExtractionCoverage,
   repairResumeExtractionFromSource,
@@ -5,6 +9,7 @@ import {
 } from "./resume-extraction-coverage";
 import {
   classifyResumeSections,
+  dedupeCredentials,
   dedupeSkillTerms,
   isCredentialEntity,
   isRoleIdentityLike,
@@ -154,23 +159,18 @@ function firstPhone(source: string): string {
     .trim() ?? "";
 }
 
-function firstCityState(source: string): string {
-  for (const rawLine of sourceLines(source).slice(0, 12)) {
-    const line = rawLine.trim();
-    const match = line.match(/\b([A-Za-z][A-Za-z .'-]{1,60},\s*[A-Z]{2})\b/);
-    if (match) return match[1].trim();
-  }
-  return "";
-}
+const firstCityState = extractContactLocation;
 
 function firstFullName(source: string): string {
   const heading = /^(?:resume|curriculum vitae|professional summary|summary|profile|objective|contact|experience|professional experience|work experience|education|skills|certifications?)$/i;
-  for (const rawLine of sourceLines(source).slice(0, 10)) {
+  const lines = sourceLines(source);
+  const contactLines = lines.filter((_line, index) => lines.slice(Math.max(0, index - 2), index + 3).some((neighbor) => /@|(?:\d{3}[\s().-]*){2}\d{4}/.test(neighbor)));
+  for (const rawLine of [...lines.slice(0, 10), ...contactLines]) {
     const firstSegment = rawLine.split(/\s*(?:\||•|▪|◦|●)\s*/)[0]?.trim() ?? "";
     if (!firstSegment || firstSegment.length > 100 || heading.test(firstSegment)) continue;
     if (/@|https?:\/\/|www\.|\d{3}[\s.()-]*\d{3}/i.test(firstSegment)) continue;
     if (/\b(?:technician|supervisor|manager|mechanic|engineer|maintenance|hvac|refrigeration|electrician|plumber|welder|carpenter)\b/i.test(firstSegment)) continue;
-    if (/\b[A-Za-z .'-]+,\s*[A-Z]{2}\b/.test(firstSegment)) continue;
+    if (locationInLine(firstSegment)) continue;
     const words = firstSegment.match(/[A-Za-z][A-Za-z'.-]*/g) ?? [];
     if (words.length >= 2 && words.length <= 5) return firstSegment;
   }
@@ -338,9 +338,10 @@ export function buildCanonicalSourceRecord(sourceResumeText: string): CanonicalS
     const jobTitle = evidence(sourceResumeText, role.jobTitle, { immutable: true, section: "experience" });
     const startDate = evidence(sourceResumeText, role.startDate, { immutable: true, section: "experience" });
     const endDate = evidence(sourceResumeText, role.endDate, { immutable: true, section: "experience" });
-    if (!employer || !jobTitle || !startDate || !endDate) return [];
+    if (!employer && !jobTitle) return [];
+    const absent: SourceEvidence = { value: "", sourceText: "", lineStart: null, lineEnd: null, section: "experience", immutable: false };
 
-    const identities = [employer.value, jobTitle.value, startDate.value, endDate.value, text(role.location)];
+    const identities = [employer?.value ?? "", jobTitle?.value ?? "", startDate?.value ?? "", endDate?.value ?? "", text(role.location)];
     const responsibilities = semanticDedupe(splitNarrative(role.responsibilities)
       .filter((item) => !isRoleIdentityLike(item, identities)), 0.78)
       .map((item) => evidence(sourceResumeText, item, { immutable: false, section: "experience" }))
@@ -348,11 +349,11 @@ export function buildCanonicalSourceRecord(sourceResumeText: string): CanonicalS
 
     return [{
       id: `source-role-${index + 1}`,
-      employer,
-      jobTitle,
+      employer: employer ?? absent,
+      jobTitle: jobTitle ?? absent,
       location: evidence(sourceResumeText, role.location, { immutable: true, section: "experience" }),
-      startDate,
-      endDate,
+      startDate: startDate ?? absent,
+      endDate: endDate ?? absent,
       current: role.current === true,
       responsibilities,
     }];
@@ -439,12 +440,40 @@ export function buildCanonicalSourceRecord(sourceResumeText: string): CanonicalS
   };
 }
 
+function sameDate(left: string, right: string): boolean {
+  const a = parseResumeDate(left);
+  const b = parseResumeDate(right);
+  if (a && b) return a.year === b.year && (!a.month || !b.month || a.month === b.month);
+  return normalize(left) === normalize(right);
+}
+
+/**
+ * True when a job with the same identity is already listed. Blank identity parts
+ * are compatible, so a partial parser job and a fuller AI job for the same
+ * position never become two jobs; "Jan 2019" and "January 2019" are one date.
+ */
+export function roleRepresented(existingRoles: RecordValue[], role: RecordValue): boolean {
+  const compatible = (left: unknown, right: unknown) => !text(left) || !text(right) || normalize(text(left)) === normalize(text(right));
+  const same = (left: unknown, right: unknown) => Boolean(text(left)) && normalize(text(left)) === normalize(text(right));
+  return existingRoles.some((existing) =>
+    compatible(existing.employer, role.employer)
+    && compatible(existing.jobTitle, role.jobTitle)
+    && (!text(existing.startDate) || !text(role.startDate) || sameDate(text(existing.startDate), text(role.startDate)))
+    && (same(existing.employer, role.employer) || same(existing.jobTitle, role.jobTitle)));
+}
+
+function isEducationOnlyCredential(value: string, educationLines: string[]): boolean {
+  const key = normalize(value);
+  return Boolean(key) && !/\b(?:epa|osha|nccer|journeyman|master|licen[cs]e)\b/.test(key)
+    && educationLines.some((line) => normalize(line).includes(key));
+}
+
 export function mergeCanonicalWithAiEnrichment(
   sourceResumeText: string,
   canonical: CanonicalSourceRecord,
   aiPrefill: unknown,
 ): RecordValue {
-  const ai = record(aiPrefill);
+  const ai = groundResumePrefill(sourceResumeText, aiPrefill);
   const aiContact = record(ai.contact);
   const aiField = record(ai.fieldValue);
   const aiRoles = Array.isArray(ai.roles)
@@ -464,6 +493,11 @@ export function mergeCanonicalWithAiEnrichment(
     const rewritten = supportedRewrittenNarrative(aiRole.responsibilities, sourceRole.responsibilities, identities);
     return {
       ...canonicalRole,
+      employer: text(canonicalRole.employer) || text(aiRole.employer),
+      jobTitle: text(canonicalRole.jobTitle) || text(aiRole.jobTitle),
+      startDate: text(canonicalRole.startDate) || text(aiRole.startDate),
+      endDate: text(canonicalRole.endDate) || text(aiRole.endDate),
+      current: isCurrentDate(text(canonicalRole.endDate) || text(aiRole.endDate)),
       responsibilities: (rewritten.length ? rewritten : sourceRole.responsibilities.map((item) => item.value)).join("\n"),
       employmentType: sourceBacked(sourceResumeText, text(aiRole.employmentType)) ? text(aiRole.employmentType) : "",
       equipment: sourceBacked(sourceResumeText, text(aiRole.equipment)) ? text(aiRole.equipment) : "",
@@ -475,6 +509,13 @@ export function mergeCanonicalWithAiEnrichment(
     };
   });
 
+  for (const role of aiRoles) {
+    // Preserve supported jobs missed by the canonical layout parser. Both identity
+    // fields must be grounded; missing required fields remain explicit questions.
+    if (!text(role.employer) && !text(role.jobTitle)) continue;
+    if (!roleRepresented(roles, role)) roles.push({ ...role } as typeof roles[number]);
+  }
+
   const contact = {
     ...aiContact,
     fullName: canonical.contact.fullName?.value ?? text(aiContact.fullName),
@@ -483,6 +524,7 @@ export function mergeCanonicalWithAiEnrichment(
     cityState: canonical.contact.cityState?.value ?? text(aiContact.cityState),
   };
 
+  const educationLines = [...canonical.education.map((item) => item.value), ...text(ai.education).split("\n").filter(Boolean)];
   const canonicalSkillNames = canonical.skills.map((item) => item.canonicalName);
   const aiSkills = [
     ...sourceBackedList(sourceResumeText, aiField.tools),
@@ -490,7 +532,13 @@ export function mergeCanonicalWithAiEnrichment(
     ...sourceBackedList(sourceResumeText, aiField.technicalSkills),
     ...sourceBackedList(sourceResumeText, aiField.software),
   ];
-  const technicalSkills = dedupeSkillTerms([...canonicalSkillNames, ...aiSkills]);
+  // The AI may echo the header (title, trade, city/state) as skills; identity stays in the header.
+  const identity = {
+    contact: { fullName: contact.fullName, email: contact.email, phone: contact.phone, location: contact.cityState },
+    targetTitle: text(ai.targetJobTitle),
+  };
+  const technicalSkills = dedupeSkillTerms([...canonicalSkillNames, ...aiSkills])
+    .filter((skill) => !isResumeIdentityTerm(skill, identity, text(ai.trade)));
   const aiSummary = text(ai.summaryNotes);
   const summarySource = canonical.summaryFacts.map((item) => item.value);
   const summaryNotes = aiSummary && rewriteSupported(aiSummary, summarySource.length ? summarySource : [sourceResumeText])
@@ -504,15 +552,20 @@ export function mergeCanonicalWithAiEnrichment(
     roles,
     fieldValue: {
       ...aiField,
-      certifications: canonical.credentials.map((item) => item.value),
-      licenses: "",
+      certifications: dedupeCredentials([
+        ...canonical.credentials.map((item) => item.value),
+        // AI credentials are already grounded; an education program is never a certification.
+        ...list(aiField.certifications).filter((item) => isCredentialEntity(item) && !isEducationOnlyCredential(item, educationLines)),
+      ]),
+      // Licenses are grounded line-by-line against the source before this merge.
+      licenses: text(aiField.licenses),
       tools: [],
       equipmentSystems: [],
       technicalSkills,
       software: [],
       safety: [],
     },
-    education: canonical.education.map((item) => item.value).join("\n"),
+    education: [...new Set(educationLines)].join("\n"),
     additionalDetails: text(canonical.prefill.additionalDetails),
   };
 }
@@ -527,16 +580,16 @@ export function validateCanonicalImmutability(
     : [];
   const issues: string[] = [];
 
-  if (roles.length !== canonical.roles.length) issues.push("roles.length");
+  if (roles.length < canonical.roles.length) issues.push("roles.length");
 
   canonical.roles.forEach((sourceRole, index) => {
     const role = roles[index] ?? {};
-    if (text(role.employer) !== sourceRole.employer.value) issues.push(`roles.${index}.employer`);
-    if (text(role.jobTitle) !== sourceRole.jobTitle.value) issues.push(`roles.${index}.jobTitle`);
-    if (text(role.location) !== (sourceRole.location?.value ?? "")) issues.push(`roles.${index}.location`);
-    if (text(role.startDate) !== sourceRole.startDate.value) issues.push(`roles.${index}.startDate`);
-    if (text(role.endDate) !== sourceRole.endDate.value) issues.push(`roles.${index}.endDate`);
-    if ((role.current === true) !== sourceRole.current) issues.push(`roles.${index}.current`);
+    if (sourceRole.employer.value && text(role.employer) !== sourceRole.employer.value) issues.push(`roles.${index}.employer`);
+    if (sourceRole.jobTitle.value && text(role.jobTitle) !== sourceRole.jobTitle.value) issues.push(`roles.${index}.jobTitle`);
+    if (sourceRole.location && text(role.location) !== sourceRole.location.value) issues.push(`roles.${index}.location`);
+    if (sourceRole.startDate.value && text(role.startDate) !== sourceRole.startDate.value) issues.push(`roles.${index}.startDate`);
+    if (sourceRole.endDate.value && text(role.endDate) !== sourceRole.endDate.value) issues.push(`roles.${index}.endDate`);
+    if (sourceRole.endDate.value && (role.current === true) !== sourceRole.current) issues.push(`roles.${index}.current`);
 
     const identities = [
       sourceRole.employer.value,
@@ -553,9 +606,9 @@ export function validateCanonicalImmutability(
   const field = record(root.fieldValue);
   const credentials = list(field.certifications);
   const expectedCredentials = canonical.credentials.map((item) => item.value);
-  if (JSON.stringify(credentials) !== JSON.stringify(expectedCredentials)) issues.push("credentials");
+  if (expectedCredentials.some((item) => !credentials.includes(item))) issues.push("credentials");
   if (credentials.some((item) => !isCredentialEntity(item))) issues.push("credential_contamination");
-  if (text(root.education) !== canonical.education.map((item) => item.value).join("\n")) issues.push("education");
+  if (canonical.education.some((item) => !text(root.education).includes(item.value))) issues.push("education");
 
   const contact = record(root.contact);
   if (canonical.contact.fullName && text(contact.fullName) !== canonical.contact.fullName.value) issues.push("contact.fullName");

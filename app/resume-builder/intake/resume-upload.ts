@@ -1,20 +1,19 @@
+import { preserveUserCorrections } from "./upload-field-state";
+import { docxResumeText, hasUsableResumeText, pdfPageText, UNREADABLE_RESUME_MESSAGE } from "./resume-file-text";
+import { isCurrentDate } from "../../../worker/resume-dates";
+import { uploadRequirementIssues, type UploadedResumeIssue } from "../../../worker/resume-upload-requirements";
 import { EXPERIENCE_LEVELS, isTradeTrack, type TradeTrack } from "../trade-content";
 import { type WizardData } from "./wizard-data";
-import { buildCanonicalSourceRecord } from "../../../worker/resume-source-canonical";
+import { buildCanonicalSourceRecord, roleRepresented } from "../../../worker/resume-source-canonical";
 
-export const RESUME_UPLOAD_MAX_BYTES = 4 * 1024 * 1024;
+export type { UploadedResumeIssue };
+
+export const RESUME_UPLOAD_MAX_BYTES = 5 * 1024 * 1024;
 export const RESUME_UPLOAD_MAX_TEXT_CHARS = 100_000;
 
 export type ResumeUploadKind = "pdf" | "docx";
 
 
-export type UploadedResumeIssue = {
-  id: string;
-  kind: "trade" | "contact" | "role" | "history";
-  message: string;
-  field?: "fullName" | "phone" | "cityState" | "employer" | "jobTitle" | "startDate" | "endDate";
-  roleIndex?: number;
-};
 
 const TRADE_SIGNALS: Array<{ trade: TradeTrack; terms: Array<[string, number]> }> = [
   {
@@ -63,61 +62,34 @@ export function inferResumeTrade(sourceText: string): TradeTrack | "" {
   return top.trade;
 }
 
-function yearFromDate(value: string): number | null {
-  const match = value.match(/\b(19|20)\d{2}\b/);
-  return match ? Number(match[0]) : null;
-}
-
+/** Blocking questions only; the same rules run on the server before generation. */
 export function uploadedResumeIssues(data: WizardData): UploadedResumeIssue[] {
-  const issues: UploadedResumeIssue[] = [];
-  if (!isTradeTrack(data.trade)) {
-    issues.push({ id: "trade", kind: "trade", message: "We could not confidently identify the trade direction. Choose the closest match." });
-  }
-  if (!data.contact.fullName.trim()) {
-    issues.push({ id: "contact-fullName", kind: "contact", field: "fullName", message: "We could not find your full name." });
-  }
-  if (!data.contact.phone.trim()) {
-    issues.push({ id: "contact-phone", kind: "contact", field: "phone", message: "We could not find a phone number employers can use." });
-  }
-  if (!data.contact.cityState.trim()) {
-    issues.push({ id: "contact-cityState", kind: "contact", field: "cityState", message: "We could not clearly identify your city and state. Add it below so employers know your location." });
-  }
-  if (!data.roles.some((role) => role.employer.trim() || role.jobTitle.trim() || role.responsibilities.trim())) {
-    issues.push({ id: "work-history", kind: "history", message: "We were not able to pull enough work-history detail from your upload." });
-  }
-
-  data.roles.forEach((role, roleIndex) => {
-    const hasRole = Boolean(role.employer.trim() || role.jobTitle.trim() || role.responsibilities.trim());
-    if (!hasRole) return;
-    if (!role.employer.trim()) {
-      issues.push({ id: `role-${roleIndex}-employer`, kind: "role", roleIndex, field: "employer", message: `Job ${roleIndex + 1} is missing an employer name.` });
-    }
-    if (!role.jobTitle.trim()) {
-      issues.push({ id: `role-${roleIndex}-jobTitle`, kind: "role", roleIndex, field: "jobTitle", message: `Job ${roleIndex + 1} is missing a job title.` });
-    }
-    if (!role.startDate.trim()) {
-      issues.push({ id: `role-${roleIndex}-startDate`, kind: "role", roleIndex, field: "startDate", message: `Job ${roleIndex + 1} is missing a start date.` });
-    }
-    if (!role.current && !role.endDate.trim()) {
-      issues.push({ id: `role-${roleIndex}-endDate`, kind: "role", roleIndex, field: "endDate", message: `Job ${roleIndex + 1} is missing an end date.` });
-    }
-    const startYear = yearFromDate(role.startDate);
-    const endYear = role.current ? null : yearFromDate(role.endDate);
-    if (startYear && endYear && endYear < startYear) {
-      issues.push({
-        id: `role-${roleIndex}-date-order`,
-        kind: "role",
-        roleIndex,
-        field: "endDate",
-        message: `Job ${roleIndex + 1} has an end date before its start date. Confirm the dates.`,
-      });
-    }
-  });
-
-  return issues;
+  return uploadRequirementIssues(data);
 }
 
-let lastExtractedResumeText = "";
+export const LEGAL_CONSENT_ERROR = "Confirm you are 18+ and agree to the policies.";
+
+/**
+ * Upload path step validation. Optional details never block, but the required
+ * facts and the 18+/policy consent always apply at the build step — an upload
+ * never bypasses consent.
+ */
+export function uploadStepErrors(step: number, data: WizardData, paid: boolean, legalConsent: boolean): string[] {
+  if (step !== 6) return [];
+  const errors = uploadedResumeIssues(data).map((issue) => issue.message);
+  if (!paid && !legalConsent) errors.push(LEGAL_CONSENT_ERROR);
+  return errors;
+}
+
+/** Blockers for "continue" from the upload summary screen; its agreement box is always required. */
+export function uploadContinueErrors(data: WizardData, consent: boolean): { issues: UploadedResumeIssue[]; consent: boolean } {
+  return { issues: uploadedResumeIssues(data), consent: !consent };
+}
+
+/** A scanned/image-only file has no usable text; route it to manual entry. */
+export function uploadTextOutcome(text: string): { route: "extract" } | { route: "manual"; message: string } {
+  return hasUsableResumeText(text) ? { route: "extract" } : { route: "manual", message: UNREADABLE_RESUME_MESSAGE };
+}
 
 export function resumeUploadKind(file: Pick<File, "name" | "type">): ResumeUploadKind | null {
   const name = file.name.toLowerCase();
@@ -148,44 +120,41 @@ function restoreDocxHeaderBreaks(value: string): string {
 /** Use facts already present in the uploaded text before asking an AI extractor. */
 export function sourceFirstResumePrefill(sourceText: string): Record<string, unknown> | null {
   const canonical = buildCanonicalSourceRecord(restoreDocxHeaderBreaks(sourceText));
-  return canonical.coverage.ready && canonical.roles.length > 0 ? canonical.prefill : null;
+  return canonical.coverage.ready && canonical.roles.length > 0 && canonical.contact.fullName
+    && (canonical.contact.phone || canonical.contact.email) && canonical.contact.cityState ? canonical.prefill : null;
 }
 
 export function recoverImportedResume(data: WizardData): WizardData {
   if (data.sourceProvenance !== "upload" || !data.sourceResumeText.trim()) return data;
-  const needsLocation = !data.contact.cityState.trim();
-  const needsJobs = !data.roles.some((role) => role.employer.trim() || role.jobTitle.trim() || role.responsibilities.trim());
-  if (!needsLocation && !needsJobs) return data;
   const canonical = buildCanonicalSourceRecord(restoreDocxHeaderBreaks(data.sourceResumeText)).prefill;
-  const contact = canonical.contact as { cityState?: string };
-  const roles = canonical.roles as WizardData["roles"];
-  return {
-    ...data,
-    contact: { ...data.contact, cityState: data.contact.cityState || contact.cityState || "" },
-    roles: needsJobs && roles.length ? roles : data.roles,
-  };
+  const extractedContact = canonical.contact as WizardData["contact"];
+  const extractedRoles = canonical.roles as WizardData["roles"];
+  const contact = { ...data.contact };
+  for (const key of ["fullName", "email", "phone", "cityState"] as const) {
+    if (!contact[key]?.trim() && !Object.hasOwn(data.confirmedFields ?? {}, `contact.${key}`)) contact[key] = extractedContact[key] ?? "";
+  }
+  const needsJobs = !data.roles.some((role) => role.employer.trim() || role.jobTitle.trim() || role.responsibilities.trim());
+  const roles = needsJobs && extractedRoles.length ? extractedRoles : data.roles.map((role, index) => {
+    const matches = extractedRoles.filter((other) => (role.employer && role.employer === other.employer) || (role.jobTitle && role.jobTitle === other.jobTitle));
+    if (matches.length !== 1) return role;
+    const result = { ...role };
+    for (const key of ["employer", "jobTitle", "startDate", "endDate", "responsibilities", "location"] as const) {
+      if (!result[key].trim() && !Object.hasOwn(data.confirmedFields ?? {}, `roles.${index}.${key}`)) result[key] = matches[0][key];
+    }
+    result.current = role.current || isCurrentDate(result.endDate);
+    return result;
+  });
+  return preserveUserCorrections(data, { ...data, contact, roles });
 }
 
 function rememberExtractedText(value: string): string {
-  const normalized = normalizeExtractedText(value);
-  lastExtractedResumeText = normalized;
-  return normalized;
+  return normalizeExtractedText(value);
 }
 
 export async function extractResumeText(file: File, kind: ResumeUploadKind): Promise<string> {
   const arrayBuffer = await file.arrayBuffer();
   if (kind === "docx") {
-    const mammoth = (await import("mammoth")).default;
-    const result = await mammoth.convertToHtml({ arrayBuffer });
-    const document = new DOMParser().parseFromString(result.value, "text/html");
-    const paragraphs = Array.from(document.body.querySelectorAll("p"));
-    const extracted = paragraphs.map((paragraph) => {
-      paragraph.querySelectorAll("br").forEach((breakElement) => breakElement.replaceWith("\n"));
-      return paragraph.textContent?.trim() ?? "";
-    }).filter(Boolean).join("\n\n");
-    if (extracted) return rememberExtractedText(extracted);
-    const fallback = await mammoth.extractRawText({ arrayBuffer });
-    return rememberExtractedText(fallback.value);
+    return rememberExtractedText(await docxResumeText(arrayBuffer));
   }
 
   const { default: pdfWorkerUrl } = await import("pdfjs-dist/legacy/build/pdf.worker.min.mjs?url");
@@ -196,10 +165,7 @@ export async function extractResumeText(file: File, kind: ResumeUploadKind): Pro
   for (let pageNumber = 1; pageNumber <= document.numPages; pageNumber += 1) {
     const page = await document.getPage(pageNumber);
     const content = await page.getTextContent();
-    pages.push(content.items
-      .map((item) => ("str" in item ? item.str : ""))
-      .filter(Boolean)
-      .join(" "));
+    pages.push(pdfPageText(content.items.flatMap((item) => "str" in item ? [item] : [])));
   }
   await document.destroy();
   return rememberExtractedText(pages.join("\n\n"));
@@ -236,9 +202,11 @@ export function extractResumePhone(text: string): string {
  */
 export function mergeResumePrefill(current: WizardData, prefill: unknown, sourceText = ""): WizardData {
   if (!prefill || typeof prefill !== "object") return current;
+  // The server grounds AI extraction against the source before it reaches the
+  // browser; source-first prefill is parsed from the source itself.
   const root = prefill as Record<string, unknown>;
   const effectiveSourceText = stringValue(
-    sourceText || root.sourceResumeText || lastExtractedResumeText,
+    sourceText || root.sourceResumeText || current.sourceResumeText,
     RESUME_UPLOAD_MAX_TEXT_CHARS,
   );
   const contact = root.contact && typeof root.contact === "object"
@@ -252,10 +220,17 @@ export function mergeResumePrefill(current: WizardData, prefill: unknown, source
     : [];
   const recovered = buildCanonicalSourceRecord(restoreDocxHeaderBreaks(effectiveSourceText)).prefill;
   const recoveredContact = recovered.contact as Record<string, unknown>;
-  const sourceRoles = importedRoles.length >= (recovered.roles as Record<string, unknown>[]).length
-    && importedRoles.some((role) => stringValue(role.employer, 200) || stringValue(role.jobTitle, 200))
-    ? importedRoles
-    : recovered.roles as Record<string, unknown>[];
+  const recoveredRoles = recovered.roles as Record<string, unknown>[];
+  const identified = importedRoles.filter((role) => stringValue(role.employer, 200) || stringValue(role.jobTitle, 200));
+  const importedPrimary = identified.length > 0 && importedRoles.length >= recoveredRoles.length;
+  const sourceRoles = [...(importedPrimary ? importedRoles : recoveredRoles)];
+  // Never discard a job found by only one reader. Extracted jobs are already
+  // grounded; parser-only jobs are added only with a complete identity so an
+  // education date range cannot become a job.
+  for (const role of importedPrimary ? recoveredRoles : identified) {
+    const complete = !importedPrimary || (stringValue(role.employer, 200) && stringValue(role.jobTitle, 200) && stringValue(role.startDate, 40));
+    if (complete && !roleRepresented(sourceRoles, role)) sourceRoles.push(role);
+  }
   const roles = sourceRoles.slice(0, 12).map((role) => ({
     employer: stringValue(role.employer, 200),
     jobTitle: stringValue(role.jobTitle, 200),
@@ -263,7 +238,7 @@ export function mergeResumePrefill(current: WizardData, prefill: unknown, source
     employmentType: stringValue(role.employmentType, 100),
     startDate: stringValue(role.startDate, 40),
     endDate: stringValue(role.endDate, 40),
-    current: role.current === true,
+    current: role.current === true || isCurrentDate(stringValue(role.endDate, 40)),
     responsibilities: stringValue(role.responsibilities, 4000),
     equipment: stringValue(role.equipment, 2000),
     systems: stringValue(role.systems, 2000),
@@ -285,7 +260,7 @@ export function mergeResumePrefill(current: WizardData, prefill: unknown, source
   const inferredTrade = inferResumeTrade(effectiveSourceText);
   const importedExperience = stringValue(root.experienceLevel, 40);
 
-  return {
+  return preserveUserCorrections(current, {
     ...current,
     sourceProvenance: "upload",
     sourceResumeText: effectiveSourceText || current.sourceResumeText,
@@ -316,5 +291,5 @@ export function mergeResumePrefill(current: WizardData, prefill: unknown, source
       ...current.targetJob,
       title: targetJobTitle,
     },
-  };
+  });
 }

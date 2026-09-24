@@ -1,3 +1,4 @@
+import { DATE_RANGE_SOURCE, parseResumeDateRange, isCurrentDate, normalizeDateSeparators, parseResumeDate } from "./resume-dates";
 export type ExtractionCoverageIssue = {
   code: "jobs" | "employers" | "job_titles" | "dates" | "responsibilities" | "education" | "credentials" | "skills_tools" | "software_cmms" | "training";
   message: string;
@@ -47,12 +48,9 @@ function list(value: unknown): string[] {
 }
 
 function normalize(value: string): string {
-  return value.toLowerCase().replace(/[\u2012-\u2015]/g, "-").replace(/\s+/g, " ").trim();
+  return normalizeDateSeparators(value).toLowerCase().replace(/\s+/g, " ").trim();
 }
 
-const MONTH = "(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)";
-const DATE = `(?:${MONTH}\\s+)?(?:19|20)\\d{2}`;
-const DATE_RANGE_SOURCE = `\\b(${DATE})\\s*(?:-|to|through|thru)\\s*(${DATE}|present|current|now)\\b`;
 const DATE_RANGE_RE = new RegExp(DATE_RANGE_SOURCE, "gi");
 const DATE_RANGE_LINE_RE = new RegExp(DATE_RANGE_SOURCE, "i");
 
@@ -70,6 +68,25 @@ const CREDENTIAL_SEPARATOR_RE = /\s*(?:\||•|▪|◦|●|;)\s*|\s+\/\s+/;
 function sourceRoleSignals(source: string): number {
   const ranges = normalize(source).match(DATE_RANGE_RE) ?? [];
   return Math.min(new Set(ranges.map((value) => value.replace(/\s+/g, " "))).size, 12);
+}
+
+const WORK_HISTORY_HEADING_RE = /^(?:professional\s+experience|work\s+experience|relevant\s+experience|employment(?:\s+history)?|work\s+history|experience)\s*:?$/i;
+const NO_EXPERIENCE_RE = /^(?:none|n\/a|no\s+(?:paid\s+)?(?:work\s+)?experience(?:\s+yet)?)\.?$/i;
+
+/**
+ * Employment evidence means a dated range or a work-history section heading with
+ * content under it. The word "experience" in a summary ("10 years of experience",
+ * "No experience yet") is not evidence that a job exists.
+ */
+export function hasWorkHistoryEvidence(source: string): boolean {
+  if (sourceRoleSignals(source) > 0) return true;
+  const lines = sourceLines(source);
+  for (let index = 0; index < lines.length; index += 1) {
+    if (!WORK_HISTORY_HEADING_RE.test(lines[index])) continue;
+    const next = lines.slice(index + 1).find(Boolean) ?? "";
+    if (next && !TOP_LEVEL_SECTION_RE.test(next.replace(/:$/, "")) && !NO_EXPERIENCE_RE.test(stripBullet(next))) return true;
+  }
+  return false;
 }
 
 function extractedRoles(value: unknown): RecordValue[] {
@@ -107,11 +124,7 @@ function stripBullet(line: string): string {
   return line.replace(/^•\s*/, "").trim();
 }
 
-function parseDateRange(line: string): { startDate: string; endDate: string; match: string } | null {
-  const match = line.match(DATE_RANGE_LINE_RE);
-  if (!match) return null;
-  return { startDate: match[1].trim(), endDate: match[2].trim(), match: match[0] };
-}
+const parseDateRange = parseResumeDateRange;
 
 function splitHeaderParts(line: string): string[] {
   return line
@@ -184,15 +197,34 @@ function roleHeaderStart(lines: string[], dateIndex: number): number {
 }
 
 function parseRolesDeterministically(source: string): ParsedRole[] {
-  const lines = sourceLines(source);
+  const lines = sourceLines(normalizeDateSeparators(source));
   const anchors = lines.flatMap((line, index) => {
     const range = parseDateRange(line);
     return range ? [{ index, range, headerStart: roleHeaderStart(lines, index) }] : [];
   });
 
+  let inExperience = false;
+  for (let index = 0; index < lines.length; index += 1) {
+    const line = lines[index];
+    if (TOP_LEVEL_SECTION_RE.test(line)) {
+      inExperience = /experience|employment|work history/i.test(line);
+      continue;
+    }
+    if (!inExperience || anchors.some((anchor) => index >= anchor.headerStart && index <= anchor.index)) continue;
+    const parts = splitHeaderParts(line);
+    if (parts.length < 2 || looksLikeNarrative(line)) continue;
+    const header = chooseHeaderFields([line]);
+    if (!header.employer || !header.jobTitle || !TITLE_SIGNAL_RE.test(header.jobTitle)) continue;
+    const next = lines[index + 1]?.trim() ?? "";
+    const singleDate = parseResumeDate(next) ? next : "";
+    anchors.push({ index: singleDate ? index + 1 : index, headerStart: index,
+      range: { startDate: singleDate, endDate: "", match: singleDate } });
+  }
+  anchors.sort((a, b) => a.headerStart - b.headerStart);
   return anchors.map((anchor, anchorIndex) => {
     const headerLines = lines.slice(anchor.headerStart, anchor.index + 1)
-      .map((line) => line.replace(anchor.range.match, "").trim())
+      // Remove only the date text, then any delimiter it leaves dangling.
+      .map((line) => (anchor.range.match ? line.replace(anchor.range.match, "") : line).replace(/^[\s|•·,;-]+|[\s|•·,;-]+$/g, "").trim())
       .filter(Boolean);
     const header = chooseHeaderFields(headerLines);
     const nextHeaderStart = anchors[anchorIndex + 1]?.headerStart ?? lines.length;
@@ -213,7 +245,7 @@ function parseRolesDeterministically(source: string): ParsedRole[] {
       employmentType: "",
       startDate: anchor.range.startDate,
       endDate: anchor.range.endDate,
-      current: /^(?:present|current|now)$/i.test(anchor.range.endDate),
+      current: isCurrentDate(anchor.range.endDate),
       responsibilities: responsibilityLines.join("\n"),
       equipment: "",
       systems: "",
@@ -353,8 +385,8 @@ export function repairResumeExtractionFromSource(sourceResumeText: string, struc
   const root = { ...record(structured) };
   const originalRoles = extractedRoles(root);
   const roleSignals = sourceRoleSignals(sourceResumeText);
-  const needsRoleRepair = roleSignals > 0 && (
-    originalRoles.length < roleSignals
+  const needsRoleRepair = hasWorkHistoryEvidence(sourceResumeText) && (
+    originalRoles.length === 0 || originalRoles.length < roleSignals
     || originalRoles.some((role) => !text(role.employer) || !text(role.jobTitle) || (!text(role.startDate) && !text(role.dates)) || !hasAnyRoleNarrative(role))
   );
   const educationEvidence = EDUCATION_EVIDENCE_RE.test(sourceResumeText);
@@ -399,31 +431,42 @@ export function assessResumeExtractionCoverage(sourceResumeText: string, structu
   }
 
   const root = record(structured);
+  const confirmed = record(record(root.meta).confirmedFields);
+  const isConfirmed = (index: number, field: string, value: unknown) => confirmed[`roles.${index}.${field}`] === value;
   const roles = extractedRoles(structured);
   const field = fieldValue(structured);
   const roleSignals = sourceRoleSignals(sourceResumeText);
   const issues: ExtractionCoverageIssue[] = [];
   const warnings: ExtractionCoverageIssue[] = [];
 
-  if (roleSignals >= 2 && roles.length < roleSignals) {
+  if (roles.length === 0 && hasWorkHistoryEvidence(sourceResumeText)) {
+    issues.push({
+      code: "jobs",
+      message: roleSignals > 0
+        ? `The uploaded resume appears to contain ${roleSignals} dated job${roleSignals === 1 ? "" : "s"}, but none were extracted.`
+        : "The uploaded resume has a work-history section, but no jobs were extracted from it.",
+      expected: Math.max(roleSignals, 1),
+      actual: 0,
+    });
+  } else if (roleSignals >= 2 && roles.length < roleSignals) {
     issues.push({ code: "jobs", message: `The uploaded resume appears to contain ${roleSignals} dated jobs, but only ${roles.length} were extracted.`, expected: roleSignals, actual: roles.length });
   }
 
-  if (roleSignals > 0 && roles.length > 0) {
+  if (roles.length > 0) {
     const missingEmployers = roles.filter((role) => !text(role.employer)).length;
     if (missingEmployers > 0) issues.push({ code: "employers", message: `${missingEmployers} extracted job(s) are missing an employer.` });
     const missingTitles = roles.filter((role) => !text(role.jobTitle)).length;
     if (missingTitles > 0) issues.push({ code: "job_titles", message: `${missingTitles} extracted job(s) are missing a job title.` });
-    const sourceMismatchEmployers = roles.filter((role) => text(role.employer) && !appearsInSource(source, role.employer)).length;
+    const sourceMismatchEmployers = roles.filter((role, index) => text(role.employer) && !isConfirmed(index, "employer", role.employer) && !appearsInSource(source, role.employer)).length;
     if (sourceMismatchEmployers > 0) issues.push({ code: "employers", message: `${sourceMismatchEmployers} extracted employer name(s) could not be verified in the uploaded resume.` });
-    const sourceMismatchTitles = roles.filter((role) => text(role.jobTitle) && !appearsInSource(source, role.jobTitle)).length;
+    const sourceMismatchTitles = roles.filter((role, index) => text(role.jobTitle) && !isConfirmed(index, "jobTitle", role.jobTitle) && !appearsInSource(source, role.jobTitle)).length;
     if (sourceMismatchTitles > 0) issues.push({ code: "job_titles", message: `${sourceMismatchTitles} extracted job title(s) could not be verified in the uploaded resume.` });
     const rolesWithoutDates = roles.filter((role) => !text(role.startDate) && !text(role.dates)).length;
     if (rolesWithoutDates > 0) issues.push({ code: "dates", message: `${rolesWithoutDates} extracted job(s) are missing dates that are present in the uploaded resume.` });
-    const sourceMismatchedDates = roles.filter((role) => {
+    const sourceMismatchedDates = roles.filter((role, index) => {
       const start = text(role.startDate);
       const end = text(role.endDate);
-      if (!start) return false;
+      if (!start || isConfirmed(index, "startDate", role.startDate)) return false;
       const dateText = end ? `${start} - ${end}` : start;
       return !appearsInSource(source, dateText) && !appearsInSource(source, start);
     }).length;

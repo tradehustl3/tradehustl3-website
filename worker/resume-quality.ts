@@ -129,6 +129,64 @@ function normalized(value: string): string {
     .replace(/[^a-z0-9]+/g, " ").trim();
 }
 
+const EMAIL_TERM_RE = /[^\s@]+@[^\s@]+\.[^\s@]+/;
+const URL_TERM_RE = /^(?:https?:\/\/|www\.)\S+$/i;
+const PHONE_FRAGMENT_RE = /\(?\b\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}\b/;
+const CITY_STATE_TERM_RE = /^[A-Za-z .'-]+,\s*[A-Z]{2}(?:\s+\d{5}(?:-\d{4})?)?$/;
+
+function phoneLike(value: string): boolean {
+  return /^[+()\d\s.-]+$/.test(value) && value.replace(/\D/g, "").length >= 7;
+}
+
+/**
+ * Header identity (name, target title, trade, city/state, phone, email) belongs
+ * in the resume header only. It is never a professional skill, even when a
+ * contact line such as "Title | Trade | City, ST | phone | email" was split
+ * into list items upstream.
+ */
+export function isResumeIdentityTerm(
+  value: string,
+  identity: { contact: CanonicalSourceRecord["contact"]; targetTitle: string },
+  trade = "",
+): boolean {
+  const cleaned = value.replace(/\s+/g, " ").trim();
+  if (!cleaned) return true;
+  if (EMAIL_TERM_RE.test(cleaned) || URL_TERM_RE.test(cleaned) || phoneLike(cleaned) || PHONE_FRAGMENT_RE.test(cleaned)
+    || CITY_STATE_TERM_RE.test(cleaned)) return true;
+  const locationParts = identity.contact.location.split(",").map((part) => part.trim());
+  const identities = [
+    identity.contact.fullName,
+    identity.contact.email,
+    identity.contact.phone,
+    identity.contact.location,
+    ...locationParts,
+    identity.targetTitle,
+    trade,
+  ].map(normalized).filter(Boolean);
+  return identities.includes(normalized(cleaned));
+}
+
+/**
+ * Header facts render in the header; competencies render only supported skills.
+ * The verified target title (or its supported fallback) always sits under the name.
+ */
+export function mapResumeHeaderAndSkills<T extends GeneratedResume>(
+  generated: T,
+  identity: { contact: CanonicalSourceRecord["contact"]; targetTitle: string },
+  trade = "",
+): T {
+  return {
+    ...generated,
+    basics: { ...generated.basics, targetTitle: identity.targetTitle || generated.basics.targetTitle },
+    skills: generated.skills.filter((skill) => !isResumeIdentityTerm(skill, identity, trade)),
+  };
+}
+
+// "<Trade> Resume" is the wizard's placeholder name for an untitled draft, not a job title.
+function supportedTitle(value: string): string {
+  return /\bresume$/i.test(value) ? "" : value;
+}
+
 function roleKey(role: { employer?: string; jobTitle: string }): string {
   return `${normalized(role.employer ?? "")}::${normalized(role.jobTitle)}`;
 }
@@ -175,7 +233,7 @@ function sourceProvenance(root: Record<string, unknown>): FactProvenance {
   return meta.importedResume === true || text(meta.source) === "upload" ? "upload" : "guided_intake";
 }
 
-export function canonicalSourceRecord(intake: unknown, targetTitle = ""): CanonicalSourceRecord {
+export function canonicalSourceRecord(intake: unknown, targetTitle = "", tradeTrack = ""): CanonicalSourceRecord {
   const root = record(intake);
   const contact = record(root.contact);
   const targetJob = record(root.targetJob);
@@ -211,24 +269,33 @@ export function canonicalSourceRecord(intake: unknown, targetTitle = ""): Canoni
     education: root.education,
     additionalDetails: root.additionalDetails,
   };
-  const source: Omit<CanonicalSourceRecord, "factProvenance"> = {
+  const identity = {
     contact: {
       fullName: text(contact.fullName, 120),
       email: text(contact.email, 254).toLowerCase(),
       phone: text(contact.phone, 80),
       location: text(contact.cityState, 160),
     },
-    targetTitle: text(targetJob.title, 120) || text(targetTitle, 120),
+    // Explicit target title first; otherwise the most recent verified job title.
+    targetTitle: text(targetJob.title, 120)
+      || supportedTitle(text(targetTitle, 120))
+      || roles.find((role) => role.jobTitle)?.jobTitle
+      || text(targetTitle, 120),
+  };
+  const trade = text(root.trade, 120) || text(tradeTrack, 120);
+  const skillList = (values: string[]) => values.filter((value) => !isResumeIdentityTerm(value, identity, trade));
+  const source: Omit<CanonicalSourceRecord, "factProvenance"> = {
+    ...identity,
     roles,
     certifications,
     licenses,
-    tools: textList(fieldValue.tools),
-    equipmentSystems: textList(fieldValue.equipmentSystems),
-    technicalSkills: Array.from(new Set([
+    tools: skillList(textList(fieldValue.tools)),
+    equipmentSystems: skillList(textList(fieldValue.equipmentSystems)),
+    technicalSkills: skillList(Array.from(new Set([
       ...textList(fieldValue.technicalSkills),
       ...splitListClaims(career.skillsAndTools),
-    ])),
-    software: textList(fieldValue.software),
+    ]))),
+    software: skillList(textList(fieldValue.software)),
     safety: textList(fieldValue.safety),
     narrativeFacts: Array.from(new Set([
       ...splitClaims(career.summaryNotes),

@@ -1,3 +1,4 @@
+import { errorKind } from "./resume-safe-log";
 import {
   handleResumeBuilderRoute as handleBaseResumeBuilderRoute,
   type ResumeBuilderDependencies,
@@ -587,7 +588,7 @@ async function generateCoverLetter(
           : "Matching cover letter preview created. Review the protected copy before checkout.",
     });
   } catch (error) {
-    console.error("Cover letter generation failed", error);
+    console.error("Cover letter generation failed", errorKind(error));
     if (env.BOOKS) await Promise.allSettled(newObjectKeys.map((key) => env.BOOKS!.delete(key)));
     if (reservedEntitlementId) await restoreCorrectionCredit(env, reservedEntitlementId);
     await env.DB.prepare(
@@ -629,7 +630,7 @@ async function serveCoverLetterFile(
       headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
       return new Response(Uint8Array.from(preview).buffer, { status: 200, headers });
     } catch (error) {
-      console.error("Cover letter preview render failed", error);
+      console.error("Cover letter preview render failed", errorKind(error));
       return json({ ok: false, message: "The protected cover-letter preview is temporarily unavailable." }, 503);
     }
   }

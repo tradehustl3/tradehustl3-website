@@ -2,6 +2,7 @@
 
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import { CoverLetterPanel } from "./cover-letter-panel";
+import { generationFailureIntakeUrl, intakeReturnUrl } from "../return-urls";
 
 type ResumeTheme = "plain" | "navy" | "lead";
 type PreviewTab = "resume" | "cover-letter";
@@ -75,7 +76,7 @@ const THEME_OPTIONS: { value: ResumeTheme; label: string; tagline: string; note:
 type GenerationFailure = {
   code?: string;
   retryable?: boolean;
-  action?: "return_to_intake" | "retry_generation" | "complete_payment";
+  action?: "review_exceptions" | "return_to_intake" | "retry_generation" | "complete_payment";
   paymentSafe?: boolean;
   runConsumed?: boolean;
   missing?: string[];
@@ -153,8 +154,9 @@ export function ResumeReview() {
           await load(resumeId);
           return false;
         }
-        if (result.action === "return_to_intake" && result.intakeUrl) {
-          setIntakeNotice(result);
+        const intakeUrl = generationFailureIntakeUrl(result, resumeId);
+        if (intakeUrl) {
+          setIntakeNotice({ ...result, intakeUrl });
           return false;
         }
         const reference = result.code ? ` (error: ${result.code})` : "";
@@ -295,7 +297,7 @@ export function ResumeReview() {
         <p className="rb-kicker">/ WORKSPACE UNAVAILABLE</p>
         <h1>LET’S GET YOU <span>BACK ON TRACK.</span></h1>
         <p>{message}</p>
-        <a className="rb-button rb-button-primary" href="/resume-builder/intake">Return to your intake <span>→</span></a>
+        <a className="rb-button rb-button-primary" href={intakeReturnUrl(resumeId)}>Return to your intake <span>→</span></a>
       </div>
     );
   }
@@ -330,7 +332,7 @@ export function ResumeReview() {
             </div>
           ) : null}
           <p className="rb-intake-reassurance">This failed attempt used no AI run, and any previous resume files are unchanged.</p>
-          <a className="rb-button rb-button-primary" href={intakeNotice.intakeUrl ?? "/resume-builder/intake"}>Return to intake <span>→</span></a>
+          <a className="rb-button rb-button-primary" href={intakeNotice.intakeUrl ?? intakeReturnUrl(resumeId)}>Return to intake <span>→</span></a>
         </section>
       ) : null}
 

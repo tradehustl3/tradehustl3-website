@@ -534,6 +534,82 @@ test("book sample signup delivers a gated 7-page PDF with its own cookie and sou
   assert.match(await pdf.text(), /^%PDF-/);
 });
 
+// The dedicated secret's check is delayed so the legacy secret's `false` settles
+// first. A valid token must still be accepted whichever check finishes first.
+async function withSlowFirstVerify(run) {
+  const subtle = globalThis.crypto.subtle;
+  const originalVerify = subtle.verify;
+  let calls = 0;
+  Object.defineProperty(subtle, "verify", {
+    configurable: true,
+    writable: true,
+    value: async (...args) => {
+      const result = await originalVerify.apply(subtle, args);
+      if (calls++ === 0) await new Promise((resolve) => setTimeout(resolve, 25));
+      return result;
+    },
+  });
+  try {
+    return await run();
+  } finally {
+    delete subtle.verify;
+    if (subtle.verify !== originalVerify) Object.defineProperty(subtle, "verify", { configurable: true, writable: true, value: originalVerify });
+  }
+}
+
+async function signupEmailToken(worker, interest, env, route) {
+  const emails = [];
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (input, init) => {
+    emails.push(JSON.parse(String(init.body)));
+    return new Response(null, { status: 201 });
+  };
+  const DB = {
+    prepare(sql) {
+      return { bind() { return {
+        async first() { return /RETURNING count/i.test(sql) ? { count: 1 } : null; },
+        async run() { return { success: true }; },
+      }; } };
+    },
+  };
+  try {
+    const res = await worker.fetch(
+      new Request("https://tradehustl3.com/api/subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: "reader@example.com", interest }),
+      }),
+      { DB, BREVO_LIST_ID: "3", ...env },
+      { waitUntil() {}, passThroughOnException() {} },
+    );
+    assert.equal(res.status, 200);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+  const html = emails.find((body) => typeof body.htmlContent === "string")?.htmlContent ?? "";
+  const match = html.match(new RegExp(`/api/${route}\\?token=([^"&]+)`));
+  assert.ok(match, `signup email links to /api/${route}`);
+  return match[1];
+}
+
+for (const [route, interest, secretName] of [
+  ["free-sample", "The TRADE HUSTL3 Book", "SAMPLE_TOKEN_SECRET"],
+  ["book-sample", "Book 7-Page Sample", "BOOK_SAMPLE_TOKEN_SECRET"],
+]) {
+  test(`/api/${route} accepts a valid link even when the legacy secret's check settles first`, async () => {
+    const worker = await loadWorker();
+    const env = { BREVO_API_KEY: "test-brevo-key", [secretName]: "dedicated-token-secret" };
+    const token = await signupEmailToken(worker, interest, env, route);
+    const response = await withSlowFirstVerify(() => worker.fetch(
+      new Request(`https://tradehustl3.com/api/${route}?token=${token}`),
+      env,
+      { waitUntil() {}, passThroughOnException() {} },
+    ));
+    assert.equal(response.status, 200);
+    assert.match(response.headers.get("content-type") ?? "", /application\/pdf/i);
+  });
+}
+
 test("unauthenticated /api/book-sample redirects back to the funnel page", async () => {
   const worker = await loadWorker();
   const res = await worker.fetch(
