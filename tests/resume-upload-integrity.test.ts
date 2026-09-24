@@ -3,6 +3,8 @@ import test from "node:test";
 import { Document, Header, Packer, Paragraph } from "docx";
 import { PDFDocument, StandardFonts } from "pdf-lib";
 import { buildCanonicalSourceRecord } from "../worker/resume-source-canonical";
+import { extractionValueSupported } from "../worker/resume-extraction-grounding";
+import { isCurrentDate, parseResumeDate, resumeDateInSource } from "../worker/resume-dates";
 import { credentialKey } from "../worker/resume-section-classifier";
 import { handleResumeBuilderRoute, runResumeBuilderRetention } from "../worker/resume-builder";
 import { handleResumeBuilderRoute as handleBaseResumeRoute } from "../worker/resume-builder-base";
@@ -41,6 +43,28 @@ const duty = "- Moved materials, staged tools, and cleaned active job sites dail
 const imported = (source: string) => mergeResumePrefill(emptyWizardData(), buildCanonicalSourceRecord(source).prefill, source);
 const questions = (data: WizardData) => uploadedResumeIssues(data).map((issue) => issue.message);
 const jobs = (data: WizardData) => data.roles.map(({ jobTitle, employer, startDate, endDate, current }) => ({ jobTitle, employer, startDate, endDate, current }));
+
+/** No-fabrication check: every parsed employer, title, location, and date is literally in the source. */
+function assertGrounded(data: WizardData, source: string) {
+  data.roles.forEach((role, index) => {
+    for (const key of ["employer", "jobTitle", "location"] as const) {
+      if (role[key]) assert.ok(extractionValueSupported(source, role[key]), `roles.${index}.${key} "${role[key]}" is not in the source`);
+    }
+    for (const key of ["startDate", "endDate"] as const) {
+      const value = role[key];
+      if (!value) continue;
+      assert.ok(isCurrentDate(value) ? extractionValueSupported(source, value) : resumeDateInSource(source, value), `roles.${index}.${key} "${value}" is not in the source`);
+    }
+  });
+}
+
+/** A heading, date, location, or employer name must never become a job title. */
+function assertNotTitle(data: WizardData, forbidden: string[]) {
+  for (const role of data.roles) {
+    assert.ok(!forbidden.some((value) => role.jobTitle.trim().toLowerCase() === value.toLowerCase()), `"${role.jobTitle}" was read as a job title`);
+    assert.equal(parseResumeDate(role.jobTitle), null, `date "${role.jobTitle}" was read as a job title`);
+  }
+}
 const fixtureJobs = FIXTURE_ROLES.map(({ jobTitle, employer, startDate, endDate }) => ({
   jobTitle, employer, startDate, endDate: endDate === "Present" ? "Present" : endDate, current: endDate === "Present",
 }));
@@ -60,19 +84,25 @@ function fixtureDiff(data: WizardData) {
 // ------------------------------------------------ title above employer ---
 
 test("title directly above employer: Laborer / ABC Construction", () => {
-  const data = imported(`${contactHeader}Laborer\nABC Construction\nJan 2024 - Present\n${duty}`);
+  const source = `${contactHeader}Laborer\nABC Construction\nJan 2024 - Present\n${duty}`;
+  const data = imported(source);
+  assertGrounded(data, source);
   assert.deepEqual(jobs(data), [{ jobTitle: "Laborer", employer: "ABC Construction", startDate: "Jan 2024", endDate: "Present", current: true }]);
   assert.deepEqual(questions(data), []);
 });
 
 test("title directly above employer: HVAC Apprentice / Cool Air Services", () => {
-  const data = imported(`${contactHeader}HVAC Apprentice\nCool Air Services\nMar 2022 - Dec 2023\n${duty}`);
+  const source = `${contactHeader}HVAC Apprentice\nCool Air Services\nMar 2022 - Dec 2023\n${duty}`;
+  const data = imported(source);
+  assertGrounded(data, source);
   assert.deepEqual(jobs(data), [{ jobTitle: "HVAC Apprentice", employer: "Cool Air Services", startDate: "Mar 2022", endDate: "Dec 2023", current: false }]);
   assert.deepEqual(questions(data), []);
 });
 
 test("existing professional title still works: Service Supervisor / American Campus Communities", () => {
-  const data = imported(`${contactHeader}Service Supervisor\nAmerican Campus Communities\nApril 2026 - July 2026\n${duty}`);
+  const source = `${contactHeader}Service Supervisor\nAmerican Campus Communities\nApril 2026 - July 2026\n${duty}`;
+  const data = imported(source);
+  assertGrounded(data, source);
   assert.deepEqual(jobs(data), [{ jobTitle: "Service Supervisor", employer: "American Campus Communities", startDate: "April 2026", endDate: "July 2026", current: false }]);
   assert.deepEqual(questions(data), []);
 });
@@ -94,6 +124,62 @@ for (const [name, employerLine] of [["plain", "American Campus Communities"], ["
     assert.ok(questions(data).includes("Job 1: What was your job title?"));
   });
 }
+
+for (const heading of ["WORK EXPERIENCE", "PROFESSIONAL EXPERIENCE", "Work Experience", "Professional Experience", "EXPERIENCE", "EMPLOYMENT HISTORY"]) {
+  for (const employerLine of ["ABC Construction", "ABC Construction — Dallas, TX"]) {
+    test(`negative: heading "${heading}" above "${employerLine}" is not a title`, () => {
+      const source = `Jordan Taylor\nDallas, TX | (214) 555-0100 | jordan@example.com\n\n${heading}\n${employerLine}\nJan 2024 - Present\n${duty}`;
+      const data = imported(source);
+      assertNotTitle(data, [heading]);
+      assertGrounded(data, source);
+      assert.deepEqual(jobs(data), [{ jobTitle: "", employer: "ABC Construction", startDate: "Jan 2024", endDate: "Present", current: true }]);
+    });
+  }
+}
+
+for (const dateLine of ["Jan 2019", "2019", "01/2019", "March 2019"]) {
+  test(`negative: lone date "${dateLine}" above an employer is not a title`, () => {
+    for (const employerLine of ["ABC Construction", "ABC Construction — Dallas, TX"]) {
+      const source = `${contactHeader}${dateLine}\n${employerLine}\n2019 - 2021\n${duty}`;
+      const data = imported(source);
+      assertNotTitle(data, [dateLine]);
+      assertGrounded(data, source);
+      assert.equal(data.roles[0].employer, "ABC Construction");
+    }
+  });
+}
+
+test("negative: the previous job's date line is never the next job's title", () => {
+  const source = `${contactHeader}Laborer\nABC Construction\nJan 2024 - Present\nCool Air Services — Dallas, TX\nMar 2022 - Dec 2023\n${duty}`;
+  const data = imported(source);
+  assertNotTitle(data, ["Jan 2024 - Present"]);
+  assertGrounded(data, source);
+  assert.deepEqual(jobs(data).map(({ jobTitle, employer }) => ({ jobTitle, employer })), [
+    { jobTitle: "Laborer", employer: "ABC Construction" },
+    { jobTitle: "", employer: "Cool Air Services" },
+  ]);
+});
+
+for (const locationLine of ["Dallas, TX", "Remote", "Austin, TX"]) {
+  test(`negative: location "${locationLine}" above an employer is not a title`, () => {
+    for (const employerLine of ["ABC Construction", "ABC Construction — Dallas, TX"]) {
+      const source = `${contactHeader}${locationLine}\n${employerLine}\n2019 - 2021\n${duty}`;
+      const data = imported(source);
+      assertNotTitle(data, [locationLine]);
+      assertGrounded(data, source);
+      assert.equal(data.roles[0].employer, "ABC Construction");
+    }
+  });
+}
+
+test("negative: an employer name above another employer line is not a title", () => {
+  for (const upper of ["Acme Services", "Northgate Medical Center", "Riverside Apartment Communities", "Joe's Plumbing & Heating"]) {
+    const source = `${contactHeader}${upper}\nABC Construction — Dallas, TX\n2019 - 2021\n${duty}`;
+    const data = imported(source);
+    assertNotTitle(data, [upper]);
+    assertGrounded(data, source);
+  }
+});
 
 test("employer names are never read as job titles", () => {
   // Employer above a keyword-free title: the acronym marks the employer.
@@ -273,6 +359,14 @@ test("E2E: clean upload -> parse -> toIntake -> D1 -> refresh -> fromIntake keep
   const review = serverUploadReview(resume.intake, { trade: resume.trade, title: resume.title });
   t.diagnostic(JSON.stringify({ fixture: "E2E refresh", questionsShown: questions(refreshed), serverIssues: review.issues.map((issue) => issue.message), diff }));
   assert.deepEqual(diff.roles, [], "employers, titles, dates, and current status survive the round trip");
+  assertGrounded(refreshed, FIXTURE_SOURCE_TEXT);
+  // Review layer: the server's authoritative field states mark every job fact confirmed (no Confirm/Edit, no question).
+  FIXTURE_ROLES.forEach((role, index) => {
+    const keys = role.endDate === "Present" ? ["employer", "jobTitle", "startDate", "current"] : ["employer", "jobTitle", "startDate", "endDate"];
+    for (const key of keys) assert.equal(review.fieldStates[`roles.${index}.${key}`]?.status, "confirmed", `roles.${index}.${key}`);
+  });
+  // The current job stores "Present" as current=true with no end date; that is optional and never a question.
+  assert.equal(review.fieldStates["roles.0.endDate"].required, false);
   assert.ok(refreshed.roles.every((role) => role.jobTitle.trim()));
   assert.deepEqual(questions(refreshed), []);
   assert.ok(!review.issues.some((issue) => TITLE_QUESTION.test(issue.message)));

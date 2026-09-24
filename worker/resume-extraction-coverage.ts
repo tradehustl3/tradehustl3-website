@@ -165,7 +165,8 @@ function chooseHeaderFields(lines: string[]): { employer: string; jobTitle: stri
   const explicitInline = inlineTitleEmployerHeader(lines);
   if (explicitInline) return explicitInline;
 
-  const candidates = lines.flatMap(splitHeaderParts).filter((part) => !DATE_RANGE_LINE_RE.test(part));
+  // A date is never an employer or a title, whether a range or a lone "Jan 2019".
+  const candidates = lines.flatMap(splitHeaderParts).filter((part) => !DATE_RANGE_LINE_RE.test(part) && !parseResumeDate(part));
   const location = candidates.find(looksLikeLocation) ?? "";
   const nonLocation = candidates.filter((part) => part !== location);
 
@@ -227,7 +228,7 @@ function roleHeaderStart(lines: string[], dateIndex: number): number {
   for (let index = dateIndex - 1; index >= 0 && seen < 3; index -= 1) {
     const line = lines[index];
     if (!line) continue;
-    if (TOP_LEVEL_SECTION_RE.test(line) || parseDateRange(line) || looksLikeNarrative(line)) break;
+    if (TOP_LEVEL_SECTION_RE.test(line) || parseDateRange(line) || parseResumeDate(line) || looksLikeNarrative(line)) break;
     start = index;
     seen += 1;
     if (splitHeaderParts(line).length >= 2) {
