@@ -12,6 +12,19 @@ import { isCurrentDate } from "../../../worker/resume-dates";
 
 import type { ExperienceLevel, TradeTrack } from "../trade-content";
 
+/**
+ * Persisted intake JSON shape version (`meta.schemaVersion`), independent of
+ * `meta.wizardVersion` (the wizard UI revision). See docs/resume-intake-schema.md.
+ * An intake without the field is version 0 and has the same shape as version 1.
+ */
+export const INTAKE_SCHEMA_VERSION = 1;
+
+export function intakeSchemaVersion(intake: unknown): number {
+  const meta = intake && typeof intake === "object" ? (intake as { meta?: unknown }).meta : undefined;
+  const version = meta && typeof meta === "object" ? (meta as { schemaVersion?: unknown }).schemaVersion : undefined;
+  return Number.isInteger(version) && (version as number) >= 0 ? version as number : 0;
+}
+
 export type RoleEntry = {
   employer: string;
   jobTitle: string;
@@ -221,6 +234,7 @@ export function toIntake(data: WizardData, accountEmail: string): Record<string,
       location: data.targetJob.location.trim(),
     },
     meta: {
+      schemaVersion: INTAKE_SCHEMA_VERSION,
       wizardVersion: 4,
       // Explicit customer corrections. Field confidence states are computed by the
       // server from the saved intake, never supplied by the browser.

@@ -1,6 +1,7 @@
 import { errorKind } from "./resume-safe-log";
 import { groundResumePrefill } from "./resume-extraction-grounding";
 import { serverUploadReview } from "./resume-upload-requirements";
+import { INTAKE_SCHEMA_VERSION, intakeSchemaVersion } from "../app/resume-builder/intake/wizard-data";
 import { createResumeDocx, createResumePdf, GeneratedResume, ResumeTheme } from "./resume-documents";
 import {
   canonicalSourceRecord,
@@ -105,6 +106,10 @@ const MAX_IMPORT_TEXT_CHARS = 100_000;
 const MAX_IMPORT_BODY_BYTES = 130_000;
 const STRIPE_WEBHOOK_MAX_BYTES = 256 * 1024;
 const RESUME_RETENTION_DAYS = 37;
+// Paid resumes keep structured intake and generated output, but the raw uploaded
+// text is cleared this many days after the last generation or edit.
+const PAID_SOURCE_TEXT_RETENTION_DAYS = 90;
+const IMPORT_SOURCE_TYPES = new Set(["pdf", "docx"]);
 const DEFAULT_GLOBAL_AI_DAILY_ATTEMPT_LIMIT = 250;
 const encoder = new TextEncoder();
 
@@ -675,7 +680,13 @@ function validateResumeInput(body: Record<string, unknown> | null):
       response: json({ ok: false, message: "Choose a supported trade and complete the intake." }, 400),
     };
   }
-  const intakeJson = JSON.stringify(uploadedDraft ? withServerUploadFieldStates(intake as Record<string, unknown>, trade, title) : intake);
+  // A shape this server does not know is refused rather than stored mislabelled;
+  // older/unversioned intakes share the current shape and are stamped with it.
+  if (intakeSchemaVersion(intake) > INTAKE_SCHEMA_VERSION) {
+    return { ok: false, response: json({ ok: false, message: "Refresh the page and try again." }, 400) };
+  }
+  const versioned = { ...intake, meta: { ...recordValue(recordValue(intake).meta), schemaVersion: INTAKE_SCHEMA_VERSION } };
+  const intakeJson = JSON.stringify(uploadedDraft ? withServerUploadFieldStates(versioned, trade, title) : versioned);
   if (intakeJson.length > MAX_INTAKE_JSON_CHARS) {
     return { ok: false, response: json({ ok: false, message: "The intake is too large." }, 413) };
   }
@@ -1865,10 +1876,20 @@ async function importResume(
   if (!allowed) return json({ ok: false, message: "Too many resume uploads. Please try again later." }, 429);
   const body = await parseJsonBody(request, MAX_IMPORT_BODY_BYTES);
   if (!body) return json({ ok: false, message: "The uploaded resume could not be read." }, 400);
-  const fileType = cleanText(body.fileType, 10);
-  const fileName = cleanText(body.fileName, 240);
-  const text = typeof body.text === "string" ? body.text.trim().slice(0, MAX_IMPORT_TEXT_CHARS + 1) : "";
-  if (!fileName || !["pdf", "docx"].includes(fileType) || text.length < 80 || text.length > MAX_IMPORT_TEXT_CHARS) {
+  // The raw file never leaves the browser; validate the extracted-text payload the
+  // server actually receives. Only `text` feeds extraction and grounding — any
+  // browser-supplied parse/status fields in the body are ignored.
+  const fileType = typeof body.fileType === "string" ? body.fileType : "";
+  const fileName = typeof body.fileName === "string" ? cleanText(body.fileName, 240) : "";
+  const text = typeof body.text === "string" ? body.text.trim() : "";
+  if (
+    !fileName
+    || !IMPORT_SOURCE_TYPES.has(fileType)
+    || text.length < 80
+    || text.length > MAX_IMPORT_TEXT_CHARS
+    || text.split(/\s+/).length < 12
+    || text.includes("\u0000")
+  ) {
     return json({ ok: false, message: "Choose a readable PDF or DOCX resume up to 5 MB." }, 400);
   }
   try {
@@ -2564,6 +2585,27 @@ export async function runResumeBuilderRetention(env: ResumeBuilderEnv): Promise<
     ]);
     if (env.BOOKS) await Promise.allSettled(keys.map((key) => env.BOOKS!.delete(key)));
   }
+
+  // Paid resumes: drop only the raw uploaded text once the resume has had no
+  // generation or edit (both bump updated_at) for the retention window. The
+  // structured intake, generated resume, and files the customer bought are kept,
+  // and updated_at is left untouched so this never counts as customer activity.
+  await env.DB.prepare(
+    `UPDATE resumes
+     SET intake_json = json_set(
+       json_remove(intake_json, '$.sourceResumeText'),
+       '$.meta.sourceResumePreserved', json('false'),
+       '$.meta.sourceResumeTextPurgedAt', datetime('now')
+     )
+     WHERE deleted_at IS NULL
+       AND updated_at < datetime('now', '-' || ? || ' days')
+       AND json_valid(intake_json)
+       AND COALESCE(json_extract(intake_json, '$.sourceResumeText'), '') <> ''
+       AND (
+         EXISTS (SELECT 1 FROM entitlements e WHERE e.resume_id = resumes.resume_id AND e.status = 'active')
+         OR EXISTS (SELECT 1 FROM resume_orders ro WHERE ro.resume_id = resumes.resume_id AND ro.status = 'paid')
+       )`,
+  ).bind(PAID_SOURCE_TEXT_RETENTION_DAYS).run();
 
   const now = nowSeconds();
   await env.DB.batch([
