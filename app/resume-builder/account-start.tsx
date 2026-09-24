@@ -100,8 +100,8 @@ export function AccountStart() {
     return (
       <div className="rb-message-panel rb-message-success" role="status">
         <span className="rb-message-icon">✓</span>
-        <p className="rb-kicker">/ LINK SENT</p>
-        <h2>CHECK YOUR INBOX.</h2>
+        <p className="rb-kicker">Link sent</p>
+        <h2>Check your inbox.</h2>
         <p>{message}</p>
         <strong>{sentTo}</strong>
         <small>The link expires in 20 minutes. Open it, then choose the confirmation button to finish signing in.</small>
@@ -119,7 +119,7 @@ export function AccountStart() {
       <button className="rb-button rb-button-primary rb-button-full" type="submit" disabled={submitting || checking}>
         {submitting ? "Sending secure link…" : "Continue with email"} <span>→</span>
       </button>
-      <p className="rb-form-note"><span aria-hidden="true">◆</span> No password. We only use your email to verify your account. If you upload a resume, your name and resume facts come from that file.</p>
+      <p className="rb-form-note">No password. We only use your email to verify your account. If you upload a resume, your name and resume facts come from that file.</p>
       {message ? <p className="rb-inline-error" role="alert">{message}</p> : null}
     </form>
   );

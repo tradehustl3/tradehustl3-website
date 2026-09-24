@@ -48,18 +48,19 @@ export function ResumePreviewFallback() {
       aria-label="Protected resume preview viewer"
       data-testid="mobile-resume-preview-fallback"
       style={{
-        margin: isMobile ? "0" : "14px 18px 18px",
+        margin: isMobile ? "12px" : "0 12px 12px",
         padding: isMobile ? "24px 18px" : "18px",
-        borderTop: isMobile ? "1px solid #d8d1c3" : "1px solid #d8d1c3",
-        background: "#f7f3e9",
-        color: "#0b273b",
+        border: "1px solid var(--rb-border)",
+        borderRadius: "var(--rb-radius)",
+        background: "var(--rb-surface)",
+        color: "var(--rb-text)",
         textAlign: "center",
       }}
     >
-      <p style={{ margin: "0 0 8px", fontWeight: 900, letterSpacing: ".08em", textTransform: "uppercase" }}>
+      <p style={{ margin: "0 0 8px", fontSize: 17, fontWeight: 700 }}>
         {isMobile ? "Your protected resume is ready" : "Need a full-screen view?"}
       </p>
-      <p style={{ margin: "0 auto 16px", maxWidth: 520, lineHeight: 1.5 }}>
+      <p style={{ margin: "0 auto 16px", maxWidth: 520, color: "var(--rb-text-2)", lineHeight: 1.55 }}>
         {isMobile
           ? "Mobile browsers do not always display secured PDFs inside a page. Open the same watermarked resume directly to review it before you pay."
           : "Open the same protected, watermarked resume directly in your browser. This does not use another AI run."}
@@ -72,7 +73,7 @@ export function ResumePreviewFallback() {
       >
         View my watermarked resume <span aria-hidden="true">→</span>
       </a>
-      <small style={{ display: "block", marginTop: 12, opacity: .75 }}>
+      <small style={{ display: "block", marginTop: 12, color: "var(--rb-text-2)", fontSize: 13 }}>
         Protected preview only · no additional AI run · use Back to return here
       </small>
     </section>

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import { Hustl3Bot } from "../hustl3-bot";
+import { TradeIcon } from "../resume-hero-texture";
 import {
   COMMON_CERTIFICATIONS,
   EMPLOYMENT_TYPES,
@@ -83,6 +84,8 @@ export function ResumeWizard() {
   const [importMessage, setImportMessage] = useState("");
   const [importConsent, setImportConsent] = useState(false);
   const [editingImportedDetails, setEditingImportedDetails] = useState(false);
+  const [dragging, setDragging] = useState(false);
+  const tradeGroupRef = useRef<HTMLDivElement | null>(null);
 
   const saveSequence = useRef(0);
   const headingRef = useRef<HTMLHeadingElement | null>(null);
@@ -261,6 +264,18 @@ export function ResumeWizard() {
     setStep(target);
   }
 
+  // "Start from scratch" is the guided path: with a trade chosen it is the same
+  // as Continue; without one it points the customer at the trade choices.
+  function startFromScratch() {
+    if (isTradeTrack(data.trade)) {
+      void goNext();
+      return;
+    }
+    setAttemptedNext(true);
+    tradeGroupRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    tradeGroupRef.current?.querySelector<HTMLButtonElement>("button")?.focus({ preventScroll: true });
+  }
+
   async function submitBuild() {
     if (stepErrors.length) {
       setAttemptedNext(true);
@@ -385,14 +400,15 @@ export function ResumeWizard() {
   const showConsent = !paid && step === LAST_STEP;
   const uploadedResumeMode = data.sourceProvenance === "upload" && Boolean(data.sourceResumeText.trim());
   const uploadVerificationMode = uploadedResumeMode && !editingImportedDetails;
+  const getStartedMode = step === 0 && !uploadedResumeMode;
 
   return (
     <div className="rb-wiz">
       {!uploadVerificationMode ? <WizardProgress step={step} percent={percent} onJump={editStep} /> : null}
 
-      <div className="rb-wiz-shell">
+      <div className={classSet("rb-wiz-shell", getStartedMode && "rb-wiz-shell-wide")}>
         <div className="rb-wiz-main">
-          <p className="rb-kicker">{uploadVerificationMode ? "/ RESUME UPLOAD · FIX ONLY WHAT NEEDS ATTENTION" : `/ BUILD · STEP ${step + 1} OF ${WIZARD_STEPS.length}`}</p>
+          <p className="rb-kicker">{uploadVerificationMode ? "Resume upload · fix only what needs attention" : `Step ${step + 1} of ${WIZARD_STEPS.length}`}</p>
 
           <div className="rb-wiz-step" key={activeStep.key}>
             {step === 0 ? renderTrade() : null}
@@ -438,7 +454,7 @@ export function ResumeWizard() {
               onClick={goBack}
               disabled={step === 0 || submitting}
             >
-              <span aria-hidden="true">←</span> BACK
+              <span aria-hidden="true">←</span> Back
             </button>
             <span className="rb-save-state" data-state={saveState} aria-live="polite">
               {saveState === "saving" ? "Saving…" : null}
@@ -447,12 +463,12 @@ export function ResumeWizard() {
             </span>
             {step < 5 ? (
               <button type="button" className="rb-button rb-button-primary" onClick={() => void goNext()}>
-                CONTINUE <span aria-hidden="true">→</span>
+                Continue <span aria-hidden="true">→</span>
               </button>
             ) : null}
             {step === 5 ? (
               <button type="button" className="rb-button rb-button-primary" onClick={() => void goNext()}>
-                REVIEW MY INFO <span aria-hidden="true">→</span>
+                Review my info <span aria-hidden="true">→</span>
               </button>
             ) : null}
             {step === 6 ? (
@@ -463,10 +479,10 @@ export function ResumeWizard() {
                 disabled={submitting}
               >
                 {submitting
-                  ? "SAVING YOUR INTAKE…"
+                  ? "Saving your intake…"
                   : paid
-                    ? "SAVE & RETURN TO REVIEW"
-                    : "BUILD MY WATERMARKED RESUME"}{" "}
+                    ? "Save & return to review"
+                    : "Build my watermarked resume"}{" "}
                 <span aria-hidden="true">→</span>
               </button>
             ) : null}
@@ -503,7 +519,7 @@ export function ResumeWizard() {
         && !issues.some((issue) => issue.roleIndex !== undefined && path === `roles.${issue.roleIndex}.${issue.field}`));
       const editStepFor = (path: string) => path.startsWith("roles.") || path.startsWith("contact.") || path === "summaryNotes" ? 2 : path === "trade" ? 0 : path === "experienceLevel" ? 1 : path.startsWith("targetJob.") ? 4 : 3;
       const issueBadge = (status: UploadedResumeIssue["status"]) => (
-        <span className={`rb-upload-badge rb-upload-badge-${status}`}>{status === "conflicting" ? "CONFLICT · CHECK THIS VALUE" : "MISSING · REQUIRED"}</span>
+        <span className={`rb-upload-badge rb-upload-badge-${status}`}>{status === "conflicting" ? "Conflict · check this value" : "Missing · required"}</span>
       );
       const roleCount = data.roles.filter(roleHasContent).length;
       const skillCount = new Set([
@@ -543,7 +559,7 @@ export function ResumeWizard() {
 
       return (
         <>
-          <h1 ref={headingRef} tabIndex={-1}>WE READ YOUR RESUME.<br /><span>{issues.length ? "NOW LET’S FIX A FEW THINGS." : "DON’T RE-TYPE IT."}</span></h1>
+          <h1 ref={headingRef} tabIndex={-1}>We read your resume. <span>{issues.length ? "Now let’s fix a few things." : "No need to re-type it."}</span></h1>
           <p className="rb-wiz-lead">
             {issues.length
               ? "HUSTL3 BOT pulled the information from your uploaded resume. A few details need your confirmation before you continue. Everything else is already filled in."
@@ -553,11 +569,11 @@ export function ResumeWizard() {
           <section className="rb-upload-result" aria-labelledby="upload-result-title">
             <div className="rb-upload-result-head">
               <div>
-                <p className="rb-resume-import-kicker">RESUME IMPORT COMPLETE</p>
-                <h2 id="upload-result-title">{issues.length ? "ALMOST READY. JUST VERIFY A FEW DETAILS." : "YOUR RESUME IS READY FOR THE NEXT STEP."}</h2>
+                <p className="rb-resume-import-kicker">Resume import complete</p>
+                <h2 id="upload-result-title">{issues.length ? "Almost ready. Just verify a few details." : "Your resume is ready for the next step."}</h2>
               </div>
               <span className={issues.length ? "rb-upload-result-count rb-upload-result-count-warn" : "rb-upload-result-count"}>
-                {issues.length ? "ACTION NEEDED" : "READY"}
+                {issues.length ? "Action needed" : "Ready"}
               </span>
             </div>
 
@@ -581,14 +597,14 @@ export function ResumeWizard() {
                 <p className="rb-resume-import-error">We found a few details that need review before we can move to your resume style options.</p>
                 <p>{`We found ${issues.length} item${issues.length === 1 ? "" : "s"} that need${issues.length === 1 ? "s" : ""} your confirmation before you continue.`}</p>
                 <div className="rb-upload-exceptions-head">
-                  <strong>FIX ONLY THESE ITEMS</strong>
+                  <strong>Fix only these items</strong>
                   <p>You do not need to re-enter your full resume. Only review the items shown below.</p>
                 </div>
 
                 {needsTrade ? (
                   <div className="rb-upload-issue rb-upload-issue-missing" data-status="missing">
                     {issueBadge("missing")}
-                    <h3>CHOOSE YOUR TARGET TRADE OR JOB TITLE</h3>
+                    <h3>Choose your target trade or job title</h3>
                     <Text label="Target job title" value={data.targetJob.title} onChange={(title) => update((prev) => ({ ...prev, targetJob: { ...prev.targetJob, title } }))} />
                     <p>Your resume shows experience across more than one area. Choose the trade direction you want this resume to target.</p>
                     <p>This helps HUSTL3 BOT build the strongest version of your resume.</p>
@@ -601,11 +617,14 @@ export function ResumeWizard() {
                             key={trade}
                             role="radio"
                             aria-checked={selected}
-                            className={classSet("rb-trade-card", selected && "rb-trade-card-on")}
+                            className={classSet("rb-trade-card", "rb-trade-card-row", selected && "rb-trade-card-on")}
                             onClick={() => update({ trade })}
                           >
-                            <span className="rb-trade-card-name">{trade}</span>
-                            <span className="rb-trade-card-note">{TRADE_GUIDANCE[trade].tagline}</span>
+                            <TradeIcon trade={trade} />
+                            <span>
+                              <span className="rb-trade-card-name">{trade}</span>
+                              <span className="rb-trade-card-note">{TRADE_GUIDANCE[trade].tagline}</span>
+                            </span>
                           </button>
                         );
                       })}
@@ -636,27 +655,27 @@ export function ResumeWizard() {
                 {needsHistory ? (
                   <div className="rb-upload-issue rb-upload-issue-missing" data-status="missing">
                     {issueBadge("missing")}
-                    <h3>ADD OR CONFIRM YOUR WORK HISTORY</h3>
+                    <h3>Add or confirm your work history</h3>
                     <p>We were not able to pull enough work-history detail from your upload. Add or confirm your job information below so we can continue.</p>
                     <Text label="Employer" value={data.roles[0]?.employer ?? ""} onChange={(value) => patchRole(0, { employer: value })} />
                     <Text label="Job title" value={data.roles[0]?.jobTitle ?? ""} onChange={(value) => patchRole(0, { jobTitle: value })} />
                     <Text label="Start date" value={data.roles[0]?.startDate ?? ""} onChange={(value) => patchRole(0, { startDate: value })} placeholder="Example: Jan 2022" />
                     <Text label="End date" value={data.roles[0]?.endDate ?? ""} onChange={(value) => patchRole(0, { endDate: value })} placeholder="Example: Aug 2024" />
-                    <label><input type="checkbox" checked={data.roles[0]?.current ?? false} onChange={(event) => patchRole(0, { current: event.target.checked, endDate: event.target.checked ? "" : data.roles[0]?.endDate ?? "" })} /> This is my current role</label>
+                    <label className="rb-check"><input type="checkbox" checked={data.roles[0]?.current ?? false} onChange={(event) => patchRole(0, { current: event.target.checked, endDate: event.target.checked ? "" : data.roles[0]?.endDate ?? "" })} /> This is my current role</label>
                   </div>
                 ) : null}
-                <div className="rb-upload-clean"><strong>YOU DO NOT HAVE TO START OVER.</strong><p>Everything not shown here has already been pulled from your resume. Only fix the items listed on this screen.</p></div>
+                <div className="rb-upload-clean"><strong>You do not have to start over.</strong><p>Everything not shown here has already been pulled from your resume. Only fix the items listed on this screen.</p></div>
               </div>
             ) : (
               <div className="rb-upload-clean">
-                <strong>✓ NO RE-TYPING REQUIRED</strong>
+                <strong>✓ No re-typing required</strong>
                 <p>Your resume supplied the information needed for the next step. You can review all extracted facts if you want, but it is not required.</p>
               </div>
             )}
 
             {optionalConflicts.length > 0 ? (
               <div className="rb-upload-conflicts" role="note">
-                <strong>CHECK THESE VALUES (OPTIONAL)</strong>
+                <strong>Check these values (optional)</strong>
                 {optionalConflicts.map(([path]) => (
                   <div className="rb-upload-issue rb-upload-issue-conflicting" data-status="conflicting" key={path}>
                     {issueBadge("conflicting")}
@@ -669,7 +688,7 @@ export function ResumeWizard() {
             {uncertain.length > 0 ? <details className="rb-upload-confirmations">
               <summary>Confirm {uncertain.length} extracted detail{uncertain.length === 1 ? "" : "s"} (optional)</summary>
               {uncertain.map(([path]) => <div className="rb-upload-low-confidence" data-status="low_confidence" key={path}>
-                <span className="rb-upload-badge rb-upload-badge-low">PLEASE CONFIRM</span>
+                <span className="rb-upload-badge rb-upload-badge-low">Please confirm</span>
                 <span>{uploadFieldLabel(path)}: {Array.isArray(values[path]) ? (values[path] as string[]).join(", ") : String(values[path])}</span>{" "}
                 <button type="button" onClick={() => setData((prev) => {
                   const next = recordUserCorrections(prev, prev, [path]); dataRef.current = next; return next;
@@ -677,7 +696,7 @@ export function ResumeWizard() {
                 <button type="button" onClick={() => { setEditingImportedDetails(true); setStep(editStepFor(path)); }}>Edit</button>
               </div>)}
             </details> : null}
-            {saveState === "error" ? <button type="button" onClick={() => void persistLatest(step)}>Retry saving</button> : null}
+            {saveState === "error" ? <button type="button" className="rb-button rb-button-secondary" onClick={() => void persistLatest(step)}>Retry saving</button> : null}
             <label className="rb-legal-consent rb-resume-import-consent">
               <input
                 type="checkbox"
@@ -699,7 +718,7 @@ export function ResumeWizard() {
                 onClick={() => void continueImportedResume()}
                 disabled={importBusy}
               >
-                {importState === "building" ? "SAVING VERIFIED FACTS…" : issues.length ? "SAVE AND CONTINUE" : "CHOOSE MY RESUME SYSTEM"} <span aria-hidden="true">→</span>
+                {importState === "building" ? "Saving verified facts…" : issues.length ? "Save and continue" : "Choose my resume system"} <span aria-hidden="true">→</span>
               </button>
               <button
                 type="button"
@@ -710,7 +729,7 @@ export function ResumeWizard() {
                 }}
                 disabled={importBusy}
               >
-                REVIEW IMPORTED DETAILS <span aria-hidden="true">→</span>
+                Review imported details <span aria-hidden="true">→</span>
               </button>
             </div>
 
@@ -725,71 +744,111 @@ export function ResumeWizard() {
                 }}
                 disabled={importBusy}
               />
-              UPLOAD A DIFFERENT RESUME
+              Upload a different resume
             </label>
           </section>
         </>
       );
     }
 
+    const acceptFile = (file: File | null) => {
+      setDragging(false);
+      void importResume(file);
+    };
+
     return (
       <>
-        <h1 ref={headingRef} tabIndex={-1}>HOW DO YOU WANT TO START?</h1>
-        <p className="rb-wiz-lead">Already have a resume? Upload it once and we will pull the facts from it. Starting fresh? Use the guided path below.</p>
-        <div className="rb-resume-import">
-          <div>
-            <p className="rb-resume-import-kicker">FASTEST PATH · ALREADY HAVE A RESUME</p>
-            <h2>UPLOAD IT ONCE. DON&apos;T TYPE IT AGAIN.</h2>
-            <p>
-              HUSTL3 BOT reads your contact details, work history, dates, trade direction, skills, certifications,
-              and education. If something looks wrong or is missing, we show only that item for you to fix.
-            </p>
-          </div>
-          <label className={classSet("rb-button", "rb-button-primary", "rb-resume-import-button", importBusy && "rb-resume-import-busy")}>
-            <input
-              type="file"
-              accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-              onChange={(event) => {
-                const file = event.target.files?.[0] ?? null;
-                event.target.value = "";
-                void importResume(file);
+        <h1 ref={headingRef} tabIndex={-1}>How do you want to start?</h1>
+        <p className="rb-wiz-lead">Upload the resume you already have and we will pull the facts from it, or start from scratch with the guided intake.</p>
+        <div className="rb-start-grid">
+          <section className="rb-start-upload" aria-labelledby="upload-title">
+            <label
+              className="rb-upload-zone"
+              data-dragging={dragging}
+              data-busy={importBusy}
+              onDragOver={(event) => {
+                event.preventDefault();
+                if (!importBusy) setDragging(true);
               }}
-              disabled={importBusy}
-            />
-            {importState === "reading"
-              ? "READING FILE…"
-              : importState === "analyzing"
-                ? "HUSTL3 BOT IS READING YOUR RESUME…"
-                : imported
-                  ? "UPLOAD A DIFFERENT RESUME"
-                  : "UPLOAD EXISTING RESUME"}
-          </label>
-          <small>PDF or DOCX · 5 MB maximum · original file is not stored</small>
-          {importMessage ? (
-            <p className={importState === "done" ? "rb-resume-import-success" : "rb-resume-import-error"} role="status">
-              {importMessage}
-            </p>
-          ) : null}
-        </div>
-        <p className="rb-resume-import-divider"><span>OR START FROM SCRATCH</span></p>
-        <h2 className="rb-scratch-heading">CHOOSE THE TRADE YOU WANT TO TARGET.</h2>
-        <div className="rb-trade-grid" role="radiogroup" aria-label="Trade track">
-          {TRADE_TRACKS.map((trade) => {
-            const selected = data.trade === trade;
-            return (
-              <button
-                type="button"
-                key={trade}
-                role="radio"
-                aria-checked={selected}
-                className={classSet("rb-trade-card", selected && "rb-trade-card-on")}
-                onClick={() => update({ trade })}
-              >
-                <span className="rb-trade-card-name">{trade}</span>
-                <span className="rb-trade-card-note">{TRADE_GUIDANCE[trade].tagline}</span>
-              </button>
-            );
-          })}
+              onDragLeave={() => setDragging(false)}
+              onDrop={(event) => {
+                event.preventDefault();
+                if (importBusy) {
+                  setDragging(false);
+                  return;
+                }
+                acceptFile(event.dataTransfer.files?.[0] ?? null);
+              }}
+            >
+              <input
+                type="file"
+                accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                onChange={(event) => {
+                  const file = event.target.files?.[0] ?? null;
+                  event.target.value = "";
+                  acceptFile(file);
+                }}
+                disabled={importBusy}
+              />
+              <span className="rb-upload-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5Z" />
+                  <path d="M14 3v5h5M12 18v-6M9.5 14.5 12 12l2.5 2.5" />
+                </svg>
+              </span>
+              <strong id="upload-title">Upload your existing resume</strong>
+              <p>
+                Drag and drop your file here, or choose it from your device. HUSTL3 BOT reads your contact details, work
+                history, dates, trade direction, skills, certifications, and education, then shows only what needs fixing.
+              </p>
+              <span className={classSet("rb-button", "rb-button-primary", importBusy && "rb-resume-import-busy")}>
+                {importState === "reading"
+                  ? "Reading file…"
+                  : importState === "analyzing"
+                    ? "HUSTL3 BOT is reading your resume…"
+                    : imported
+                      ? "Upload a different resume"
+                      : "Upload resume"}
+              </span>
+              <small className="rb-upload-rules">PDF or DOCX · 5 MB maximum · original file is not stored</small>
+              {importMessage ? (
+                <span className={importState === "done" ? "rb-resume-import-success" : "rb-resume-import-error"} role="status">
+                  {importMessage}
+                </span>
+              ) : null}
+            </label>
+            <p className="rb-or-divider"><span>OR</span></p>
+            <button type="button" className="rb-button rb-button-secondary" onClick={startFromScratch} disabled={importBusy}>
+              Start from scratch
+            </button>
+            <p className="rb-section-hint">Answer a few guided questions about your trade and field experience.</p>
+          </section>
+
+          <section className="rb-start-trades" aria-labelledby="trade-select-title">
+            <h2 className="rb-section-title" id="trade-select-title">Choose the trade you want to target</h2>
+            <p className="rb-section-hint">Required to start from scratch. Optional for uploads — HUSTL3 BOT detects your trade from the resume and uses this choice only if it can’t.</p>
+            <div className="rb-trade-grid" role="radiogroup" aria-labelledby="trade-select-title" ref={tradeGroupRef}>
+              {TRADE_TRACKS.map((trade) => {
+                const selected = data.trade === trade;
+                return (
+                  <button
+                    type="button"
+                    key={trade}
+                    role="radio"
+                    aria-checked={selected}
+                    className={classSet("rb-trade-card", "rb-trade-card-row", selected && "rb-trade-card-on")}
+                    onClick={() => update({ trade })}
+                  >
+                    <TradeIcon trade={trade} />
+                    <span>
+                      <span className="rb-trade-card-name">{trade}</span>
+                      <span className="rb-trade-card-note">{TRADE_GUIDANCE[trade].tagline}</span>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </section>
         </div>
       </>
     );
@@ -797,7 +856,7 @@ export function ResumeWizard() {
   function renderExperience() {
     return (
       <>
-        <h1 ref={headingRef} tabIndex={-1}>HOW MUCH FIELD EXPERIENCE ARE WE WORKING WITH?</h1>
+        <h1 ref={headingRef} tabIndex={-1}>How much field experience are we working with?</h1>
         <p className="rb-wiz-lead">
           No paid experience yet is fine. Trade school, apprenticeships, certifications, side work, military service,
           volunteer work, tools, and technical training all build a strong resume.
@@ -826,7 +885,7 @@ export function ResumeWizard() {
   function renderWorkHistory() {
     return (
       <>
-        <h1 ref={headingRef} tabIndex={-1}>WHAT HAVE YOU ACTUALLY DONE?</h1>
+        <h1 ref={headingRef} tabIndex={-1}>What have you actually done?</h1>
         <p className="rb-wiz-lead">
           Add every role that shows trade skill — employer jobs, self-employment, contract, apprentice, helper,
           school lab, military, volunteer, or side work. No employment yet? Leave the roles blank and lean on your
@@ -914,7 +973,7 @@ export function ResumeWizard() {
           className="rb-button rb-button-ghost rb-add-role"
           onClick={() => update((p) => ({ ...p, roles: [...p.roles, emptyRole()] }))}
         >
-          <span aria-hidden="true">+</span> ADD ANOTHER ROLE
+          <span aria-hidden="true">+</span> Add another role
         </button>
       </>
     );
@@ -924,7 +983,7 @@ export function ResumeWizard() {
     const guidance = data.trade ? TRADE_GUIDANCE[data.trade] : null;
     return (
       <>
-        <h1 ref={headingRef} tabIndex={-1}>WHAT CAN YOU DO THAT EMPLOYERS CARE ABOUT?</h1>
+        <h1 ref={headingRef} tabIndex={-1}>What can you do that employers care about?</h1>
         <p className="rb-wiz-lead">Select what fits and add your own. Nothing goes on the resume unless you put it here.</p>
 
         <ChipField
@@ -986,7 +1045,7 @@ export function ResumeWizard() {
   function renderTargetJob() {
     return (
       <>
-        <h1 ref={headingRef} tabIndex={-1}>WHAT JOB ARE WE CHASING?</h1>
+        <h1 ref={headingRef} tabIndex={-1}>What job are we chasing?</h1>
         <p className="rb-wiz-lead">
           Paste the posting and TRADE HUSTL3 prioritizes relevant language from your real experience.
           We match language. We do not manufacture experience.
@@ -1012,7 +1071,7 @@ export function ResumeWizard() {
     const roles = data.roles.filter(roleHasContent);
     return (
       <>
-        <h1 ref={headingRef} tabIndex={-1}>CHECK THE FACTS BEFORE WE BUILD.</h1>
+        <h1 ref={headingRef} tabIndex={-1}>Check the facts before we build.</h1>
         <p className="rb-wiz-lead rb-review-note">Nothing is generated yet. Make sure the facts are right first.</p>
         <div className="rb-summary">
           <SummaryCard title="Trade" onEdit={() => editStep(0)}>
@@ -1067,7 +1126,7 @@ export function ResumeWizard() {
   function renderGenerate() {
     return (
       <div className="rb-generate">
-        <h1 ref={headingRef} tabIndex={-1}>READY TO TURN YOUR EXPERIENCE INTO A RESUME?</h1>
+        <h1 ref={headingRef} tabIndex={-1}>Ready to turn your experience into a resume?</h1>
         <p className="rb-wiz-lead">Your first protected preview is built before checkout.</p>
         <div className="rb-value-reminder">
           <ul>
@@ -1206,8 +1265,8 @@ function WizardProgress({ step, percent, onJump }: { step: number; percent: numb
   return (
     <div className="rb-wiz-progress">
       <div className="rb-wiz-progress-head">
-        <span>BUILD · {percent}% complete</span>
-        <span>Step {step + 1} of {WIZARD_STEPS.length}</span>
+        <span>{WIZARD_STEPS[step].label}</span>
+        <span>Step {step + 1} of {WIZARD_STEPS.length} · {percent}% complete</span>
       </div>
       <ol className="rb-wiz-dots">
         {WIZARD_STEPS.map((wizardStep, index) => {
@@ -1237,7 +1296,7 @@ function ValueRail({ paid }: { paid: boolean }) {
     : ["Built for skilled trades", "Preview before payment", "$9.99 one-time · no subscription", "Resume + cover letter", "PDF + DOCX", "3 shared corrections"];
   return (
     <div className="rb-value-rail" aria-label="What you get">
-      <p>THE OFFER</p>
+      <p>What you get</p>
       <ul>{items.map((item) => <li key={item}>{item}</li>)}</ul>
     </div>
   );

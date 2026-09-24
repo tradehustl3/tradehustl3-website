@@ -70,6 +70,25 @@ function IconGlyph({ name, ...props }: SVGProps<SVGSVGElement> & { name: Glyph }
   );
 }
 
+const CARD_ICONS: Record<TradeTrack, Glyph> = {
+  "HVAC & Refrigeration": "gauge",
+  Electrical: "bolt",
+  Plumbing: "valve",
+  "Welding & Fabrication": "torch",
+  "Construction & Carpentry": "hammer",
+  "Facilities Maintenance": "toolbox",
+  "General Labor / Trade Helper": "helmet",
+};
+
+/** Small line icon for a selectable trade card; one distinct glyph per trade. */
+export function TradeIcon({ trade }: { trade: TradeTrack }) {
+  return (
+    <span className="rb-trade-icon" aria-hidden="true">
+      <IconGlyph name={CARD_ICONS[trade]} focusable="false" />
+    </span>
+  );
+}
+
 export function ResumeHeroTexture({ trade = "main" }: { trade?: HeroTextureTrade }) {
   const [primary, secondaryLeft, secondaryRight] = GLYPHS[trade];
 

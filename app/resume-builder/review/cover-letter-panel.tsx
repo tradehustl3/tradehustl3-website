@@ -26,7 +26,7 @@ export function CoverLetterPanel({
   coverLetter: CoverLetterState;
   paid: boolean;
   onRefresh: () => Promise<void>;
-  onMessage: (message: string) => void;
+  onMessage: (message: string, tone?: "info" | "success" | "error") => void;
 }) {
   const [working, setWorking] = useState(false);
 
@@ -56,10 +56,10 @@ export function CoverLetterPanel({
       const result = await response.json() as { message?: string };
       if (!response.ok) throw new Error(result.message || "We could not generate the matching cover letter.");
       await onRefresh();
-      onMessage(result.message || "Matching cover letter updated.");
+      onMessage(result.message || "Matching cover letter updated.", "success");
       event.currentTarget.reset();
     } catch (error) {
-      onMessage(error instanceof Error ? error.message : "We could not generate the matching cover letter.");
+      onMessage(error instanceof Error ? error.message : "We could not generate the matching cover letter.", "error");
     } finally {
       setWorking(false);
     }
@@ -70,8 +70,8 @@ export function CoverLetterPanel({
   if (!coverLetter.generated) {
     return (
       <section id="included-cover-letter" className="rb-correction-form" aria-labelledby="cover-letter-title">
-        <p className="rb-kicker">/ INCLUDED COVER LETTER PREVIEW</p>
-        <h2 id="cover-letter-title">BUILD THE MATCHING COVER LETTER.</h2>
+        <p className="rb-kicker">INCLUDED COVER LETTER PREVIEW</p>
+        <h2 id="cover-letter-title">Build the matching cover letter.</h2>
         <p>Generate the matching cover letter before checkout so you can review the whole package first. The protected preview uses the same verified facts and the same resume style.</p>
         {coverLetter.needsTargetDetails ? <p className="rb-quality-pass">Add target job details to generate your matching cover letter.</p> : null}
         <form onSubmit={(event) => void submit(event)}>
@@ -92,15 +92,15 @@ export function CoverLetterPanel({
 
   return (
     <section id="included-cover-letter" className="rb-correction-form" aria-labelledby="cover-letter-title">
-      <p className="rb-kicker">/ MATCHING COVER LETTER</p>
-      <h2 id="cover-letter-title">{paid ? "READY TO SEND." : "PREVIEW READY."}</h2>
+      <p className="rb-kicker">MATCHING COVER LETTER</p>
+      <h2 id="cover-letter-title">{paid ? "Ready to send." : "Preview ready."}</h2>
       <p>{paid
         ? "Your cover letter is unlocked and uses the same Classic Black or TRADE HUSTL3 Red Accent style as your resume."
         : "Review the watermarked cover-letter tab above. Your clean PDF and editable DOCX unlock with the same $9.99 one-time purchase."}</p>
 
       {paid && coverLetter.downloads ? (
         <div className="rb-downloads">
-          <p>COVER LETTER FILES</p>
+          <p>Cover letter files</p>
           <a className="rb-download" href={coverLetter.downloads.pdf}><span><strong>PDF</strong><small>Clean, ready to send</small></span><b>↓</b></a>
           <a className="rb-download" href={coverLetter.downloads.docx}><span><strong>DOCX</strong><small>Clean, editable copy</small></span><b>↓</b></a>
         </div>

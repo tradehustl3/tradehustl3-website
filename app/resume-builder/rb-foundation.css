@@ -1,0 +1,289 @@
+/*
+ * TRADE HUSTL3 Resume Builder — design tokens + shared primitives.
+ * UI Design System (Approved September 2026); see docs/resume-builder-phase2-spec.md.
+ *
+ * Imported by resume-builder.css (all builder routes) and by the homepage,
+ * where the builder's account step renders inside `.rb-scope`. Keep this file
+ * to tokens and the primitives that account step needs: typography, buttons,
+ * form fields, alerts, and the account/magic-link states.
+ */
+.rb-page,
+.rb-scope {
+  --rb-navy: #0f2d5b;
+  --rb-navy-hover: #0b2248;
+  --rb-red: #d71920;
+  --rb-red-hover: #b8141a;
+  --rb-red-soft: #fef2f2;
+  --rb-red-border: #fecaca;
+  --rb-error: #b91c1c;
+  --rb-success: #15803d;
+  --rb-success-soft: #f0fdf4;
+  --rb-success-border: #bbf7d0;
+  --rb-warning: #a16207;
+  --rb-warning-soft: #fffbeb;
+  --rb-warning-border: #fde68a;
+  --rb-bg: #fafafb;
+  --rb-surface: #fff;
+  --rb-soft: #f8fafc;
+  --rb-text: #0f172a;
+  --rb-text-2: #64748b;
+  --rb-muted: #94a3b8; /* decorative / future-step only — below 4.5:1 for body copy */
+  --rb-border: #e5e7eb;
+  --rb-border-strong: #cbd5e1;
+  --rb-radius-sm: 8px;
+  --rb-radius: 10px;
+  --rb-radius-lg: 12px;
+  --rb-shadow-sm: 0 1px 2px rgb(15 23 42 / .05);
+  --rb-shadow: 0 1px 3px rgb(15 23 42 / .06), 0 6px 16px rgb(15 23 42 / .05);
+  --rb-shadow-lg: 0 12px 32px rgb(15 23 42 / .08);
+  --rb-focus-ring: 0 0 0 3px rgb(15 45 91 / .22);
+  --rb-font: var(--font-rb), Inter, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --rb-container: 1240px;
+  --rb-gutter: clamp(16px, 4vw, 32px);
+  --rb-control-h: 48px;
+  font-family: var(--rb-font);
+}
+
+.rb-page {
+  min-height: 100vh;
+  background: var(--rb-bg);
+  color: var(--rb-text);
+  font-size: 16px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Typography — resets the site-wide uppercase display headings for the builder. */
+.rb-page h1, .rb-page h2, .rb-page h3, .rb-page h4,
+.rb-scope h1, .rb-scope h2, .rb-scope h3 {
+  max-width: none;
+  margin: 0;
+  color: var(--rb-text);
+  font-family: var(--rb-font);
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -.015em;
+  text-transform: none;
+  text-shadow: none;
+  text-wrap: balance;
+}
+.rb-page h1 { font-size: clamp(30px, 2.2vw + 18px, 46px); font-weight: 800; line-height: 1.1; letter-spacing: -.025em; }
+.rb-page h2, .rb-scope h2 { font-size: clamp(24px, 1vw + 18px, 30px); }
+.rb-page h3, .rb-scope h3 { font-size: clamp(18px, .4vw + 16px, 20px); }
+.rb-page h1 span { color: var(--rb-red); }
+.rb-page :focus-visible, .rb-scope :focus-visible { outline: 2px solid var(--rb-navy); outline-offset: 2px; }
+
+.rb-kicker {
+  margin: 0 0 10px;
+  color: var(--rb-red);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  line-height: 1.4;
+  text-transform: uppercase;
+}
+.rb-sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* ============================================================
+   Buttons
+   ============================================================ */
+.rb-button {
+  min-height: var(--rb-control-h);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 20px;
+  border: 1px solid transparent;
+  border-radius: var(--rb-radius-sm);
+  cursor: pointer;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: center;
+  text-decoration: none;
+  text-transform: none;
+  transition: background-color .15s, border-color .15s, color .15s, box-shadow .15s;
+}
+.rb-button > span[aria-hidden="true"], .rb-button > span:last-child:not(:only-child) { font-weight: 500; }
+.rb-button-primary { border-color: var(--rb-red); background: var(--rb-red); color: #fff; box-shadow: var(--rb-shadow-sm); }
+.rb-button-primary:hover:not(:disabled) { border-color: var(--rb-red-hover); background: var(--rb-red-hover); }
+.rb-button-secondary,
+.rb-button-secondary-dark,
+.rb-button-ghost { border-color: var(--rb-border-strong); background: var(--rb-surface); color: var(--rb-navy); }
+.rb-button-secondary:hover:not(:disabled),
+.rb-button-secondary-dark:hover:not(:disabled),
+.rb-button-ghost:hover:not(:disabled) { border-color: var(--rb-navy); background: var(--rb-soft); }
+.rb-button:disabled, .rb-button[aria-disabled="true"] {
+  border-color: var(--rb-border);
+  background: #f1f5f9;
+  color: var(--rb-text-2);
+  box-shadow: none;
+  cursor: not-allowed;
+}
+.rb-button:focus-visible { outline: 2px solid var(--rb-navy); outline-offset: 2px; }
+.rb-button-full { width: 100%; margin-top: 20px; }
+.rb-button-build { background: var(--rb-red); }
+
+.rb-text-button, .rb-text-link {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--rb-red);
+  cursor: pointer;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+.rb-text-button:hover, .rb-text-link:hover { color: var(--rb-red-hover); }
+
+/* ============================================================
+   Forms
+   ============================================================ */
+.rb-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.rb-field + .rb-field { margin-top: 16px; }
+.rb-field label, .rb-chipfield > label, .rb-correction-form label, .rb-bullet-card > label {
+  color: var(--rb-text);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.4;
+  text-transform: none;
+}
+.rb-field label span, .rb-correction-form label small { color: var(--rb-text-2); font-size: 13px; font-weight: 400; }
+.rb-field input, .rb-field select, .rb-field textarea,
+.rb-correction-form input, .rb-correction-form textarea,
+.rb-bullet-card textarea, .rb-inline-input, .rb-chip-input {
+  width: 100%;
+  border: 1px solid var(--rb-border-strong);
+  border-radius: var(--rb-radius-sm);
+  outline: 0;
+  background: var(--rb-surface);
+  color: var(--rb-text);
+  font: inherit;
+  font-size: 16px; /* 16px prevents iOS zoom-on-focus */
+  line-height: 1.45;
+  transition: border-color .15s, box-shadow .15s;
+}
+.rb-field input, .rb-field select, .rb-correction-form input, .rb-inline-input { min-height: var(--rb-control-h); padding: 0 14px; }
+.rb-field textarea, .rb-correction-form textarea, .rb-bullet-card textarea { resize: vertical; padding: 12px 14px; }
+.rb-page ::placeholder, .rb-scope ::placeholder { color: var(--rb-muted); opacity: 1; }
+.rb-field input:focus, .rb-field select:focus, .rb-field textarea:focus,
+.rb-correction-form input:focus, .rb-correction-form textarea:focus,
+.rb-bullet-card textarea:focus, .rb-inline-input:focus, .rb-chip-input:focus { border-color: var(--rb-navy); box-shadow: var(--rb-focus-ring); }
+.rb-field input:disabled, .rb-field textarea:disabled, .rb-correction-form textarea:disabled, .rb-inline-input:disabled, .rb-bullet-card textarea:disabled { background: var(--rb-soft); color: var(--rb-text-2); }
+.rb-field-invalid input, .rb-field-invalid textarea, .rb-field-invalid select { border-color: var(--rb-red); box-shadow: 0 0 0 3px rgb(215 25 32 / .12); }
+.rb-field-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 20px; }
+.rb-field-grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.rb-field-grid .rb-field + .rb-field { margin-top: 0; }
+.rb-field-wide { grid-column: 1 / -1; }
+.rb-form-note { margin: 12px 0 0; color: var(--rb-text-2); font-size: 13px; line-height: 1.5; }
+.rb-form-note span { margin-right: 4px; color: var(--rb-red); }
+.rb-check { display: inline-flex; align-items: center; gap: 8px; color: var(--rb-text); font-size: 14px; font-weight: 500; white-space: nowrap; }
+.rb-check input, .rb-legal-consent input { width: 18px; height: 18px; flex: 0 0 auto; margin: 0; accent-color: var(--rb-red); }
+.rb-legal-consent {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-top: 20px;
+  padding: 14px 16px;
+  border: 1px solid var(--rb-border);
+  border-radius: var(--rb-radius);
+  background: var(--rb-soft);
+  color: var(--rb-text-2);
+  font-size: 14px;
+  line-height: 1.55;
+}
+.rb-legal-consent input { margin-top: 2px; }
+.rb-legal-consent a { color: var(--rb-navy); font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
+
+/* ============================================================
+   Alerts + status messages
+   ============================================================ */
+.rb-alert, .rb-inline-error, .rb-intake-notice, .rb-wiz-errors, .rb-resume-import-error {
+  border: 1px solid var(--rb-red-border);
+  border-radius: var(--rb-radius);
+  background: var(--rb-red-soft);
+  color: var(--rb-text);
+}
+.rb-alert p { margin: 0; }
+.rb-alert { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 12px; margin: 16px 0 0; padding: 16px; }
+.rb-alert-icon {
+  width: 24px;
+  height: 24px;
+  display: grid;
+  grid-row: 1 / span 3;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--rb-red);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1;
+}
+.rb-alert-title { color: var(--rb-error); font-size: 15px; font-weight: 700; }
+.rb-alert-body { color: var(--rb-text); font-size: 14px; line-height: 1.55; overflow-wrap: anywhere; }
+.rb-alert .rb-button { justify-self: start; min-height: 40px; margin-top: 8px; padding: 0 16px; font-size: 14px; }
+.rb-alert-info { border-color: var(--rb-border); background: var(--rb-soft); }
+.rb-alert-info .rb-alert-icon { background: var(--rb-navy); }
+.rb-alert-info .rb-alert-title { color: var(--rb-navy); }
+.rb-alert-success { border-color: var(--rb-success-border); background: var(--rb-success-soft); }
+.rb-alert-success .rb-alert-icon { background: var(--rb-success); }
+.rb-alert-success .rb-alert-title { color: var(--rb-success); }
+.rb-inline-error { margin: 16px 0 0; padding: 12px 14px; color: var(--rb-error); font-size: 14px; font-weight: 500; line-height: 1.5; }
+.rb-wiz-errors { margin-top: 20px; padding: 14px 16px; }
+.rb-wiz-errors strong { color: var(--rb-error); font-size: 15px; }
+.rb-wiz-errors ul { margin: 6px 0 0; padding-left: 20px; }
+.rb-wiz-errors li { margin: 3px 0; font-size: 14px; }
+.rb-intake-notice { margin: 0 0 20px; padding: 20px 22px; }
+.rb-intake-notice .rb-kicker { color: var(--rb-error); }
+.rb-intake-notice h2 { margin: 0 0 8px; color: var(--rb-error); font-size: 22px; }
+.rb-intake-notice > p { max-width: 820px; margin: 6px 0; color: var(--rb-text); font-size: 15px; line-height: 1.55; }
+.rb-intake-missing { margin: 14px 0; padding: 12px 16px; border-radius: var(--rb-radius-sm); background: var(--rb-surface); }
+.rb-intake-missing strong { font-size: 14px; }
+.rb-intake-missing ul { margin: 6px 0 0; padding-left: 20px; }
+.rb-intake-missing li { margin: 3px 0; font-size: 14px; }
+.rb-intake-notice .rb-intake-reassurance { color: var(--rb-text-2); font-size: 14px; font-weight: 500; }
+.rb-intake-notice .rb-button { margin-top: 12px; }
+.rb-workspace-message { margin: 16px 0 0; padding: 12px 16px; border: 1px solid var(--rb-border); border-radius: var(--rb-radius); background: var(--rb-surface); color: var(--rb-text); font-size: 15px; }
+.rb-status-dot { width: 8px; height: 8px; display: inline-block; flex: 0 0 auto; border-radius: 50%; background: var(--rb-success); box-shadow: 0 0 0 3px rgb(21 128 61 / .15); }
+
+/* Account entry (homepage panel + magic-link states) */
+.rb-account-form { margin-top: 24px; }
+.rb-account-ready {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0 12px;
+  align-items: center;
+  margin-top: 24px;
+  padding: 18px;
+  border: 1px solid var(--rb-border);
+  border-radius: var(--rb-radius);
+  background: var(--rb-soft);
+}
+.rb-account-ready p, .rb-account-ready strong, .rb-account-ready small { display: block; margin: 0; }
+.rb-account-ready p { color: var(--rb-success); font-size: 13px; font-weight: 600; }
+.rb-account-ready small { margin-top: 2px; color: var(--rb-text-2); font-size: 14px; }
+.rb-account-ready .rb-button { grid-column: 1 / -1; margin-top: 16px; }
+.rb-message-panel { margin-top: 24px; }
+.rb-message-panel h2 { font-size: 24px; }
+.rb-message-panel > p:not(.rb-kicker) { margin: 8px 0 0; color: var(--rb-text-2); line-height: 1.6; }
+.rb-message-panel strong, .rb-message-panel small { display: block; }
+.rb-message-panel strong { margin-top: 8px; overflow-wrap: anywhere; }
+.rb-message-panel small { margin: 8px 0 18px; color: var(--rb-text-2); font-size: 14px; line-height: 1.5; }
+
+.rb-confirm-mark, .rb-message-icon {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  margin-bottom: 20px;
+  border-radius: 50%;
+  background: var(--rb-success-soft);
+  color: var(--rb-success);
+  font-size: 22px;
+  font-weight: 800;
+}

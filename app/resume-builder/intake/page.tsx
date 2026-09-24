@@ -16,13 +16,10 @@ export default function IntakePage() {
       <ResumeBuilderHeader />
       <FlowSteps current={2} />
       <section className="rb-flow-intro rb-wiz-intro">
-        <div>
-          <p className="rb-kicker">/ BUILD</p>
-          <h1>UPLOAD IT OR START FRESH.<br /><span>WE HANDLE THE REST.</span></h1>
-        </div>
+        <h1>Upload your resume once. <span>We handle the rest.</span></h1>
         <p>
-          Already have a resume? Upload it once and HUSTL3 BOT pulls the facts from it, flags only what needs your
-          attention, then sends you to your resume-system choices. Starting from scratch still uses the guided trade intake.
+          HUSTL3 BOT reads your resume, flags only what needs your attention, and builds a professional,
+          ATS-focused version for the trade you want to target. Starting from scratch uses the same guided trade intake.
           Your work autosaves to your verified account.
         </p>
       </section>

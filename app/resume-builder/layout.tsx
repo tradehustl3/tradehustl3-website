@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import "./resume-builder.css";
+import { rbFont } from "./rb-font";
 
 export const metadata: Metadata = {
   title: {
@@ -12,5 +13,6 @@ export const metadata: Metadata = {
 };
 
 export default function ResumeBuilderLayout({ children }: Readonly<{ children: ReactNode }>) {
-  return children;
+  // `display: contents` keeps page layout unchanged while scoping the Inter variable.
+  return <div className={rbFont.variable} style={{ display: "contents" }}>{children}</div>;
 }

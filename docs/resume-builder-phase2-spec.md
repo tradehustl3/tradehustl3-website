@@ -128,3 +128,159 @@ Pagination (`worker/resume-documents.ts`):
 - No job heading is ever orphaned at the bottom of a page.
 - Every verified job, bullet, certification, and education item renders.
 - `npm run lint`, `npm run typecheck`, and `npm test` pass.
+
+## UI Design System — Approved September 2026 (branch `feat/resume-builder-ui-unification`)
+
+This section is the source of truth for the Resume Builder **application interface**. It replaces the earlier
+dark navy / cream / gold / condensed-display look on every Resume Builder screen. Future changes must follow it;
+do not reintroduce dark full-page backgrounds, cream form surfaces, gold accents, or condensed display fonts.
+
+Scope: interface chrome only. The generated resume and cover-letter documents (PDF/DOCX/preview files, their
+fonts, colors, and the three templates) are governed by the "Approved behavior" above and are not part of this system.
+
+### Where it lives
+
+| File | Role |
+| --- | --- |
+| `app/resume-builder/rb-foundation.css` | Design tokens + shared primitives (type reset, buttons, fields, alerts, account states). Imported by `resume-builder.css` and by the homepage for the account step. |
+| `app/resume-builder/resume-builder.css` | Builder layouts: header, progress, cards, wizard, upload, review workspace, template cards, responsive rules. |
+| `app/resume-builder/trade-landing.module.css` | `/resume-builder/<trade>` landing-page layout, built only from `--rb-*` tokens. |
+| `app/resume-builder/rb-font.ts` | Inter via `next/font/google` (self-hosted at build), exposed as `--font-rb`. |
+| `app/resume-builder/resume-builder-header.tsx`, `flow-steps.tsx` | The one header and the one progress indicator. |
+
+Rules: use `var(--rb-*)` tokens, never raw hex values, in Resume Builder styles. Put new shared primitives in
+`rb-foundation.css`; do not copy button/field CSS into page modules. Tokens are defined on `.rb-page` (every builder
+`<main>`) and `.rb-scope` (builder UI rendered elsewhere, e.g. the homepage account panel).
+
+### Colors
+
+| Token | Value | Use |
+| --- | --- | --- |
+| `--rb-navy` | `#0F2D5B` | Header, footer, secondary-button text, focus outline, headline first line |
+| `--rb-red` / `--rb-red-hover` | `#D71920` / `#B8141A` | Primary actions, selection, active/completed progress, headline emphasis |
+| `--rb-red-soft` / `--rb-red-border` | `#FEF2F2` / `#FECACA` | Error alert ground, selected-chip and icon tints |
+| `--rb-error` | `#B91C1C` | Error titles and text on light red (AA) |
+| `--rb-success` / `-soft` / `-border` | `#15803D` / `#F0FDF4` / `#BBF7D0` | Saved/ready/verified states (AA) |
+| `--rb-warning` / `-soft` / `-border` | `#A16207` / `#FFFBEB` / `#FDE68A` | "Action needed" badges only |
+| `--rb-bg` | `#FAFAFB` | Page background |
+| `--rb-surface` | `#FFFFFF` | Cards, inputs |
+| `--rb-soft` | `#F8FAFC` | Soft panels inside cards, consent boxes |
+| `--rb-text` | `#0F172A` | Primary text |
+| `--rb-text-2` | `#64748B` | Secondary text, helper copy |
+| `--rb-muted` | `#94A3B8` | Placeholders, future-step outlines, decorative only (below 4.5:1 — never body copy) |
+| `--rb-border` / `--rb-border-strong` | `#E5E7EB` / `#CBD5E1` | Card borders / input and secondary-button borders |
+
+### Typography
+
+- One family: **Inter** (`--rb-font`, falling back to the system UI stack). No Anton/Impact/display fonts.
+- H1: 800 weight, `clamp(30px, …, 46px)` — ≈46px desktop, 30–36px tablet/mobile, line-height 1.1.
+- H2: 700, 24px mobile → 30px desktop. Wizard step titles and review/topbar titles use the H2 scale.
+- H3: 700, 18–20px.
+- Body 16px, line-height 1.55–1.6. Helper/small copy 13–14px. Labels 14px/600.
+- Sentence case everywhere. ALL CAPS only for small eyebrows (`.rb-kicker`, 12px/700, 0.08em tracking) and
+  tiny labels. No leading "/ " on eyebrows. No oversized decorative type.
+
+### Buttons (`.rb-button`)
+
+- One height: `--rb-control-h` = 48px (40px in the header and inside alerts). Radius 8px. 15px/600, no uppercase,
+  no letter-spacing. Arrow glyphs are `aria-hidden`.
+- Primary `.rb-button-primary`: red background, white text; hover `--rb-red-hover`.
+- Secondary `.rb-button-secondary` (aliases `.rb-button-secondary-dark`, `.rb-button-ghost`): white, navy text,
+  `--rb-border-strong` border; hover navy border + soft ground.
+- Disabled: `#F1F5F9` ground, `--rb-text-2` text, `not-allowed` cursor — clearly inactive.
+- Text actions `.rb-text-button` / `.rb-text-link`: red, underlined.
+
+### Cards
+
+- White, 1px `--rb-border`, radius 12px (`--rb-radius-lg`; 10px for inner cards), `--rb-shadow-sm`; `--rb-shadow`
+  on hover or for the one primary card on a page.
+- Selectable cards (`.rb-trade-card`, `.rb-level-card`): radio circle top-right; selected = red border + 1px red
+  ring + faint red tint + filled red check. Hover = stronger border + shadow. No gold or thick borders.
+
+### Forms
+
+- Inputs/selects/textareas: white, 1px `--rb-border-strong`, radius 8px, 48px tall, 16px text (prevents iOS zoom).
+- Label above field, 6px gap, 14px/600; optional hints inline in 13px `--rb-text-2`.
+- Focus: navy border + `--rb-focus-ring` (navy 22%). Invalid: red border + faint red ring, with the step's error
+  list in an alert. Checkboxes use `accent-color: --rb-red`.
+
+### Header
+
+- `ResumeBuilderHeader` on every builder route: full-width navy bar, contents in the 1240px container.
+- Left: approved Resume Builder logo (44px; 36px mobile) + "TRADE HUSTL**3**" wordmark + divider + "Resume Builder".
+- Right: "Exit builder" (outlined, white) or, on trade landing pages, the red "Build my resume" CTA.
+- Mobile (≤640px): 56px tall, product label hidden; ≤380px shows the logo only.
+
+### Progress indicator
+
+- `FlowSteps` (Account → Experience → Preview → Unlock → Download) sits directly under the header on every flow
+  page, on a white bar. Current = filled red circle + bold label; completed = red check on light red + red
+  connector; future = gray outline. Mobile shows numbers for all steps and the label for the current step only.
+- The guided intake keeps its inner 7-step progress (Trade … Generate) as a white card using the same states.
+
+### Desktop layout
+
+- Container `min(1240px, 100% − 2 × gutter)`; gutter `clamp(16px, 4vw, 32px)`. Page background `--rb-bg`.
+- Intake: headline block, then the wizard card with the HUSTL3 BOT + "What you get" rail (300px) on the right —
+  except the Get Started step, which uses the full width and drops the rail below.
+- Review: preview (≈70%) + sidebar (≈30%). Before the first build: document frame left, system selection right.
+
+### Mobile layout (375 / 390 / 430px)
+
+- Everything stacks to one column; no fixed widths; `minmax(0, 1fr)` grids so long words never force overflow.
+- 16–20px side gutters; form fields full width; tap targets ≥ 40px (buttons 48px).
+- Wizard Back/Continue stay in a sticky bottom action bar inside the card (existing behavior).
+- HUSTL3 BOT collapses to a toggle; the preview iframe is replaced by the "View my watermarked resume" button
+  below 820px (existing fallback).
+
+### Upload experience (Get Started step)
+
+- Headline: "Upload your resume once. / We handle the rest." — first line navy, second line red.
+- Left column: large dashed white drop zone (whole zone clickable, keyboard focusable via the file input) with
+  document icon, "Upload your existing resume", drag-and-drop copy, red "Upload resume" button, and rules
+  "PDF or DOCX · 5 MB maximum · original file is not stored". Dropped files use the same `importResume` path as the
+  picker. Then an "OR" divider and the secondary "Start from scratch" button (with a trade chosen it acts as
+  Continue; otherwise it moves focus to the trade list and shows the trade error).
+- Right column: "Choose the trade you want to target" — all seven supported trades as selectable cards with an
+  icon, name, one-line description, and radio/check. (The list must match `ALLOWED_TRADES` in the worker; do not
+  add an "Other" card unless the backend accepts it.)
+- Continue sits beneath in the wizard action bar. Mobile order: upload → Start from scratch → trades → Continue.
+- After upload: white "import complete" card with a snapshot grid, green "Ready" / amber "Action needed" badge,
+  and only the flagged items, each as a bordered issue card.
+
+### Template (resume system) cards
+
+- Field Pro, Modern Trade, Lead / Supervisor (`plain` / `navy` / `lead`): list cards with a mini layout thumbnail,
+  name, tagline, note, and radio/check; selected = red border + red check.
+- First build: document frame on the left shows a larger layout sketch of the selected system; the right column
+  holds the heading, the cards, and the red "Build my watermarked preview" CTA.
+
+### Error states
+
+- `.rb-alert` component: light red ground, red border, red "!" icon, red title, readable body, optional action.
+- Generation failures on the first build render directly under the Build button as "We couldn't build your
+  preview" with a **Try again** button that re-sends the same first-build request. Other failures use "Something
+  went wrong" without a retry. Success/info messages use the neutral/green message style.
+- Intake-update notices, wizard validation lists, and inline errors share the same red alert styling.
+- Presentation only: error codes, `MODEL_OUTPUT_ERROR` handling, run accounting, and messages come from the API unchanged.
+
+### Route coverage
+
+| Route | Status |
+| --- | --- |
+| `/resume-builder` | Redirects to `/#resume-start`; the homepage account panel uses the system via `.rb-scope`. |
+| `/resume-builder/confirm` | Updated (magic-link confirmation card). |
+| `/resume-builder/intake` | Updated (Get Started, all 7 guided steps, upload verification). |
+| `/resume-builder/review` | Updated (system selection, preview, cover-letter tab, quality, bullet workshop, corrections, unlock, downloads, loading/empty/error/working states). |
+| `/resume-builder/payment-confirmed` | Updated (checking / waiting / ready / error). |
+| `/resume-builder/{hvac, electrician, plumbing, facilities-maintenance, welding-fabrication, construction-carpentry, general-labor}` | Updated visual system. Section headings are ALL-CAPS strings in `trade-landing-content.ts` (SEO copy) and still need a sentence-case copy pass. |
+| `/resume-builder/electrical` | Permanent redirect to `/resume-builder/electrician`. |
+| `/resume-builder/refund-policy`, `/resume-builder/ai-disclosure` | Not yet migrated: rendered by the site-wide `PolicyPage` shell shared with `/privacy` and `/terms`. |
+
+### Responsive requirements (acceptance)
+
+1. No horizontal scroll at 375, 390, 430, 768, 1024, 1280, 1440px on any route above.
+2. No clipped cards or hidden Continue/Build/Unlock buttons; the wizard action bar stays reachable.
+3. Headings ≤ 36px on phones; body text 16px; no two-column layout below 900px (Get Started, first build).
+4. Visible focus on every interactive element; selection is never color-only (radio/check glyph + `aria-checked`).
+5. `prefers-reduced-motion` disables transitions and spinners.

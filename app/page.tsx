@@ -3,6 +3,8 @@ import Link from 'next/link';
 import { CtaAnalytics } from './cta-analytics';
 import { AccountStart } from './resume-builder/account-start';
 import { ResumeBuilderStartAnalytics } from './resume-builder/funnel-analytics';
+import { rbFont } from './resume-builder/rb-font';
+import './resume-builder/rb-foundation.css';
 import styles from './home-traffic-director.module.css';
 
 const tradeChips = [
@@ -307,9 +309,9 @@ export default function Home() {
             <span>Account</span><i>→</i><span>Experience</span><i>→</i><span>Choose system</span><i>→</i><span>Preview</span><i>→</i><span>Unlock</span>
           </div>
         </div>
-        <aside className={styles.startPanel}>
-          <p className={styles.startIndex}>ACCOUNT · STAGE 1 OF 5</p>
-          <h3>BUILD MY RESUME</h3>
+        <aside className={`${styles.startPanel} rb-scope ${rbFont.variable}`}>
+          <p className={styles.startIndex}>Account · stage 1 of 5</p>
+          <h3>Build my resume</h3>
           <p>Create or verify your account. Your work is saved to your account so you can continue across devices.</p>
           <AccountStart />
         </aside>
