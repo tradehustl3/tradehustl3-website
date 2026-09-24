@@ -39,7 +39,8 @@ test("production smoke validates the real custom domain end to end", async () =>
   assert.match(source, /Continue with email/);
   assert.match(source, /UPLOAD IT OR START FRESH/);
   assert.match(source, /TRADE-HUSTL3-Production-Smoke/);
-  assert.match(source, /--retry-all-errors/);
+  assert.match(source, /smoke_fetch\(\)/);
+  assert.match(source, /for attempt in \$\(seq 1 "\$attempts"\)/);
 });
 
 test("Cloudflare Worker deployment owns the production custom domain", async () => {
