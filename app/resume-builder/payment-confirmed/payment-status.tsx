@@ -67,11 +67,11 @@ export function PaymentStatus() {
   return (
     <div className="rb-payment-card">
       <div className={`rb-payment-pulse rb-payment-pulse-${stage}`} aria-hidden="true"><span>{stage === "ready" ? "✓" : "$"}</span></div>
-      <p className="rb-kicker">/ SECURE PAYMENT RETURN</p>
-      <h1>{stage === "ready" ? <>PAYMENT <span>CONFIRMED.</span></> : <>LOCKING IN YOUR <span>BUILD.</span></>}</h1>
+      <p className="rb-kicker">Secure payment return</p>
+      <h1>{stage === "ready" ? <>Payment <span>confirmed.</span></> : <>Locking in your <span>build.</span></>}</h1>
       <p role="status">{message}</p>
       <div className="rb-order-summary"><span>Resume Builder</span><strong>$9.99 paid once</strong><small>Resume + matching cover letter · PDF + DOCX · 3 shared corrections</small></div>
-      {stage === "waiting" || stage === "error" ? <button className="rb-button rb-button-primary" type="button" onClick={() => { attempts.current = 0; void check(); }}>Check payment status <span>↻</span></button> : null}
+      {stage === "waiting" || stage === "error" ? <button className="rb-button rb-button-primary" type="button" onClick={() => { attempts.current = 0; void check(); }}>Check payment status <span aria-hidden="true">↻</span></button> : null}
       {stage === "error" ? <PaymentErrorReturnLink resumeId={returnId} /> : null}
       <small>Do not close this page while confirmation is in progress.</small>
     </div>

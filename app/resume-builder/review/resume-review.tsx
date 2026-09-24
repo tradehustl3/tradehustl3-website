@@ -6,6 +6,7 @@ import { generationFailureIntakeUrl, intakeReturnUrl } from "../return-urls";
 
 type ResumeTheme = "plain" | "navy" | "lead";
 type PreviewTab = "resume" | "cover-letter";
+type MessageTone = "info" | "success" | "error";
 
 type Resume = {
   resumeId: string;
@@ -92,12 +93,22 @@ export function ResumeReview() {
   const [loading, setLoading] = useState(true);
   const [working, setWorking] = useState(false);
   const [checkingOut, setCheckingOut] = useState(false);
-  const [message, setMessage] = useState("");
+  const [message, setMessageText] = useState("");
+  const [messageTone, setMessageTone] = useState<MessageTone>("info");
+  const [retryGeneration, setRetryGeneration] = useState(false);
   const [intakeNotice, setIntakeNotice] = useState<GenerationFailure | null>(null);
   const [themeSaving, setThemeSaving] = useState(false);
   const [bulletSaving, setBulletSaving] = useState("");
   const [bulletDrafts, setBulletDrafts] = useState<Record<string, string>>({});
   const [activePreview, setActivePreview] = useState<PreviewTab>("resume");
+
+  // Presentation only: the tone picks the alert style; `retry` offers the same
+  // first-build request again after a failed generation.
+  const notify = useCallback((text: string, tone: MessageTone = "info", retry = false) => {
+    setMessageText(text);
+    setMessageTone(tone);
+    setRetryGeneration(retry);
+  }, []);
 
   const load = useCallback(async (id: string) => {
     try {
@@ -110,22 +121,22 @@ export function ResumeReview() {
       if (!response.ok || !result.resume) throw new Error(result.message || "We could not load your resume.");
       setResume(result.resume);
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "We could not load your resume.");
+      notify(error instanceof Error ? error.message : "We could not load your resume.", "error");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [notify]);
 
   useEffect(() => {
     if (!resumeId) {
       queueMicrotask(() => {
-        setMessage("This review link is missing the resume reference.");
+        notify("This review link is missing the resume reference.", "error");
         setLoading(false);
       });
       return;
     }
     queueMicrotask(() => void load(resumeId));
-  }, [load, resumeId]);
+  }, [load, notify, resumeId]);
 
   // The first preview is intentionally user-triggered. The customer chooses a
   // resume system first so HUSTL3 BOT can apply that writing profile on the
@@ -134,7 +145,7 @@ export function ResumeReview() {
   async function runGeneration(correctionRequest?: string): Promise<boolean> {
     if (!resumeId) return false;
     setWorking(true);
-    setMessage("");
+    notify("");
     setIntakeNotice(null);
     try {
       const response = await fetch(`/api/resume-builder/resumes/${encodeURIComponent(resumeId)}/generate`, {
@@ -150,7 +161,7 @@ export function ResumeReview() {
           return false;
         }
         if (response.status === 402 || result.action === "complete_payment") {
-          setMessage(result.message || "Complete the $9.99 payment before requesting a correction.");
+          notify(result.message || "Complete the $9.99 payment before requesting a correction.", "error");
           await load(resumeId);
           return false;
         }
@@ -163,12 +174,12 @@ export function ResumeReview() {
         throw new Error(`${result.message || "We could not complete this AI run."}${reference}`);
       }
       await load(resumeId);
-      setMessage(result.sourceRecovery
+      notify(result.sourceRecovery
         ? "Your preview was built from the verified details in your upload because the AI rewrite was unavailable. Review it before continuing."
-        : correctionRequest ? "Correction applied. Review the updated watermarked copy." : "Your first resume is ready for review.");
+        : correctionRequest ? "Correction applied. Review the updated watermarked copy." : "Your first resume is ready for review.", "success");
       return true;
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "We could not complete this AI run.");
+      notify(error instanceof Error ? error.message : "We could not complete this AI run.", "error", !correctionRequest);
       return false;
     } finally {
       setWorking(false);
@@ -188,7 +199,7 @@ export function ResumeReview() {
     if (!resumeId || !resume || resume.theme === theme || themeSaving) return;
     const previous = resume.theme;
     setThemeSaving(true);
-    setMessage("");
+    notify("");
     setResume({ ...resume, theme });
     try {
       const response = await fetch(`/api/resume-builder/resumes/${encodeURIComponent(resumeId)}`, {
@@ -200,10 +211,10 @@ export function ResumeReview() {
       const result = await response.json() as { message?: string };
       if (!response.ok) throw new Error(result.message || "We could not save your template choice.");
       await load(resumeId);
-      setMessage(result.message || "Resume style updated without using an AI run.");
+      notify(result.message || "Resume style updated without using an AI run.", "success");
     } catch (error) {
       setResume((current) => current ? { ...current, theme: previous } : current);
-      setMessage(error instanceof Error ? error.message : "We could not save your template choice.");
+      notify(error instanceof Error ? error.message : "We could not save your template choice.", "error");
     } finally {
       setThemeSaving(false);
     }
@@ -219,7 +230,7 @@ export function ResumeReview() {
     const key = `${jobIndex}:${bulletIndex}`;
     const editedText = bulletDrafts[key] ?? suggestion;
     setBulletSaving(key);
-    setMessage("");
+    notify("");
     try {
       const response = await fetch(`/api/resume-builder/resumes/${encodeURIComponent(resumeId)}/bullets`, {
         method: "PATCH",
@@ -230,9 +241,9 @@ export function ResumeReview() {
       const result = await response.json() as { message?: string };
       if (!response.ok) throw new Error(result.message || "We could not save that bullet.");
       await load(resumeId);
-      setMessage(result.message || "Bullet saved without using an AI run.");
+      notify(result.message || "Bullet saved without using an AI run.", "success");
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "We could not save that bullet.");
+      notify(error instanceof Error ? error.message : "We could not save that bullet.", "error");
     } finally {
       setBulletSaving("");
     }
@@ -270,7 +281,7 @@ export function ResumeReview() {
   async function startCheckout() {
     if (!resumeId) return;
     setCheckingOut(true);
-    setMessage("");
+    notify("");
     try {
       const response = await fetch(`/api/resume-builder/resumes/${encodeURIComponent(resumeId)}/checkout`, {
         method: "POST",
@@ -282,9 +293,26 @@ export function ResumeReview() {
       if (!response.ok || !result.checkoutUrl) throw new Error(result.message || "Secure checkout is temporarily unavailable.");
       window.location.assign(result.checkoutUrl);
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Secure checkout is temporarily unavailable.");
+      notify(error instanceof Error ? error.message : "Secure checkout is temporarily unavailable.", "error");
       setCheckingOut(false);
     }
+  }
+
+  function renderNotice() {
+    if (!message) return null;
+    if (messageTone === "error") {
+      return (
+        <div className="rb-alert" role="alert">
+          <span className="rb-alert-icon" aria-hidden="true">!</span>
+          <p className="rb-alert-title">{retryGeneration ? "We couldn’t build your preview" : "Something went wrong"}</p>
+          <p className="rb-alert-body">{message}</p>
+          {retryGeneration ? (
+            <button className="rb-button rb-button-primary" type="button" disabled={working} onClick={() => void runGeneration()}>Try again</button>
+          ) : null}
+        </div>
+      );
+    }
+    return <p className={`rb-workspace-message rb-workspace-message-${messageTone}`} role="status">{message}</p>;
   }
 
   if (loading) {
@@ -294,8 +322,8 @@ export function ResumeReview() {
   if (!resume) {
     return (
       <div className="rb-review-empty">
-        <p className="rb-kicker">/ WORKSPACE UNAVAILABLE</p>
-        <h1>LET’S GET YOU <span>BACK ON TRACK.</span></h1>
+        <p className="rb-kicker">Workspace unavailable</p>
+        <h1>Let’s get you <span>back on track.</span></h1>
         <p>{message}</p>
         <a className="rb-button rb-button-primary" href={intakeReturnUrl(resumeId)}>Return to your intake <span>→</span></a>
       </div>
@@ -312,7 +340,7 @@ export function ResumeReview() {
   return (
     <div className="rb-review-workspace">
       <section className="rb-review-topbar">
-        <div><p className="rb-kicker">/ YOUR RESUME WORKSPACE</p><h1>{resume.title}</h1><span>{resume.trade}</span></div>
+        <div><p className="rb-kicker">Your resume workspace</p><h1>{resume.title}</h1><span>{resume.trade}</span></div>
         <div className="rb-run-meter" aria-label={`${resume.runsUsed} of ${resume.runsTotal} AI runs used`}>
           <div><span>AI runs</span><strong>{resume.runsUsed} / {resume.runsTotal}</strong></div>
           <ol>{Array.from({ length: resume.runsTotal }, (_, index) => <li className={index < resume.runsUsed ? "used" : ""} key={index} />)}</ol>
@@ -322,8 +350,8 @@ export function ResumeReview() {
 
       {intakeNotice ? (
         <section className="rb-intake-notice" role="alert">
-          <p className="rb-kicker">/ INTAKE UPDATE NEEDED</p>
-          <h2>WE NEED A LITTLE MORE FROM YOU.</h2>
+          <p className="rb-kicker">Intake update needed</p>
+          <h2>We need a little more from you.</h2>
           <p>{intakeNotice.message}</p>
           {intakeNotice.missing?.length ? (
             <div className="rb-intake-missing">
@@ -338,31 +366,35 @@ export function ResumeReview() {
 
       {!hasDraft ? (
         <section className="rb-first-build">
-          <div className="rb-blueprint" aria-hidden="true"><span>ATS</span><i /><i /><i /><i /></div>
-          <div><p className="rb-kicker">/ PREVIEW BEFORE YOU PAY</p><h2>CHOOSE YOUR SYSTEM. THEN BUILD.</h2><p>Pick how you want employers to read your experience. HUSTL3 BOT uses the selected writing profile on the first build while staying locked to the facts you provided—no invented licenses, employers, duties, or results.</p>
+          <div className="rb-doc-frame">
+            <div className={`rb-blueprint rb-blueprint-${resume.theme}`} aria-hidden="true"><i /><i /><b /><i /><i /><i /><i /><b /><i /><i /><i /><i /><i /><b /><i /><i /><i /></div>
+            <small>{THEME_OPTIONS.find((option) => option.value === resume.theme)?.label} layout · your watermarked preview is built next</small>
+          </div>
+          <div><p className="rb-kicker">Preview before you pay</p><h2>Choose your resume system. Then build.</h2><p>Pick how you want employers to read your experience. HUSTL3 BOT uses the selected writing profile on the first build while staying locked to the facts you provided—no invented licenses, employers, duties, or results.</p>
           <span className="rb-theme-label">Choose your resume system</span>
           {renderThemePicker()}
-          <button className="rb-button rb-button-primary" type="button" disabled={working} onClick={() => void runGeneration()}>{working ? "Building your resume…" : "Build my watermarked preview"} <span>→</span></button></div>
+          <button className="rb-button rb-button-primary" type="button" disabled={working} onClick={() => void runGeneration()}>{working ? "Building your resume…" : "Build my watermarked preview"} <span aria-hidden="true">→</span></button>
+          {renderNotice()}</div>
         </section>
       ) : (
         <section className="rb-review-grid">
           <div className="rb-preview-panel">
             {coverLetter?.available ? (
-              <div role="tablist" aria-label="Package preview" style={{ display: "flex", gap: 8, padding: "10px 12px", borderBottom: "1px solid rgba(255,255,255,.12)" }}>
+              <div className="rb-preview-tabs" role="tablist" aria-label="Package preview">
                 <button
                   type="button"
                   role="tab"
                   aria-selected={activePreview === "resume"}
                   onClick={() => setActivePreview("resume")}
                   className={activePreview === "resume" ? "rb-button rb-button-primary" : "rb-button rb-button-secondary-dark"}
-                >RESUME</button>
+                >Resume</button>
                 <button
                   type="button"
                   role="tab"
                   aria-selected={activePreview === "cover-letter"}
                   onClick={() => setActivePreview("cover-letter")}
                   className={activePreview === "cover-letter" ? "rb-button rb-button-primary" : "rb-button rb-button-secondary-dark"}
-                >COVER LETTER</button>
+                >Cover letter</button>
               </div>
             ) : null}
 
@@ -377,10 +409,10 @@ export function ResumeReview() {
                 <iframe key={`${coverLetter.previewUrl}-${resume.paid}-${resume.theme}`} src={`${coverLetter.previewUrl}&style=${resume.theme}`} title={resume.paid ? "Clean matching cover letter" : "Watermarked matching cover letter preview"} />
               </>
             ) : (
-              <div style={{ minHeight: 520, display: "grid", placeItems: "center", padding: 32, textAlign: "center", background: "#fff", color: "#111" }}>
+              <div className="rb-preview-empty">
                 <div>
-                  <p className="rb-kicker">/ COVER LETTER PREVIEW</p>
-                  <h2>ADD TARGET JOB DETAILS.</h2>
+                  <p className="rb-kicker">Cover letter preview</p>
+                  <h2>Add target job details.</h2>
                   <p>Add target job details to generate your matching cover letter.</p>
                   <a className="rb-button rb-button-primary" href="#included-cover-letter">Build cover-letter preview <span>→</span></a>
                 </div>
@@ -389,7 +421,7 @@ export function ResumeReview() {
           </div>
 
           <aside className="rb-review-sidebar">
-            <div className="rb-review-status"><p className="rb-kicker">/ {resume.paid ? "REVIEW + REFINE" : "PREVIEW BEFORE YOU PAY"}</p><h2>{resume.paid ? "MAKE IT SOUND LIKE YOU." : "REVIEW THE WHOLE PACKAGE."}</h2><p className="rb-review-desc">{resume.paid ? "Check names, dates, certifications, job duties, contact information, and your included matching cover letter before downloading." : "Your resume is ready. Build the included matching cover-letter preview, review both tabs, then pay once to remove the watermarks and unlock the clean PDF + DOCX files."}</p>
+            <div className="rb-review-status"><p className="rb-kicker">{resume.paid ? "Review + refine" : "Preview before you pay"}</p><h2>{resume.paid ? "Make it sound like you." : "Review the whole package."}</h2><p className="rb-review-desc">{resume.paid ? "Check names, dates, certifications, job duties, contact information, and your included matching cover letter before downloading." : "Your resume is ready. Build the included matching cover-letter preview, review both tabs, then pay once to remove the watermarks and unlock the clean PDF + DOCX files."}</p>
               <span className="rb-theme-label">Resume system</span>
               {renderThemePicker()}
               <small className="rb-theme-note">Your first build uses the selected system&apos;s writing profile and layout. After generation, switching systems refreshes the resume and matching cover-letter layout without using an AI correction; your verified written content stays unchanged unless you request a correction.</small>
@@ -397,7 +429,7 @@ export function ResumeReview() {
 
             <section className="rb-quality-card" aria-labelledby="resume-quality-title">
               <div className="rb-quality-head">
-                <div><p className="rb-kicker">/ RESUME QUALITY SCORE</p><h2 id="resume-quality-title">{resume.qualityScore.total}<span>/100</span></h2></div>
+                <div><p className="rb-kicker">Resume quality score</p><h2 id="resume-quality-title">{resume.qualityScore.total}<span>/100</span></h2></div>
                 <strong>{resume.qualityScore.label}</strong>
               </div>
               <p>Deterministic checks for complete work history, dates, credentials, ATS structure, and unsupported claims. Scoring uses no AI run.</p>
@@ -406,8 +438,8 @@ export function ResumeReview() {
 
             {resume.bulletEditor.length ? (
               <section className="rb-bullet-editor" aria-labelledby="bullet-editor-title">
-                <p className="rb-kicker">/ HUSTL3 BOT BULLET WORKSHOP</p>
-                <h2 id="bullet-editor-title">IMPROVE ONE BULLET AT A TIME.</h2>
+                <p className="rb-kicker">HUSTL3 BOT bullet workshop</p>
+                <h2 id="bullet-editor-title">Improve one bullet at a time.</h2>
                 <p>We strengthen what you actually did. We never make up numbers, licenses, equipment experience, or certifications.</p>
                 {resume.bulletEditor.map((job) => (
                   <div className="rb-bullet-job" key={job.jobIndex}>
@@ -448,7 +480,7 @@ export function ResumeReview() {
                 coverLetter={coverLetter}
                 paid={resume.paid}
                 onRefresh={async () => { await load(resumeId); setActivePreview("cover-letter"); }}
-                onMessage={setMessage}
+                onMessage={notify}
               />
             ) : null}
 
@@ -460,8 +492,8 @@ export function ResumeReview() {
               <small>The three corrections are shared across the resume and cover letter. One submitted correction uses one run. Failed generations are restored automatically.</small>
             </form> : (
               <div className="rb-unpaid-card">
-                <p className="rb-kicker">/ ONE-TIME PURCHASE</p>
-                <h2>UNLOCK THE FULL PACKAGE.</h2>
+                <p className="rb-kicker">One-time purchase</p>
+                <h2>Unlock the full package.</h2>
                 <p>Pay $9.99 once. No subscription. Review the resume and matching cover letter first, then unlock the clean resume PDF + DOCX, clean cover-letter PDF + DOCX, and up to three shared corrections.</p>
                 <button className="rb-button rb-button-primary rb-button-full" type="button" disabled={checkingOut} onClick={() => void startCheckout()}>{checkingOut ? "Opening secure checkout…" : "Unlock resume + cover letter — $9.99"} <span>↗</span></button>
               </div>
@@ -469,7 +501,7 @@ export function ResumeReview() {
 
             {resume.downloads ? (
               <div className="rb-downloads">
-                <p>RESUME FILES</p>
+                <p>Resume files</p>
                 <a className="rb-download" href={resume.downloads.pdf}><span><strong>PDF</strong><small>Clean, ready to send</small></span><b>↓</b></a>
                 <a className="rb-download" href={resume.downloads.docx}><span><strong>DOCX</strong><small>Clean, editable copy</small></span><b>↓</b></a>
               </div>
@@ -478,8 +510,8 @@ export function ResumeReview() {
         </section>
       )}
 
-      {message ? <p className="rb-workspace-message" role="status">{message}</p> : null}
-      {working ? <div className="rb-working-overlay" role="status"><span /><strong>HUSTL3 BOT IS BUILDING</strong><small>This can take a minute. Keep this page open.</small></div> : null}
+      {hasDraft ? renderNotice() : null}
+      {working ? <div className="rb-working-overlay" role="status"><span /><strong>HUSTL3 BOT is building</strong><small>This can take a minute. Keep this page open.</small></div> : null}
     </div>
   );
 }

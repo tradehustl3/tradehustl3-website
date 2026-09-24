@@ -42,8 +42,8 @@ export function ConfirmMagicLink() {
   return (
     <div className="rb-confirm-card">
       <div className="rb-confirm-mark" aria-hidden="true">✓</div>
-      <p className="rb-kicker">/ EMAIL VERIFIED</p>
-      <h1>CONFIRM THIS <span>SIGN-IN.</span></h1>
+      <p className="rb-kicker">Email verified</p>
+      <h1>Confirm this <span>sign-in.</span></h1>
       <p>
         For your security, opening the email did not sign you in. Choose the button below to confirm this browser and continue to your saved intake.
       </p>

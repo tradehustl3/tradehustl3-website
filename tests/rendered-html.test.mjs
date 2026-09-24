@@ -1074,7 +1074,7 @@ test("redirects the redundant Resume Builder landing route into the homepage sta
 test("server-renders scanner-safe confirmation, intake, payment return, and review routes", async () => {
   const routes = [
     ["/resume-builder/confirm?token=test", /CONFIRM THIS[\s\S]*SIGN-IN/i],
-    ["/resume-builder/intake", /UPLOAD IT OR START FRESH[\s\S]*WE HANDLE THE REST/i],
+    ["/resume-builder/intake", /Upload your resume once\.[\s\S]*We handle the rest\./i],
     ["/resume-builder/payment-confirmed?resume_id=test", /LOCKING IN YOUR[\s\S]*BUILD/i],
     ["/resume-builder/review?resume_id=test", /Loading your secure workspace/i],
   ];

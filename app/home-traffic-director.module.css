@@ -280,79 +280,19 @@
 .startPath{display:flex;flex-wrap:wrap;align-items:center;gap:9px;margin-top:30px}
 .startPath span{padding:8px 11px;border:1px solid #c6d4de;border-radius:999px;background:#fff;color:#17334e;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.05em}
 .startPath i{color:#d71920;font-style:normal;font-weight:950}
+/* Resume Builder account step: tokens + field/button primitives come from
+   app/resume-builder/rb-foundation.css via the `rb-scope` class. */
 .startPanel{
-  --rb-red:#d71920;
-  --rb-red-deep:#b3141a;
-  --rb-red-hi:#e5333a;
-  --rb-red-tint:#d7192022;
-  --rb-gold:#d6a52a;
-  --rb-navy:#071a2b;
-  --rb-ink:#0a1420;
-  --rb-ink-soft:#53616b;
-  --rb-field:#fffdf8;
-  --rb-field-border:#b9b8b1;
-  --rb-line:#d6a52a44;
-  padding:clamp(28px,4vw,46px);
-  border-top:5px solid #d71920;
-  background:#fff;
-  box-shadow:18px 18px 0 rgba(7,26,43,.07);
+  padding:clamp(24px,4vw,40px);
+  border:1px solid var(--rb-border);
+  border-radius:var(--rb-radius-lg);
+  background:var(--rb-surface);
+  color:var(--rb-text);
+  box-shadow:var(--rb-shadow);
 }
-.startIndex{margin:0 0 15px;color:#d71920;font-size:10px;font-weight:950;letter-spacing:.16em}
-.startPanel>h3{margin:0;font-family:var(--font-display),Impact,sans-serif;font-size:clamp(38px,4vw,58px);font-weight:400;line-height:.95}
-.startPanel>p:not(.startIndex){margin:15px 0 0;color:#53616b;line-height:1.6}
-.startPanel :global(.rb-account-form){margin-top:28px}
-.startPanel :global(.rb-field){display:flex;flex-direction:column;gap:8px}
-.startPanel :global(.rb-field + .rb-field){margin-top:18px}
-.startPanel :global(.rb-field label){color:#071a2b;font-size:10px;font-weight:900;letter-spacing:.11em;text-transform:uppercase}
-.startPanel :global(.rb-field input){
-  width:100%;
-  min-height:50px;
-  padding:0 14px;
-  border:1px solid #b9b8b1;
-  background:#fffdf8;
-  color:#0a1420;
-  font:inherit;
-  font-size:15px;
-}
-.startPanel :global(.rb-field input:focus){outline:0;border-color:#d6a52a;box-shadow:0 0 0 3px #d6a52a33}
-.startPanel :global(.rb-button){
-  min-height:50px;
-  display:inline-flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:24px;
-  padding:14px 19px;
-  border:1px solid transparent;
-  cursor:pointer;
-  font:inherit;
-  font-size:10px;
-  font-weight:900;
-  letter-spacing:.11em;
-  text-transform:uppercase;
-}
-.startPanel :global(.rb-button-primary){border-color:#d71920;background:#d71920;color:#fff}
-.startPanel :global(.rb-button-full){width:100%;margin-top:22px}
-.startPanel :global(.rb-button:disabled){cursor:wait;opacity:.58}
-.startPanel :global(.rb-form-note){color:#53616b;font-size:11px;line-height:1.5}
-.startPanel :global(.rb-form-note span){margin-right:5px;color:#d6a52a}
-.startPanel :global(.rb-inline-error){margin:16px 0 0;padding:12px 14px;border-left:3px solid #d71920;background:#d7192022;color:#b3141a;font-size:13px;line-height:1.5}
-.startPanel :global(.rb-account-ready){margin-top:28px;display:grid;grid-template-columns:auto 1fr;gap:0 12px;align-items:center;padding:22px;border:1px solid #d6a52a44;background:#fffdf8}
-.startPanel :global(.rb-status-dot){width:9px;height:9px;display:inline-block;border-radius:50%;background:#d6a52a;box-shadow:0 0 0 4px #d6a52a2e}
-.startPanel :global(.rb-account-ready p),
-.startPanel :global(.rb-account-ready strong),
-.startPanel :global(.rb-account-ready small){display:block;margin:0}
-.startPanel :global(.rb-account-ready p){color:#a77b12;font-size:9px;font-weight:900;letter-spacing:.12em;text-transform:uppercase}
-.startPanel :global(.rb-account-ready small){margin-top:3px;color:#53616b}
-.startPanel :global(.rb-account-ready .rb-button){grid-column:1/-1;margin-top:20px}
-.startPanel :global(.rb-message-panel){margin-top:28px}
-.startPanel :global(.rb-message-icon){width:46px;height:46px;display:grid;place-items:center;margin-bottom:20px;border:1px solid #d6a52a;color:#a77b12;font-size:22px;font-weight:900}
-.startPanel :global(.rb-kicker){margin:0 0 14px;color:#a77b12;font-size:10px;font-weight:900;letter-spacing:.18em;text-transform:uppercase}
-.startPanel :global(.rb-message-panel h2){margin:0;font-family:var(--font-display),Impact,sans-serif;font-size:clamp(34px,4vw,52px);font-weight:400;line-height:.95}
-.startPanel :global(.rb-message-panel > p:not(.rb-kicker)){color:#53616b;line-height:1.6}
-.startPanel :global(.rb-message-panel strong),
-.startPanel :global(.rb-message-panel small){display:block}
-.startPanel :global(.rb-message-panel small){margin:10px 0 20px;color:#53616b;line-height:1.5}
-.startPanel :global(.rb-text-button){border:0;border-bottom:1px solid currentColor;background:transparent;color:#d71920;cursor:pointer;font:inherit;font-size:10px;font-weight:900;letter-spacing:.1em;text-transform:uppercase}
+.startIndex{margin:0 0 8px;color:var(--rb-red);font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+.startPanel>h3{font-size:clamp(26px,1.2vw + 20px,32px);font-weight:800;line-height:1.15}
+.startPanel>p:not(.startIndex){margin:12px 0 0;color:var(--rb-text-2);font-size:16px;line-height:1.6}
 .tradeStrip li a{display:block}
 .tradeStrip li a:hover{text-decoration:underline;text-underline-offset:3px}
 @media(max-width:1050px){.startSection{grid-template-columns:1fr}.startPanel{width:min(720px,100%)}}
@@ -361,5 +301,5 @@
   .startIntro>p:not(.eyebrow){font-size:16px}
   .startPath{gap:7px}
   .startPath span{font-size:9px}
-  .startPanel{padding:26px 20px;box-shadow:10px 10px 0 rgba(7,26,43,.07)}
+  .startPanel{padding:22px 18px}
 }

@@ -77,7 +77,7 @@ export function Hustl3Bot({
         <div className="rb-bot-avatar rb-bot-avatar-lg" aria-hidden="true">
           <Image src="/hustl3-bot-branded-transparent.png" alt="" width={264} height={429} priority />
         </div>
-        <p className="rb-bot-name">HUSTL3 BOT<span>ON THE JOB</span></p>
+        <p className="rb-bot-name">HUSTL3 BOT<span>Jobsite tips for this step</span></p>
         <ul className="rb-bot-tips">
           {tips.map((tip) => (
             <li key={tip}>{tip}</li>
