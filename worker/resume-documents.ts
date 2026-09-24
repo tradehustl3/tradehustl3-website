@@ -221,9 +221,9 @@ export async function createResumeDocx(resume: GeneratedResume, theme: ResumeThe
           })],
         }));
       }
-      for (const [index, item] of job.bullets.entries()) {
-        children.push(bullet(item, index < job.bullets.length - 1));
-      }
+      // Heading and employer line keep with the next paragraph, so they always
+      // land with the first bullet. Later bullets flow onto the next page.
+      for (const item of job.bullets) children.push(bullet(item));
     }
   };
   const addEducation = () => {
@@ -706,14 +706,11 @@ function writeJobHeading(writer: PdfWriter, job: ResumeExperience, continued = f
   }
 }
 
-function writeJob(writer: PdfWriter, job: ResumeExperience, keepWholeWhenPossible: boolean): void {
-  const fullHeight = jobHeight(writer, job);
-  const pageCapacity = onePageCapacity(writer.layout);
+// Reserve room for the heading, employer line, and first bullet so a heading is
+// never orphaned; later bullets flow onto the next page under a "(continued)" heading.
+function writeJob(writer: PdfWriter, job: ResumeExperience): void {
   const firstBulletHeight = job.bullets.length ? bulletHeight(writer, job.bullets[0]) : 0;
-  const introHeight = jobHeadingHeight(writer, job) + firstBulletHeight;
-
-  if (keepWholeWhenPossible && fullHeight <= pageCapacity) ensureSpace(writer, fullHeight);
-  else ensureSpace(writer, introHeight);
+  ensureSpace(writer, jobHeadingHeight(writer, job) + firstBulletHeight);
 
   writeJobHeading(writer, job);
   for (const item of job.bullets) {
@@ -792,7 +789,7 @@ export async function createResumePdf(resume: GeneratedResume, watermarked = fal
     const firstJob = resume.experience[0];
     const firstJobIntro = jobHeadingHeight(writer, firstJob) + (firstJob.bullets.length ? bulletHeight(writer, firstJob.bullets[0]) : 0);
     writeSection(writer, theme === "lead" ? "PROFESSIONAL EXPERIENCE" : "WORK EXPERIENCE", firstJobIntro);
-    for (const [index, job] of resume.experience.entries()) writeJob(writer, job, index > 0);
+    for (const job of resume.experience) writeJob(writer, job);
   };
   const addEducation = () => {
     if (!resume.education.length) return;

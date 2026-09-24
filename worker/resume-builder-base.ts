@@ -1850,14 +1850,17 @@ function validateModelResume(
     );
   }
   const source = canonicalSourceRecord(intake, resume.title, resume.trade);
-  let generated = mapResumeHeaderAndSkills(validation.resume, source, resume.trade);
+  let generated = mapResumeHeaderAndSkills(validation.resume, source, resume.trade, !correctionRequest);
   let guardFlags = unsupportedNumbers(generated, intake, resume.title, correctionRequest);
   const initialGuardFlags = guardFlags;
   const firstIssues = validateResumeAgainstSource(generated, source, guardFlags.length, Boolean(correctionRequest));
   const claimsValid = validateClaimSources(generated, source, claimSources, correctionRequest);
   const contentRepaired = firstIssues.length > 0;
   if (contentRepaired) {
-    generated = repairResumeFromSource(generated, source, Boolean(correctionRequest));
+    generated = repairResumeFromSource(generated, source, Boolean(correctionRequest), {
+      trade: resume.trade,
+      backfillCompetencies: !correctionRequest,
+    });
     guardFlags = unsupportedNumbers(generated, intake, resume.title, correctionRequest);
   }
   const remainingIssues = validateResumeAgainstSource(generated, source, guardFlags.length, Boolean(correctionRequest));
