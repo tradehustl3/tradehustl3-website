@@ -247,8 +247,8 @@ export default function Home() {
           <p className={styles.heroAssurance}>No credit card required to build your preview. Pay only when you are ready to unlock your resume and matching cover letter in PDF + editable DOCX.</p>
           <div className={styles.tradeVisual}>
             <Image
-              src="/trade-landings/trade-hustl3-resume-builder-hero.webp"
-              alt="TRADE HUSTL3 Resume Builder commercial construction worksite built for skilled trades"
+              src="/trade-hustl3-resume-builder-home-hero.webp"
+              alt="Skilled tradespeople reviewing a resume preview and job opportunities with TRADE HUSTL3 Resume Builder"
               fill
               sizes="(max-width: 1050px) 92vw, 52vw"
               priority
@@ -265,7 +265,7 @@ export default function Home() {
             <Image src="/sample-hvac-resume.webp" alt="Finished TRADE HUSTL3 HVAC resume sample" width={816} height={1056} sizes="(max-width: 900px) 86vw, 42vw" priority />
             <div className={styles.botCard}>
               <div className={styles.botAvatar}>
-                <Image src="/optimized/hustl3-bot.webp" alt="" fill sizes="58px" />
+                <Image src="/hustl3-bot-official.png" alt="" fill sizes="58px" />
               </div>
               <div className={styles.botCopy}>
                 <span>HUSTL3 BOT</span>
@@ -401,7 +401,7 @@ export default function Home() {
           <p className={styles.eyebrow}>BUILT FOR THE TRADES</p>
           <h2 id="difference-title">Your work is not generic. Your resume should not be either.</h2>
           <p>TRADE HUSTL3 is built around the way skilled-trades people actually work: equipment, tools, troubleshooting, PMs, installs, safety, certifications, emergency response, production, and measurable results.</p>
-          <Image src="/optimized/hustl3-bot.webp" alt="HUSTL3 BOT in branded skilled-trades safety gear" width={330} height={495} sizes="(max-width: 760px) 70vw, 330px" />
+          <Image src="/hustl3-bot-official.png" alt="HUSTL3 BOT in branded skilled-trades safety gear" width={330} height={495} sizes="(max-width: 760px) 70vw, 330px" />
         </div>
         <div className={styles.proofGrid}>{proofPoints.map(([title, copy], index) => <article key={title}><span>0{index + 1}</span><h3>{title}</h3><p>{copy}</p></article>)}</div>
       </section>
