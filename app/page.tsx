@@ -308,6 +308,11 @@ export default function Home() {
           <div className={styles.startPath} aria-label="Resume Builder stages">
             <span>Account</span><i>→</i><span>Experience</span><i>→</i><span>Choose system</span><i>→</i><span>Preview</span><i>→</i><span>Unlock</span>
           </div>
+          <div className={styles.startHighlights} aria-label="What happens after you start">
+            <div><span aria-hidden="true">01</span><strong>Bring your experience</strong><small>Upload a resume or answer guided trade questions.</small></div>
+            <div><span aria-hidden="true">02</span><strong>See your preview</strong><small>Review the finished structure before you pay.</small></div>
+            <div><span aria-hidden="true">03</span><strong>Take your files</strong><small>Unlock PDF and editable DOCX when you are ready.</small></div>
+          </div>
         </div>
         <aside className={`${styles.startPanel} rb-scope ${rbFont.variable}`}>
           <p className={styles.startIndex}>Account · stage 1 of 5</p>
@@ -384,6 +389,11 @@ export default function Home() {
 
               <h3>{title}</h3>
               <p>{copy}</p>
+              <div className={styles.processVisual} aria-hidden="true">
+                {index === 0 ? <div className={styles.processDocument}><span /><span /><span /><b>YOUR EXPERIENCE</b></div> : null}
+                {index === 1 ? <div className={styles.processBot}><Image src="/hustl3-bot-official.png" alt="" width={90} height={112} /><span>BUILDING YOUR PREVIEW</span></div> : null}
+                {index === 2 ? <div className={styles.processFiles}><span>PDF</span><span>DOCX</span><b>RESUME + COVER LETTER</b></div> : null}
+              </div>
 
               {index < processSteps.length - 1 ? (
                 <div className={styles.processArrow} aria-hidden="true">
@@ -401,7 +411,7 @@ export default function Home() {
           <p className={styles.eyebrow}>BUILT FOR THE TRADES</p>
           <h2 id="difference-title">Your work is not generic. Your resume should not be either.</h2>
           <p>TRADE HUSTL3 is built around the way skilled-trades people actually work: equipment, tools, troubleshooting, PMs, installs, safety, certifications, emergency response, production, and measurable results.</p>
-          <Image src="/hustl3-bot-official.png" alt="HUSTL3 BOT in branded skilled-trades safety gear" width={330} height={495} sizes="(max-width: 760px) 70vw, 330px" />
+          <Image src="/hustl3-bot-official.png" alt="Full-body HUSTL3 BOT in branded skilled-trades safety gear" width={1122} height={1402} sizes="(max-width: 760px) 85vw, 360px" />
         </div>
         <div className={styles.proofGrid}>{proofPoints.map(([title, copy], index) => <article key={title}><span>0{index + 1}</span><h3>{title}</h3><p>{copy}</p></article>)}</div>
       </section>

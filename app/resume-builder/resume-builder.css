@@ -491,7 +491,7 @@ h2.rb-section-title { margin: 0 0 4px; font-size: 20px; }
 .rb-bot-avatar { display: block; }
 .rb-bot-avatar img { width: 100%; height: auto; display: block; object-fit: contain; }
 .rb-bot-toggle .rb-bot-avatar { flex: 0 0 32px; width: 32px; }
-.rb-bot-avatar-lg { width: 96px; margin: 0 auto 12px; }
+.rb-bot-avatar-lg { width: min(160px, 70%); margin: 0 auto 12px; }
 .rb-bot-name { margin: 0 0 12px; color: var(--rb-text); font-size: 15px; font-weight: 700; text-align: center; }
 .rb-bot-name span { display: block; color: var(--rb-text-2); font-size: 13px; font-weight: 500; }
 .rb-bot-tips { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
@@ -698,7 +698,7 @@ p.rb-quality-pass { margin: 12px 0 0; padding: 10px 12px; border: 1px solid var(
   .rb-bot-toggle { display: flex; }
   .rb-bot-body { display: none; padding-top: 0; }
   .rb-bot-body[data-open="true"] { display: block; padding-top: 12px; }
-  .rb-bot-avatar-lg { width: 64px; }
+  .rb-bot-avatar-lg { width: min(125px, 58%); }
   .rb-review-grid { grid-template-columns: minmax(0, 1fr); }
   .rb-preview-panel iframe { height: 640px; }
 }

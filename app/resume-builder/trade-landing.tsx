@@ -187,7 +187,7 @@ export function TradeLandingPage({ content }: { content: TradeLandingContent }) 
         <div className={styles.botPanel}>
           <div className={styles.botImage}>
             <Image src="/hustl3-bot-official.png" alt="HUSTL3 BOT Resume Builder guide"
-              width={880} height={1430} />
+              width={1122} height={1402} />
           </div>
           <div><p className="rb-kicker">HUSTL3 BOT FIELD GUIDANCE</p>
             <h2>TURN THE WORK YOU DID INTO PROOF.</h2><p>{content.accomplishments.intro}</p></div>

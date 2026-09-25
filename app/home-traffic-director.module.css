@@ -30,6 +30,54 @@
 @media(max-width:720px){.brand{padding:3px 8px}.brand img{width:clamp(112px,34vw,148px)!important;height:42px!important}.tradeVisual{margin-top:24px;border-radius:14px}.tradeVisualLabel{align-items:flex-start;flex-direction:column;gap:3px}.tradeVisualLabel span{font-size:11px}.botCard{grid-template-columns:52px minmax(0,1fr)}.botAvatar{width:52px;height:52px}.tradeStrip{padding:18px}.tradeStrip ul{display:grid;grid-template-columns:1fr 1fr;width:100%}.tradeStrip li{display:flex;align-items:center}}
 @media(prefers-reduced-motion:reduce){.tradeVisual,.botCard{scroll-behavior:auto}}
 
+/* Keep the complete headline and trade labels visible in the supplied artwork. */
+.tradeVisual{aspect-ratio:2/1;background:#071d31}
+.tradeVisual>img{object-fit:contain;object-position:center}
+
+/* Give every trade a clear tap target and a stronger brand presence. */
+.tradeStrip{gap:24px;padding-block:25px;background:linear-gradient(110deg,#071d31,#123c5d)}
+.tradeStrip ul{gap:12px}
+.tradeStrip li{padding:0;border-color:rgba(241,195,87,.58);background:linear-gradient(145deg,rgba(241,195,87,.16),rgba(255,255,255,.06));font-size:14px;box-shadow:0 5px 18px rgba(0,0,0,.15)}
+.tradeStrip li a{padding:12px 16px;color:#fff}
+.tradeStrip li:hover,.tradeStrip li:focus-within{border-color:#f1c357;background:rgba(241,195,87,.26)}
+.tradeStrip li a:focus-visible{outline:3px solid #f1c357;outline-offset:3px;border-radius:999px}
+
+/* Make the account entry feel like part of the product journey. */
+.startHighlights{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:30px}
+.startHighlights>div{min-width:0;padding:19px;border:1px solid #cbdde9;border-top:3px solid #f1c357;border-radius:12px;background:rgba(255,255,255,.86);box-shadow:0 12px 25px rgba(10,38,59,.07)}
+.startHighlights span{display:block;margin-bottom:17px;color:#bd8318;font-size:12px;font-weight:950;letter-spacing:.12em}
+.startHighlights strong{display:block;color:#0b2c49;font-size:15px;line-height:1.3}
+.startHighlights small{display:block;margin-top:8px;color:#526a7c;font-size:12px;line-height:1.55}
+
+/* Small product cues make each step recognizable at a glance. */
+.processGrid li.processCard{display:flex;flex-direction:column;min-height:405px}
+.processVisual{display:flex;align-items:center;justify-content:center;min-height:120px;margin-top:auto;padding-top:22px}
+.processDocument{width:150px;padding:17px 14px 13px;border:1px solid #a8c7db;border-radius:7px;background:#fff;box-shadow:10px 9px 0 #e5f0f7}
+.processDocument span{display:block;height:5px;margin-bottom:9px;border-radius:5px;background:#b4c9d8}
+.processDocument span:first-child{width:70%;height:8px;background:#2671a7}
+.processDocument span:nth-child(3){width:84%}
+.processDocument b,.processFiles b{display:block;margin-top:11px;color:#31536d;font-size:9px;letter-spacing:.09em}
+.processBot{display:flex;align-items:center;gap:14px;padding:5px 18px 5px 6px;border:1px solid #c7dce8;border-radius:12px;background:#edf6fb}
+.processBot img{display:block;width:70px;height:88px;object-fit:contain}
+.processBot span{max-width:100px;color:#0b2c49;font-size:11px;font-weight:950;line-height:1.4;letter-spacing:.07em}
+.processFiles{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:9px;max-width:230px}
+.processFiles span{display:grid;place-items:center;width:75px;height:75px;border:1px solid #e7c477;border-radius:9px;background:#fff7e2;color:#0b2c49;font-size:16px;font-weight:950;box-shadow:6px 7px 0 rgba(241,195,87,.2)}
+.processFiles b{flex:0 0 100%;text-align:center}
+
+/* Preserve the whole approved character from hard hat to boots. */
+.differenceIntro>img{width:min(360px,100%)!important;height:auto;aspect-ratio:1122/1402;object-fit:contain;margin:30px auto 0!important}
+.botAvatar img{object-fit:contain;object-position:center;transform:none}
+@media(max-width:720px){
+  .tradeStrip ul{gap:10px}
+  .tradeStrip li{font-size:12px}
+  .tradeStrip li a{padding:11px 12px}
+  .startHighlights{grid-template-columns:1fr;gap:9px}
+  .startHighlights>div{padding:14px 17px}
+  .startHighlights span{margin-bottom:5px}
+  .processGrid li.processCard{min-height:0}
+  .differenceIntro>img{width:min(320px,85vw)!important;margin:24px auto 12px!important}
+}
+
 
 /* Desktop hero lockup and resilient header wordmark. */
 .brand{gap:10px;padding:4px 14px 4px 5px}

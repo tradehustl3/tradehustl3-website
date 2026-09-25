@@ -75,7 +75,7 @@ export function Hustl3Bot({
 
       <div id={panelId} className="rb-bot-body" data-open={open}>
         <div className="rb-bot-avatar rb-bot-avatar-lg" aria-hidden="true">
-          <Image src="/hustl3-bot-official.png" alt="" width={264} height={429} priority />
+          <Image src="/hustl3-bot-official.png" alt="" width={1122} height={1402} priority />
         </div>
         <p className="rb-bot-name">HUSTL3 BOT<span>Jobsite tips for this step</span></p>
         <ul className="rb-bot-tips">
