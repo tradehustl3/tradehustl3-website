@@ -1319,10 +1319,10 @@ async function findReviewRequestByToken(
      WHERE rr.token_hash = ?
        AND rr.consumed_at IS NULL
        AND rr.sent_at IS NOT NULL
-       AND rr.sent_at > datetime('now', '-30 days')
+       AND rr.sent_at > datetime('now', '-' || ? || ' seconds')
        AND ro.status = 'paid'
      LIMIT 1`,
-  ).bind(tokenHash).first<ReviewRequestRow>();
+  ).bind(tokenHash, REVIEW_TOKEN_TTL_SECONDS).first<ReviewRequestRow>();
 }
 
 async function getReviewRequest(request: Request, env: ResumeBuilderEnv): Promise<Response> {
