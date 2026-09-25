@@ -301,6 +301,8 @@ export default function Home() {
         <ul>{purchaseTrust.map((item) => <li key={item}>{item}</li>)}</ul>
       </section>
 
+      <CustomerReviews />
+
       <section className={styles.startSection} id="resume-start" aria-labelledby="resume-start-title">
         <div className={styles.startIntro}>
           <p className={styles.eyebrow}>START YOUR RESUME</p>
@@ -416,8 +418,6 @@ export default function Home() {
         </div>
         <div className={styles.proofGrid}>{proofPoints.map(([title, copy], index) => <article key={title}><span>0{index + 1}</span><h3>{title}</h3><p>{copy}</p></article>)}</div>
       </section>
-
-      <CustomerReviews />
 
       <section className={styles.guideSignup} aria-labelledby="guide-title">
         <div>
