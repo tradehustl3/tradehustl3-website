@@ -316,6 +316,7 @@ export default function BookPage() {
           <article><span>KINDLE eBOOK</span><strong>$9.99</strong><small>Amazon link added after the listing is confirmed live</small></article>
         </div>
         <LaunchPurchaseButton />
+        <p className="purchase-terms"><strong>Secure checkout powered by Stripe · One-time purchase · No subscription.</strong></p>
         <p className="purchase-terms">By purchasing, you agree to the <Link href="/terms">Terms of Service</Link>, <Link href="/privacy">Privacy Policy</Link>, and <Link href="/book/refund-policy">eBook Delivery and Refund Policy</Link>.</p>
       </section>
 

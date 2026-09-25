@@ -34,12 +34,12 @@ export const metadata: Metadata = {
 
   authors: [
     {
-      name: "Zachary Ellis",
+      name: "Da Maintenance Mane",
       url: SITE_URL,
     },
   ],
 
-  creator: "Zachary Ellis",
+  creator: "Da Maintenance Mane",
   publisher: SITE_NAME,
 
   alternates: {
@@ -107,6 +107,8 @@ const structuredData = {
       legalName: "TRADE HUSTL3 LLC",
       url: SITE_URL,
       description: SITE_DESCRIPTION,
+      email: "support@tradehustl3.com",
+      areaServed: "US",
 
       logo: {
         "@type": "ImageObject",
@@ -133,14 +135,31 @@ const structuredData = {
     {
       "@type": "Person",
       "@id": `${SITE_URL}/#zachary-ellis`,
-      name: "Zachary Ellis",
-      alternateName: "Da Maintenance Mane",
+      name: "Da Maintenance Mane",
+      alternateName: "Zachary Ellis",
       jobTitle: "Founder of TRADE HUSTL3 and HVAC/facilities maintenance professional",
       url: SITE_URL,
 
       worksFor: {
         "@id": `${SITE_URL}/#organization`,
       },
+    },
+
+    {
+      "@type": "WebApplication",
+      "@id": `${SITE_URL}/#resume-builder`,
+      name: "TRADE HUSTL3 Resume Builder",
+      url: `${SITE_URL}/#resume-start`,
+      applicationCategory: "BusinessApplication",
+      operatingSystem: "Web",
+      description: SITE_DESCRIPTION,
+      offers: {
+        "@type": "Offer",
+        price: "9.99",
+        priceCurrency: "USD",
+        availability: "https://schema.org/InStock",
+      },
+      provider: { "@id": `${SITE_URL}/#organization` },
     },
 
     {
