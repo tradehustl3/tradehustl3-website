@@ -496,6 +496,7 @@ export function ResumeReview() {
                 <h2>Unlock the full package.</h2>
                 <p>Pay $9.99 once. No subscription. Review the resume and matching cover letter first, then unlock the clean resume PDF + DOCX, clean cover-letter PDF + DOCX, and up to three shared corrections.</p>
                 <button className="rb-button rb-button-primary rb-button-full" type="button" disabled={checkingOut} onClick={() => void startCheckout()}>{checkingOut ? "Opening secure checkout…" : "Unlock resume + cover letter — $9.99"} <span>↗</span></button>
+                <small>Secure checkout powered by Stripe · one-time $9.99 · no subscription. TRADE HUSTL3 does not receive or store your full card number. Need help? <a href="mailto:support@tradehustl3.com">support@tradehustl3.com</a></small>
               </div>
             )}
 
