@@ -149,6 +149,59 @@ export const resumeOrders = sqliteTable(
   ],
 );
 
+export const reviewRequests = sqliteTable(
+  "review_requests",
+  {
+    requestId: text("request_id").primaryKey(),
+    userId: text("user_id").notNull(),
+    resumeId: text("resume_id").notNull(),
+    orderId: text("order_id").notNull(),
+    email: text("email").notNull(),
+    tokenHash: text("token_hash"),
+    scheduledAt: integer("scheduled_at").notNull(),
+    sentAt: text("sent_at"),
+    consumedAt: text("consumed_at"),
+    createdAt: text("created_at").notNull().default(sql`(CURRENT_TIMESTAMP)`),
+    updatedAt: text("updated_at").notNull().default(sql`(CURRENT_TIMESTAMP)`),
+  },
+  (table) => [
+    uniqueIndex("review_requests_order_idx").on(table.orderId),
+    uniqueIndex("review_requests_token_idx").on(table.tokenHash),
+    index("review_requests_due_idx").on(table.sentAt, table.consumedAt, table.scheduledAt),
+    index("review_requests_user_idx").on(table.userId, table.createdAt),
+  ],
+);
+
+export const customerReviews = sqliteTable(
+  "customer_reviews",
+  {
+    reviewId: text("review_id").primaryKey(),
+    requestId: text("request_id").notNull(),
+    userId: text("user_id").notNull(),
+    resumeId: text("resume_id").notNull(),
+    orderId: text("order_id").notNull(),
+    email: text("email").notNull(),
+    publicName: text("public_name").notNull(),
+    trade: text("trade").notNull(),
+    rating: integer("rating").notNull(),
+    reviewText: text("review_text").notNull(),
+    resultText: text("result_text"),
+    recommend: integer("recommend").notNull().default(0),
+    consentPublish: integer("consent_publish").notNull().default(0),
+    consentResumeExample: integer("consent_resume_example").notNull().default(0),
+    status: text("status").notNull().default("pending"),
+    approvedAt: text("approved_at"),
+    publishedAt: text("published_at"),
+    createdAt: text("created_at").notNull().default(sql`(CURRENT_TIMESTAMP)`),
+    updatedAt: text("updated_at").notNull().default(sql`(CURRENT_TIMESTAMP)`),
+  },
+  (table) => [
+    uniqueIndex("customer_reviews_request_idx").on(table.requestId),
+    index("customer_reviews_public_idx").on(table.status, table.consentPublish, table.approvedAt),
+    index("customer_reviews_user_idx").on(table.userId, table.createdAt),
+  ],
+);
+
 export const entitlements = sqliteTable(
   "entitlements",
   {
