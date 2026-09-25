@@ -1204,10 +1204,78 @@ function isReviewAdmin(user: AuthenticatedUser, env: ResumeBuilderEnv): boolean 
   return reviewAdminEmails(env).has(normalizeEmail(user.email));
 }
 
+async function ensureReviewSchema(env: ResumeBuilderEnv): Promise<void> {
+  await env.DB.batch([
+    env.DB.prepare(
+      `CREATE TABLE IF NOT EXISTS review_requests (
+        request_id TEXT PRIMARY KEY NOT NULL,
+        user_id TEXT NOT NULL,
+        resume_id TEXT NOT NULL,
+        order_id TEXT NOT NULL UNIQUE,
+        email TEXT NOT NULL,
+        token_hash TEXT UNIQUE,
+        scheduled_at INTEGER NOT NULL,
+        sent_at TEXT,
+        consumed_at TEXT,
+        created_at TEXT NOT NULL DEFAULT (CURRENT_TIMESTAMP),
+        updated_at TEXT NOT NULL DEFAULT (CURRENT_TIMESTAMP)
+      )`,
+    ),
+    env.DB.prepare(
+      `CREATE INDEX IF NOT EXISTS review_requests_due_idx
+       ON review_requests (sent_at, consumed_at, scheduled_at)`,
+    ),
+    env.DB.prepare(
+      `CREATE INDEX IF NOT EXISTS review_requests_user_idx
+       ON review_requests (user_id, created_at)`,
+    ),
+    env.DB.prepare(
+      `CREATE TABLE IF NOT EXISTS customer_reviews (
+        review_id TEXT PRIMARY KEY NOT NULL,
+        request_id TEXT NOT NULL UNIQUE,
+        user_id TEXT NOT NULL,
+        resume_id TEXT NOT NULL,
+        order_id TEXT NOT NULL,
+        email TEXT NOT NULL,
+        public_name TEXT NOT NULL,
+        trade TEXT NOT NULL,
+        rating INTEGER NOT NULL CHECK (rating BETWEEN 1 AND 5),
+        review_text TEXT NOT NULL,
+        result_text TEXT,
+        recommend INTEGER NOT NULL DEFAULT 0 CHECK (recommend IN (0, 1)),
+        consent_publish INTEGER NOT NULL DEFAULT 0 CHECK (consent_publish IN (0, 1)),
+        consent_resume_example INTEGER NOT NULL DEFAULT 0 CHECK (consent_resume_example IN (0, 1)),
+        status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
+        approved_at TEXT,
+        published_at TEXT,
+        created_at TEXT NOT NULL DEFAULT (CURRENT_TIMESTAMP),
+        updated_at TEXT NOT NULL DEFAULT (CURRENT_TIMESTAMP)
+      )`,
+    ),
+    env.DB.prepare(
+      `CREATE INDEX IF NOT EXISTS customer_reviews_public_idx
+       ON customer_reviews (status, consent_publish, approved_at)`,
+    ),
+    env.DB.prepare(
+      `CREATE INDEX IF NOT EXISTS customer_reviews_user_idx
+       ON customer_reviews (user_id, created_at)`,
+    ),
+  ]);
+
+  await env.DB.prepare(
+    `INSERT OR IGNORE INTO review_requests
+     (request_id, user_id, resume_id, order_id, email, scheduled_at)
+     SELECT lower(hex(randomblob(16))), user_id, resume_id, order_id, email, ?
+     FROM resume_orders
+     WHERE status = 'paid'`,
+  ).bind(nowSeconds()).run();
+}
+
 async function queuePaidReviewRequest(
   env: ResumeBuilderEnv,
   order: { orderId: string; userId: string; resumeId: string; email: string },
 ): Promise<void> {
+  await ensureReviewSchema(env);
   await env.DB.prepare(
     `INSERT OR IGNORE INTO review_requests
      (request_id, user_id, resume_id, order_id, email, scheduled_at)
@@ -1265,6 +1333,7 @@ export async function runReviewRequestEmails(env: ResumeBuilderEnv): Promise<voi
   if (!env.DB) return;
   let due;
   try {
+    await ensureReviewSchema(env);
     due = await env.DB.prepare(
       `SELECT rr.request_id, rr.email
        FROM review_requests rr
@@ -1308,6 +1377,7 @@ async function findReviewRequestByToken(
   token: string,
 ): Promise<ReviewRequestRow | null> {
   if (!validReviewToken(token)) return null;
+  await ensureReviewSchema(env);
   const tokenHash = await sha256Hex(token);
   return env.DB.prepare(
     `SELECT rr.request_id, rr.user_id, rr.resume_id, rr.order_id, rr.email, rr.sent_at,
@@ -1422,6 +1492,7 @@ async function submitCustomerReview(request: Request, env: ResumeBuilderEnv): Pr
 async function getPublicCustomerReviews(request: Request, env: ResumeBuilderEnv): Promise<Response> {
   if (request.method !== "GET") return methodNotAllowed("GET");
   try {
+    await ensureReviewSchema(env);
     const rows = await env.DB.prepare(
       `SELECT cr.review_id, cr.public_name, cr.trade, cr.rating, cr.review_text, cr.result_text, cr.created_at
        FROM customer_reviews cr
@@ -1457,6 +1528,7 @@ async function getPublicCustomerReviews(request: Request, env: ResumeBuilderEnv)
 
 async function getAdminCustomerReviews(request: Request, env: ResumeBuilderEnv): Promise<Response> {
   if (request.method !== "GET") return methodNotAllowed("GET");
+  await ensureReviewSchema(env);
   const user = await requireUser(request, env);
   if (!user) return json({ ok: false, message: "Sign in to continue." }, 401);
   if (!isReviewAdmin(user, env)) return json({ ok: false, message: "Not authorized." }, 403);
@@ -1499,6 +1571,7 @@ async function getAdminCustomerReviews(request: Request, env: ResumeBuilderEnv):
 
 async function moderateCustomerReview(request: Request, env: ResumeBuilderEnv): Promise<Response> {
   if (request.method !== "PATCH") return methodNotAllowed("PATCH");
+  await ensureReviewSchema(env);
   if (!hasTrustedOrigin(request)) return json({ ok: false, message: "Request origin rejected." }, 403);
   const user = await requireUser(request, env);
   if (!user) return json({ ok: false, message: "Sign in to continue." }, 401);
