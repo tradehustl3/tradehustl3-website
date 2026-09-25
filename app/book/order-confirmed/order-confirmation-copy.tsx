@@ -26,9 +26,9 @@ export function OrderConfirmationCopy() {
   return (
     <>
       <p className="section-label">/ PREORDER CONFIRMED</p>
-      <h1>YOU’RE IN.<br /><span>LAUNCH LOCKED.</span></h1>
+      <h1>PURCHASE CONFIRMED.<br /><span>CHECK YOUR EMAIL.</span></h1>
       <p>
-        Your $9.99 TRADE HUSTL3 eBook preorder is confirmed. You were charged today, and your private download will be emailed on September 15, 2026.
+        Your $9.99 TRADE HUSTL3 eBook purchase is confirmed. Your private download link will be sent to the email address used at checkout.
       </p>
       <div className="order-confirmed-note">
         <strong>Keep your confirmation email.</strong>
