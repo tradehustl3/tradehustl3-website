@@ -419,6 +419,8 @@ export default function Home() {
 
       <CustomerReviews />
 
+      <CustomerReviews />
+
       <section className={styles.guideSignup} aria-labelledby="guide-title">
         <div>
           <p className={styles.eyebrow}>FREE CAREER GUIDE</p>
