@@ -46,10 +46,13 @@ CREATE INDEX IF NOT EXISTS customer_reviews_public_idx
 CREATE INDEX IF NOT EXISTS customer_reviews_user_idx
   ON customer_reviews (user_id, created_at);
 
--- Seed one review invitation for existing paid Resume Builder orders so current
--- customers are not excluded from the verified-review program. The scheduler
--- will send each invitation once, and only while the order remains paid.
-INSERT OR IGNORE INTO review_requests
+-- Run-once seed: one review invitation for each existing paid Resume Builder
+-- order so current customers are not excluded from the verified-review program.
+-- Each invitation becomes due three days after payment (or now, for older
+-- orders). Re-running is harmless: ON CONFLICT(order_id) never adds a second
+-- invitation. The scheduler sends each invitation once, and only while the
+-- order remains paid.
+INSERT INTO review_requests
   (request_id, user_id, resume_id, order_id, email, scheduled_at)
 SELECT
   lower(hex(randomblob(16))),
@@ -57,6 +60,10 @@ SELECT
   resume_id,
   order_id,
   email,
-  CAST(strftime('%s', 'now') AS INTEGER)
+  MAX(
+    CAST(strftime('%s', 'now') AS INTEGER),
+    COALESCE(CAST(strftime('%s', paid_at) AS INTEGER) + 259200, 0)
+  )
 FROM resume_orders
-WHERE status = 'paid';
+WHERE status = 'paid'
+ON CONFLICT(order_id) DO NOTHING;

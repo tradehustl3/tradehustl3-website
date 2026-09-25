@@ -2,7 +2,6 @@ import {
   handleResumeBuilderRoute as handleCoreResumeBuilderRoute,
   runResumeBuilderRetention,
   runReviewRequestEmails,
-  runReviewRequestEmails,
   type ResumeBuilderEnv,
 } from "./resume-builder";
 import { operationalEvent } from "./operations-monitoring";

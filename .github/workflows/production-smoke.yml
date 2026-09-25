@@ -113,3 +113,46 @@ jobs:
           smoke_fetch "$CUSTOM_ORIGIN/resume-builder/intake" /tmp/custom-intake.html 9 5 \
             --header 'Cache-Control: no-cache'
           grep -Fq 'UPLOAD IT OR START FRESH' /tmp/custom-intake.html
+
+      - name: Verify verified-review surfaces
+        shell: bash
+        run: |
+          set -euo pipefail
+          source "$RUNNER_TEMP/smoke-fetch.sh"
+          smoke_fetch "$CUSTOM_ORIGIN/reviews" /dev/null 6 3
+
+          smoke_fetch "$CUSTOM_ORIGIN/api/resume-builder/reviews/public" /tmp/public-reviews.json 6 3
+          node -e '
+            const body = require("fs").readFileSync("/tmp/public-reviews.json", "utf8");
+            const payload = JSON.parse(body);
+            if (!Array.isArray(payload.reviews)) throw new Error("Public review API did not return a reviews array.");
+            for (const field of ["\"email\"", "\"user_id\"", "\"order_id\"", "\"token_hash\""]) {
+              if (body.includes(field)) throw new Error(`Public review API exposed ${field}.`);
+            }
+            console.log(`Public review API returned ${payload.reviews.length} approved review(s).`);
+          '
+
+          # The moderation shell may render for anyone; its data is protected by
+          # the authenticated API. It must never be indexed or archived.
+          smoke_fetch "$CUSTOM_ORIGIN/admin/reviews" /tmp/admin-reviews.html 6 3
+          robots="$(grep -oiE '<meta[^>]+name="robots"[^>]*>' /tmp/admin-reviews.html || true)"
+          for directive in noindex nofollow noarchive; do
+            if ! grep -qi "$directive" <<<"$robots"; then
+              echo "::error::/admin/reviews robots metadata is missing $directive"
+              exit 1
+            fi
+          done
+
+          # Logged out, the moderation API must refuse to return review data.
+          admin_auth=()
+          if [ -n "${SMOKE_BYPASS_TOKEN:-}" ]; then
+            (umask 077; printf 'X-Smoke-Token: %s\n' "$SMOKE_BYPASS_TOKEN" > "$RUNNER_TEMP/admin-auth-header")
+            admin_auth=(--header "@$RUNNER_TEMP/admin-auth-header")
+          fi
+          status="$(curl --silent --output /dev/null --write-out '%{http_code}' \
+            --header 'User-Agent: Mozilla/5.0 (compatible; TRADE-HUSTL3-Production-Smoke/1.0)' \
+            "${admin_auth[@]}" "$CUSTOM_ORIGIN/api/resume-builder/reviews/admin")" || status="000"
+          if [ "$status" != "401" ]; then
+            echo "::error::Logged-out review admin API returned HTTP $status instead of 401"
+            exit 1
+          fi

@@ -6,7 +6,7 @@ import styles from "./reviews.module.css";
 export const metadata: Metadata = {
   title: "Customer Review | TRADE HUSTL3",
   description: "Share honest feedback about the TRADE HUSTL3 Resume Builder.",
-  robots: { index: false, follow: false },
+  robots: { index: false, follow: false, noarchive: true },
 };
 
 export default function ReviewsPage() {

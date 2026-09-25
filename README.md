@@ -95,8 +95,9 @@ WHERE job_id = ?;
 
 The Resume Builder review pipeline is limited to verified paid orders. A review invitation is queued after a successful Resume Builder checkout and becomes eligible for email delivery three days later. The existing scheduled Worker sends a private 30-day review link through Brevo.
 
-- `drizzle/0006_verified_customer_reviews.sql` remains the canonical schema migration. The Worker also performs the same idempotent `CREATE TABLE IF NOT EXISTS` bootstrap so the review feature can come online safely even when Cloudflare deploys before an operator runs the migration.
-- Existing paid Resume Builder orders are seeded once with review invitations; duplicate invitations are prevented by the unique order ID.
+- `drizzle/0006_verified_customer_reviews.sql` remains the canonical schema migration. The Worker also performs the same idempotent `CREATE TABLE IF NOT EXISTS` bootstrap (tables and indexes only, never invitations) so the review feature can come online safely even when Cloudflare deploys before an operator runs the migration.
+- The migration seeds one review invitation for each existing paid Resume Builder order, due three days after that order's payment (or immediately for older orders). Re-running it is harmless: `ON CONFLICT(order_id) DO NOTHING` prevents a second invitation for any order.
+- Each invitation is claimed before its email is sent, so overlapping scheduler runs cannot email a customer twice, and it is skipped if the order was refunded. Review links store only a SHA-256 token hash, work once, and expire 30 days after sending.
 - Customers may submit private feedback without publication permission.
 - Public reviews require both explicit customer publication consent and internal approval.
 - The public homepage feed excludes refunded orders automatically.

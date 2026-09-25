@@ -16,7 +16,8 @@ export function ReviewForm() {
   const [requestInfo, setRequestInfo] = useState<RequestInfo | null>(null);
   const [token, setToken] = useState("");
   const [name, setName] = useState("");
-  const [rating, setRating] = useState(5);
+  // No rating is preselected so the customer chooses one without a nudge.
+  const [rating, setRating] = useState(0);
   const [reviewText, setReviewText] = useState("");
   const [resultText, setResultText] = useState("");
   const [recommend, setRecommend] = useState(false);
@@ -58,6 +59,10 @@ export function ReviewForm() {
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (working) return;
+    if (rating < 1) {
+      setMessage("Choose a rating from 1 to 5.");
+      return;
+    }
     setWorking(true);
     setMessage("");
     try {
@@ -143,7 +148,7 @@ export function ReviewForm() {
             >★</button>
           ))}
         </div>
-        <span>{rating} / 5</span>
+        <span>{rating ? `${rating} / 5` : "Choose a rating"}</span>
       </fieldset>
 
       <label className={styles.field}>

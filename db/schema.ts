@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { index, integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
+import { check, index, integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 
 export const subscribers = sqliteTable("subscribers", {
   email: text("email").primaryKey(),
@@ -155,9 +155,9 @@ export const reviewRequests = sqliteTable(
     requestId: text("request_id").primaryKey(),
     userId: text("user_id").notNull(),
     resumeId: text("resume_id").notNull(),
-    orderId: text("order_id").notNull(),
+    orderId: text("order_id").notNull().unique(),
     email: text("email").notNull(),
-    tokenHash: text("token_hash"),
+    tokenHash: text("token_hash").unique(),
     scheduledAt: integer("scheduled_at").notNull(),
     sentAt: text("sent_at"),
     consumedAt: text("consumed_at"),
@@ -165,8 +165,6 @@ export const reviewRequests = sqliteTable(
     updatedAt: text("updated_at").notNull().default(sql`(CURRENT_TIMESTAMP)`),
   },
   (table) => [
-    uniqueIndex("review_requests_order_idx").on(table.orderId),
-    uniqueIndex("review_requests_token_idx").on(table.tokenHash),
     index("review_requests_due_idx").on(table.sentAt, table.consumedAt, table.scheduledAt),
     index("review_requests_user_idx").on(table.userId, table.createdAt),
   ],
@@ -176,7 +174,7 @@ export const customerReviews = sqliteTable(
   "customer_reviews",
   {
     reviewId: text("review_id").primaryKey(),
-    requestId: text("request_id").notNull(),
+    requestId: text("request_id").notNull().unique(),
     userId: text("user_id").notNull(),
     resumeId: text("resume_id").notNull(),
     orderId: text("order_id").notNull(),
@@ -196,7 +194,11 @@ export const customerReviews = sqliteTable(
     updatedAt: text("updated_at").notNull().default(sql`(CURRENT_TIMESTAMP)`),
   },
   (table) => [
-    uniqueIndex("customer_reviews_request_idx").on(table.requestId),
+    check("customer_reviews_rating_check", sql`${table.rating} BETWEEN 1 AND 5`),
+    check("customer_reviews_recommend_check", sql`${table.recommend} IN (0, 1)`),
+    check("customer_reviews_consent_publish_check", sql`${table.consentPublish} IN (0, 1)`),
+    check("customer_reviews_consent_resume_example_check", sql`${table.consentResumeExample} IN (0, 1)`),
+    check("customer_reviews_status_check", sql`${table.status} IN ('pending', 'approved', 'rejected')`),
     index("customer_reviews_public_idx").on(table.status, table.consentPublish, table.approvedAt),
     index("customer_reviews_user_idx").on(table.userId, table.createdAt),
   ],
