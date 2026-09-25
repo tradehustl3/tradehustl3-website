@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import "./page-shell.css";
 
-export const LEGAL_UPDATED = "August 25, 2026";
+export const LEGAL_UPDATED = "September 24, 2026";
 export const SUPPORT_EMAIL = "support@tradehustl3.com";
 
 export function PolicyPage({
