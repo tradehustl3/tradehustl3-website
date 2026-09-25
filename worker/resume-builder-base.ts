@@ -37,6 +37,7 @@ export interface ResumeBuilderEnv {
   GEMINI_MODEL?: string;
   RESUME_AI_PROVIDER?: string;
   RESUME_AI_DAILY_ATTEMPT_LIMIT?: string;
+  REVIEW_ADMIN_EMAILS?: string;
 }
 
 export interface ResumeBuilderDependencies {
@@ -106,6 +107,10 @@ const MAX_IMPORT_TEXT_CHARS = 100_000;
 const MAX_IMPORT_BODY_BYTES = 130_000;
 const STRIPE_WEBHOOK_MAX_BYTES = 256 * 1024;
 const RESUME_RETENTION_DAYS = 37;
+const REVIEW_REQUEST_DELAY_SECONDS = 3 * 24 * 60 * 60;
+const REVIEW_TOKEN_TTL_SECONDS = 30 * 24 * 60 * 60;
+const REVIEW_MIN_TEXT_LENGTH = 20;
+const REVIEW_MAX_TEXT_LENGTH = 1200;
 // Paid resumes keep structured intake and generated output, but the raw uploaded
 // text is cleared this many days after the last generation or edit.
 const PAID_SOURCE_TEXT_RETENTION_DAYS = 90;
