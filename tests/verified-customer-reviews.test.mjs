@@ -173,3 +173,28 @@ test("production smoke checks the verified-review surfaces", () => {
   assert.match(smoke, /for directive in noindex nofollow noarchive/);
   assert.match(smoke, /reviews\/admin"\)" \|\| status="000"/);
 });
+
+test("only a verified paid checkout can create review invitations; homepage reads cannot", () => {
+  const worker = read("worker/resume-builder-base.ts");
+  assert.equal(worker.match(/INTO review_requests/g)?.length, 1, "one insert path in the Worker");
+  assert.equal(worker.match(/await queuePaidReviewRequest\(/g)?.length, 1, "queued only from the Stripe webhook");
+  const webhook = worker.slice(worker.indexOf("async function handleResumeStripeWebhook"), worker.indexOf("async function queuePaidReviewRequest"));
+  assert.match(webhook, /queuePaidReviewRequest\(env, orderId\)/);
+  assert.match(worker, /nowSeconds\(\) \+ REVIEW_REQUEST_DELAY_SECONDS/);
+
+  const bootstrap = worker.slice(worker.indexOf("const REVIEW_SCHEMA_STATEMENTS"), worker.indexOf("async function queuePaidReviewRequest"));
+  assert.doesNotMatch(bootstrap, /INSERT|FROM resume_orders|nowSeconds/);
+  assert.match(worker, /reviews\/public"\) return getPublicCustomerReviews/);
+  assert.doesNotMatch(publicReviewsHandler(worker), /INSERT|UPDATE|queuePaidReviewRequest/);
+
+  // The homepage component only performs a GET of the public feed.
+  const component = read("app/customer-reviews.tsx");
+  assert.doesNotMatch(component, /method:/);
+  assert.equal(component.match(/fetch\(/g)?.length, 1);
+});
+
+test("migration seed never schedules sooner than paid_at + 3 days", () => {
+  const migration = read("drizzle/0006_verified_customer_reviews.sql");
+  assert.match(migration, /strftime\('%s', paid_at\) AS INTEGER\) \+ 259200/);
+  assert.match(migration, /ON CONFLICT\(order_id\) DO NOTHING/);
+});

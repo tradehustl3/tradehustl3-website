@@ -182,10 +182,14 @@ test("review tokens are hashed, single use, expiring, and require a paid order",
   assert.notEqual(stored.token_hash, token);
   assert.equal(stored.token_hash, createHash("sha256").update(token).digest("hex"));
 
-  assert.equal((await call(db.env, `reviews/request?token=${token}`)).status, 200);
+  const valid = await call(db.env, `reviews/request?token=${token}`);
+  assert.equal(valid.status, 200);
+  assert.deepEqual(((await valid.json()) as { reviewRequest: unknown }).reviewRequest, { trade: "HVAC & Refrigeration", defaultName: "Account Name", verifiedPurchase: true });
   assert.equal((await call(db.env, "reviews/request")).status, 404);
   const modified = `${token.slice(0, -1)}${token.endsWith("A") ? "B" : "A"}`;
-  assert.equal((await call(db.env, `reviews/request?token=${modified}`)).status, 404);
+  const rejected = await call(db.env, `reviews/request?token=${modified}`);
+  assert.equal(rejected.status, 404);
+  assert.equal(((await rejected.json()) as { reviewRequest?: unknown }).reviewRequest, undefined, "no review data exposed");
 
   db.sqlite.prepare("UPDATE resume_orders SET status = 'refunded'").run();
   assert.equal((await call(db.env, `reviews/request?token=${token}`)).status, 404);
@@ -269,20 +273,140 @@ test("approved consented reviews appear publicly with safe fields and disappear 
 
   db.sqlite.prepare("UPDATE resume_orders SET status = 'refunded'").run();
   assert.equal((await publicReviews()).reviews.length, 0);
+  assert.equal((db.sqlite.prepare("SELECT status FROM customer_reviews").get() as { status: string }).status, "approved", "the review record is kept, just no longer public");
 });
 
-test("0006 migration seeds existing paid orders once and is harmless to re-run", () => {
+const countRequests = (db: Db, orderId?: string) => (orderId
+  ? db.sqlite.prepare("SELECT count(*) AS n FROM review_requests WHERE order_id = ?").get(orderId)
+  : db.sqlite.prepare("SELECT count(*) AS n FROM review_requests").get()) as { n: number };
+
+function insertOrder(db: Db, orderId: string, status: string, paidAgo: string | null) {
+  db.sqlite.prepare(`INSERT INTO resume_orders (order_id, user_id, resume_id, email, plan, amount_total, currency, status, paid_at)
+    VALUES (?, 'user-1', 'resume-1', 'account@example.com', 'resume_mvp_999', 999, 'usd', ?, ${paidAgo ? "datetime('now', ?)" : "NULL"})`)
+    .run(...(paidAgo ? [orderId, status, paidAgo] : [orderId, status]));
+}
+
+test("0006 migration seeds paid orders at paid_at + 3 days, skips refunds, and is harmless to re-run", () => {
   const db = setup();
-  db.sqlite.prepare("UPDATE resume_orders SET status = 'paid', paid_at = datetime('now', '-10 days')").run();
-  db.sqlite.prepare("INSERT INTO resume_orders (order_id, user_id, resume_id, email, plan, amount_total, currency, status) VALUES ('order-2', 'user-1', 'resume-1', 'account@example.com', 'resume_mvp_999', 999, 'usd', 'refunded')").run();
-  db.sqlite.prepare("INSERT INTO resume_orders (order_id, user_id, resume_id, email, plan, amount_total, currency, status, paid_at) VALUES ('order-3', 'user-1', 'resume-1', 'account@example.com', 'resume_mvp_999', 999, 'usd', 'paid', datetime('now'))").run();
+  insertOrder(db, "ORDER_OLD", "paid", "-7 days");
+  insertOrder(db, "ORDER_RECENT", "paid", "-1 days");
+  insertOrder(db, "ORDER_REFUNDED", "refunded", "-7 days");
 
   const migration = readFileSync(new URL("../drizzle/0006_verified_customer_reviews.sql", import.meta.url), "utf8");
   db.sqlite.exec(migration);
+  const afterFirst = countRequests(db).n;
   db.sqlite.exec(migration);
+  assert.equal(countRequests(db).n, afterFirst, "second run adds nothing");
 
-  const rows = db.sqlite.prepare("SELECT order_id, scheduled_at FROM review_requests ORDER BY order_id").all() as Array<{ order_id: string; scheduled_at: number }>;
-  assert.deepEqual(rows.map((row) => row.order_id), ["order-1", "order-3"]);
-  assert.ok(rows[0].scheduled_at <= now() + 5, "older paid orders are due now");
-  assert.ok(Math.abs(rows[1].scheduled_at - (now() + 3 * DAY)) < 60, "recent paid orders still wait three days");
+  assert.equal(countRequests(db, "ORDER_OLD").n, 1);
+  assert.equal(countRequests(db, "ORDER_RECENT").n, 1);
+  assert.equal(countRequests(db, "ORDER_REFUNDED").n, 0);
+  assert.equal(countRequests(db, "order-1").n, 0, "unpaid orders are not seeded");
+
+  const scheduled = (orderId: string) => (db.sqlite.prepare("SELECT scheduled_at FROM review_requests WHERE order_id = ?").get(orderId) as { scheduled_at: number }).scheduled_at;
+  assert.ok(scheduled("ORDER_OLD") <= now() + 5, "orders paid more than 3 days ago are eligible now");
+  const recentPaidAt = now() - DAY;
+  assert.ok(Math.abs(scheduled("ORDER_RECENT") - (recentPaidAt + 3 * DAY)) < 60, "recent orders wait until paid_at + 3 days");
+  assert.ok(scheduled("ORDER_RECENT") > now() + DAY, "recent orders are not immediately eligible");
+});
+
+test("public review reads never seed review invitations", async () => {
+  const db = setup();
+  db.sqlite.prepare("UPDATE resume_orders SET status = 'paid', paid_at = datetime('now', '-10 days')").run();
+  assert.equal(countRequests(db, "order-1").n, 0, "no review_request exists for the paid order");
+
+  for (let i = 0; i < 10; i += 1) {
+    const response = await call(db.env, "reviews/public");
+    assert.equal(response.status, 200);
+    assert.equal(countRequests(db, "order-1").n, 0, `public read ${i + 1} created no invitation`);
+  }
+  // Other read paths that run the schema bootstrap must not seed either.
+  await call(db.env, "reviews/request?token=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
+  await call(db.env, "reviews/admin", { session: ADMIN_SESSION });
+  await withBrevo(async (sent) => {
+    await runReviewRequestEmails(db.env as never);
+    assert.equal(sent.length, 0, "the scheduler never emails an order that has no invitation");
+  });
+  assert.equal(countRequests(db).n, 0);
+
+  // Only the verified paid-checkout path creates the invitation, three days out.
+  db.sqlite.prepare("UPDATE resume_orders SET status = 'pending', paid_at = NULL").run();
+  const paymentTime = now();
+  assert.equal((await webhook(db.env, checkoutEvent("evt_paid"))).status, 200);
+  assert.equal(countRequests(db, "order-1").n, 1);
+  const { scheduled_at: scheduledAt } = db.sqlite.prepare("SELECT scheduled_at FROM review_requests WHERE order_id = 'order-1'").get() as { scheduled_at: number };
+  assert.ok(scheduledAt >= paymentTime + 3 * DAY - 5, "scheduled no sooner than payment + 259200 seconds");
+  assert.ok(scheduledAt <= now() + 3 * DAY + 5);
+  for (let i = 0; i < 10; i += 1) await call(db.env, "reviews/public");
+  assert.equal(countRequests(db, "order-1").n, 1, "further reads never add a second invitation");
+});
+
+test("schema bootstrap on a database without the review tables creates them and seeds nothing", async () => {
+  const db = setup();
+  db.sqlite.prepare("UPDATE resume_orders SET status = 'paid', paid_at = datetime('now', '-10 days')").run();
+  // Simulate the Worker deploying before migration 0006 has been applied.
+  db.sqlite.exec("DROP TABLE customer_reviews; DROP TABLE review_requests;");
+
+  for (let i = 0; i < 3; i += 1) assert.equal((await call(db.env, "reviews/public")).status, 200);
+  const tables = db.sqlite.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name IN ('review_requests', 'customer_reviews') ORDER BY name").all() as Array<{ name: string }>;
+  assert.deepEqual(tables.map((row) => row.name), ["customer_reviews", "review_requests"]);
+  assert.equal(countRequests(db).n, 0);
+
+  // The bootstrap DDL matches the migration: re-applying 0006 on top is harmless.
+  const migration = readFileSync(new URL("../drizzle/0006_verified_customer_reviews.sql", import.meta.url), "utf8");
+  db.sqlite.exec(migration);
+  assert.equal(countRequests(db, "order-1").n, 1, "only the migration seeds the existing paid order");
+});
+
+test("overlapping scheduler runs send one email", async () => {
+  const db = setup();
+  await webhook(db.env, checkoutEvent("evt_1"));
+  db.sqlite.prepare("UPDATE review_requests SET scheduled_at = ?").run(now() - 1);
+  await withBrevo(async (sent) => {
+    await Promise.all([runReviewRequestEmails(db.env as never), runReviewRequestEmails(db.env as never)]);
+    assert.equal(sent.length, 1);
+  });
+});
+
+test("review email goes to the order email with the right subject, link, and honest-feedback copy", async () => {
+  const db = setup();
+  await webhook(db.env, checkoutEvent("evt_1"));
+  db.sqlite.prepare("UPDATE review_requests SET scheduled_at = ?").run(now() - 1);
+  await withBrevo(async (sent) => {
+    await runReviewRequestEmails(db.env as never);
+    assert.equal(sent.length, 1);
+    const message = JSON.parse(sent[0]) as { to: Array<{ email: string }>; subject: string; htmlContent: string };
+    assert.deepEqual(message.to, [{ email: "account@example.com" }]);
+    assert.equal(message.subject, "How did TRADE HUSTL3 work for you?");
+    assert.match(message.htmlContent, /href="https:\/\/tradehustl3\.com\/reviews\?token=[A-Za-z0-9_-]{43}"/);
+    assert.match(message.htmlContent, /honest feedback/);
+    assert.doesNotMatch(message.htmlContent, /5-star|five-star/i);
+  });
+});
+
+test("a failing review queue never breaks payment fulfillment", async () => {
+  const db = setup();
+  const failingDB = {
+    prepare(sql: string) {
+      if (/review_requests|customer_reviews/i.test(sql)) throw new Error("review storage unavailable");
+      return db.DB.prepare(sql);
+    },
+    batch: (statements: unknown[]) => db.DB.batch(statements as never),
+  } as unknown as D1Database;
+  const response = await webhook({ ...db.env, DB: failingDB }, checkoutEvent("evt_1"));
+  assert.equal(response.status, 200);
+  assert.equal((db.sqlite.prepare("SELECT status FROM resume_orders WHERE order_id = 'order-1'").get() as { status: string }).status, "paid");
+  assert.equal((db.sqlite.prepare("SELECT count(*) AS n FROM entitlements WHERE source_order_id = 'order-1' AND status = 'active'").get() as { n: number }).n, 1);
+  assert.equal(countRequests(db).n, 0);
+});
+
+test("valid boundary submissions are accepted", async () => {
+  for (const rating of [1, 2, 3, 4, 5]) {
+    const db = setup();
+    const token = await paidAndInvited(db);
+    const reviewText = rating === 1 ? "x".repeat(20) : "Honest feedback about the builder.";
+    const response = await call(db.env, "reviews/submit", { method: "POST", body: review(token, { rating, reviewText, name: "n".repeat(120), resultText: "r".repeat(500) }) });
+    assert.equal(response.status, 200, `rating ${rating}`);
+    assert.equal((db.sqlite.prepare("SELECT status FROM customer_reviews").get() as { status: string }).status, "pending");
+  }
 });
