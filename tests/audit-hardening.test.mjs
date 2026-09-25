@@ -82,3 +82,23 @@ test("unsupported social proof and stale self-mutating workflow are removed", ()
   assert.equal(existsSync(new URL("../.github/workflows/fix-upload-first-ux.yml", import.meta.url)), false);
   assert.equal(existsSync(new URL("../scripts/fix-upload-first-ux.py", import.meta.url)), false);
 });
+
+
+test("public brand identity and checkout reassurance stay consistent", () => {
+  const layout = read("app/layout.tsx");
+  const book = read("app/book/page.tsx");
+  const tradeLanding = read("app/resume-builder/trade-landing.tsx");
+
+  assert.match(layout, /creator: "Da Maintenance Mane"/);
+  assert.match(layout, /name: "Da Maintenance Mane"/);
+  assert.match(layout, /alternateName: "Zachary Ellis"/);
+  assert.match(layout, /"@type": "WebApplication"/);
+  assert.match(layout, /price: "9\.99"/);
+
+  assert.doesNotMatch(book, /Built by Trades\. Backed by HUSTL3\./);
+  assert.match(book, /Built by Hustle\. Backed by Trades\./);
+  assert.match(book, /Secure checkout powered by Stripe/i);
+
+  assert.match(tradeLanding, /Secure checkout powered by Stripe/i);
+  assert.match(tradeLanding, /support@tradehustl3\.com/i);
+});
