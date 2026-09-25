@@ -52,7 +52,7 @@ Production setup:
 
 - Create the private R2 bucket `tradehustl3books` and bind it to the Worker as `BOOKS`.
 - Upload the customer PDF with the exact object key `TRADE-HUSTL3-COMPLETE-EBOOK.pdf`.
-- Apply every numbered D1 migration through `drizzle/0005_lead_delivery_queue.sql` in order before deploying the Worker. Keep each matching `_down.sql` file as a reviewed rollback procedure; do not run rollback files during normal deployment.
+- Apply every numbered D1 migration through `drizzle/0006_verified_customer_reviews.sql` in order before deploying the Worker. Keep each matching `_down.sql` file as a reviewed rollback procedure; do not run rollback files during normal deployment.
 - Add `STRIPE_WEBHOOK_SECRET` as an encrypted runtime secret.
 - Add `STRIPE_EBOOK_PAYMENT_LINK_ID` as a regular runtime variable.
 - Create one Stripe webhook at `https://tradehustl3.com/api/stripe/webhook` subscribed to `checkout.session.completed`, `checkout.session.async_payment_succeeded`, and `charge.refunded`.
@@ -90,6 +90,18 @@ UPDATE lead_delivery_jobs
 SET status = 'pending', attempts = 0, next_attempt_at = unixepoch(), updated_at = CURRENT_TIMESTAMP
 WHERE job_id = ?;
 ```
+
+## Verified customer reviews
+
+The Resume Builder review pipeline is limited to verified paid orders. A review invitation is queued after a successful Resume Builder checkout and becomes eligible for email delivery three days later. The existing scheduled Worker sends a private 30-day review link through Brevo.
+
+- Apply `drizzle/0006_verified_customer_reviews.sql` before deploying code that depends on the review tables.
+- The migration also seeds one review invitation for existing paid Resume Builder orders.
+- Customers may submit private feedback without publication permission.
+- Public reviews require both explicit customer publication consent and internal approval.
+- The public homepage feed excludes refunded orders automatically.
+- Review wording and customer-reported job-search results are stored as submitted; moderation must not rewrite them into stronger claims.
+- Review moderation is available at `/admin/reviews` to authenticated `founder@tradehustl3.com`, `support@tradehustl3.com`, or addresses listed in `REVIEW_ADMIN_EMAILS`.
 
 ## Resume generation with Gemini
 
