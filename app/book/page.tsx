@@ -202,7 +202,7 @@ export default function BookPage() {
         </div>
         <figure className="sample-quote">
           <blockquote>
-            “You don’t have to wait for somebody to hand you a future. Learn a skill. Build your value. Earn your own. Create something nobody can take from you. <span>BUILT BY HUSTLE. BACKED BY TRADES.</span>”
+            “You don’t have to wait for somebody to hand you a future. Learn a skill. Build your value. Earn your own. Create something nobody can take from you. <span>BUILT BY TRADES. BACKED BY HUSTL3.</span>”
           </blockquote>
           <figcaption>The TRADE HUSTL3 mindset</figcaption>
         </figure>
@@ -321,7 +321,7 @@ export default function BookPage() {
       </section>
 
       <footer>
-        <div className="footer-brand"><div className="wordmark">TRADE HUSTL<span>3</span></div><p>Built by Hustle. Backed by Trades.</p><SocialLinks /></div>
+        <div className="footer-brand"><div className="wordmark">TRADE HUSTL<span>3</span></div><p>Built by Trades. Backed by HUSTL3.</p><SocialLinks /></div>
         <div className="footer-links"><Link href="/">Home</Link><a href="#sample">Free guide</a><a href="#chapters">Chapters</a><a href="#author">Author</a><a href="mailto:partners@tradehustl3.com">Partnerships</a></div>
         <div className="footer-legal"><Link href="/privacy">Privacy</Link><Link href="/terms">Terms</Link><Link href="/book/refund-policy">eBook policy</Link><Link href="/data-deletion">Data requests</Link><Link href="/contact">Support</Link></div>
         <p className="copyright">© 2026 TRADE HUSTL3. ALL GRIT RESERVED.</p>
