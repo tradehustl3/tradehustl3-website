@@ -165,7 +165,7 @@ test("server-renders the official book page, cover, portrait, and current editio
   assert.equal(response.status, 200);
   const html = await response.text();
 
-  assert.match(html, /<title>TRADE HUSTL3 Book \| Zachary Ellis<\/title>/i);
+  assert.match(html, /<title>TRADE HUSTL3 Book \| Da Maintenance Mane<\/title>/i);
   assert.match(html, /<link rel="canonical" href="https:\/\/tradehustl3\.com\/book"/i);
   assert.match(html, /trade-hustl3-book-cover\.jpg/i);
   assert.match(html, /zachary-ellis-author\.jpg/i);
@@ -189,7 +189,7 @@ test("server-renders the official book page, cover, portrait, and current editio
   assert.match(html, /Final Word: Build Something That Belongs to You/i);
   assert.doesNotMatch(html, /Launch countdown/i);
   assert.match(html, /Earn your own/i);
-  assert.match(html, /BUILT BY HUSTL3[\s\S]*BACKED BY TRADES/i);
+  assert.match(html, /BUILT BY TRADES[\s\S]*BACKED BY HUSTL3/i);
   assert.equal(html.includes("fell through an attic"), false);
 });
 
