@@ -45,3 +45,18 @@ CREATE INDEX IF NOT EXISTS customer_reviews_public_idx
 
 CREATE INDEX IF NOT EXISTS customer_reviews_user_idx
   ON customer_reviews (user_id, created_at);
+
+-- Seed one review invitation for existing paid Resume Builder orders so current
+-- customers are not excluded from the verified-review program. The scheduler
+-- will send each invitation once, and only while the order remains paid.
+INSERT OR IGNORE INTO review_requests
+  (request_id, user_id, resume_id, order_id, email, scheduled_at)
+SELECT
+  lower(hex(randomblob(16))),
+  user_id,
+  resume_id,
+  order_id,
+  email,
+  CAST(strftime('%s', 'now') AS INTEGER)
+FROM resume_orders
+WHERE status = 'paid';
