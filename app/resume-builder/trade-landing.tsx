@@ -186,7 +186,7 @@ export function TradeLandingPage({ content }: { content: TradeLandingContent }) 
       <section className={`${styles.section} ${styles.proofSection}`} aria-labelledby="examples-title">
         <div className={styles.botPanel}>
           <div className={styles.botImage}>
-            <Image src="/hustl3-bot-official.png" alt="HUSTL3 BOT Resume Builder guide"
+            <Image src="/hustl3-bot-official.webp" alt="HUSTL3 BOT Resume Builder guide"
               width={1122} height={1402} />
           </div>
           <div><p className="rb-kicker">HUSTL3 BOT FIELD GUIDANCE</p>
