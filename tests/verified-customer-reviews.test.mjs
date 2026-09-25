@@ -46,14 +46,16 @@ test("customer review form separates publishing consent from resume-example cons
   assert.match(form, /No discount, payment, reward, or other incentive/i);
 });
 
-test("homepage customer proof stays hidden until approved reviews exist", () => {
+test("homepage shows consented testimonials and keeps paid-order verification distinct", () => {
   const page = read("app/page.tsx");
   const reviews = read("app/customer-reviews.tsx");
   assert.match(page, /<CustomerReviews \/>/);
-  assert.match(reviews, /if \(!reviews\.length\) return null/);
-  assert.match(reviews, /Verified customer/);
+  assert.match(reviews, /consentedTestimonials/);
+  assert.match(reviews, /Customer testimonial · used with permission/);
+  assert.match(reviews, /Verified TRADE HUSTL3 customer/);
   assert.match(reviews, /Customer-reported result/);
-  assert.match(reviews, /Individual job-search outcomes vary/);
+  assert.match(reviews, /job-search outcomes are self-reported/i);
+  assert.match(reviews, /TRADE HUSTL3 does not guarantee interviews or employment/i);
 });
 
 test("review moderation is restricted to authenticated TRADE HUSTL3 review admins", () => {
