@@ -14,6 +14,7 @@ test("Resume Builder funnel exposes the core GA4 milestones", () => {
   for (const eventName of [
     "resume_builder_start",
     "sign_up",
+    "resume_intake_started",
     "resume_intake_complete",
     "resume_preview_generated",
     "begin_checkout",
