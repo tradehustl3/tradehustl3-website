@@ -9,7 +9,7 @@ feat/verified-customer-reviews
 ## Commit
 Application code QA'd at `ddc7476dbcd78fd9250ce2b52c9b240da5337167`. The commit that adds this report changes only tests and docs; no Worker, app, or migration code changed during QA.
 
-QA date: 2026-09-25 (UTC).
+QA date: 2026-09-25 (UTC). Cloud staging D1 migration QA was added in a second pass the same day.
 
 ### Environments used
 
@@ -18,9 +18,30 @@ QA date: 2026-09-25 (UTC).
 | Local D1: `wrangler d1 execute --local` (Wrangler 4.129.0, workerd SQLite) | A–D | Throwaway database under the session scratchpad, id `00000000-…`. Migrations 0000–0005 were applied first. |
 | Built Worker served locally: `wrangler dev --local` on `dist/server`, with its own throwaway local D1 | Early-email HTTP proof, I–P, homepage/admin checks, supporting evidence for F | The config copy replaced the production D1 id with a dummy id. No `BREVO_API_KEY` and no Stripe keys were present, so no email or payment could leave the machine. |
 | `npm test`: in-memory SQLite with all repo migrations, real Worker handlers | Unit and integration regression suite | Brevo and Stripe transport are stubbed in tests. Those results count as automated coverage, not as manual integration passes. |
-| Cloud staging D1 `tradehustl3-website-staging` | Not used | The tables were listed read-only. It is several migrations behind (no 0004/0005 tables) and is not bound to any Worker. Reading its order data was blocked by the session permission policy, so no fixtures or migrations were written to it. |
+| Cloud staging D1 `tradehustl3-website-staging` (id `355a6b5d-…`) | Staging migration (A–D on Cloudflare D1) | Not bound to any Worker (the account has only the production Worker), so nothing there can run the scheduler or send email. Existing customer rows were not read; only schema metadata, aggregate counts and QA fixture rows were queried. |
 
-No production resource was read or written. No email was sent.
+No production resource was read or written. No email was sent. No Stripe call was made.
+
+### Staging D1 migration (cloud) — PASS
+
+1. **Migration state before:** `resumes.theme` exists (0004 already applied). `lead_delivery_jobs` was missing (0005 not applied), and `review_requests`/`customer_reviews` were missing (0006 not applied). 0004 was therefore not re-run, because `ALTER TABLE … ADD COLUMN theme` would fail on a second application.
+2. **0005 applied:** both statements `success: true`; `lead_delivery_jobs` and `lead_delivery_jobs_due_idx` were created.
+3. **0006 first application:** all 7 statements `success: true`. The seed statement changed 0 rows because staging had no paid orders.
+4. **Schema after 0006:**
+   - Tables `review_requests` and `customer_reviews`.
+   - Indexes `review_requests_due_idx`, `review_requests_user_idx`, `customer_reviews_public_idx`, `customer_reviews_user_idx`.
+   - UNIQUE autoindexes: `sqlite_autoindex_review_requests_1`, `_2` and `_3` (request_id, order_id, token_hash) and `sqlite_autoindex_customer_reviews_1` and `_2` (review_id, request_id).
+5. **QA fixtures:** three `resume_orders` rows with ids `QA_REVIEW_ORDER_OLD` (paid 7 days ago), `QA_REVIEW_ORDER_RECENT` (paid 1 day ago) and `QA_REVIEW_ORDER_REFUNDED` (refunded, paid 7 days ago), all with email `reviews-qa@example.invalid`, which cannot receive mail.
+6. **0006 second application:** the 6 DDL statements were no-ops (`changed_db: false`, no error). The seed inserted exactly 2 rows:
+
+   | order_id | requests | seconds from now | seconds after paid_at |
+   | --- | --- | --- | --- |
+   | QA_REVIEW_ORDER_OLD | 1 | −34 (due now) | 604813 |
+   | QA_REVIEW_ORDER_RECENT | 1 | +172753 (not due for ~2 days) | 259200 |
+   | QA_REVIEW_ORDER_REFUNDED | 0 | — | — |
+
+7. **Seed third application:** `changes: 0`, `review_requests` total 2, 0 duplicate order_ids.
+8. **Cleanup:** the QA fixture review_requests (2) and resume_orders (3) were deleted. Staging now has the 0005 and 0006 schema, 0 `review_requests` and 0 `customer_reviews`.
 
 ## Early-email bootstrap bug
 PASS (FIXED)
@@ -38,7 +59,7 @@ Evidence:
 ## A–P
 
 A. Migration first run — PASS
-Evidence: local D1, migrations 0000–0005, then fixtures, then `0006_verified_customer_reviews.sql` → "7 commands executed successfully".
+Evidence: cloud staging D1 (see "Staging D1 migration" above). Also local D1, migrations 0000–0005, then fixtures, then `0006_verified_customer_reviews.sql` → "7 commands executed successfully".
 - **Tables:** `review_requests` and `customer_reviews`.
 - **Indexes:** `review_requests_due_idx`, `review_requests_user_idx`, `customer_reviews_public_idx`, `customer_reviews_user_idx`, plus autoindexes for the UNIQUE columns.
 - **Constraints enforced by the D1 engine:**
@@ -56,10 +77,10 @@ Evidence: local D1, migrations 0000–0005, then fixtures, then `0006_verified_c
   | valid row | accepted |
 
 B. Migration second run — PASS
-Evidence: re-applying 0006 on the same local D1 raised no error. The `review_requests` total was 2 before and 2 after. The migration is idempotent (`IF NOT EXISTS` plus `ON CONFLICT(order_id) DO NOTHING`); still treat it as run-once in production.
+Evidence: on cloud staging D1, the second and third applications raised no error, the DDL was a no-op, and a re-run seed changed 0 rows (total 2, 0 duplicate order_ids). On the local D1, re-applying 0006 raised no error. The `review_requests` total was 2 before and 2 after. The migration is idempotent (`IF NOT EXISTS` plus `ON CONFLICT(order_id) DO NOTHING`); still treat it as run-once in production.
 
 C. Existing paid order seed — PASS
-Evidence: fixtures created before 0006 were ORDER_OLD (paid, paid 7 days ago), ORDER_RECENT (paid, paid 1 day ago) and ORDER_REFUNDED (refunded, paid 7 days ago).
+Evidence: on cloud staging D1, QA_REVIEW_ORDER_OLD has 1 request (due now), QA_REVIEW_ORDER_RECENT has 1 request at paid_at + 259200 exactly, and QA_REVIEW_ORDER_REFUNDED has 0. On the local D1, fixtures created before 0006 were ORDER_OLD (paid, paid 7 days ago), ORDER_RECENT (paid, paid 1 day ago) and ORDER_REFUNDED (refunded, paid 7 days ago).
 
 | order_id | rows | scheduled_at | seconds from now | seconds after paid_at |
 | --- | --- | --- | --- | --- |
@@ -68,20 +89,20 @@ Evidence: fixtures created before 0006 were ORDER_OLD (paid, paid 7 days ago), O
 | ORDER_REFUNDED | 0 | — | — | — |
 
 D. Duplicate seed protection — PASS
-Evidence: after the second application, ORDER_OLD = 1, ORDER_RECENT = 1 and TOTAL = 2. The integration test `0006 migration seeds paid orders at paid_at + 3 days, skips refunds, and is harmless to re-run` asserts the same fixtures, including a count unchanged after the second run. A separate test covers the Worker-deploys-first order: bootstrap creates the tables, then 0006 applied on top succeeds and seeds exactly 1 row for the existing paid order.
+Evidence: on cloud staging D1, a repeat seed changed 0 rows and there were 0 duplicate order_ids. On the local D1, after the second application, ORDER_OLD = 1, ORDER_RECENT = 1 and TOTAL = 2. The integration test `0006 migration seeds paid orders at paid_at + 3 days, skips refunds, and is harmless to re-run` asserts the same fixtures, including a count unchanged after the second run. A separate test covers the Worker-deploys-first order: bootstrap creates the tables, then 0006 applied on top succeeds and seeds exactly 1 row for the existing paid order.
 
 E. Stripe test purchase — BLOCKED
 Missing access:
 - Stripe test-mode credentials: `STRIPE_SECRET_KEY=sk_test_…` and `STRIPE_RESUME_WEBHOOK_SECRET`
 - the Stripe CLI (`stripe listen --forward-to …/api/resume-builder/stripe/webhook`), or a staging Worker with a test-mode webhook endpoint
-- a staging Worker bound to `tradehustl3-website-staging` with migrations 0004–0006 applied
+- a staging Worker bound to `tradehustl3-website-staging` (the staging D1 now has 0005 and 0006). The Cloudflare account has only the production Worker, `tradehustl3-website`.
 
-None of these exist in this environment. No real checkout was performed.
+None of the credentials exist in this environment (rechecked in the second pass: no Stripe env vars, no `.dev.vars`, no Stripe CLI). No real checkout was performed.
 
 Automated coverage only (not an integration pass): a signed-webhook test shows the order becomes `paid`, one active entitlement is created, exactly 1 review request exists (`scheduled_at ≈ now + 259200`), and a replayed event creates no duplicate. `a failing review queue never breaks payment fulfillment` makes every review SQL statement throw; the webhook still returns 200, the order is `paid`, and the entitlement is active.
 
 F. Refund before email — BLOCKED
-Missing access: `BREVO_API_KEY` for a safe test sender and a TRADE HUSTL3-owned QA inbox, on a staging Worker. Delivery could not be observed end to end.
+Missing access: `BREVO_API_KEY` for a safe test sender, a TRADE HUSTL3-owned QA inbox address, and a staging Worker bound to the staging D1 to run the scheduler (rechecked in the second pass: none available). Delivery could not be observed end to end.
 
 Supporting local evidence (not a delivery pass): on the real local Worker, `/cdn-cgi/handler/scheduled` ran with two due invitations, one on a refunded order and one on a paid order.
 - Exactly one delivery attempt was logged (`Review request delivery failed`, for the paid order, because no Brevo key is configured).
@@ -174,7 +195,8 @@ The code-level release blocker, the early-email bootstrap bug, is fixed and cove
 
 1. **E:** a Stripe test-mode purchase through the real checkout on a staging Worker (needs `sk_test_…`, `STRIPE_RESUME_WEBHOOK_SECRET`, and the Stripe CLI or a staging webhook endpoint).
 2. **F, G and H:** real Brevo delivery to a TRADE HUSTL3-owned QA inbox (needs `BREVO_API_KEY` on staging and the QA address).
-3. **Migration 0006 human review:** apply it to the staging D1, which first needs 0004 and 0005, before production.
-4. **Manual Resume Builder walkthrough on staging:** magic link, upload, preview, checkout, downloads, cover letter and corrections.
+3. **A staging Worker** bound to `tradehustl3-website-staging` (no such Worker exists; staging D1 is now migrated through 0006). E and F–H need it.
+4. **Migration 0006 human sign-off** for production. It passed on staging (first, second and third applications, correct paid_at + 3 day seeding, no duplicates).
+5. **Manual Resume Builder walkthrough on staging:** magic link, upload, preview, checkout, downloads, cover letter and corrections.
 
 After those pass, re-run the checks and change the recommendation to READY TO MERGE.
