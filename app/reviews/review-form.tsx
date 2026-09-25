@@ -27,10 +27,12 @@ export function ReviewForm() {
 
   useEffect(() => {
     const currentToken = new URLSearchParams(window.location.search).get("token") ?? "";
-    setToken(currentToken);
+    queueMicrotask(() => setToken(currentToken));
     if (!currentToken) {
-      setState("invalid");
-      setMessage("This review link is missing its verification token.");
+      queueMicrotask(() => {
+        setState("invalid");
+        setMessage("This review link is missing its verification token.");
+      });
       return;
     }
 
