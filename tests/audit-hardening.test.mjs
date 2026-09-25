@@ -31,6 +31,14 @@ test("review makes the included cover letter visible before payment and correcta
   assert.match(panel, /Apply one package correction/);
 });
 
+test("checkout communicates payment security and support before purchase", () => {
+  const review = read("app/resume-builder/review/resume-review.tsx");
+  assert.match(review, /Secure checkout powered by Stripe/i);
+  assert.match(review, /one-time \$9\.99/i);
+  assert.match(review, /no subscription/i);
+  assert.match(review, /support@tradehustl3\.com/i);
+});
+
 test("optional tracking is excluded from private resume pages and honors user choice", () => {
   const layout = read("app/layout.tsx");
   const pixels = read("app/marketing-pixels.tsx");
