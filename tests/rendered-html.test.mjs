@@ -165,13 +165,13 @@ test("server-renders the official book page, cover, portrait, and current editio
   assert.equal(response.status, 200);
   const html = await response.text();
 
-  assert.match(html, /<title>TRADE HUSTL3 Book \| Zachary Ellis<\/title>/i);
+  assert.match(html, /<title>TRADE HUSTL3 Book \| Da Maintenance Mane<\/title>/i);
   assert.match(html, /<link rel="canonical" href="https:\/\/tradehustl3\.com\/book"/i);
   assert.match(html, /trade-hustl3-book-cover\.jpg/i);
   assert.match(html, /zachary-ellis-author\.jpg/i);
   assert.match(html, /DA[\s\S]*MAINTENANCE[\s\S]*MANE\./i);
   assert.equal(html.includes("Zachary Cameron Ellis"), false);
-  assert.match(html, /September 15, 2026/i);
+  assert.match(html, /Available now/i);
   assert.match(html, /Current KDP ISBN/i);
   assert.match(html, /9798193043355/i);
   assert.match(html, /No experience required/i);
@@ -187,9 +187,9 @@ test("server-renders the official book page, cover, portrait, and current editio
   assert.match(html, /21 CHAPTERS[\s\S]*FOUR PARTS[\s\S]*ONE PLAN/i);
   assert.match(html, /What a Skilled Trade Really Is/i);
   assert.match(html, /Final Word: Build Something That Belongs to You/i);
-  assert.match(html, /Launch countdown/i);
+  assert.doesNotMatch(html, /Launch countdown/i);
   assert.match(html, /Earn your own/i);
-  assert.match(html, /BUILT BY HUSTL3[\s\S]*BACKED BY TRADES/i);
+  assert.match(html, /BUILT BY TRADES[\s\S]*BACKED BY HUSTL3/i);
   assert.equal(html.includes("fell through an attic"), false);
 });
 
@@ -686,29 +686,24 @@ test("a Top 10 credential cannot unlock the book sample, and vice versa", async 
   assert.equal(crossed.status, 302);
 });
 
-test("keeps the direct eBook gated until the September 15 launch", async () => {
-  await withFrozenDateNow(EBOOK_RELEASE_AT - 60 * 60 * 1000, async () => {
-    const html = await (await renderPath("/book")).text();
-    assert.match(html, /DIRECT eBOOK/i);
-    assert.match(html, /\$9\.99/i);
-    assert.doesNotMatch(html, /\$9\.00/i);
-    assert.match(html, /Available September 15/i);
-    assert.match(html, /Secure PDF delivered by email after payment/i);
-    assert.doesNotMatch(html, /href="https:\/\/buy\.stripe\.com\/4gM5kwaQ96EscGf2uKbfO02"/i);
-  });
+test("keeps the direct eBook available after launch", async () => {
+  const html = await (await renderPath("/book")).text();
+  assert.match(html, /DIRECT eBOOK/i);
+  assert.match(html, /\$9\.99/i);
+  assert.doesNotMatch(html, /\$9\.00/i);
+  assert.match(html, /Available now/i);
+  assert.match(html, /secure PDF delivered by email after payment/i);
+  assert.match(html, /href="https:\/\/buy\.stripe\.com\/4gM5kwaQ96EscGf2uKbfO02"/i);
 });
 
 test("renders a private order-confirmation page", async () => {
-  await withFrozenDateNow(EBOOK_RELEASE_AT - 60 * 60 * 1000, async () => {
-    const response = await renderPath("/book/order-confirmed");
-    assert.equal(response.status, 200);
-    const html = await response.text();
-    assert.match(html, /PREORDER CONFIRMED/i);
-    assert.match(html, /\$9\.99/i);
-    assert.match(html, /charged today/i);
-    assert.match(html, /September 15, 2026/i);
-    assert.match(html, /name="robots" content="noindex, nofollow"/i);
-  });
+  const response = await renderPath("/book/order-confirmed");
+  assert.equal(response.status, 200);
+  const html = await response.text();
+  assert.match(html, /PAYMENT CONFIRMED/i);
+  assert.match(html, /\$9\.99/i);
+  assert.match(html, /private download link/i);
+  assert.match(html, /name="robots" content="noindex, nofollow"/i);
 });
 
 test("records a preorder confirmation without releasing the eBook before launch", async () => {
@@ -1060,11 +1055,11 @@ test("routes the branded resume link to the Resume Builder", async () => {
 
 test("redirects the redundant Resume Builder landing route into the homepage start point", async () => {
   const response = await renderPath("/resume-builder");
-  assert.equal(response.status, 307);
+  assert.equal(response.status, 308);
   assert.equal(response.headers.get("location"), "/#resume-start");
 
   const withTrade = await renderPath("/resume-builder?trade=hvac&utm_source=test");
-  assert.equal(withTrade.status, 307);
+  assert.equal(withTrade.status, 308);
   assert.equal(
     withTrade.headers.get("location"),
     "/?trade=hvac&utm_source=test#resume-start",

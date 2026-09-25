@@ -2,7 +2,7 @@ import type { MetadataRoute } from "next";
 import { TRADE_LANDING_PAGES, tradeLandingPath } from "./resume-builder/trade-landing-content";
 import { SITE_URL } from "./site";
 
-const CONTENT_REFRESHED_AT = new Date("2026-08-30T23:27:04.000Z");
+const CONTENT_REFRESHED_AT = new Date("2026-09-24T00:00:00.000Z");
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const publicPages: MetadataRoute.Sitemap = [
@@ -47,7 +47,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/resume-builder/ai-disclosure",
   ].map((path) => ({
     url: `${SITE_URL}${path}`,
-    lastModified: new Date("2026-08-25T00:00:00.000Z"),
+    lastModified: new Date("2026-09-24T00:00:00.000Z"),
     changeFrequency: "yearly" as const,
     priority: 0.3,
   }));

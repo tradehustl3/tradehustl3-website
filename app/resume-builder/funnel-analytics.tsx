@@ -71,6 +71,15 @@ export function ResumeBuilderStartAnalytics() {
 
 export function ResumeIntakeAnalytics() {
   useEffect(() => {
+    const intakeKey = "tradehustl3_ga4_resume_intake_started";
+    try {
+      if (window.sessionStorage.getItem(intakeKey) !== "1") {
+        if (trackResumeFunnelEvent("resume_intake_started")) window.sessionStorage.setItem(intakeKey, "1");
+      }
+    } catch {
+      trackResumeFunnelEvent("resume_intake_started");
+    }
+
     const originalFetch = window.fetch.bind(window);
     window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
       const response = await originalFetch(input, init);

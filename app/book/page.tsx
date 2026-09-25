@@ -5,18 +5,17 @@ import { SocialLinks } from "../social-links";
 import { SITE_NAME, SITE_URL } from "../site";
 import { SignupForm } from "../signup-form";
 import LaunchPurchaseButton from "./launch-purchase-button";
-import ReleaseCountdown from "./release-countdown";
 
 const BOOK_TITLE = "TRADE HUSTL3: Built by Hustle, Backed by Trades";
 const BOOK_DESCRIPTION =
-  "A practical skilled-trades career guide by Zachary Ellis covering more than 200 trades, entry paths, certifications, earning power, ownership, and a 90-Day Action Plan.";
+  "A practical skilled-trades career guide by Da Maintenance Mane covering more than 200 trades, entry paths, certifications, earning power, ownership, and a 90-Day Action Plan.";
 
 export const metadata: Metadata = {
-  title: "TRADE HUSTL3 Book | Zachary Ellis",
+  title: "TRADE HUSTL3 Book | Da Maintenance Mane",
   description: BOOK_DESCRIPTION,
   alternates: { canonical: "/book" },
   openGraph: {
-    title: "TRADE HUSTL3 Book | Zachary Ellis",
+    title: "TRADE HUSTL3 Book | Da Maintenance Mane",
     description: BOOK_DESCRIPTION,
     url: "/book",
     siteName: SITE_NAME,
@@ -32,7 +31,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "TRADE HUSTL3 Book | Zachary Ellis",
+    title: "TRADE HUSTL3 Book | Da Maintenance Mane",
     description: BOOK_DESCRIPTION,
     images: ["/trade-hustl3-book-cover.jpg"],
   },
@@ -50,9 +49,7 @@ const bookStructuredData = {
   url: `${SITE_URL}/book`,
   image: `${SITE_URL}/trade-hustl3-book-cover.jpg`,
   author: {
-    "@type": "Person",
     "@id": `${SITE_URL}/#zachary-ellis`,
-    name: "Zachary Ellis",
   },
   publisher: {
     "@type": "Organization",
@@ -167,10 +164,10 @@ export default function BookPage() {
         </div>
         <div className="book-hero-copy">
           <p className="section-label">/ THE OFFICIAL BOOK</p>
-          <p className="book-release-badge">Direct eBook · September 15, 2026</p>
+          <p className="book-release-badge">Direct eBook · Available now</p>
           <h1>TRADE<br />HUSTL<span>3</span></h1>
           <p className="book-subtitle">Built by Hustle, Backed by Trades.</p>
-          <p className="book-byline">By Zachary Ellis</p>
+          <p className="book-byline">By Da Maintenance Mane</p>
           <div className="book-hero-proof" aria-label="Book highlights">
             <span><strong>200+</strong><small>Skilled trades</small></span>
             <span><strong>21</strong><small>Chapters</small></span>
@@ -181,17 +178,13 @@ export default function BookPage() {
           </p>
           <div className="hero-actions">
             <a className="button button-primary" href="#sample">Get the Free Guide <span>↗</span></a>
-            <Link className="button button-secondary" href="/#join">Get launch updates</Link>
-          </div>
-          <div className="countdown-wrap">
-            <p>Direct eBook launch countdown · September 15, 2026</p>
-            <ReleaseCountdown />
+            <Link className="button button-secondary" href="/#join">Get book updates</Link>
           </div>
         </div>
       </section>
 
       <section className="book-facts" aria-label="Book details">
-        <div><span>Direct eBook</span><strong>September 15, 2026</strong></div>
+        <div><span>Direct eBook</span><strong>Available now</strong></div>
         <div><span>Formats</span><strong>Paperback + eBook</strong></div>
         <div><span>Starting point</span><strong>No experience required</strong></div>
         <div><span>Current KDP ISBN</span><strong>9798193043355</strong></div>
@@ -209,7 +202,7 @@ export default function BookPage() {
         </div>
         <figure className="sample-quote">
           <blockquote>
-            “You don’t have to wait for somebody to hand you a future. Learn a skill. Build your value. Earn your own. Create something nobody can take from you. <span>BUILT BY HUSTL3. BACKED BY TRADES.</span>”
+            “You don’t have to wait for somebody to hand you a future. Learn a skill. Build your value. Earn your own. Create something nobody can take from you. <span>BUILT BY TRADES. BACKED BY HUSTL3.</span>”
           </blockquote>
           <figcaption>The TRADE HUSTL3 mindset</figcaption>
         </figure>
@@ -293,7 +286,7 @@ export default function BookPage() {
           <Image
             className="author-portrait"
             src="/zachary-ellis-author.jpg"
-            alt="Zachary Ellis, author of TRADE HUSTL3"
+            alt="Da Maintenance Mane, author of TRADE HUSTL3"
             width={1086}
             height={1449}
           />
@@ -303,7 +296,7 @@ export default function BookPage() {
           <p className="section-label">/ ABOUT THE AUTHOR</p>
           <h2>DA<br />MAINTENANCE <span>MANE.</span></h2>
           <p>
-            Zachary Ellis is an HVAC and facilities maintenance professional with more than nine years of hands-on experience solving real problems in the field. His background includes residential and commercial systems, preventive maintenance, facilities operations, team leadership, vendor coordination, and large-scale equipment.
+            Da Maintenance Mane is an HVAC and facilities maintenance professional with 10+ years of hands-on experience solving real problems in the field. His background includes residential and commercial systems, preventive maintenance, facilities operations, team leadership, vendor coordination, and large-scale equipment.
           </p>
           <p>
             TRADE HUSTL3 was born from real work, real lessons, and a clear purpose: help the next generation enter skilled trades, earn through useful ability, and elevate into leadership, ownership, and long-term opportunity.
@@ -313,21 +306,21 @@ export default function BookPage() {
 
       <section className="book-availability" id="availability">
         <p className="section-label">/ AVAILABILITY</p>
-        <h2>DIRECT FIRST.<br /><span>AMAZON NEXT.</span></h2>
+        <h2>DIRECT EBOOK.<br /><span>AVAILABLE NOW.</span></h2>
         <p>
-          The direct eBook launches September 15, 2026. Amazon paperback and Kindle editions are scheduled for September 25, 2026.
+          The direct eBook is available now. Amazon paperback and Kindle links will be added here after their listings are confirmed live.
         </p>
         <div className="availability-grid">
-          <article><span>AMAZON PAPERBACK</span><strong>$24.99</strong><small>Scheduled for September 25, 2026</small></article>
-          <article><span>DIRECT eBOOK</span><strong>$9.99</strong><small>Available September 15 · secure PDF delivered by email after payment</small></article>
-          <article><span>KINDLE eBOOK</span><strong>$9.99</strong><small>Scheduled for September 25, 2026 · Amazon link added when live</small></article>
+          <article><span>AMAZON PAPERBACK</span><strong>$24.99</strong><small>Amazon link added after the listing is confirmed live</small></article>
+          <article><span>DIRECT eBOOK</span><strong>$9.99</strong><small>Available now · secure PDF delivered by email after payment</small></article>
+          <article><span>KINDLE eBOOK</span><strong>$9.99</strong><small>Amazon link added after the listing is confirmed live</small></article>
         </div>
         <LaunchPurchaseButton />
         <p className="purchase-terms">By purchasing, you agree to the <Link href="/terms">Terms of Service</Link>, <Link href="/privacy">Privacy Policy</Link>, and <Link href="/book/refund-policy">eBook Delivery and Refund Policy</Link>.</p>
       </section>
 
       <footer>
-        <div className="footer-brand"><div className="wordmark">TRADE HUSTL<span>3</span></div><p>Built by Hustle, Backed by Trades.</p><SocialLinks /></div>
+        <div className="footer-brand"><div className="wordmark">TRADE HUSTL<span>3</span></div><p>Built by Trades. Backed by HUSTL3.</p><SocialLinks /></div>
         <div className="footer-links"><Link href="/">Home</Link><a href="#sample">Free guide</a><a href="#chapters">Chapters</a><a href="#author">Author</a><a href="mailto:partners@tradehustl3.com">Partnerships</a></div>
         <div className="footer-legal"><Link href="/privacy">Privacy</Link><Link href="/terms">Terms</Link><Link href="/book/refund-policy">eBook policy</Link><Link href="/data-deletion">Data requests</Link><Link href="/contact">Support</Link></div>
         <p className="copyright">© 2026 TRADE HUSTL3. ALL GRIT RESERVED.</p>

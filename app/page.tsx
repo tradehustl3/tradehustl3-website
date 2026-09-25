@@ -434,7 +434,7 @@ export default function Home() {
 
       <footer className={styles.footer} data-site-footer>
         <div className={styles.footerBrand}><Image src="/optimized/trade-hustl3-logo.webp" alt="TRADE HUSTL3 logo" width={44} height={44} /><strong>TRADE HUSTL3 LLC</strong></div>
-        <p>Built by Trades. Backed by HUSTL3.</p>
+        <p>Built by Trades. Backed by HUSTL3.<br />TRADE HUSTL3 LLC · Atlanta, Georgia · <a href="mailto:support@tradehustl3.com">support@tradehustl3.com</a></p>
         <nav aria-label="Footer links">
           <Link href="#resume-start">Resume Builder</Link>
           <Link href="/top-10-trades">Top 10 Trades</Link>
