@@ -156,6 +156,7 @@ export function TradeLandingPage({ content }: { content: TradeLandingContent }) 
             <ul><li>✓ Matching cover letter included at no extra cost</li>{content.pricing.bullets.slice(0, 3).map((bullet) => <li key={bullet}>✓ {bullet}</li>)}</ul>
             <BuildCta content={content} location={content.ctaLocations.pricing} label={content.pricing.ctaLabel}
               className="rb-button rb-button-primary rb-button-full" />
+            <small>Secure checkout powered by Stripe · One-time $9.99 · No subscription.</small>
           </div>
         </aside>
       </section>
@@ -263,6 +264,7 @@ export function TradeLandingPage({ content }: { content: TradeLandingContent }) 
           <BuildCta content={content} location={content.ctaLocations.closing} label={content.closingCta.ctaLabel}
             className="rb-button rb-button-primary rb-button-full" />
           <small>Resume, matching cover letter, PDF + DOCX downloads, and up to 3 corrections within 7 days.</small>
+          <small>Secure checkout powered by Stripe · Need help? support@tradehustl3.com</small>
         </div>
       </section>
 
