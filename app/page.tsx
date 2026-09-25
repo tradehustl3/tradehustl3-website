@@ -1,6 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { CtaAnalytics } from './cta-analytics';
+import { CustomerReviews } from './customer-reviews';
 import { AccountStart } from './resume-builder/account-start';
 import { ResumeBuilderStartAnalytics } from './resume-builder/funnel-analytics';
 import { rbFont } from './resume-builder/rb-font';
@@ -415,6 +416,8 @@ export default function Home() {
         </div>
         <div className={styles.proofGrid}>{proofPoints.map(([title, copy], index) => <article key={title}><span>0{index + 1}</span><h3>{title}</h3><p>{copy}</p></article>)}</div>
       </section>
+
+      <CustomerReviews />
 
       <section className={styles.guideSignup} aria-labelledby="guide-title">
         <div>
