@@ -1,4 +1,4 @@
-import { redirect } from "next/navigation";
+import { permanentRedirect } from "next/navigation";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
@@ -19,5 +19,5 @@ export default async function ResumeBuilderPage({
   }
 
   const suffix = query.toString() ? `?${query.toString()}` : "";
-  redirect(`/${suffix}#resume-start`);
+  permanentRedirect(`/${suffix}#resume-start`);
 }
