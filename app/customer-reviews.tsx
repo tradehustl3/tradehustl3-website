@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import styles from "./customer-reviews.module.css";
 
 type PublicReview = {
@@ -77,6 +77,8 @@ const customerStories: CustomerStory[] = [
 export function CustomerReviews() {
   const [verifiedReviews, setVerifiedReviews] = useState<PublicReview[]>([]);
   const [loaded, setLoaded] = useState(false);
+  const storyScrollerRef = useRef<HTMLDivElement | null>(null);
+  const [activeStory, setActiveStory] = useState(0);
 
   useEffect(() => {
     let active = true;
@@ -105,6 +107,34 @@ export function CustomerReviews() {
     };
   }, []);
 
+  function updateActiveStory() {
+    const scroller = storyScrollerRef.current;
+    if (!scroller) return;
+
+    const cards = Array.from(
+      scroller.querySelectorAll<HTMLElement>("[data-story-card]"),
+    );
+
+    if (!cards.length) return;
+
+    const scrollerCenter = scroller.scrollLeft + scroller.clientWidth / 2;
+
+    let closestIndex = 0;
+    let closestDistance = Number.POSITIVE_INFINITY;
+
+    cards.forEach((card, index) => {
+      const cardCenter = card.offsetLeft + card.offsetWidth / 2;
+      const distance = Math.abs(cardCenter - scrollerCenter);
+
+      if (distance < closestDistance) {
+        closestDistance = distance;
+        closestIndex = index;
+      }
+    });
+
+    setActiveStory(closestIndex);
+  }
+
   return (
     <section className={styles.section} aria-labelledby="customer-reviews-title">
       <div className={styles.heading}>
@@ -121,9 +151,14 @@ export function CustomerReviews() {
         </div>
       </div>
 
-      <div className={styles.storyGrid} aria-label="Customer stories">
+      <div
+        ref={storyScrollerRef}
+        className={styles.storyGrid}
+        aria-label="Customer stories"
+        onScroll={updateActiveStory}
+      >
         {customerStories.map((story) => (
-          <article className={styles.storyCard} key={story.id}>
+          <article className={styles.storyCard} key={story.id} data-story-card>
             <div className={styles.storyTop}>
               <Image
                 className={styles.photo}
@@ -145,6 +180,43 @@ export function CustomerReviews() {
             <blockquote>“{story.review}”</blockquote>
           </article>
         ))}
+      </div>
+
+      <div className={styles.mobileCarouselNav}>
+        <div
+          className={styles.carouselDots}
+          aria-label={`Customer story ${activeStory + 1} of ${customerStories.length}`}
+        >
+          {customerStories.map((story, index) => (
+            <button
+              key={story.id}
+              type="button"
+              className={
+                index === activeStory
+                  ? `${styles.carouselDot} ${styles.carouselDotActive}`
+                  : styles.carouselDot
+              }
+              aria-label={`Show ${story.name} customer story`}
+              aria-current={index === activeStory ? "true" : undefined}
+              onClick={() => {
+                const scroller = storyScrollerRef.current;
+                const cards = scroller?.querySelectorAll<HTMLElement>("[data-story-card]");
+
+                cards?.[index]?.scrollIntoView({
+                  behavior: "smooth",
+                  block: "nearest",
+                  inline: "center",
+                });
+              }}
+            />
+          ))}
+        </div>
+
+        <p className={styles.swipeHint}>
+          <span aria-hidden="true">←</span>
+          Swipe to see more stories
+          <span aria-hidden="true">→</span>
+        </p>
       </div>
 
       {loaded && verifiedReviews.length > 0 ? (
