@@ -1266,12 +1266,14 @@ export async function runReviewRequestEmails(env: ResumeBuilderEnv): Promise<voi
   let due;
   try {
     due = await env.DB.prepare(
-      `SELECT request_id, email
-       FROM review_requests
-       WHERE sent_at IS NULL
-         AND consumed_at IS NULL
-         AND scheduled_at <= ?
-       ORDER BY scheduled_at ASC
+      `SELECT rr.request_id, rr.email
+       FROM review_requests rr
+       JOIN resume_orders ro ON ro.order_id = rr.order_id
+       WHERE rr.sent_at IS NULL
+         AND rr.consumed_at IS NULL
+         AND rr.scheduled_at <= ?
+         AND ro.status = 'paid'
+       ORDER BY rr.scheduled_at ASC
        LIMIT 25`,
     ).bind(nowSeconds()).all<{ request_id: string; email: string }>();
   } catch (error) {
@@ -1421,10 +1423,11 @@ async function getPublicCustomerReviews(request: Request, env: ResumeBuilderEnv)
   if (request.method !== "GET") return methodNotAllowed("GET");
   try {
     const rows = await env.DB.prepare(
-      `SELECT review_id, public_name, trade, rating, review_text, result_text, created_at
-       FROM customer_reviews
-       WHERE status = 'approved' AND consent_publish = 1
-       ORDER BY COALESCE(approved_at, created_at) DESC
+      `SELECT cr.review_id, cr.public_name, cr.trade, cr.rating, cr.review_text, cr.result_text, cr.created_at
+       FROM customer_reviews cr
+       JOIN resume_orders ro ON ro.order_id = cr.order_id
+       WHERE cr.status = 'approved' AND cr.consent_publish = 1 AND ro.status = 'paid'
+       ORDER BY COALESCE(cr.approved_at, cr.created_at) DESC
        LIMIT 6`,
     ).all<{
       review_id: string;
