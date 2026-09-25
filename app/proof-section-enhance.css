@@ -32,9 +32,11 @@ section[aria-labelledby="difference-title"] > div:last-child {
 /* The old negative bottom margins caused the bot to overlap proof card 01. */
 section[aria-labelledby="difference-title"] > div:first-child > img {
   display: block;
-  width: min(300px, 70vw) !important;
-  height: auto;
-  margin: 34px auto 8px !important;
+  width: min(360px, 100%) !important;
+  height: auto !important;
+  aspect-ratio: 1122 / 1402;
+  object-fit: contain;
+  margin: 34px auto 18px !important;
   padding: 7px;
   border: 1px solid rgba(241, 195, 87, .55);
   border-radius: 20px;
@@ -160,7 +162,7 @@ section[aria-labelledby="difference-title"] > div:last-child > article p {
   }
 
   section[aria-labelledby="difference-title"] > div:first-child > img {
-    width: min(78vw, 330px) !important;
+    width: min(85vw, 330px) !important;
     margin: 28px auto 18px !important;
     padding: 5px;
     border-radius: 16px;
