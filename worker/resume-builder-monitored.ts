@@ -1,12 +1,13 @@
 import {
   handleResumeBuilderRoute as handleCoreResumeBuilderRoute,
   runResumeBuilderRetention,
+  runReviewRequestEmails,
   type ResumeBuilderEnv,
 } from "./resume-builder";
 import { operationalEvent } from "./operations-monitoring";
 
 export type { ResumeBuilderEnv };
-export { runResumeBuilderRetention };
+export { runResumeBuilderRetention, runReviewRequestEmails };
 
 function monitoredFailure(pathname: string, status: number): ReturnType<typeof operationalEvent> | null {
   if (pathname === "/api/resume-builder/auth/request" && status >= 500) {
