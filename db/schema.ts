@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { index, integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
+import { check, index, integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 
 export const subscribers = sqliteTable("subscribers", {
   email: text("email").primaryKey(),
@@ -146,6 +146,61 @@ export const resumeOrders = sqliteTable(
     index("resume_orders_user_idx").on(table.userId),
     index("resume_orders_resume_idx").on(table.resumeId),
     index("resume_orders_email_idx").on(table.email),
+  ],
+);
+
+export const reviewRequests = sqliteTable(
+  "review_requests",
+  {
+    requestId: text("request_id").primaryKey(),
+    userId: text("user_id").notNull(),
+    resumeId: text("resume_id").notNull(),
+    orderId: text("order_id").notNull().unique(),
+    email: text("email").notNull(),
+    tokenHash: text("token_hash").unique(),
+    scheduledAt: integer("scheduled_at").notNull(),
+    sentAt: text("sent_at"),
+    consumedAt: text("consumed_at"),
+    createdAt: text("created_at").notNull().default(sql`(CURRENT_TIMESTAMP)`),
+    updatedAt: text("updated_at").notNull().default(sql`(CURRENT_TIMESTAMP)`),
+  },
+  (table) => [
+    index("review_requests_due_idx").on(table.sentAt, table.consumedAt, table.scheduledAt),
+    index("review_requests_user_idx").on(table.userId, table.createdAt),
+  ],
+);
+
+export const customerReviews = sqliteTable(
+  "customer_reviews",
+  {
+    reviewId: text("review_id").primaryKey(),
+    requestId: text("request_id").notNull().unique(),
+    userId: text("user_id").notNull(),
+    resumeId: text("resume_id").notNull(),
+    orderId: text("order_id").notNull(),
+    email: text("email").notNull(),
+    publicName: text("public_name").notNull(),
+    trade: text("trade").notNull(),
+    rating: integer("rating").notNull(),
+    reviewText: text("review_text").notNull(),
+    resultText: text("result_text"),
+    recommend: integer("recommend").notNull().default(0),
+    consentPublish: integer("consent_publish").notNull().default(0),
+    consentResumeExample: integer("consent_resume_example").notNull().default(0),
+    status: text("status").notNull().default("pending"),
+    approvedAt: text("approved_at"),
+    publishedAt: text("published_at"),
+    createdAt: text("created_at").notNull().default(sql`(CURRENT_TIMESTAMP)`),
+    updatedAt: text("updated_at").notNull().default(sql`(CURRENT_TIMESTAMP)`),
+  },
+  (table) => [
+    check("customer_reviews_rating_check", sql`${table.rating} BETWEEN 1 AND 5`),
+    check("customer_reviews_recommend_check", sql`${table.recommend} IN (0, 1)`),
+    check("customer_reviews_consent_publish_check", sql`${table.consentPublish} IN (0, 1)`),
+    check("customer_reviews_consent_resume_example_check", sql`${table.consentResumeExample} IN (0, 1)`),
+    check("customer_reviews_status_check", sql`${table.status} IN ('pending', 'approved', 'rejected')`),
+    index("customer_reviews_public_idx").on(table.status, table.consentPublish, table.approvedAt),
+    index("customer_reviews_user_idx").on(table.userId, table.createdAt),
   ],
 );
 

@@ -1,0 +1,21 @@
+.section{
+  padding:clamp(64px,8vw,110px) clamp(20px,6vw,88px);
+  background:linear-gradient(180deg,#f7fbff 0%,#fff 100%);
+  border-top:1px solid rgba(7,26,43,.08);
+  border-bottom:1px solid rgba(7,26,43,.08);
+  color:#071a2b;
+}
+.heading{max-width:850px;margin:0 auto 38px;text-align:center}
+.heading>p{margin:0 0 10px;color:#155a8a;font-size:.76rem;font-weight:900;letter-spacing:.14em}
+.heading h2{margin:0;font-family:var(--font-display),Impact,sans-serif;font-size:clamp(2.8rem,6vw,5.6rem);line-height:.96;letter-spacing:-.03em}
+.heading h2 span{color:#d71920}.heading>div{max-width:680px;margin:18px auto 0;color:#52697a;line-height:1.65}
+.grid{max-width:1180px;margin:auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(285px,1fr));gap:18px}
+.card{background:#fff;border:1px solid #dce5ec;border-radius:20px;padding:24px;box-shadow:0 16px 42px rgba(7,26,43,.07)}
+.cardTop{display:grid;grid-template-columns:56px 1fr;gap:14px;align-items:start}
+.avatar{width:56px;height:56px;border-radius:14px;display:grid;place-items:center;background:#071a2b;color:#fff;font-weight:900;font-size:1.25rem}
+.identity{display:grid;gap:3px;padding-top:2px}.identity strong{font-size:1.08rem}.identity span{color:#155a8a;font-size:.9rem}.identity em{font-style:normal;color:#627789;font-size:.72rem;font-weight:700;line-height:1.35}
+.stars{color:#d6a52a;letter-spacing:2px;margin:18px 0 10px}.stars i{font-style:normal;color:#d6dde3}
+.card blockquote{margin:0;font-size:1rem;line-height:1.65;color:#20384a}
+.result{margin:18px 0 0;padding:13px 14px;background:#f3f7fa;border-radius:11px;color:#41596b;line-height:1.5}
+.result strong{display:block;color:#155a8a;font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}
+.disclaimer{max-width:800px;margin:24px auto 0;text-align:center;color:#758694;font-size:.78rem;line-height:1.5}

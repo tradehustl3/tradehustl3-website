@@ -3,7 +3,7 @@ import { handleImageOptimization, DEFAULT_DEVICE_SIZES, DEFAULT_IMAGE_SIZES } fr
 import handler from "vinext/server/app-router-entry";
 import freeSampleDataUrl from "./assets/trade-hustl3-free-sample.pdf?inline";
 import bookSampleDataUrl from "./assets/trade-hustl3-seven-page-book-sample.pdf?inline";
-import { handleResumeBuilderRoute, ResumeBuilderEnv, runResumeBuilderRetention } from "./resume-builder-monitored";
+import { handleResumeBuilderRoute, ResumeBuilderEnv, runResumeBuilderRetention, runReviewRequestEmails } from "./resume-builder-monitored";
 import { handleEbookStripeRoute, runEbookLaunchDelivery, EbookStripeEnv, EBOOK_RELEASE_AT } from "./ebook-stripe";
 import { getOperationsHealth, operationalEvent } from "./operations-monitoring";
 
@@ -738,7 +738,7 @@ async function serveBookSample(request: Request, env: Env): Promise<Response> {
 const worker = {
   async scheduled(_controller: ScheduledController, env: Env, ctx: ExecutionContext): Promise<void> {
     console.log("eBook launch sweep invoked", new Date().toISOString());
-    const jobs = [runResumeBuilderRetention(env), runLeadDeliveryRetries(env)];
+    const jobs = [runResumeBuilderRetention(env), runLeadDeliveryRetries(env), runReviewRequestEmails(env)];
     if (Date.now() >= EBOOK_RELEASE_AT) jobs.push(runEbookLaunchDelivery(env));
     ctx.waitUntil(Promise.all(jobs).then(() => undefined));
   },

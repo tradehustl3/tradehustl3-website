@@ -1,0 +1,200 @@
+.page {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 15% 5%, rgba(21, 90, 138, .14), transparent 30rem),
+    linear-gradient(180deg, #f8fbff 0%, #ffffff 45%, #f4f7fa 100%);
+  color: #071a2b;
+  font-family: var(--font-body), Arial, sans-serif;
+}
+
+.header {
+  min-height: 78px;
+  padding: 14px clamp(20px, 5vw, 76px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(7, 26, 43, .1);
+  background: rgba(255,255,255,.92);
+}
+
+.brand {
+  color: #071a2b;
+  font-weight: 900;
+  text-decoration: none;
+  letter-spacing: -.03em;
+  font-size: 1.25rem;
+}
+
+.brand span, .hero h1 span { color: #d71920; }
+.support { color: #155a8a; font-weight: 700; text-decoration: none; }
+
+.hero {
+  width: min(900px, calc(100% - 40px));
+  margin: 0 auto;
+  padding: 72px 0 30px;
+  text-align: center;
+}
+
+.kicker {
+  margin: 0 0 10px;
+  color: #155a8a;
+  font-size: .78rem;
+  font-weight: 900;
+  letter-spacing: .14em;
+}
+
+.hero h1 {
+  margin: 0;
+  font-family: var(--font-display), Impact, sans-serif;
+  font-size: clamp(3rem, 8vw, 6.5rem);
+  line-height: .94;
+  letter-spacing: -.03em;
+}
+
+.hero > p:last-child {
+  max-width: 720px;
+  margin: 24px auto 0;
+  color: #44586a;
+  line-height: 1.7;
+  font-size: 1.05rem;
+}
+
+.card {
+  width: min(760px, calc(100% - 40px));
+  margin: 20px auto 90px;
+  padding: clamp(24px, 5vw, 48px);
+  background: #fff;
+  border: 1px solid rgba(7, 26, 43, .1);
+  border-radius: 26px;
+  box-shadow: 0 24px 80px rgba(7, 26, 43, .1);
+}
+
+.card h2 { margin: 0 0 14px; font-size: clamp(1.7rem, 4vw, 2.5rem); }
+.status { color: #4b5f70; line-height: 1.65; }
+
+.verifiedRow {
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 28px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #e5ebf0;
+  color: #44586a;
+  font-weight: 700;
+}
+
+.verifiedBadge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 9px 13px;
+  background: #eaf8ef;
+  color: #126a36;
+  font-size: .86rem;
+}
+
+.field {
+  display: grid;
+  gap: 7px;
+  margin: 24px 0;
+}
+
+.field > span, .ratingField legend, .consentBox > strong { font-weight: 850; }
+.field small, .finePrint { color: #607383; line-height: 1.55; }
+.field b { justify-self: end; color: #7b8994; font-size: .75rem; }
+
+.field input, .field textarea {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #cfd9e1;
+  border-radius: 12px;
+  padding: 14px 15px;
+  color: #071a2b;
+  background: #fff;
+  font: inherit;
+}
+
+.field textarea { resize: vertical; }
+.field input:focus, .field textarea:focus { outline: 3px solid rgba(21, 90, 138, .18); border-color: #155a8a; }
+
+.ratingField {
+  border: 0;
+  padding: 0;
+  margin: 28px 0;
+}
+
+.stars { display: flex; gap: 3px; margin: 8px 0 4px; }
+.star, .starActive {
+  border: 0;
+  background: transparent;
+  padding: 2px;
+  cursor: pointer;
+  font-size: 2rem;
+  line-height: 1;
+}
+.star { color: #c9d2da; }
+.starActive { color: #d6a52a; }
+
+.checkRow {
+  display: flex;
+  gap: 11px;
+  align-items: flex-start;
+  margin: 14px 0;
+  line-height: 1.5;
+}
+.checkRow input { margin-top: 4px; width: 18px; height: 18px; flex: 0 0 auto; }
+
+.consentBox {
+  margin: 28px 0 18px;
+  padding: 20px;
+  border-radius: 16px;
+  background: #f3f7fa;
+  border: 1px solid #dce5ec;
+}
+
+.finePrint { font-size: .84rem; }
+.error { color: #a0191f; font-weight: 700; }
+.successMark {
+  width: 54px; height: 54px; border-radius: 50%;
+  display: grid; place-items: center;
+  background: #eaf8ef; color: #126a36; font-weight: 900; font-size: 1.6rem;
+  margin-bottom: 18px;
+}
+
+.button {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 52px;
+  padding: 0 22px;
+  border: 0;
+  border-radius: 12px;
+  background: #d71920;
+  color: #fff;
+  text-decoration: none;
+  font: inherit;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.button:disabled { opacity: .6; cursor: wait; }
+
+.footer {
+  padding: 28px clamp(20px, 5vw, 76px);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  justify-content: space-between;
+  background: #071a2b;
+  color: #d9e1e7;
+}
+.footer p { margin: 0; }
+.footer div { display: flex; gap: 18px; flex-wrap: wrap; }
+.footer a { color: #fff; text-decoration: none; }
+
+@media (max-width: 600px) {
+  .hero { padding-top: 50px; }
+  .card { border-radius: 18px; margin-bottom: 60px; padding: 24px 20px; }
+}

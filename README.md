@@ -52,7 +52,7 @@ Production setup:
 
 - Create the private R2 bucket `tradehustl3books` and bind it to the Worker as `BOOKS`.
 - Upload the customer PDF with the exact object key `TRADE-HUSTL3-COMPLETE-EBOOK.pdf`.
-- Apply every numbered D1 migration through `drizzle/0005_lead_delivery_queue.sql` in order before deploying the Worker. Keep each matching `_down.sql` file as a reviewed rollback procedure; do not run rollback files during normal deployment.
+- Apply every numbered D1 migration through `drizzle/0006_verified_customer_reviews.sql` in order before deploying the Worker. Keep each matching `_down.sql` file as a reviewed rollback procedure; do not run rollback files during normal deployment.
 - Add `STRIPE_WEBHOOK_SECRET` as an encrypted runtime secret.
 - Add `STRIPE_EBOOK_PAYMENT_LINK_ID` as a regular runtime variable.
 - Create one Stripe webhook at `https://tradehustl3.com/api/stripe/webhook` subscribed to `checkout.session.completed`, `checkout.session.async_payment_succeeded`, and `charge.refunded`.
@@ -90,6 +90,19 @@ UPDATE lead_delivery_jobs
 SET status = 'pending', attempts = 0, next_attempt_at = unixepoch(), updated_at = CURRENT_TIMESTAMP
 WHERE job_id = ?;
 ```
+
+## Verified customer reviews
+
+The Resume Builder review pipeline is limited to verified paid orders. A review invitation is queued after a successful Resume Builder checkout and becomes eligible for email delivery three days later. The existing scheduled Worker sends a private 30-day review link through Brevo.
+
+- `drizzle/0006_verified_customer_reviews.sql` remains the canonical schema migration. The Worker also performs the same idempotent `CREATE TABLE IF NOT EXISTS` bootstrap (tables and indexes only, never invitations) so the review feature can come online safely even when Cloudflare deploys before an operator runs the migration.
+- The migration seeds one review invitation for each existing paid Resume Builder order, due three days after that order's payment (or immediately for older orders). Re-running it is harmless: `ON CONFLICT(order_id) DO NOTHING` prevents a second invitation for any order.
+- Each invitation is claimed before its email is sent, so overlapping scheduler runs cannot email a customer twice, and it is skipped if the order was refunded. Review links store only a SHA-256 token hash, work once, and expire 30 days after sending.
+- Customers may submit private feedback without publication permission.
+- Public reviews require both explicit customer publication consent and internal approval.
+- The public homepage feed excludes refunded orders automatically.
+- Review wording and customer-reported job-search results are stored as submitted; moderation must not rewrite them into stronger claims.
+- Review moderation is available at `/admin/reviews` to authenticated `founder@tradehustl3.com`, `support@tradehustl3.com`, or addresses listed in `REVIEW_ADMIN_EMAILS`.
 
 ## Resume generation with Gemini
 
