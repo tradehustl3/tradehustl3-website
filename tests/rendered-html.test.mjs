@@ -258,7 +258,7 @@ test("homepage leads with preview-before-payment proof and the included cover le
   assert.match(html, /3 corrections within 7 days/i);
   assert.match(html, /No credit card to preview/i);
   assert.match(html, /trade-hustl3-resume-builder-home-hero\.webp/i);
-  assert.match(html, /hustl3-bot-official\.png/i);
+  assert.match(html, /hustl3-bot-official\.webp/i);
   assert.match(html, /BUILT SPECIFICALLY FOR SKILLED-TRADES JOB SEEKERS/i);
   assert.doesNotMatch(html, /Founder, TRADE HUSTL3/i);
   assert.match(html, /BUILT FOR THE TRADES[\s\S]*READY WHEN YOU ARE/i);
