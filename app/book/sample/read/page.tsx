@@ -149,7 +149,7 @@ export default function BookSampleReaderPage() {
             <h3>TRADE HUSTL3</h3>
             <p>BUILT BY HUSTLE. BACKED BY TRADES.</p>
             <p>ENTER • EARN • ELEVATE</p>
-            <small>By Zachary Ellis</small>
+            <small>By Da Maintenance Mane</small>
           </div>
         </article>
 
