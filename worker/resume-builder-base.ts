@@ -1157,6 +1157,365 @@ async function handleResumeStripeWebhook(request: Request, env: ResumeBuilderEnv
   return json({ received: true });
 }
 
+
+type ReviewRequestRow = {
+  request_id: string;
+  user_id: string;
+  resume_id: string;
+  order_id: string;
+  email: string;
+  sent_at: string;
+  trade: string;
+  full_name: string | null;
+};
+
+function validReviewToken(token: string): boolean {
+  return /^[A-Za-z0-9_-]{43}$/.test(token);
+}
+
+function publicReviewName(value: string, fallback: string | null): string {
+  const cleaned = cleanText(value || fallback || "", 120).replace(/\s+/g, " ").trim();
+  if (!cleaned) return "Verified customer";
+  const parts = cleaned.split(" ").filter(Boolean);
+  if (parts.length === 1) return parts[0].slice(0, 40);
+  return `${parts[0].slice(0, 40)} ${parts[parts.length - 1].charAt(0).toUpperCase()}.`;
+}
+
+function reviewAdminEmails(env: ResumeBuilderEnv): Set<string> {
+  const configured = (env.REVIEW_ADMIN_EMAILS ?? "")
+    .split(",")
+    .map((email) => normalizeEmail(email))
+    .filter((email) => isValidEmail(email));
+  return new Set(["founder@tradehustl3.com", "support@tradehustl3.com", ...configured]);
+}
+
+function isReviewAdmin(user: AuthenticatedUser, env: ResumeBuilderEnv): boolean {
+  return reviewAdminEmails(env).has(normalizeEmail(user.email));
+}
+
+async function queuePaidReviewRequest(
+  env: ResumeBuilderEnv,
+  order: { orderId: string; userId: string; resumeId: string; email: string },
+): Promise<void> {
+  await env.DB.prepare(
+    `INSERT OR IGNORE INTO review_requests
+     (request_id, user_id, resume_id, order_id, email, scheduled_at)
+     VALUES (?, ?, ?, ?, ?, ?)`,
+  ).bind(
+    crypto.randomUUID(),
+    order.userId,
+    order.resumeId,
+    order.orderId,
+    order.email,
+    nowSeconds() + REVIEW_REQUEST_DELAY_SECONDS,
+  ).run();
+}
+
+async function sendReviewRequestEmail(env: ResumeBuilderEnv, email: string, reviewUrl: string): Promise<void> {
+  const apiKey = env.BREVO_API_KEY?.trim();
+  if (!apiKey) throw new Error("Brevo review email is not configured.");
+  const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+      "api-key": apiKey,
+    },
+    body: JSON.stringify({
+      sender: {
+        name: "TRADE HUSTL3",
+        email: env.BREVO_AUTH_SENDER_EMAIL?.trim()
+          || env.BREVO_SAMPLE_SENDER_EMAIL?.trim()
+          || "updates@tradehustl3.com",
+      },
+      to: [{ email }],
+      subject: "How did TRADE HUSTL3 work for you?",
+      htmlContent: `
+        <div style="background:#071a2b;padding:32px;font-family:Arial,sans-serif;color:#f4f0e7">
+          <div style="max-width:620px;margin:auto">
+            <p style="color:#d6a52a;font-weight:700;letter-spacing:2px">TRADE HUSTL3 RESUME BUILDER</p>
+            <h1 style="margin:16px 0;color:#ffffff">Tell us how the builder worked for you.</h1>
+            <p style="font-size:16px;line-height:1.6;color:#c5ced5">We want your honest feedback — positive, negative, or somewhere in between. Your review helps us improve the Resume Builder for skilled-trades job seekers.</p>
+            <p style="font-size:16px;line-height:1.6;color:#c5ced5">You choose whether TRADE HUSTL3 may publish your review. There is no reward, discount, or other incentive for leaving a review.</p>
+            <p style="margin:28px 0"><a href="${reviewUrl}" style="display:inline-block;background:#d71920;color:#ffffff;padding:16px 22px;text-decoration:none;font-weight:700">LEAVE HONEST FEEDBACK</a></p>
+            <p style="font-size:13px;line-height:1.6;color:#9cabb5">This private review link expires 30 days after it is sent.</p>
+          </div>
+        </div>`,
+    }),
+  });
+  if (!response.ok) {
+    const detail = (await response.text()).slice(0, 300);
+    console.error("Resume Builder review email failed", response.status, detail);
+    throw new Error("Review email delivery failed.");
+  }
+}
+
+export async function runReviewRequestEmails(env: ResumeBuilderEnv): Promise<void> {
+  if (!env.DB) return;
+  let due;
+  try {
+    due = await env.DB.prepare(
+      `SELECT request_id, email
+       FROM review_requests
+       WHERE sent_at IS NULL
+         AND consumed_at IS NULL
+         AND scheduled_at <= ?
+       ORDER BY scheduled_at ASC
+       LIMIT 25`,
+    ).bind(nowSeconds()).all<{ request_id: string; email: string }>();
+  } catch (error) {
+    console.error("Review request sweep unavailable", errorKind(error));
+    return;
+  }
+
+  for (const row of due.results ?? []) {
+    const token = randomToken();
+    const tokenHash = await sha256Hex(token);
+    try {
+      await env.DB.prepare(
+        `UPDATE review_requests
+         SET token_hash = ?, updated_at = CURRENT_TIMESTAMP
+         WHERE request_id = ? AND sent_at IS NULL AND consumed_at IS NULL`,
+      ).bind(tokenHash, row.request_id).run();
+      const reviewUrl = `${SITE_URL}/reviews?token=${encodeURIComponent(token)}`;
+      await sendReviewRequestEmail(env, row.email, reviewUrl);
+      await env.DB.prepare(
+        `UPDATE review_requests
+         SET sent_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+         WHERE request_id = ? AND token_hash = ?`,
+      ).bind(row.request_id, tokenHash).run();
+    } catch (error) {
+      console.error("Review request delivery failed", errorKind(error));
+    }
+  }
+}
+
+async function findReviewRequestByToken(
+  env: ResumeBuilderEnv,
+  token: string,
+): Promise<ReviewRequestRow | null> {
+  if (!validReviewToken(token)) return null;
+  const tokenHash = await sha256Hex(token);
+  return env.DB.prepare(
+    `SELECT rr.request_id, rr.user_id, rr.resume_id, rr.order_id, rr.email, rr.sent_at,
+            r.trade, u.full_name
+     FROM review_requests rr
+     JOIN resume_orders ro ON ro.order_id = rr.order_id
+     JOIN resumes r ON r.resume_id = rr.resume_id
+     LEFT JOIN users u ON u.user_id = rr.user_id
+     WHERE rr.token_hash = ?
+       AND rr.consumed_at IS NULL
+       AND rr.sent_at IS NOT NULL
+       AND rr.sent_at > datetime('now', '-30 days')
+       AND ro.status = 'paid'
+     LIMIT 1`,
+  ).bind(tokenHash).first<ReviewRequestRow>();
+}
+
+async function getReviewRequest(request: Request, env: ResumeBuilderEnv): Promise<Response> {
+  if (request.method !== "GET") return methodNotAllowed("GET");
+  const token = new URL(request.url).searchParams.get("token") || "";
+  let row: ReviewRequestRow | null = null;
+  try {
+    row = await findReviewRequestByToken(env, token);
+  } catch {
+    return json({ ok: false, message: "Review collection is temporarily unavailable." }, 503);
+  }
+  if (!row) return json({ ok: false, message: "This review link is invalid, expired, or already used." }, 404);
+  return json({
+    ok: true,
+    reviewRequest: {
+      trade: row.trade,
+      defaultName: row.full_name ?? "",
+      verifiedPurchase: true,
+    },
+  });
+}
+
+async function submitCustomerReview(request: Request, env: ResumeBuilderEnv): Promise<Response> {
+  if (request.method !== "POST") return methodNotAllowed("POST");
+  if (!hasTrustedOrigin(request)) return json({ ok: false, message: "Request origin rejected." }, 403);
+  const body = await parseJsonBody(request, 12_000);
+  if (!body) return json({ ok: false, message: "Review information is required." }, 400);
+
+  const token = typeof body.token === "string" ? body.token.trim() : "";
+  const rating = Number(body.rating);
+  const reviewText = cleanText(body.reviewText, REVIEW_MAX_TEXT_LENGTH);
+  const resultText = cleanText(body.resultText, 500) || null;
+  const name = cleanText(body.name, 120);
+  const recommend = body.recommend === true ? 1 : 0;
+  const consentPublish = body.consentPublish === true ? 1 : 0;
+  const consentResumeExample = body.consentResumeExample === true ? 1 : 0;
+
+  if (!validReviewToken(token)) return json({ ok: false, message: "This review link is invalid." }, 400);
+  if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+    return json({ ok: false, message: "Choose a rating from 1 to 5." }, 400);
+  }
+  if (reviewText.length < REVIEW_MIN_TEXT_LENGTH) {
+    return json({ ok: false, message: `Please share at least ${REVIEW_MIN_TEXT_LENGTH} characters of honest feedback.` }, 400);
+  }
+
+  let row: ReviewRequestRow | null = null;
+  try {
+    row = await findReviewRequestByToken(env, token);
+  } catch {
+    return json({ ok: false, message: "Review collection is temporarily unavailable." }, 503);
+  }
+  if (!row) return json({ ok: false, message: "This review link is invalid, expired, or already used." }, 404);
+
+  const publicName = publicReviewName(name, row.full_name);
+  try {
+    await env.DB.batch([
+      env.DB.prepare(
+        `INSERT INTO customer_reviews
+         (review_id, request_id, user_id, resume_id, order_id, email, public_name, trade,
+          rating, review_text, result_text, recommend, consent_publish, consent_resume_example, status)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')`,
+      ).bind(
+        crypto.randomUUID(),
+        row.request_id,
+        row.user_id,
+        row.resume_id,
+        row.order_id,
+        row.email,
+        publicName,
+        row.trade,
+        rating,
+        reviewText,
+        resultText,
+        recommend,
+        consentPublish,
+        consentResumeExample,
+      ),
+      env.DB.prepare(
+        `UPDATE review_requests
+         SET consumed_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+         WHERE request_id = ? AND consumed_at IS NULL`,
+      ).bind(row.request_id),
+    ]);
+  } catch (error) {
+    console.error("Customer review submission failed", errorKind(error));
+    return json({ ok: false, message: "We could not save your review. Please try again." }, 503);
+  }
+
+  return json({
+    ok: true,
+    message: consentPublish
+      ? "Thank you. Your review was submitted for moderation before anything can appear publicly."
+      : "Thank you. Your feedback was saved privately and will not be published.",
+  });
+}
+
+async function getPublicCustomerReviews(request: Request, env: ResumeBuilderEnv): Promise<Response> {
+  if (request.method !== "GET") return methodNotAllowed("GET");
+  try {
+    const rows = await env.DB.prepare(
+      `SELECT review_id, public_name, trade, rating, review_text, result_text, created_at
+       FROM customer_reviews
+       WHERE status = 'approved' AND consent_publish = 1
+       ORDER BY COALESCE(approved_at, created_at) DESC
+       LIMIT 6`,
+    ).all<{
+      review_id: string;
+      public_name: string;
+      trade: string;
+      rating: number;
+      review_text: string;
+      result_text: string | null;
+      created_at: string;
+    }>();
+    return json({
+      ok: true,
+      reviews: (rows.results ?? []).map((row) => ({
+        id: row.review_id,
+        name: row.public_name,
+        trade: row.trade,
+        rating: row.rating,
+        review: row.review_text,
+        result: row.result_text,
+        verifiedCustomer: true,
+      })),
+    });
+  } catch {
+    return json({ ok: true, reviews: [] });
+  }
+}
+
+async function getAdminCustomerReviews(request: Request, env: ResumeBuilderEnv): Promise<Response> {
+  if (request.method !== "GET") return methodNotAllowed("GET");
+  const user = await requireUser(request, env);
+  if (!user) return json({ ok: false, message: "Sign in to continue." }, 401);
+  if (!isReviewAdmin(user, env)) return json({ ok: false, message: "Not authorized." }, 403);
+  const rows = await env.DB.prepare(
+    `SELECT review_id, public_name, trade, rating, review_text, result_text, recommend,
+            consent_publish, consent_resume_example, status, created_at
+     FROM customer_reviews
+     ORDER BY CASE status WHEN 'pending' THEN 0 WHEN 'approved' THEN 1 ELSE 2 END, created_at DESC
+     LIMIT 100`,
+  ).all<{
+    review_id: string;
+    public_name: string;
+    trade: string;
+    rating: number;
+    review_text: string;
+    result_text: string | null;
+    recommend: number;
+    consent_publish: number;
+    consent_resume_example: number;
+    status: string;
+    created_at: string;
+  }>();
+  return json({
+    ok: true,
+    reviews: (rows.results ?? []).map((row) => ({
+      id: row.review_id,
+      name: row.public_name,
+      trade: row.trade,
+      rating: row.rating,
+      review: row.review_text,
+      result: row.result_text,
+      recommend: Boolean(row.recommend),
+      consentPublish: Boolean(row.consent_publish),
+      consentResumeExample: Boolean(row.consent_resume_example),
+      status: row.status,
+      createdAt: row.created_at,
+    })),
+  });
+}
+
+async function moderateCustomerReview(request: Request, env: ResumeBuilderEnv): Promise<Response> {
+  if (request.method !== "PATCH") return methodNotAllowed("PATCH");
+  if (!hasTrustedOrigin(request)) return json({ ok: false, message: "Request origin rejected." }, 403);
+  const user = await requireUser(request, env);
+  if (!user) return json({ ok: false, message: "Sign in to continue." }, 401);
+  if (!isReviewAdmin(user, env)) return json({ ok: false, message: "Not authorized." }, 403);
+  const body = await parseJsonBody(request, 5_000);
+  const reviewId = cleanText(body?.reviewId, 80);
+  const status = body?.status === "approved" || body?.status === "rejected" ? body.status : "";
+  if (!reviewId || !status) return json({ ok: false, message: "Review and moderation status are required." }, 400);
+
+  if (status === "approved") {
+    const review = await env.DB.prepare(
+      "SELECT consent_publish FROM customer_reviews WHERE review_id = ?",
+    ).bind(reviewId).first<{ consent_publish: number }>();
+    if (!review) return json({ ok: false, message: "Review not found." }, 404);
+    if (!review.consent_publish) {
+      return json({ ok: false, message: "This customer did not give permission to publish the review." }, 409);
+    }
+  }
+
+  const result = await env.DB.prepare(
+    `UPDATE customer_reviews
+     SET status = ?,
+         approved_at = CASE WHEN ? = 'approved' THEN CURRENT_TIMESTAMP ELSE approved_at END,
+         published_at = CASE WHEN ? = 'approved' THEN CURRENT_TIMESTAMP ELSE NULL END,
+         updated_at = CURRENT_TIMESTAMP
+     WHERE review_id = ?`,
+  ).bind(status, status, status, reviewId).run();
+  if (!(result.meta?.changes ?? 0)) return json({ ok: false, message: "Review not found." }, 404);
+  return json({ ok: true, status });
+}
+
 function stringArray(value: unknown, maxItems: number, maxLength: number): string[] {
   if (!Array.isArray(value)) return [];
   return value.slice(0, maxItems).map((item) => cleanText(item, maxLength)).filter(Boolean);
