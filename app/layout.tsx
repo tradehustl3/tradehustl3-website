@@ -104,6 +104,7 @@ const structuredData = {
       "@type": "Organization",
       "@id": `${SITE_URL}/#organization`,
       name: SITE_NAME,
+      legalName: "TRADE HUSTL3 LLC",
       url: SITE_URL,
       description: SITE_DESCRIPTION,
 
@@ -133,7 +134,8 @@ const structuredData = {
       "@type": "Person",
       "@id": `${SITE_URL}/#zachary-ellis`,
       name: "Zachary Ellis",
-      jobTitle: "HVAC and facilities maintenance professional",
+      alternateName: "Da Maintenance Mane",
+      jobTitle: "Founder of TRADE HUSTL3 and HVAC/facilities maintenance professional",
       url: SITE_URL,
 
       worksFor: {
