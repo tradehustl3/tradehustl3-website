@@ -1154,6 +1154,17 @@ async function handleResumeStripeWebhook(request: Request, env: ResumeBuilderEnv
       orderId,
     ),
   ]);
+  try {
+    await queuePaidReviewRequest(env, {
+      orderId,
+      userId,
+      resumeId,
+      email,
+    });
+  } catch (error) {
+    // Review collection must never interfere with payment fulfillment.
+    console.error("Review request could not be queued", errorKind(error));
+  }
   return json({ received: true });
 }
 
