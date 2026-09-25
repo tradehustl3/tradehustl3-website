@@ -4,14 +4,14 @@ const crawlerFreshnessHeaders = [
   { key: "Cache-Control", value: "no-store, max-age=0" },
   { key: "Cloudflare-CDN-Cache-Control", value: "no-store" },
   { key: "CDN-Cache-Control", value: "no-store" },
-  { key: "X-TRADE-HUSTL3-Content-Revision", value: "2026-09-06-production-refresh" },
+  { key: "X-TRADE-HUSTL3-Content-Revision", value: "2026-09-24-readiness-cleanup" },
 ];
 
 const policyNoStoreHeaders = [
   { key: "Cache-Control", value: "no-store, max-age=0" },
   { key: "Cloudflare-CDN-Cache-Control", value: "no-store" },
   { key: "CDN-Cache-Control", value: "no-store" },
-  { key: "X-TRADE-HUSTL3-Content-Revision", value: "2026-09-04-policy-cache-hardening" },
+  { key: "X-TRADE-HUSTL3-Content-Revision", value: "2026-09-24-policy-refresh" },
 ];
 
 const nextConfig: NextConfig = {
