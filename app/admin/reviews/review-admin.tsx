@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import styles from "./review-admin.module.css";
 
@@ -34,7 +35,7 @@ export function ReviewAdmin() {
     }
   }, []);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => { queueMicrotask(() => void load()); }, [load]);
 
   async function moderate(reviewId: string, status: "approved" | "rejected") {
     setWorking(reviewId);
@@ -61,7 +62,7 @@ export function ReviewAdmin() {
       {message ? (
         <div className={styles.notice}>
           <p>{message}</p>
-          {message.toLowerCase().includes("sign in") ? <a href="/#resume-start">Sign in through the Resume Builder</a> : null}
+          {message.toLowerCase().includes("sign in") ? <Link href="/#resume-start">Sign in through the Resume Builder</Link> : null}
         </div>
       ) : null}
 
