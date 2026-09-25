@@ -700,7 +700,7 @@ test("renders a private order-confirmation page", async () => {
   const response = await renderPath("/book/order-confirmed");
   assert.equal(response.status, 200);
   const html = await response.text();
-  assert.match(html, /PURCHASE CONFIRMED/i);
+  assert.match(html, /PAYMENT CONFIRMED/i);
   assert.match(html, /\$9\.99/i);
   assert.match(html, /private download link/i);
   assert.match(html, /name="robots" content="noindex, nofollow"/i);
