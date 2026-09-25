@@ -3048,6 +3048,14 @@ export async function handleResumeBuilderRoute(
     if (pathname === "/api/resume-builder/resume-import") return importResume(request, env, dependencies);
     if (pathname === "/api/resume-builder/resumes") return createResume(request, env);
     if (pathname === "/api/resume-builder/stripe/webhook") return handleResumeStripeWebhook(request, env);
+    if (pathname === "/api/resume-builder/reviews/public") return getPublicCustomerReviews(request, env);
+    if (pathname === "/api/resume-builder/reviews/request") return getReviewRequest(request, env);
+    if (pathname === "/api/resume-builder/reviews/submit") return submitCustomerReview(request, env);
+    if (pathname === "/api/resume-builder/reviews/admin") {
+      return request.method === "GET"
+        ? getAdminCustomerReviews(request, env)
+        : moderateCustomerReview(request, env);
+    }
 
     const bulletMatch = pathname.match(/^\/api\/resume-builder\/resumes\/([^/]+)\/bullets$/);
     if (bulletMatch) return updateResumeBullet(request, env, bulletMatch[1], dependencies);
