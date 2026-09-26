@@ -3,6 +3,7 @@ import {
   runResumeBuilderRetention,
   runReviewRequestEmails,
   type ResumeBuilderEnv,
+  type ResumeBuilderDependencies,
 } from "./resume-builder";
 import { operationalEvent } from "./operations-monitoring";
 
@@ -33,10 +34,11 @@ function monitoredFailure(pathname: string, status: number): ReturnType<typeof o
 export async function handleResumeBuilderRoute(
   request: Request,
   env: ResumeBuilderEnv,
+  dependencies: ResumeBuilderDependencies = {},
 ): Promise<Response | null> {
   const pathname = new URL(request.url).pathname;
   try {
-    const response = await handleCoreResumeBuilderRoute(request, env);
+    const response = await handleCoreResumeBuilderRoute(request, env, dependencies);
     if (!response) return null;
 
     const event = monitoredFailure(pathname, response.status);
