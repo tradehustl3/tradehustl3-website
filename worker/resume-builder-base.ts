@@ -30,6 +30,8 @@ export interface ResumeBuilderEnv {
   STRIPE_SECRET_KEY?: string;
   STRIPE_RESUME_PRICE_ID?: string;
   STRIPE_RESUME_WEBHOOK_SECRET?: string;
+  /** Shared bearer secret for the n8n Resume Builder recovery status check. */
+  N8N_RESUME_STATUS_SECRET?: string;
   ANTHROPIC_API_KEY?: string;
   CLAUDE_MODEL?: string;
   RESUME_AI_BRIDGE_URL?: string;
@@ -378,6 +380,19 @@ async function sha256Hex(value: string | Uint8Array): Promise<string> {
   const input = typeof value === "string" ? encoder.encode(value) : value;
   const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", Uint8Array.from(input).buffer));
   return Array.from(digest, (byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+async function secureSecretMatch(provided: string, expected: string): Promise<boolean> {
+  const [providedDigest, expectedDigest] = await Promise.all([
+    crypto.subtle.digest("SHA-256", encoder.encode(provided)),
+    crypto.subtle.digest("SHA-256", encoder.encode(expected)),
+  ]);
+  const providedBytes = new Uint8Array(providedDigest);
+  const expectedBytes = new Uint8Array(expectedDigest);
+  let mismatch = 0;
+  for (let index = 0; index < providedBytes.length; index += 1) {
+    mismatch |= providedBytes[index] ^ expectedBytes[index];
+  }
+  return mismatch === 0;
 }
 
 function requestIp(request: Request): string {
@@ -739,6 +754,45 @@ async function findEntitlement(env: ResumeBuilderEnv, resumeId: string, userId: 
        AND (access_expires_at IS NULL OR access_expires_at > ?)
      ORDER BY created_at DESC LIMIT 1`,
   ).bind(resumeId, userId, nowSeconds()).first<EntitlementRecord>();
+}
+async function getN8nResumePurchaseStatus(request: Request, env: ResumeBuilderEnv): Promise<Response> {
+  if (request.method !== "POST") return methodNotAllowed("POST");
+
+  const expectedSecret = env.N8N_RESUME_STATUS_SECRET?.trim() ?? "";
+  if (expectedSecret.length < 32) {
+    return json({ ok: false, message: "Integration unavailable." }, 503);
+  }
+
+  const authorization = request.headers.get("Authorization") ?? "";
+  const providedSecret = authorization.startsWith("Bearer ")
+    ? authorization.slice("Bearer ".length).trim()
+    : "";
+  if (!providedSecret || !await secureSecretMatch(providedSecret, expectedSecret)) {
+    return json(
+      { ok: false, message: "Unauthorized." },
+      401,
+      { "WWW-Authenticate": "Bearer" },
+    );
+  }
+
+  const body = await parseJsonBody(request, 2_000);
+  const resumeId = typeof body?.resumeId === "string" ? body.resumeId.trim() : "";
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(resumeId)) {
+    return json({ ok: false, message: "A valid resumeId is required." }, 400);
+  }
+
+  // Recovery messages must stop after a confirmed purchase even if that order
+  // is later refunded. paid_at is written only by the verified Stripe webhook
+  // and is intentionally not cleared by the refund handler.
+  const completedPurchase = await env.DB.prepare(
+    `SELECT 1 AS paid
+     FROM resume_orders
+     WHERE resume_id = ? AND paid_at IS NOT NULL
+     ORDER BY paid_at DESC
+     LIMIT 1`,
+  ).bind(resumeId).first<{ paid: number }>();
+
+  return json({ ok: true, paid: Boolean(completedPurchase) });
 }
 
 async function getResumeStatus(request: Request, env: ResumeBuilderEnv, resumeId: string): Promise<Response> {
@@ -3156,6 +3210,7 @@ export async function handleResumeBuilderRoute(
     if (pathname === "/api/resume-builder/me") return getCurrentUser(request, env);
     if (pathname === "/api/resume-builder/resume-import") return importResume(request, env, dependencies);
     if (pathname === "/api/resume-builder/resumes") return createResume(request, env);
+    if (pathname === "/api/resume-builder/internal/n8n/purchase-status") return getN8nResumePurchaseStatus(request, env);
     if (pathname === "/api/resume-builder/stripe/webhook") return handleResumeStripeWebhook(request, env);
     if (pathname === "/api/resume-builder/reviews/public") return getPublicCustomerReviews(request, env);
     if (pathname === "/api/resume-builder/reviews/request") return getReviewRequest(request, env);
