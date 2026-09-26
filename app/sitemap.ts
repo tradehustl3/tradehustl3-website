@@ -2,7 +2,7 @@ import type { MetadataRoute } from "next";
 import { TRADE_LANDING_PAGES, tradeLandingPath } from "./resume-builder/trade-landing-content";
 import { SITE_URL } from "./site";
 
-const CONTENT_REFRESHED_AT = new Date("2026-09-24T00:00:00.000Z");
+const CONTENT_REFRESHED_AT = new Date("2026-09-26T00:00:00.000Z");
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const publicPages: MetadataRoute.Sitemap = [
@@ -28,6 +28,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       url: `${SITE_URL}/top-10-trades`,
       lastModified: CONTENT_REFRESHED_AT,
       changeFrequency: "daily",
+      priority: 0.9,
+    },
+    {
+      url: `${SITE_URL}/resume-examples/skilled-trades`,
+      lastModified: CONTENT_REFRESHED_AT,
+      changeFrequency: "weekly",
       priority: 0.9,
     },
     ...TRADE_LANDING_PAGES.map((page) => ({
