@@ -883,3 +883,119 @@ test("clean DOCX and clean/watermarked PDF generators produce valid files", asyn
 });
 
 void context;
+
+const n8nResumeStatusSecret = "n8n-resume-status-test-secret-0123456789abcdef";
+const n8nResumeId = "11111111-1111-4111-8111-111111111111";
+
+test("n8n purchase-status endpoint fails closed when its secret is not configured", async () => {
+  const response = await handleResumeBuilderRoute(
+    new Request("https://tradehustl3.com/api/resume-builder/internal/n8n/purchase-status", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${n8nResumeStatusSecret}` },
+      body: JSON.stringify({ resumeId: n8nResumeId }),
+    }),
+    { DB: fakeDb() as unknown as D1Database },
+  );
+  assert.equal(response?.status, 503);
+});
+
+test("n8n purchase-status endpoint rejects an invalid bearer secret", async () => {
+  const response = await handleResumeBuilderRoute(
+    new Request("https://tradehustl3.com/api/resume-builder/internal/n8n/purchase-status", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: "Bearer definitely-wrong-secret" },
+      body: JSON.stringify({ resumeId: n8nResumeId }),
+    }),
+    {
+      DB: fakeDb() as unknown as D1Database,
+      N8N_RESUME_STATUS_SECRET: n8nResumeStatusSecret,
+    },
+  );
+  assert.equal(response?.status, 401);
+  assert.equal(response?.headers.get("www-authenticate"), "Bearer");
+});
+
+test("n8n purchase-status endpoint rejects malformed resume IDs before querying purchase data", async () => {
+  let queried = false;
+  const DB = {
+    prepare() {
+      queried = true;
+      throw new Error("purchase query should not run");
+    },
+  };
+  const response = await handleResumeBuilderRoute(
+    new Request("https://tradehustl3.com/api/resume-builder/internal/n8n/purchase-status", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${n8nResumeStatusSecret}` },
+      body: JSON.stringify({ resumeId: "not-a-resume-id" }),
+    }),
+    {
+      DB: DB as unknown as D1Database,
+      N8N_RESUME_STATUS_SECRET: n8nResumeStatusSecret,
+    },
+  );
+  assert.equal(response?.status, 400);
+  assert.equal(queried, false);
+});
+
+test("n8n purchase-status endpoint reports unpaid when Stripe has never confirmed payment", async () => {
+  const sqlSeen: string[] = [];
+  const DB = {
+    prepare(sql: string) {
+      sqlSeen.push(sql);
+      return {
+        bind() {
+          return {
+            async first() { return null; },
+          };
+        },
+      };
+    },
+  };
+  const response = await handleResumeBuilderRoute(
+    new Request("https://tradehustl3.com/api/resume-builder/internal/n8n/purchase-status", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${n8nResumeStatusSecret}` },
+      body: JSON.stringify({ resumeId: n8nResumeId }),
+    }),
+    {
+      DB: DB as unknown as D1Database,
+      N8N_RESUME_STATUS_SECRET: n8nResumeStatusSecret,
+    },
+  );
+  assert.equal(response?.status, 200);
+  assert.deepEqual(await response?.json(), { ok: true, paid: false });
+  assert.equal(sqlSeen.some((sql) => /FROM resume_orders[\s\S]*paid_at IS NOT NULL/i.test(sql)), true);
+});
+
+test("n8n purchase-status endpoint suppresses recovery after a confirmed purchase", async () => {
+  const DB = {
+    prepare(sql: string) {
+      return {
+        bind(...values: unknown[]) {
+          return {
+            async first() {
+              if (/FROM resume_orders[\s\S]*paid_at IS NOT NULL/i.test(sql) && values[0] === n8nResumeId) {
+                return { paid: 1 };
+              }
+              return null;
+            },
+          };
+        },
+      };
+    },
+  };
+  const response = await handleResumeBuilderRoute(
+    new Request("https://tradehustl3.com/api/resume-builder/internal/n8n/purchase-status", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${n8nResumeStatusSecret}` },
+      body: JSON.stringify({ resumeId: n8nResumeId }),
+    }),
+    {
+      DB: DB as unknown as D1Database,
+      N8N_RESUME_STATUS_SECRET: n8nResumeStatusSecret,
+    },
+  );
+  assert.equal(response?.status, 200);
+  assert.deepEqual(await response?.json(), { ok: true, paid: true });
+});

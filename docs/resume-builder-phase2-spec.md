@@ -284,3 +284,51 @@ Rules: use `var(--rb-*)` tokens, never raw hex values, in Resume Builder styles.
 3. Headings ≤ 36px on phones; body text 16px; no two-column layout below 900px (Get Started, first build).
 4. Visible focus on every interactive element; selection is never color-only (radio/check glyph + `aria-checked`).
 5. `prefers-reduced-motion` disables transitions and spinners.
+
+## n8n Resume Builder Recovery Purchase Check — Approved September 2026
+
+This section is the source of truth for the server-to-server purchase check used by the Resume Builder recovery workflow.
+
+### Approved behavior
+
+- n8n calls `POST /api/resume-builder/internal/n8n/purchase-status` after the recovery wait period.
+- The request body contains only `resumeId`; n8n does not receive D1 credentials, Stripe credentials, customer-session cookies, or payment metadata.
+- The endpoint returns `{ "ok": true, "paid": true }` after Stripe has ever confirmed payment for that resume and `paid: false` otherwise.
+- A completed purchase permanently suppresses abandoned-checkout recovery for that workflow, including if the order is later refunded. This prevents a customer who already purchased from receiving an abandonment email.
+- The endpoint never returns customer email, name, order ID, Stripe session ID, payment-intent ID, or resume content.
+
+### Authentication and data rules
+
+- Authentication is a dedicated bearer secret in the Cloudflare runtime secret `N8N_RESUME_STATUS_SECRET`.
+- The configured secret must be at least 32 characters. Missing/short configuration fails closed with HTTP 503.
+- Missing or incorrect bearer credentials return HTTP 401.
+- `resumeId` must be a UUID; malformed identifiers return HTTP 400 before any purchase query.
+- Payment state comes from server-written `resume_orders.paid_at`, which is populated only by the verified Stripe webhook. n8n never calls Stripe directly.
+- Responses are `Cache-Control: no-store`.
+
+### Edge cases and regression scenarios
+
+- No configured integration secret: no status data is exposed.
+- Wrong bearer token: no status data is exposed.
+- Unknown but well-formed resume UUID: returns `paid: false` without exposing whether the resume exists.
+- Pending/failed checkout with no `paid_at`: returns `paid: false`.
+- Confirmed purchase with `paid_at`: returns `paid: true`.
+- Refunded order retains `paid_at`, so recovery remains suppressed.
+- Existing customer-facing resume status, checkout, Stripe webhook, entitlement, refund, generation, and download behavior must remain unchanged.
+
+### Files changed
+
+- `worker/resume-builder-base.ts` — secure internal route, bearer validation, UUID validation, purchase lookup.
+- `.env.example` — documents the dedicated n8n secret.
+- `tests/resume-builder-backend.test.ts` — endpoint authentication, validation, unpaid, and paid regression coverage.
+- `docs/resume-builder-phase2-spec.md` — this specification.
+
+### Acceptance criteria
+
+- Unauthorized callers cannot read purchase state.
+- n8n can determine only whether recovery should stop for a supplied resume ID.
+- No Stripe or D1 secret is stored in n8n.
+- No personally identifiable customer data is returned.
+- A Stripe-confirmed purchase returns `paid: true` and prevents recovery messaging.
+- Existing Resume Builder payment and entitlement paths are not modified.
+- `npm run lint`, `npm run typecheck`, and `npm test` pass.
