@@ -1,4 +1,5 @@
 import { errorKind } from "./resume-safe-log";
+import { notifyResumeRecovery, type RecoveryContext } from "./resume-recovery";
 import { groundResumePrefill } from "./resume-extraction-grounding";
 import { serverUploadReview } from "./resume-upload-requirements";
 import { INTAKE_SCHEMA_VERSION, intakeSchemaVersion } from "../app/resume-builder/intake/wizard-data";
@@ -43,6 +44,7 @@ export interface ResumeBuilderEnv {
 }
 
 export interface ResumeBuilderDependencies {
+  recoveryContext?: RecoveryContext;
   /** Internal reconciliation only; never derived from request JSON or headers. */
   importRateLimitAlreadyChecked?: boolean;
   anthropicFetch?: typeof fetch;
@@ -716,7 +718,7 @@ function validateResumeInput(body: Record<string, unknown> | null):
   return { ok: true, value: { trade, title, targetJobPosting, intakeJson, theme } };
 }
 
-async function createResume(request: Request, env: ResumeBuilderEnv): Promise<Response> {
+async function createResume(request: Request, env: ResumeBuilderEnv, dependencies: ResumeBuilderDependencies): Promise<Response> {
   if (request.method !== "POST") return methodNotAllowed("POST");
   if (!hasTrustedOrigin(request)) return json({ ok: false, message: "Request origin rejected." }, 403);
   const user = await requireUser(request, env);
@@ -736,6 +738,11 @@ async function createResume(request: Request, env: ResumeBuilderEnv): Promise<Re
     `INSERT INTO resumes (resume_id, user_id, trade, title, intake_json, target_job_posting, theme, status)
      VALUES (?, ?, ?, ?, ?, ?, ?, 'draft')`,
   ).bind(resumeId, user.userId, trade, title, intakeJson, targetJobPosting, theme).run();
+  // A persisted draft and a valid, magic-link-authenticated account email are
+  // eligible for recovery. Never trust an uploaded resume's contact address.
+  const email = user.email.trim();
+  const emailEligible = isValidEmail(email);
+  notifyResumeRecovery({ resumeId, email, emailEligible }, dependencies.recoveryContext);
   return json({ ok: true, resumeId, status: "draft", price: { amount: RESUME_PRICE_CENTS, currency: "usd" } }, 201);
 }
 
@@ -3209,7 +3216,7 @@ export async function handleResumeBuilderRoute(
     if (pathname === "/api/resume-builder/auth/logout") return logout(request, env);
     if (pathname === "/api/resume-builder/me") return getCurrentUser(request, env);
     if (pathname === "/api/resume-builder/resume-import") return importResume(request, env, dependencies);
-    if (pathname === "/api/resume-builder/resumes") return createResume(request, env);
+    if (pathname === "/api/resume-builder/resumes") return createResume(request, env, dependencies);
     if (pathname === "/api/resume-builder/internal/n8n/purchase-status") return getN8nResumePurchaseStatus(request, env);
     if (pathname === "/api/resume-builder/stripe/webhook") return handleResumeStripeWebhook(request, env);
     if (pathname === "/api/resume-builder/reviews/public") return getPublicCustomerReviews(request, env);
