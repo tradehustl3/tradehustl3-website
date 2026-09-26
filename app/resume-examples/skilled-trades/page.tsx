@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { CtaAnalytics } from "../../cta-analytics";
 import { ResumeBuilderHeader } from "../../resume-builder/resume-builder-header";
 import { SITE_NAME, SITE_URL } from "../../site";
@@ -231,7 +232,7 @@ export const metadata: Metadata = {
 
 function BuilderCta({ location, label, className = "" }: { location: string; label: string; className?: string }) {
   return (
-    <a
+    <Link
       className={`rb-button rb-button-primary ${className}`.trim()}
       href="/#resume-start"
       data-analytics-event="cta_click"
@@ -240,7 +241,7 @@ function BuilderCta({ location, label, className = "" }: { location: string; lab
       data-item="skilled_trades_resume_examples"
     >
       <span>{label}</span><span aria-hidden="true">→</span>
-    </a>
+    </Link>
   );
 }
 
@@ -372,7 +373,7 @@ export default function SkilledTradesResumeExamplesPage() {
 
       <footer className="rb-footer">
         <strong>TRADE HUSTL<span>3</span></strong><p>Built by Hustle. Backed by Trades.</p>
-        <div className="rb-footer-links"><a href="/#resume-start">Resume Builder</a><a href="/top-10-trades">Top 10 Trades</a>
+        <div className="rb-footer-links"><Link href="/#resume-start">Resume Builder</Link><a href="/top-10-trades">Top 10 Trades</a>
           <a href="/privacy">Privacy</a><a href="/terms">Terms</a><a href="/contact">Support</a></div>
       </footer>
     </main>

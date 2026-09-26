@@ -64,7 +64,7 @@ test("page moves readers to the existing preview-first $9.99 funnel", async () =
 test("page publishes matching WebPage, ItemList, BreadcrumbList, and FAQPage data", async () => {
   const html = await (await renderPage()).text();
   for (const type of ["WebPage", "ItemList", "BreadcrumbList", "FAQPage", "Question"]) {
-    assert.ok(html.includes(`\"@type\":\"${type}\"`), `missing ${type} schema`);
+    assert.ok(html.includes(`"@type":"${type}"`), `missing ${type} schema`);
   }
   assert.match(html, /"numberOfItems":7/);
   assert.match(html, /What if I do not know exact numbers for my resume\?/);
