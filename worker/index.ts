@@ -763,7 +763,7 @@ const worker = {
       return withSecurityHeaders(Response.redirect(target.toString(), 308), url.pathname);
     }
 
-    const resumeBuilderResponse = await handleResumeBuilderRoute(request, env);
+    const resumeBuilderResponse = await handleResumeBuilderRoute(request, env, { recoveryContext: ctx });
     if (resumeBuilderResponse) return withSecurityHeaders(resumeBuilderResponse, url.pathname);
 
     const ebookStripeResponse = await handleEbookStripeRoute(request, env);
