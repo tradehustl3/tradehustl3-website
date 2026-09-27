@@ -33,6 +33,7 @@ export interface ResumeBuilderEnv {
   STRIPE_RESUME_WEBHOOK_SECRET?: string;
   /** Shared bearer secret for the n8n Resume Builder recovery status check. */
   N8N_RESUME_STATUS_SECRET?: string;
+  AGENT1_FUNNEL_SECRET?: string;
   ANTHROPIC_API_KEY?: string;
   CLAUDE_MODEL?: string;
   RESUME_AI_BRIDGE_URL?: string;
@@ -762,6 +763,145 @@ async function findEntitlement(env: ResumeBuilderEnv, resumeId: string, userId: 
      ORDER BY created_at DESC LIMIT 1`,
   ).bind(resumeId, userId, nowSeconds()).first<EntitlementRecord>();
 }
+
+async function getAgent1FunnelSnapshot(
+  request: Request,
+  env: ResumeBuilderEnv,
+): Promise<Response> {
+  if (request.method !== "GET") return methodNotAllowed("GET");
+
+  const expectedSecret = env.AGENT1_FUNNEL_SECRET?.trim() ?? "";
+  if (expectedSecret.length < 32) {
+    return json({ ok: false, message: "Integration unavailable." }, 503);
+  }
+
+  const authorization = request.headers.get("Authorization") ?? "";
+  const providedSecret = authorization.startsWith("Bearer ")
+    ? authorization.slice("Bearer ".length).trim()
+    : "";
+
+  if (
+    !providedSecret ||
+    !await secureSecretMatch(providedSecret, expectedSecret)
+  ) {
+    return json(
+      { ok: false, message: "Unauthorized." },
+      401,
+      { "WWW-Authenticate": "Bearer" },
+    );
+  }
+
+  const url = new URL(request.url);
+  const requestedWindow = url.searchParams.get("window") ?? "7d";
+
+  const windowHours =
+    requestedWindow === "24h"
+      ? 24
+      : requestedWindow === "7d"
+        ? 24 * 7
+        : null;
+
+  if (windowHours === null) {
+    return json(
+      {
+        ok: false,
+        message: 'window must be "24h" or "7d".',
+      },
+      400,
+    );
+  }
+
+  const behavioral = await env.DB.prepare(
+    `SELECT
+       SUM(CASE WHEN event_name = 'resume_builder_start' THEN 1 ELSE 0 END) AS starts,
+       SUM(CASE WHEN event_name = 'resume_intake_started' THEN 1 ELSE 0 END) AS intake_started,
+       SUM(CASE WHEN event_name = 'resume_intake_complete' THEN 1 ELSE 0 END) AS intake_completed,
+       SUM(CASE WHEN event_name = 'resume_preview_generated' THEN 1 ELSE 0 END) AS previews_generated,
+       SUM(CASE WHEN event_name = 'begin_checkout' THEN 1 ELSE 0 END) AS checkout_started
+     FROM funnel_events
+     WHERE occurred_at >= datetime('now', ?)`
+  )
+    .bind(`-${windowHours} hours`)
+    .first<{
+      starts: number | null;
+      intake_started: number | null;
+      intake_completed: number | null;
+      previews_generated: number | null;
+      checkout_started: number | null;
+    }>();
+
+  // Revenue truth comes only from Stripe-verified resume_orders.
+  // paid_at is written by the verified Stripe webhook.
+  const purchases = await env.DB.prepare(
+    `SELECT
+       COUNT(*) AS verified_purchases,
+       COALESCE(SUM(amount_total), 0) AS verified_revenue_cents
+     FROM resume_orders
+     WHERE status = 'paid'
+       AND paid_at IS NOT NULL
+       AND paid_at >= datetime('now', ?)`
+  )
+    .bind(`-${windowHours} hours`)
+    .first<{
+      verified_purchases: number | null;
+      verified_revenue_cents: number | null;
+    }>();
+
+  const starts = Number(behavioral?.starts ?? 0);
+  const intakeStarted = Number(behavioral?.intake_started ?? 0);
+  const intakeCompleted = Number(behavioral?.intake_completed ?? 0);
+  const previewsGenerated = Number(behavioral?.previews_generated ?? 0);
+  const checkoutStarted = Number(behavioral?.checkout_started ?? 0);
+  const verifiedPurchases = Number(purchases?.verified_purchases ?? 0);
+  const verifiedRevenueCents = Number(
+    purchases?.verified_revenue_cents ?? 0,
+  );
+
+  const rate = (numerator: number, denominator: number): number | null =>
+    denominator > 0
+      ? Number(((numerator / denominator) * 100).toFixed(2))
+      : null;
+
+  return json({
+    ok: true,
+    source: "trade_hustl3_production",
+    product: "resume_builder",
+    window: requestedWindow,
+    generatedAt: new Date().toISOString(),
+
+    counts: {
+      starts,
+      intakeStarted,
+      intakeCompleted,
+      previewsGenerated,
+      checkoutStarted,
+      verifiedPurchases,
+    },
+
+    conversionRates: {
+      startToIntake: rate(intakeStarted, starts),
+      intakeToComplete: rate(intakeCompleted, intakeStarted),
+      completeToPreview: rate(previewsGenerated, intakeCompleted),
+      previewToCheckout: rate(checkoutStarted, previewsGenerated),
+      checkoutToPurchase: rate(verifiedPurchases, checkoutStarted),
+      overall: rate(verifiedPurchases, starts),
+    },
+
+    revenue: {
+      verifiedRevenueCents,
+      verifiedRevenueUsd: Number(
+        (verifiedRevenueCents / 100).toFixed(2),
+      ),
+      currency: "USD",
+    },
+
+    authority: {
+      behavioralEvents: "funnel_events",
+      purchases: "resume_orders.status=paid AND paid_at IS NOT NULL",
+    },
+  });
+}
+
 async function getN8nResumePurchaseStatus(request: Request, env: ResumeBuilderEnv): Promise<Response> {
   if (request.method !== "POST") return methodNotAllowed("POST");
 
@@ -3201,6 +3341,107 @@ async function serveResumeFile(
   return new Response(object.body, { status: 200, headers });
 }
 
+
+const FUNNEL_EVENT_NAMES = new Set([
+  "resume_builder_start",
+  "resume_intake_started",
+  "resume_intake_complete",
+  "resume_preview_generated",
+  "begin_checkout",
+]);
+
+const FUNNEL_METADATA_KEYS = new Set([
+  "utm_source",
+  "utm_medium",
+  "utm_campaign",
+  "utm_content",
+  "utm_term",
+  "trade",
+  "device",
+]);
+
+function funnelString(value: unknown, maxLength: number): string | null {
+  if (typeof value !== "string") return null;
+  const normalized = value.trim();
+  return normalized ? normalized.slice(0, maxLength) : null;
+}
+
+function funnelMetadata(value: unknown): string | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+
+  const safe: Record<string, string> = {};
+
+  for (const [key, rawValue] of Object.entries(value)) {
+    if (!FUNNEL_METADATA_KEYS.has(key) || typeof rawValue !== "string") continue;
+    const normalized = rawValue.trim().slice(0, 256);
+    if (normalized) safe[key] = normalized;
+  }
+
+  return Object.keys(safe).length ? JSON.stringify(safe) : null;
+}
+
+async function recordFunnelEvent(
+  request: Request,
+  env: ResumeBuilderEnv,
+): Promise<Response> {
+  if (request.method !== "POST") {
+    return json({ ok: false, message: "Method not allowed." }, 405);
+  }
+
+  let payload: Record<string, unknown>;
+
+  try {
+    const value = await request.json();
+    if (!value || typeof value !== "object" || Array.isArray(value)) {
+      return json({ ok: false, message: "Invalid event payload." }, 400);
+    }
+    payload = value as Record<string, unknown>;
+  } catch {
+    return json({ ok: false, message: "Invalid event payload." }, 400);
+  }
+
+  const eventName = funnelString(payload.eventName, 64);
+
+  if (!eventName || !FUNNEL_EVENT_NAMES.has(eventName)) {
+    return json({ ok: false, message: "Invalid funnel event." }, 400);
+  }
+
+  const occurredAtValue = funnelString(payload.occurredAt, 64);
+  const occurredAt =
+    occurredAtValue && !Number.isNaN(Date.parse(occurredAtValue))
+      ? new Date(occurredAtValue).toISOString()
+      : new Date().toISOString();
+
+  const eventId = crypto.randomUUID();
+
+  await env.DB.prepare(
+    `INSERT INTO funnel_events (
+      event_id,
+      event_name,
+      anonymous_id,
+      user_id,
+      resume_id,
+      session_id,
+      path,
+      metadata,
+      occurred_at
+    ) VALUES (?, ?, ?, NULL, ?, ?, ?, ?, ?)`
+  )
+    .bind(
+      eventId,
+      eventName,
+      funnelString(payload.anonymousId, 128),
+      funnelString(payload.resumeId, 128),
+      funnelString(payload.sessionId, 128),
+      funnelString(payload.path, 512),
+      funnelMetadata(payload.metadata),
+      occurredAt,
+    )
+    .run();
+
+  return json({ ok: true, eventId }, 201);
+}
+
 export async function handleResumeBuilderRoute(
   request: Request,
   env: ResumeBuilderEnv,
@@ -3211,12 +3452,14 @@ export async function handleResumeBuilderRoute(
   if (!env.DB) return json({ ok: false, message: "Resume Builder is temporarily unavailable." }, 503);
 
   try {
+    if (pathname === "/api/resume-builder/funnel-events") return recordFunnelEvent(request, env);
     if (pathname === "/api/resume-builder/auth/request") return requestMagicLink(request, env);
     if (pathname === "/api/resume-builder/auth/confirm") return confirmMagicLink(request, env);
     if (pathname === "/api/resume-builder/auth/logout") return logout(request, env);
     if (pathname === "/api/resume-builder/me") return getCurrentUser(request, env);
     if (pathname === "/api/resume-builder/resume-import") return importResume(request, env, dependencies);
     if (pathname === "/api/resume-builder/resumes") return createResume(request, env, dependencies);
+    if (pathname === "/api/resume-builder/internal/agent1/funnel-snapshot") return getAgent1FunnelSnapshot(request, env);
     if (pathname === "/api/resume-builder/internal/n8n/purchase-status") return getN8nResumePurchaseStatus(request, env);
     if (pathname === "/api/resume-builder/stripe/webhook") return handleResumeStripeWebhook(request, env);
     if (pathname === "/api/resume-builder/reviews/public") return getPublicCustomerReviews(request, env);

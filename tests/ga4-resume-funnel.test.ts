@@ -45,3 +45,17 @@ test("funnel observers are mounted on the actual Resume Builder stages", () => {
   assert.match(confirm, /trackResumeFunnelEvent\("sign_up"/);
   assert.match(payment, /trackResumePurchase\(resumeId\.current\)/);
 });
+
+test("first-party funnel tracking deduplicates independently of GA4", () => {
+  assert.match(analytics, /tradehustl3_first_party_funnel/);
+  assert.match(analytics, /sessionStorage\.getItem\(dedupeKey\)/);
+  assert.match(analytics, /response\.ok/);
+  assert.match(analytics, /sessionStorage\.setItem\(dedupeKey, "1"\)/);
+});
+
+test("purchase stays GA4-only and is not sent to first-party funnel telemetry", () => {
+  assert.match(
+    analytics,
+    /if\s*\(eventName\s*!==\s*"purchase"\)\s*\{\s*sendFirstPartyFunnelEvent/,
+  );
+});

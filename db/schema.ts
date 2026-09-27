@@ -282,3 +282,33 @@ export const rateLimits = sqliteTable(
   },
   (table) => [index("rate_limits_window_idx").on(table.windowStart)],
 );
+
+export const funnelEvents = sqliteTable(
+  "funnel_events",
+  {
+    eventId: text("event_id").primaryKey(),
+    eventName: text("event_name").notNull(),
+    anonymousId: text("anonymous_id"),
+    userId: text("user_id"),
+    resumeId: text("resume_id"),
+    sessionId: text("session_id"),
+    path: text("path"),
+    metadata: text("metadata"),
+    occurredAt: text("occurred_at").notNull().default(sql`(CURRENT_TIMESTAMP)`),
+    createdAt: text("created_at").notNull().default(sql`(CURRENT_TIMESTAMP)`),
+  },
+  (table) => [
+    index("funnel_events_name_time_idx").on(
+      table.eventName,
+      table.occurredAt,
+    ),
+    index("funnel_events_resume_idx").on(
+      table.resumeId,
+      table.occurredAt,
+    ),
+    index("funnel_events_session_idx").on(
+      table.sessionId,
+      table.occurredAt,
+    ),
+  ],
+);
