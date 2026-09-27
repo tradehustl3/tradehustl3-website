@@ -15,19 +15,115 @@ const ITEM = {
   quantity: 1,
 };
 
+function getOrCreateAnalyticsId(
+  storage: Storage,
+  key: string,
+): string {
+  const existing = storage.getItem(key);
+  if (existing) return existing;
+
+  const value = crypto.randomUUID();
+  storage.setItem(key, value);
+  return value;
+}
+
+function firstPartyDedupeKey(
+  eventName: string,
+  resumeId?: string,
+): string {
+  return [
+    "tradehustl3_first_party_funnel",
+    eventName,
+    resumeId || "session",
+  ].join(":");
+}
+
+function sendFirstPartyFunnelEvent(
+  eventName: string,
+  parameters: FunnelParams,
+): void {
+  try {
+    const attribution = readCampaignAttribution();
+
+    const anonymousId = getOrCreateAnalyticsId(
+      window.localStorage,
+      "tradehustl3_funnel_anonymous_id",
+    );
+
+    const sessionId = getOrCreateAnalyticsId(
+      window.sessionStorage,
+      "tradehustl3_funnel_session_id",
+    );
+
+    const resumeId =
+      typeof parameters.resume_id === "string"
+        ? parameters.resume_id
+        : undefined;
+
+    const dedupeKey = firstPartyDedupeKey(eventName, resumeId);
+
+    if (window.sessionStorage.getItem(dedupeKey) === "1") {
+      return;
+    }
+
+    const metadata = {
+      ...attribution,
+    };
+
+    void fetch("/api/resume-builder/funnel-events", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: {
+        "content-type": "application/json",
+      },
+      keepalive: true,
+      body: JSON.stringify({
+        eventName,
+        anonymousId,
+        sessionId,
+        resumeId,
+        path: window.location.pathname,
+        metadata,
+        occurredAt: new Date().toISOString(),
+      }),
+    })
+      .then((response) => {
+        if (response.ok) {
+          window.sessionStorage.setItem(dedupeKey, "1");
+        }
+      })
+      .catch(() => {
+        // First-party telemetry must never interfere with the Resume Builder.
+      });
+  } catch {
+    // First-party telemetry must never interfere with the Resume Builder.
+  }
+}
+
 export function trackResumeFunnelEvent(eventName: string, parameters: FunnelParams = {}): boolean {
+  let gaTracked = false;
+
   try {
     const analyticsWindow = window as AnalyticsWindow;
-    if (typeof analyticsWindow.gtag !== "function") return false;
-    analyticsWindow.gtag("event", eventName, {
-      product: "resume_builder",
-      ...readCampaignAttribution(),
-      ...parameters,
-    });
-    return true;
+
+    if (typeof analyticsWindow.gtag === "function") {
+      analyticsWindow.gtag("event", eventName, {
+        product: "resume_builder",
+        ...readCampaignAttribution(),
+        ...parameters,
+      });
+
+      gaTracked = true;
+    }
   } catch {
-    return false;
+    gaTracked = false;
   }
+
+  if (eventName !== "purchase") {
+    sendFirstPartyFunnelEvent(eventName, parameters);
+  }
+
+  return gaTracked;
 }
 
 export function trackResumeCheckout(): boolean {
