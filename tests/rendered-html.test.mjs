@@ -112,6 +112,7 @@ test("publishes a canonical XML sitemap and robots discovery hints", async () =>
   const sitemap = await sitemapResponse.text();
   assert.match(sitemap, /<loc>https:\/\/tradehustl3\.com<\/loc>/i);
   assert.match(sitemap, /<loc>https:\/\/tradehustl3\.com\/book<\/loc>/i);
+  assert.match(sitemap, /<loc>https:\/\/tradehustl3\.com\/resume-examples<\/loc>/i);
   assert.doesNotMatch(sitemap, /<loc>https:\/\/tradehustl3\.com\/resume-builder<\/loc>/i);
   assert.match(sitemap, /<loc>https:\/\/tradehustl3\.com\/resume-builder\/hvac<\/loc>/i);
   for (const path of ["privacy", "terms", "contact", "data-deletion", "resume-builder/refund-policy", "book/refund-policy", "resume-builder/ai-disclosure"]) {

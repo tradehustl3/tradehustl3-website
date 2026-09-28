@@ -41,6 +41,34 @@ const TRADE_SIGNALS: Array<{ trade: TradeTrack; terms: Array<[string, number]> }
     terms: [["maintenance supervisor", 5], ["facilities maintenance", 5], ["facility maintenance", 5], ["maintenance technician", 4], ["work order", 2], ["cmms", 3], ["make-ready", 3], ["preventive maintenance", 2], ["vendor coordination", 2]],
   },
   {
+    trade: "Commercial Driving & Transportation",
+    terms: [["cdl driver", 5], ["truck driver", 5], ["bus driver", 5], ["chauffeur", 5], ["paratransit", 5], ["commercial driver", 4], ["dot medical", 3], ["eld", 3], ["pre-trip inspection", 3], ["passenger endorsement", 3]],
+  },
+  {
+    trade: "Warehouse, Logistics & Material Handling",
+    terms: [["warehouse associate", 5], ["forklift operator", 5], ["material handler", 5], ["order picker", 5], ["shipping and receiving", 4], ["rf scanner", 3], ["cycle count", 3], ["pallet jack", 2], ["loading dock", 2]],
+  },
+  {
+    trade: "Industrial & Warehouse Maintenance",
+    terms: [["industrial maintenance", 5], ["maintenance mechanic", 5], ["conveyor technician", 5], ["electro-mechanical", 5], ["plc technician", 5], ["packaging equipment", 3], ["motor and gearbox", 3], ["root cause analysis", 2], ["lockout tagout", 2]],
+  },
+  {
+    trade: "Landscaping & Grounds Maintenance",
+    terms: [["landscaper", 5], ["groundskeeper", 5], ["grounds maintenance", 5], ["irrigation technician", 5], ["lawn care", 4], ["commercial mower", 3], ["pesticide applicator", 3], ["tree care", 3], ["snow removal", 2]],
+  },
+  {
+    trade: "Roadwork, Paving, Concrete & Heavy Equipment",
+    terms: [["heavy equipment operator", 5], ["asphalt", 4], ["paving", 4], ["road construction", 4], ["concrete finisher", 5], ["excavator operator", 5], ["motor grader", 4], ["traffic control flagger", 4], ["compaction", 3]],
+  },
+  {
+    trade: "Roofing & Exterior Trades",
+    terms: [["roofer", 5], ["roofing", 5], ["tpo", 4], ["epdm", 4], ["metal roof", 4], ["siding installer", 4], ["waterproofing", 3], ["flashing", 3], ["fall protection", 2]],
+  },
+  {
+    trade: "Automotive, Diesel & Fleet Maintenance",
+    terms: [["automotive technician", 5], ["diesel technician", 5], ["diesel mechanic", 5], ["fleet maintenance", 5], ["heavy equipment mechanic", 5], ["ase certified", 4], ["scan tool", 3], ["repair order", 2], ["air brakes", 3]],
+  },
+  {
     trade: "General Labor / Trade Helper",
     terms: [["general labor", 5], ["laborer", 5], ["trade helper", 5], ["material handling", 3], ["site cleanup", 3], ["demolition", 2], ["pallet jack", 2]],
   },

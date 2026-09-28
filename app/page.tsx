@@ -5,6 +5,7 @@ import { CustomerReviews } from './customer-reviews';
 import { AccountStart } from './resume-builder/account-start';
 import { ResumeBuilderStartAnalytics } from './resume-builder/funnel-analytics';
 import { rbFont } from './resume-builder/rb-font';
+import { CATALOG_METRICS } from './resume-examples/catalog-metrics';
 import './resume-builder/rb-foundation.css';
 import styles from './home-traffic-director.module.css';
 
@@ -222,6 +223,7 @@ export default function Home() {
           </span>
         </div>
         <nav className={styles.nav} aria-label="Primary navigation" data-header-nav>
+          <Link href="/resume-examples">Trade careers</Link>
           <Link href="#included-cover-letter">Cover letter included</Link>
           <Link href="/book">The Book</Link>
           <AnalyticsLink href="#resume-start" location="sticky_header" className={styles.headerCta}>Build My Free Preview</AnalyticsLink>
@@ -294,6 +296,27 @@ export default function Home() {
       <section className={styles.tradeStrip} id="trade-guides" aria-label="Supported trade categories">
         <strong>BUILT FOR THE TRADES</strong>
         <ul>{tradeChips.map(([trade, href]) => <li key={trade}><Link href={href}>{trade}</Link></li>)}</ul>
+        <Link className={styles.tradeCatalogLink} href="/resume-examples">Browse all {CATALOG_METRICS.careerFamilies} families <span aria-hidden="true">→</span></Link>
+      </section>
+
+      <section className={styles.catalogProof} aria-labelledby="catalog-proof-title">
+        <div className={styles.catalogProofCopy}>
+          <p className={styles.eyebrow}>THE TRADE RESUME CATALOG</p>
+          <h2 id="catalog-proof-title">Real coverage. Clear numbers.</h2>
+          <p>
+            We count career families, job titles, live builder tracks, and field prompts separately.
+            A role name is not passed off as a finished template, and a color change is not counted twice.
+          </p>
+          <AnalyticsLink href="/resume-examples" location="homepage_catalog" event="select_content" item="resume_catalog" className={styles.catalogProofLink}>
+            Explore the full skilled-trades catalog <span aria-hidden="true">→</span>
+          </AnalyticsLink>
+        </div>
+        <dl className={styles.catalogProofGrid}>
+          <div><dt>{CATALOG_METRICS.careerFamilies}</dt><dd>Career families inside the guided builder</dd></div>
+          <div><dt>{CATALOG_METRICS.mappedRoles}</dt><dd>Skilled-trade and field job titles mapped</dd></div>
+          <div><dt>{CATALOG_METRICS.fieldPrompts}</dt><dd>Distinct tool, system, skill, duty, and credential prompts</dd></div>
+          <div><dt>{CATALOG_METRICS.accomplishmentExamples}</dt><dd>Field accomplishment examples across the detailed guides</dd></div>
+        </dl>
       </section>
 
       <section className={styles.trustStrip} aria-label="Resume Builder purchase protections">
@@ -440,6 +463,7 @@ export default function Home() {
         <p>Built by Trades. Backed by HUSTL3.<br />TRADE HUSTL3 LLC · Atlanta, Georgia · <a href="mailto:support@tradehustl3.com">support@tradehustl3.com</a></p>
         <nav aria-label="Footer links">
           <Link href="#resume-start">Resume Builder</Link>
+          <Link href="/resume-examples">Trade Career Catalog</Link>
           <Link href="/top-10-trades">Top 10 Trades</Link>
           <Link href="/book">The Book</Link>
           <Link href="/privacy">Privacy</Link>

@@ -32,6 +32,13 @@ const GLYPHS: Record<HeroTextureTrade, [Glyph, Glyph, Glyph]> = {
   "Construction & Carpentry": ["hammer", "level", "saw"],
   "Facilities Maintenance": ["toolbox", "clipboard", "ladder"],
   "General Labor / Trade Helper": ["toolbox", "wrench", "gloves"],
+  "Commercial Driving & Transportation": ["clipboard", "gauge", "wrench"],
+  "Warehouse, Logistics & Material Handling": ["gloves", "toolbox", "clipboard"],
+  "Industrial & Warehouse Maintenance": ["multimeter", "wrench", "toolbox"],
+  "Landscaping & Grounds Maintenance": ["gloves", "saw", "toolbox"],
+  "Roadwork, Paving, Concrete & Heavy Equipment": ["helmet", "level", "hammer"],
+  "Roofing & Exterior Trades": ["ladder", "hammer", "gloves"],
+  "Automotive, Diesel & Fleet Maintenance": ["wrench", "gauge", "multimeter"],
 };
 
 function IconGlyph({ name, ...props }: SVGProps<SVGSVGElement> & { name: Glyph }) {
@@ -78,6 +85,13 @@ const CARD_ICONS: Record<TradeTrack, Glyph> = {
   "Construction & Carpentry": "hammer",
   "Facilities Maintenance": "toolbox",
   "General Labor / Trade Helper": "helmet",
+  "Commercial Driving & Transportation": "clipboard",
+  "Warehouse, Logistics & Material Handling": "gloves",
+  "Industrial & Warehouse Maintenance": "multimeter",
+  "Landscaping & Grounds Maintenance": "saw",
+  "Roadwork, Paving, Concrete & Heavy Equipment": "level",
+  "Roofing & Exterior Trades": "ladder",
+  "Automotive, Diesel & Fleet Maintenance": "wrench",
 };
 
 /** Small line icon for a selectable trade card; one distinct glyph per trade. */

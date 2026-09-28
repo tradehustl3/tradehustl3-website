@@ -1,7 +1,7 @@
 /**
  * Shared skilled-trades knowledge base for the guided Resume Builder wizard.
  *
- * The seven `TRADE_TRACKS` values must stay byte-for-byte identical to
+ * The `TRADE_TRACKS` values must stay byte-for-byte identical to
  * `ALLOWED_TRADES` in `worker/resume-builder.ts` — the backend rejects anything
  * else. Everything else in this file is UI guidance only (HUSTL3 BOT copy and
  * example chips); it is never sent to the model as fact.
@@ -15,6 +15,13 @@ export const TRADE_TRACKS = [
   "Facilities Maintenance",
   "Welding & Fabrication",
   "General Labor / Trade Helper",
+  "Commercial Driving & Transportation",
+  "Warehouse, Logistics & Material Handling",
+  "Industrial & Warehouse Maintenance",
+  "Landscaping & Grounds Maintenance",
+  "Roadwork, Paving, Concrete & Heavy Equipment",
+  "Roofing & Exterior Trades",
+  "Automotive, Diesel & Fleet Maintenance",
 ] as const;
 
 export type TradeTrack = (typeof TRADE_TRACKS)[number];
@@ -168,6 +175,111 @@ export const TRADE_GUIDANCE: Record<TradeTrack, TradeGuidance> = {
     certifications: ["OSHA 10", "OSHA 30", "Forklift", "Aerial / scissor lift", "Flagger / traffic control", "First aid / CPR", "Confined space entry", "CDL (any class)", "Scaffold user"],
     technicalSkills: ["Material handling", "Site setup & cleanup", "Demolition", "Measuring & layout support", "Blueprint reading (basic)", "Equipment operation", "Concrete prep & pour support", "Load / unload", "Jobsite safety", "Tool maintenance"],
     dutyCategories: ["Material handling", "Site setup", "Demolition", "Trade assistance", "Measuring / layout", "Equipment operation", "Concrete support", "Loading / unloading", "Work-order support", "Basic repairs", "Jobsite safety", "Crew support"],
+  },
+  "Commercial Driving & Transportation": {
+    tagline: "Freight, passenger, delivery, public transit, and private transportation.",
+    workHistory:
+      'Skip "drove a truck" or "transported passengers." Name the vehicle class, route type, endorsements, '
+      + "miles, stops or passengers, pre- and post-trip inspections, ELD or dispatch system, loading duties, "
+      + "and safety record. Add on-time rate, route volume, or incident-free mileage only when you can verify it.",
+    fieldValue:
+      "Lead with the license class and current endorsements that the target job requires. Then show the "
+      + "equipment, routes, customers or passengers, inspections, and safety responsibilities you handled.",
+    tools: ["Electronic logging device (ELD)", "DOT inspection checklist", "Load straps & binders", "Pallet jack", "Liftgate", "Tire-pressure gauge", "Wheel chocks", "Two-way radio", "GPS / route app", "Passenger lift controls"],
+    equipmentSystems: ["Tractor-trailer", "Straight / box truck", "Dump truck", "Tanker", "Flatbed", "School bus", "Transit bus", "Motor coach", "Shuttle / paratransit van", "Tow truck"],
+    certifications: ["CDL Class A", "CDL Class B", "Passenger endorsement (P)", "School bus endorsement (S)", "Tanker endorsement (N)", "Hazardous materials endorsement (H/X)", "Air brakes qualification", "DOT medical card", "TWIC", "Defensive driving"],
+    technicalSkills: ["Pre-trip / post-trip inspection", "ELD & hours-of-service compliance", "Route planning", "Cargo securement", "Passenger assistance", "Defensive driving", "Backing & docking", "Air-brake inspection", "Delivery documentation", "Emergency procedures"],
+    dutyCategories: ["Freight transport", "Passenger transport", "Local routes", "OTR / regional routes", "Vehicle inspections", "Cargo securement", "Loading / unloading", "Customer service", "Dispatch communication", "DOT compliance", "Safety performance", "Driver leadership / training"],
+  },
+  "Warehouse, Logistics & Material Handling": {
+    tagline: "Receiving, picking, inventory, docks, fulfillment, and material movement.",
+    workHistory:
+      'Replace "worked in a warehouse" with the real operation: receiving, put-away, picking, packing, '
+      + "shipping, cycle counts, dock loading, replenishment, or returns. Name the equipment and warehouse "
+      + "system, then add orders, pallets, units, accuracy, or shift volume you can verify.",
+    fieldValue:
+      "Show the pace and accuracy of your work without guessing. List active equipment authorizations, "
+      + "WMS or scanner experience, inventory responsibility, dock or zone scope, and any lead duties.",
+    tools: ["RF scanner", "Handheld barcode scanner", "Pallet jack", "Electric pallet jack", "Reach truck", "Order picker", "Forklift", "Dock plate / leveler", "Stretch-wrap machine", "Shipping scale"],
+    equipmentSystems: ["Warehouse management system (WMS)", "Conveyor / sortation", "Pallet racking", "Loading dock", "Cold storage", "Pick modules", "Automated storage / retrieval", "Parcel shipping station", "Inventory cage", "Yard management system"],
+    certifications: ["Powered industrial truck authorization", "Forklift operator", "Reach truck authorization", "Order picker authorization", "OSHA 10", "Hazard communication", "First aid / CPR", "Food-safety training", "TWIC", "Rigging / signalperson"],
+    technicalSkills: ["Receiving & put-away", "Order picking", "Packing & shipping", "Cycle counting", "Inventory reconciliation", "Loading & unloading", "RF scanning", "Warehouse safety", "Returns processing", "Team / shift leadership"],
+    dutyCategories: ["Receiving", "Put-away", "Picking", "Packing", "Shipping", "Inventory control", "Material handling", "Forklift operation", "Dock operations", "Quality / accuracy", "Safety", "Team leadership"],
+  },
+  "Industrial & Warehouse Maintenance": {
+    tagline: "Plant, conveyor, packaging, automation, controls, and reliability work.",
+    workHistory:
+      'Do not stop at "maintained equipment." Name the conveyors, motors, gearboxes, sensors, PLCs, '
+      + "packaging lines, pneumatics, hydraulics, or refrigeration systems you supported. Add PM volume, "
+      + "downtime, response time, line speed, or repeat-failure reduction only from your records.",
+    fieldValue:
+      "Lead with the electrical and mechanical systems you can troubleshoot safely. Show CMMS use, "
+      + "lockout/tagout, root-cause work, parts or vendor coordination, and the production areas you covered.",
+    tools: ["Multimeter", "Clamp meter", "Megger", "Vibration meter", "Infrared camera", "Laser alignment tool", "Bearing puller", "Grease gun", "PLC programming cable", "Pneumatic test gauge"],
+    equipmentSystems: ["Conveyors & sorters", "Motors & gearboxes", "PLCs & HMIs", "Variable-frequency drives", "Pneumatics", "Hydraulics", "Packaging equipment", "Robotics", "Industrial refrigeration", "Automated storage / retrieval"],
+    certifications: ["OSHA 10", "OSHA 30", "Lockout/tagout (LOTO)", "NFPA 70E", "EPA 608", "Ammonia refrigeration / RETA", "PLC training", "CMRP", "Forklift", "Aerial / scissor lift"],
+    technicalSkills: ["Preventive maintenance", "Electrical troubleshooting", "Mechanical troubleshooting", "PLC / controls diagnostics", "Conveyor repair", "Motor & gearbox replacement", "Precision alignment", "Root-cause analysis", "CMMS documentation", "Parts & inventory control"],
+    dutyCategories: ["Preventive maintenance", "Corrective maintenance", "Electrical diagnostics", "Mechanical repair", "Controls / PLCs", "Conveyors", "Packaging equipment", "Pneumatics / hydraulics", "Reliability", "CMMS / work orders", "Safety / LOTO", "Shift leadership"],
+  },
+  "Landscaping & Grounds Maintenance": {
+    tagline: "Landscape, turf, irrigation, tree care, grounds, and seasonal services.",
+    workHistory:
+      'Skip "did landscaping." Describe the properties, acreage, route, turf and plant care, irrigation '
+      + "repairs, pruning, chemical or fertilizer applications, snow work, and equipment you operated. Add "
+      + "properties, acres, zones, crew size, or weekly route volume you can verify.",
+    fieldValue:
+      "Show the environments and seasons you can handle. Put current applicator, irrigation, arborist, "
+      + "equipment, and safety credentials up front, then show route ownership and crew responsibility.",
+    tools: ["Commercial mower", "String trimmer", "Edger", "Backpack blower", "Chainsaw", "Hedge trimmer", "Core aerator", "Sod cutter", "Irrigation locator", "Skid steer"],
+    equipmentSystems: ["Irrigation controllers", "Drip irrigation", "Sprinkler zones", "Turf equipment", "Tree-care rigging", "Snowplow & spreader", "Landscape trailers", "Chemical application systems", "Drainage systems", "Athletic-field equipment"],
+    certifications: ["State pesticide applicator license", "ISA Certified Arborist", "Irrigation technician certification", "OSHA 10", "Chainsaw safety", "First aid / CPR", "Commercial driver's license", "Forklift / skid steer", "Snow & ice management training", "Landscape industry certification"],
+    technicalSkills: ["Landscape maintenance", "Turf care", "Irrigation diagnostics", "Tree & shrub pruning", "Chemical application", "Equipment operation", "Plant identification", "Drainage repair", "Snow & ice response", "Crew leadership"],
+    dutyCategories: ["Mowing / turf", "Pruning", "Irrigation", "Plant installation", "Chemical application", "Tree care", "Grounds cleanup", "Equipment maintenance", "Snow removal", "Route management", "Safety", "Crew leadership"],
+  },
+  "Roadwork, Paving, Concrete & Heavy Equipment": {
+    tagline: "Asphalt, concrete, grading, utilities, traffic control, and earthmoving.",
+    workHistory:
+      'Replace "ran equipment" with the machine, attachment, material, grade, and work zone. Describe '
+      + "paving, rolling, excavation, trenching, grading, concrete placement, traffic control, inspections, "
+      + "and daily maintenance. Add tons, yards, lane miles, footage, or production only when verified.",
+    fieldValue:
+      "Lead with operator cards, CDL, flagger, or OSHA training, then name the equipment you can run "
+      + "independently, the ground or road scopes you know, and your safety and inspection habits.",
+    tools: ["Laser level", "Grade rod", "Plate compactor", "Concrete vibrator", "Cut-off saw", "Asphalt lute", "Screed controls", "Hand tamper", "Pipe laser", "Two-way radio"],
+    equipmentSystems: ["Asphalt paver", "Road roller", "Excavator", "Wheel loader", "Bulldozer", "Motor grader", "Skid steer", "Backhoe", "Concrete pump", "Milling machine"],
+    certifications: ["OSHA 10", "OSHA 30", "Flagger / traffic control", "CDL Class A", "CDL Class B", "NCCER equipment operator", "Trenching & excavation competent person", "First aid / CPR", "Silica awareness", "Crane signalperson"],
+    technicalSkills: ["Equipment operation", "Fine grading", "Asphalt placement", "Compaction", "Concrete placement & finishing", "Trenching & excavation", "Underground utility support", "Traffic control", "Daily equipment inspection", "Plan / grade reading"],
+    dutyCategories: ["Paving", "Rolling / compaction", "Grading", "Excavation", "Concrete", "Utilities", "Traffic control", "Equipment inspection", "Material placement", "Grade checking", "Safety", "Crew leadership"],
+  },
+  "Roofing & Exterior Trades": {
+    tagline: "Residential and commercial roofing, waterproofing, siding, and exteriors.",
+    workHistory:
+      'Do not write only "installed roofs." Name the system—shingle, TPO, EPDM, PVC, modified bitumen, '
+      + "metal, coating, siding, gutter, or waterproofing—plus tear-off, deck repair, flashing, detail work, "
+      + "testing, and equipment. Add squares, linear feet, projects, or crew size you can prove.",
+    fieldValue:
+      "Show the roof and exterior systems you know, manufacturer training, fall-protection discipline, "
+      + "service or leak-detection ability, and whether you can lead layout, detail, or closeout work.",
+    tools: ["Roofing nailer", "Seam welder", "Hot-air welder", "Core cutter", "Moisture scanner", "Sheet-metal brake", "Snips & seamers", "Chalk line", "Fall-arrest system", "Material hoist"],
+    equipmentSystems: ["Asphalt shingles", "TPO roofing", "EPDM roofing", "PVC roofing", "Modified bitumen", "Standing-seam metal", "Roof coatings", "Siding systems", "Gutters & downspouts", "Below-grade waterproofing"],
+    certifications: ["OSHA 10", "OSHA 30", "Fall protection", "Manufacturer system certification", "NRCA training", "Aerial / scissor lift", "First aid / CPR", "Forklift / telehandler", "Hot-work training", "State roofing license"],
+    technicalSkills: ["Tear-off & deck prep", "Membrane installation", "Shingle installation", "Metal roofing", "Flashing & details", "Leak diagnostics", "Heat welding", "Sheet-metal fabrication", "Waterproofing", "Roof inspection"],
+    dutyCategories: ["Tear-off", "Deck repair", "Shingle roofing", "Single-ply roofing", "Metal roofing", "Flashing", "Service / leaks", "Waterproofing", "Siding / gutters", "Equipment operation", "Fall protection", "Crew leadership"],
+  },
+  "Automotive, Diesel & Fleet Maintenance": {
+    tagline: "Cars, trucks, buses, trailers, fleets, heavy equipment, and mobile repair.",
+    workHistory:
+      'Skip "fixed vehicles." Name the vehicle or equipment classes, diagnostic platforms, engines, '
+      + "electrical, brakes, steering, suspension, HVAC, aftertreatment, hydraulics, and PM work you handled. "
+      + "Add repair orders, fleet size, turnaround, comeback reduction, or uptime only from real records.",
+    fieldValue:
+      "Lead with ASE, manufacturer, CDL, inspection, or emissions credentials. Then show the systems you "
+      + "diagnose independently, scan-tool experience, documentation, and the fleet or shop scope you owned.",
+    tools: ["Diagnostic scan tool", "Digital multimeter", "Oscilloscope", "Battery / charging tester", "Torque wrench", "Brake lathe", "A/C recovery machine", "Diesel compression tester", "Hydraulic pressure kit", "Vehicle lift"],
+    equipmentSystems: ["Gasoline engines", "Diesel engines", "Transmissions", "Air brakes", "Hydraulic brakes", "Steering & suspension", "Vehicle electrical", "HVAC", "Diesel aftertreatment", "Hydraulic equipment"],
+    certifications: ["ASE certification", "ASE Master Technician", "EPA 609", "CDL Class A", "CDL Class B", "DOT inspector qualification", "Brake inspector qualification", "Manufacturer training", "Forklift", "State inspection / emissions license"],
+    technicalSkills: ["Computer diagnostics", "Electrical diagnostics", "Preventive maintenance", "Engine repair", "Brake systems", "Steering & suspension", "HVAC service", "Aftertreatment diagnostics", "Hydraulic repair", "Repair-order documentation"],
+    dutyCategories: ["Diagnostics", "Preventive maintenance", "Engine", "Electrical", "Brakes", "Steering / suspension", "HVAC", "Aftertreatment", "Hydraulics", "Inspections", "Shop safety", "Team leadership"],
   },
 };
 
