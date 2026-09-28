@@ -16,7 +16,8 @@ function post(body: unknown): Request {
   });
 }
 
-test("Agent #1 funnel endpoint records an allowlisted behavioral event", async () => {
+test("Agent #1 funnel endpoint records an allowlisted behavioral event", async (t) => {
+  t.mock.timers.enable({ apis: ["Date"], now: Date.parse("2026-09-28T12:00:00.000Z") });
   const { DB, sqlite } = sqliteD1();
 
   const response = await handleResumeBuilderRoute(
@@ -61,7 +62,8 @@ test("Agent #1 funnel endpoint records an allowlisted behavioral event", async (
   assert.equal(row.anonymous_id, "anon-123");
   assert.equal(row.session_id, "session-456");
   assert.equal(row.path, "/resume-builder");
-  assert.equal(row.occurred_at, "2026-09-27T13:00:00.000Z");
+  // Server receive time is authoritative; the client occurredAt is ignored.
+  assert.equal(row.occurred_at, "2026-09-28T12:00:00.000Z");
 
   assert.deepEqual(JSON.parse(row.metadata || "{}"), {
     utm_source: "google",
@@ -463,4 +465,194 @@ test("browser funnel telemetry cannot manufacture Agent #1 purchase revenue", as
   assert.equal(payload.counts.verifiedPurchases, 0);
   assert.equal(payload.revenue.verifiedRevenueCents, 0);
   assert.equal(payload.revenue.verifiedRevenueUsd, 0);
+});
+
+// ---------------------------------------------------------------------------
+// Snapshot window boundaries. The clock is frozen so every boundary is exact:
+// windowEnd = NOW, windowStart = NOW - 24h. Both bounds are inclusive.
+// ---------------------------------------------------------------------------
+
+const NOW = "2026-09-28T12:00:00.000Z";
+const WINDOW_START_ISO = "2026-09-27T12:00:00.000Z";
+const WINDOW_START_SQLITE = "2026-09-27 12:00:00";
+
+type SnapshotPayload = {
+  generatedAt: string;
+  windowStart: string;
+  windowEnd: string;
+  counts: {
+    starts: number;
+    intakeStarted: number;
+    intakeCompleted: number;
+    previewsGenerated: number;
+    checkoutStarted: number;
+    verifiedPurchases: number;
+  };
+  revenue: { verifiedRevenueCents: number; verifiedRevenueUsd: number };
+};
+
+function insertStart(sqlite: ReturnType<typeof sqliteD1>["sqlite"], id: string, occurredAt: string) {
+  sqlite.prepare(
+    "INSERT INTO funnel_events (event_id, event_name, occurred_at) VALUES (?, 'resume_builder_start', ?)",
+  ).run(id, occurredAt);
+}
+
+function insertPaidOrder(sqlite: ReturnType<typeof sqliteD1>["sqlite"], id: string, paidAt: string) {
+  sqlite.prepare(`
+    INSERT INTO resume_orders (order_id, user_id, resume_id, email, plan, amount_total, currency, status, paid_at)
+    VALUES (?, 'user-1', 'resume-1', 'buyer@example.com', 'resume_mvp_999', 999, 'usd', 'paid', ?)
+  `).run(id, paidAt);
+}
+
+async function frozenSnapshot(
+  t: { mock: { timers: { enable(options: { apis: ["Date"]; now: number }): void } } },
+  DB: D1Database,
+): Promise<SnapshotPayload> {
+  t.mock.timers.enable({ apis: ["Date"], now: Date.parse(NOW) });
+  const response = await handleResumeBuilderRoute(snapshotRequest("24h"), {
+    DB,
+    AGENT1_FUNNEL_SECRET: AGENT1_SECRET,
+  });
+  assert.ok(response);
+  assert.equal(response.status, 200);
+  return await response.json() as SnapshotPayload;
+}
+
+test("snapshot reports one server-side window used for every query", async (t) => {
+  const { DB } = sqliteD1();
+  const payload = await frozenSnapshot(t, DB);
+  assert.equal(payload.windowEnd, NOW);
+  assert.equal(payload.generatedAt, NOW);
+  assert.equal(payload.windowStart, WINDOW_START_ISO);
+});
+
+test("ISO event exactly at the lower boundary is included", async (t) => {
+  const { DB, sqlite } = sqliteD1();
+  insertStart(sqlite, "iso-lower", WINDOW_START_ISO);
+  assert.equal((await frozenSnapshot(t, DB)).counts.starts, 1);
+});
+
+test("SQLite-format event exactly at the lower boundary is included", async (t) => {
+  const { DB, sqlite } = sqliteD1();
+  insertStart(sqlite, "sqlite-lower", WINDOW_START_SQLITE);
+  assert.equal((await frozenSnapshot(t, DB)).counts.starts, 1);
+});
+
+test("ISO event one millisecond before the lower boundary is excluded", async (t) => {
+  const { DB, sqlite } = sqliteD1();
+  insertStart(sqlite, "iso-before", "2026-09-27T11:59:59.999Z");
+  insertStart(sqlite, "sqlite-before", "2026-09-27 11:59:59");
+  assert.equal((await frozenSnapshot(t, DB)).counts.starts, 0);
+});
+
+test("valid ISO event inside the window is included", async (t) => {
+  const { DB, sqlite } = sqliteD1();
+  insertStart(sqlite, "iso-inside", "2026-09-28T06:00:00.000Z");
+  assert.equal((await frozenSnapshot(t, DB)).counts.starts, 1);
+});
+
+test("valid SQLite-format event inside the window is included", async (t) => {
+  const { DB, sqlite } = sqliteD1();
+  insertStart(sqlite, "sqlite-inside", "2026-09-28 06:00:00");
+  assert.equal((await frozenSnapshot(t, DB)).counts.starts, 1);
+});
+
+test("ISO event exactly at the upper boundary is included", async (t) => {
+  const { DB, sqlite } = sqliteD1();
+  insertStart(sqlite, "iso-upper", NOW);
+  assert.equal((await frozenSnapshot(t, DB)).counts.starts, 1);
+});
+
+test("future-dated events after the upper boundary are excluded", async (t) => {
+  const { DB, sqlite } = sqliteD1();
+  insertStart(sqlite, "iso-future-1ms", "2026-09-28T12:00:00.001Z");
+  insertStart(sqlite, "iso-future-5d", "2026-10-03T12:00:00.000Z");
+  insertStart(sqlite, "sqlite-future", "2026-09-28 12:00:01");
+  assert.equal((await frozenSnapshot(t, DB)).counts.starts, 0);
+});
+
+test("unparseable stored timestamps are excluded rather than counted", async (t) => {
+  const { DB, sqlite } = sqliteD1();
+  insertStart(sqlite, "garbage", "not-a-timestamp");
+  assert.equal((await frozenSnapshot(t, DB)).counts.starts, 0);
+});
+
+test("mixed ISO and SQLite timestamp formats produce correct totals", async (t) => {
+  const { DB, sqlite } = sqliteD1();
+  // Included: 5
+  insertStart(sqlite, "in-1", WINDOW_START_ISO);
+  insertStart(sqlite, "in-2", WINDOW_START_SQLITE);
+  insertStart(sqlite, "in-3", "2026-09-28T01:30:00.000Z");
+  insertStart(sqlite, "in-4", "2026-09-28 01:30:00");
+  insertStart(sqlite, "in-5", NOW);
+  // Excluded: 5
+  insertStart(sqlite, "out-1", "2026-09-27T06:00:00.000Z");
+  insertStart(sqlite, "out-2", "2026-09-27 06:00:00");
+  insertStart(sqlite, "out-3", "2026-09-26T12:00:00.000Z");
+  insertStart(sqlite, "out-4", "2026-09-28T12:00:00.001Z");
+  insertStart(sqlite, "out-5", "2026-09-29 00:00:00");
+  sqlite.prepare(
+    "INSERT INTO funnel_events (event_id, event_name, occurred_at) VALUES ('in-checkout', 'begin_checkout', '2026-09-28 10:00:00'), ('out-checkout', 'begin_checkout', '2026-09-27T11:00:00.000Z')",
+  ).run();
+
+  const payload = await frozenSnapshot(t, DB);
+  assert.equal(payload.counts.starts, 5);
+  assert.equal(payload.counts.checkoutStarted, 1);
+});
+
+test("paid_at uses the identical bounded window as funnel events", async (t) => {
+  const { DB, sqlite } = sqliteD1();
+  // Included: lower boundary (both formats), inside, upper boundary.
+  insertPaidOrder(sqlite, "paid-lower-sqlite", WINDOW_START_SQLITE);
+  insertPaidOrder(sqlite, "paid-lower-iso", WINDOW_START_ISO);
+  insertPaidOrder(sqlite, "paid-inside", "2026-09-28 08:00:00");
+  insertPaidOrder(sqlite, "paid-upper", "2026-09-28 12:00:00");
+  // Excluded: before the window, after the window.
+  insertPaidOrder(sqlite, "paid-before", "2026-09-27 11:59:59");
+  insertPaidOrder(sqlite, "paid-after", "2026-09-28 12:00:01");
+  insertPaidOrder(sqlite, "paid-old-iso", "2026-09-27T06:00:00.000Z");
+
+  const payload = await frozenSnapshot(t, DB);
+  assert.equal(payload.counts.verifiedPurchases, 4);
+  assert.equal(payload.revenue.verifiedRevenueCents, 3996);
+  assert.equal(payload.revenue.verifiedRevenueUsd, 39.96);
+});
+
+test("regression: a 30-hour-old ISO event passed the old text comparison and is now excluded", async (t) => {
+  const { DB, sqlite } = sqliteD1();
+  const thirtyHoursOld = "2026-09-27T06:00:00.000Z";
+  insertStart(sqlite, "thirty-hours-old", thirtyHoursOld);
+
+  // The previous query compared text: occurred_at >= datetime('now', '-24 hours'),
+  // whose result at NOW is "2026-09-27 12:00:00". Prove that comparison wrongly
+  // included the 30-hour-old ISO row ('T' sorts after ' ').
+  const legacy = sqlite.prepare(
+    "SELECT COUNT(*) AS count FROM funnel_events WHERE occurred_at >= ?",
+  ).get(WINDOW_START_SQLITE) as { count: number };
+  assert.equal(legacy.count, 1);
+
+  assert.equal((await frozenSnapshot(t, DB)).counts.starts, 0);
+});
+
+// ---------------------------------------------------------------------------
+// Public event writes: the server clock, not the client, decides occurred_at.
+// ---------------------------------------------------------------------------
+
+test("client occurredAt cannot backdate or future-date a funnel event", async (t) => {
+  t.mock.timers.enable({ apis: ["Date"], now: Date.parse(NOW) });
+  const { DB, sqlite } = sqliteD1();
+
+  for (const occurredAt of ["2026-09-21T12:00:00.000Z", "2099-01-01T00:00:00.000Z", "not-a-date"]) {
+    const response = await handleResumeBuilderRoute(
+      post({ eventName: "resume_builder_start", occurredAt }),
+      { DB },
+    );
+    assert.ok(response);
+    assert.equal(response.status, 201);
+  }
+
+  const rows = sqlite
+    .prepare("SELECT occurred_at FROM funnel_events")
+    .all() as Array<{ occurred_at: string }>;
+  assert.deepEqual(rows.map((row) => row.occurred_at), [NOW, NOW, NOW]);
 });
