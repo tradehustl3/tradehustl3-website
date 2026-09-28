@@ -818,6 +818,17 @@ async function getAgent1FunnelSnapshot(
     );
   }
 
+  // One server clock reading defines the window for every query and for
+  // generatedAt. Stored timestamps mix ISO-8601 ("2026-09-27T12:00:00.000Z",
+  // written by recordFunnelEvent) and SQLite CURRENT_TIMESTAMP
+  // ("2026-09-27 12:00:00", paid_at). Text comparison between the two is
+  // wrong ('T' sorts after ' '), so both sides go through julianday().
+  // Both bounds are inclusive; unparseable values yield NULL and are excluded.
+  const windowEnd = new Date();
+  const windowStart = new Date(windowEnd.getTime() - windowHours * 60 * 60 * 1000);
+  const windowEndIso = windowEnd.toISOString();
+  const windowStartIso = windowStart.toISOString();
+
   const behavioral = await env.DB.prepare(
     `SELECT
        SUM(CASE WHEN event_name = 'resume_builder_start' THEN 1 ELSE 0 END) AS starts,
@@ -826,9 +837,10 @@ async function getAgent1FunnelSnapshot(
        SUM(CASE WHEN event_name = 'resume_preview_generated' THEN 1 ELSE 0 END) AS previews_generated,
        SUM(CASE WHEN event_name = 'begin_checkout' THEN 1 ELSE 0 END) AS checkout_started
      FROM funnel_events
-     WHERE occurred_at >= datetime('now', ?)`
+     WHERE julianday(occurred_at) >= julianday(?)
+       AND julianday(occurred_at) <= julianday(?)`
   )
-    .bind(`-${windowHours} hours`)
+    .bind(windowStartIso, windowEndIso)
     .first<{
       starts: number | null;
       intake_started: number | null;
@@ -846,9 +858,10 @@ async function getAgent1FunnelSnapshot(
      FROM resume_orders
      WHERE status = 'paid'
        AND paid_at IS NOT NULL
-       AND paid_at >= datetime('now', ?)`
+       AND julianday(paid_at) >= julianday(?)
+       AND julianday(paid_at) <= julianday(?)`
   )
-    .bind(`-${windowHours} hours`)
+    .bind(windowStartIso, windowEndIso)
     .first<{
       verified_purchases: number | null;
       verified_revenue_cents: number | null;
@@ -874,7 +887,9 @@ async function getAgent1FunnelSnapshot(
     source: "trade_hustl3_production",
     product: "resume_builder",
     window: requestedWindow,
-    generatedAt: new Date().toISOString(),
+    generatedAt: windowEndIso,
+    windowStart: windowStartIso,
+    windowEnd: windowEndIso,
 
     counts: {
       starts,
@@ -1335,12 +1350,15 @@ async function handleResumeStripeWebhook(request: Request, env: ResumeBuilderEnv
   }
 
   const entitlementId = crypto.randomUUID();
+  // Stripe retries deliveries. paid_at keeps its first value so a replayed
+  // event cannot move the purchase into a later reporting window; the
+  // entitlement and review request inserts are already idempotent per order.
   await env.DB.batch([
     stripeEventStatement(env, eventId, eventType),
     env.DB.prepare(
       `UPDATE resume_orders SET
          status = CASE WHEN status = 'refunded' THEN 'refunded' ELSE 'paid' END,
-         stripe_session_id = ?, stripe_payment_intent_id = ?, paid_at = CURRENT_TIMESTAMP
+         stripe_session_id = ?, stripe_payment_intent_id = ?, paid_at = COALESCE(paid_at, CURRENT_TIMESTAMP)
        WHERE order_id = ?`,
     ).bind(sessionId, paymentIntent, orderId),
     env.DB.prepare(
@@ -3413,11 +3431,11 @@ async function recordFunnelEvent(
     return json({ ok: false, message: "Invalid funnel event." }, 400);
   }
 
-  const occurredAtValue = funnelString(payload.occurredAt, 64);
-  const occurredAt =
-    occurredAtValue && !Number.isNaN(Date.parse(occurredAtValue))
-      ? new Date(occurredAtValue).toISOString()
-      : new Date().toISOString();
+  // occurred_at is the server receive time. This endpoint is public, so a
+  // client-supplied payload.occurredAt must never decide which analytics
+  // window an event lands in. The field is still tolerated in the request
+  // body for compatibility with existing browser code, but it is ignored.
+  const occurredAt = new Date().toISOString();
 
   const eventId = crypto.randomUUID();
 

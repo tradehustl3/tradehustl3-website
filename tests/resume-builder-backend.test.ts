@@ -3,6 +3,7 @@ import test from "node:test";
 import { PDFDocument } from "pdf-lib";
 import { handleResumeBuilderRoute, runResumeBuilderRetention } from "../worker/resume-builder";
 import { createResumeDocx, createResumePdf, GeneratedResume } from "../worker/resume-documents";
+import { sqliteD1 } from "./helpers/sqlite-d1";
 
 const sampleResume: GeneratedResume = {
   basics: {
@@ -570,6 +571,70 @@ test("a verified $9.99 Stripe event grants exactly four AI runs", async () => {
   assert.equal(entitlement.values.includes(4), true);
   assert.equal(entitlement.values.includes(1), true);
   assert.equal(entitlement.values.includes("resume_mvp_999"), true);
+});
+
+test("a replayed Stripe checkout event does not move paid_at or duplicate the entitlement", async () => {
+  const webhookSecret = "whsec_resume_builder_replay_test";
+  const { DB, sqlite } = sqliteD1();
+  sqlite.prepare(`
+    INSERT INTO resume_orders (order_id, user_id, resume_id, email, plan, amount_total, currency, status)
+    VALUES ('order-1', 'user-1', 'resume-1', 'member@example.com', 'resume_mvp_999', 999, 'usd', 'pending')
+  `).run();
+  const event = JSON.stringify({
+    id: "evt_resume_builder_replay",
+    type: "checkout.session.completed",
+    data: {
+      object: {
+        id: "cs_resume_builder_replay",
+        client_reference_id: "order-1",
+        payment_status: "paid",
+        amount_total: 999,
+        currency: "usd",
+        payment_intent: "pi_resume_builder_replay",
+        customer: "cus_resume_builder",
+        customer_details: { email: "member@example.com" },
+        metadata: {
+          product: "resume_builder_mvp",
+          order_id: "order-1",
+          resume_id: "resume-1",
+          user_id: "user-1",
+        },
+      },
+    },
+  });
+  const deliver = async () => handleResumeBuilderRoute(
+    new Request("https://tradehustl3.com/api/resume-builder/stripe/webhook", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Stripe-Signature": await stripeSignature(event, webhookSecret) },
+      body: event,
+    }),
+    { DB, STRIPE_RESUME_WEBHOOK_SECRET: webhookSecret },
+  );
+  const order = () => sqlite.prepare("SELECT status, paid_at FROM resume_orders WHERE order_id = 'order-1'")
+    .get() as { status: string; paid_at: string | null };
+  const entitlements = () => sqlite.prepare(
+    "SELECT status, credits_total, credits_used, plan FROM entitlements WHERE source_order_id = 'order-1'",
+  ).all() as Array<{ status: string; credits_total: number; credits_used: number; plan: string }>;
+
+  const first = await deliver();
+  assert.equal(first?.status, 200);
+  assert.equal(order().status, "paid");
+  assert.ok(order().paid_at, "the first verified event sets paid_at");
+
+  // Simulate Stripe retrying an hour later: pin the original paid time to a
+  // known earlier value so a replay that rewrote it would be detectable.
+  sqlite.prepare("UPDATE resume_orders SET paid_at = '2026-09-27 08:00:00' WHERE order_id = 'order-1'").run();
+
+  const replay = await deliver();
+  assert.equal(replay?.status, 200);
+  assert.equal(order().status, "paid");
+  assert.equal(order().paid_at, "2026-09-27 08:00:00");
+  assert.deepEqual(entitlements().map((row) => ({ ...row })), [
+    { status: "active", credits_total: 4, credits_used: 1, plan: "resume_mvp_999" },
+  ]);
+  const recorded = sqlite.prepare("SELECT COUNT(*) AS count FROM stripe_events WHERE event_id = 'evt_resume_builder_replay'")
+    .get() as { count: number };
+  assert.equal(recorded.count, 1);
 });
 
 type RefundHarnessOptions = {
