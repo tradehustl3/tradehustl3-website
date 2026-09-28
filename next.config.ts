@@ -4,7 +4,7 @@ const crawlerFreshnessHeaders = [
   { key: "Cache-Control", value: "no-store, max-age=0" },
   { key: "Cloudflare-CDN-Cache-Control", value: "no-store" },
   { key: "CDN-Cache-Control", value: "no-store" },
-  { key: "X-TRADE-HUSTL3-Content-Revision", value: "2026-09-24-readiness-cleanup" },
+  { key: "X-TRADE-HUSTL3-Content-Revision", value: "2026-09-28-trade-catalog" },
 ];
 
 const policyNoStoreHeaders = [
@@ -24,6 +24,7 @@ const nextConfig: NextConfig = {
       { source: "/book", headers: crawlerFreshnessHeaders },
       { source: "/book/sample", headers: crawlerFreshnessHeaders },
       { source: "/top-10-trades", headers: crawlerFreshnessHeaders },
+      { source: "/resume-examples", headers: crawlerFreshnessHeaders },
       { source: "/resume-builder", headers: crawlerFreshnessHeaders },
       { source: "/resume-builder/intake", headers: crawlerFreshnessHeaders },
       { source: "/resume-builder/review", headers: crawlerFreshnessHeaders },

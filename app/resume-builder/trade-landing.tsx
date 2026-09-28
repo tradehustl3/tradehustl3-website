@@ -14,10 +14,10 @@ import styles from "./trade-landing.module.css";
 
 const HUB_HREF = "/#trade-guides";
 
-const TRADE_WORKSITE_IMAGES: Record<
+const TRADE_WORKSITE_IMAGES: Partial<Record<
   TradeLandingContent["trade"],
   { src: string; alt: string; width: number; height: number }
-> = {
+>> = {
   "HVAC & Refrigeration": {
     src: "/optimized/hvac-manifold-worksite.webp",
     alt: "HVAC manifold gauges connected to commercial equipment at an active worksite",
@@ -105,7 +105,12 @@ function SiblingGuides({ content }: { content: TradeLandingContent }) {
 }
 
 export function TradeLandingPage({ content }: { content: TradeLandingContent }) {
-  const worksiteImage = TRADE_WORKSITE_IMAGES[content.trade];
+  const worksiteImage = TRADE_WORKSITE_IMAGES[content.trade] ?? {
+    src: "/trade-hustl3-resume-builder-home-hero.webp",
+    alt: "Skilled tradespeople working across field and maintenance careers",
+    width: 1536,
+    height: 1024,
+  };
 
   return (
     <main className={`rb-page ${styles.page}`}>

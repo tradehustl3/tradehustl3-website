@@ -17,6 +17,10 @@ test("resolveTradeParam accepts trade slugs from the landing pages", () => {
   assert.equal(resolveTradeParam("hvac-refrigeration"), "HVAC & Refrigeration");
   assert.equal(resolveTradeParam("electrician"), "Electrical");
   assert.equal(resolveTradeParam("facilities-maintenance"), "Facilities Maintenance");
+  assert.equal(resolveTradeParam("cdl-driver"), "Commercial Driving & Transportation");
+  assert.equal(resolveTradeParam("school-bus-driver"), "Commercial Driving & Transportation");
+  assert.equal(resolveTradeParam("industrial-maintenance"), "Industrial & Warehouse Maintenance");
+  assert.equal(resolveTradeParam("roofing"), "Roofing & Exterior Trades");
 });
 
 test("resolveTradeParam also accepts the exact trade-track name", () => {
@@ -44,6 +48,7 @@ test("intake hrefs carry the preselected trade slug", () => {
   assert.equal(intakeWizardHref("HVAC & Refrigeration"), "/resume-builder/intake?trade=hvac");
   assert.equal(intakeEntryHref("Electrical"), "/?trade=electrician#resume-start");
   assert.equal(intakeEntryHref("Facilities Maintenance"), "/?trade=facilities-maintenance#resume-start");
+  assert.equal(intakeEntryHref("Commercial Driving & Transportation"), "/?trade=commercial-driving-transportation#resume-start");
 });
 
 test("every published trade landing page preselects a real, resolvable trade", () => {
@@ -57,8 +62,10 @@ test("every published trade landing page preselects a real, resolvable trade", (
     "construction-carpentry",
     "general-labor",
   ]);
-  // The seven-page cluster is complete: one landing page per intake trade.
-  assert.equal(TRADE_LANDING_PAGES.length, TRADE_TRACKS.length);
+  // The first seven detailed SEO guides remain complete while the guided
+  // builder supports the broader fourteen-family catalog.
+  assert.equal(TRADE_LANDING_PAGES.length, 7);
+  assert.equal(TRADE_TRACKS.length, 14);
   assert.equal(new Set(slugs).size, slugs.length);
 
   for (const page of TRADE_LANDING_PAGES) {
