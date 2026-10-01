@@ -36,6 +36,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "daily",
       priority: 0.9,
     },
+    {
+      url: `${SITE_URL}/resume-examples/skilled-trades`,
+      lastModified: CONTENT_REFRESHED_AT,
+      changeFrequency: "weekly",
+      priority: 0.9,
+    },
     ...TRADE_LANDING_PAGES.map((page) => ({
       url: `${SITE_URL}${tradeLandingPath(page)}`,
       lastModified: CONTENT_REFRESHED_AT,
