@@ -92,7 +92,7 @@ export default function ResumeExamplesCatalogPage() {
         </Link>
         <nav aria-label="Catalog navigation">
           <a href="#career-catalog">Browse careers</a>
-          <Link href="/#trade-guides">Detailed guides</Link>
+          <Link href="/resume-examples/skilled-trades">Detailed examples</Link>
           <Link
             className={styles.headerCta}
             href="/#resume-start"
@@ -127,6 +127,16 @@ export default function ResumeExamplesCatalogPage() {
               Build my free preview <span aria-hidden="true">→</span>
             </Link>
             <a className={styles.secondaryCta} href="#career-catalog">Find my job title</a>
+            <Link
+              className={styles.secondaryCta}
+              href="/resume-examples/skilled-trades"
+              data-analytics-event="cta_click"
+              data-location="resume_catalog_hero"
+              data-destination="/resume-examples/skilled-trades"
+              data-item="skilled_trades_resume_examples"
+            >
+              See 7 detailed examples
+            </Link>
           </div>
           <p className={styles.priceNote}>$0 to build and preview · $9.99 one-time to unlock · No subscription</p>
         </div>
