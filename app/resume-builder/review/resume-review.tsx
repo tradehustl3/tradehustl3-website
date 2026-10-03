@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useState } from "react";
+import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { CoverLetterPanel } from "./cover-letter-panel";
 import { generationFailureIntakeUrl, intakeReturnUrl } from "../return-urls";
 
@@ -99,6 +99,10 @@ export function ResumeReview() {
   const [retryGeneration, setRetryGeneration] = useState(false);
   const [intakeNotice, setIntakeNotice] = useState<GenerationFailure | null>(null);
   const [pendingTrack, setPendingTrack] = useState<ResumeTheme | null>(null);
+  const trackChoiceRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (pendingTrack) trackChoiceRef.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }, [pendingTrack]);
   const [themeSaving, setThemeSaving] = useState(false);
   const [bulletSaving, setBulletSaving] = useState("");
   const [bulletDrafts, setBulletDrafts] = useState<Record<string, string>>({});
@@ -197,8 +201,8 @@ export function ResumeReview() {
     if (applied) event.currentTarget.reset();
   }
 
-  async function updateTheme(theme: ResumeTheme) {
-    if (!resumeId || !resume || resume.theme === theme || themeSaving) return;
+  async function updateTheme(theme: ResumeTheme): Promise<boolean> {
+    if (!resumeId || !resume || resume.theme === theme || themeSaving) return false;
     const previous = resume.theme;
     setThemeSaving(true);
     notify("");
@@ -214,9 +218,11 @@ export function ResumeReview() {
       if (!response.ok) throw new Error(result.message || "We could not save your template choice.");
       await load(resumeId);
       notify(result.message || "Resume style updated without using an AI run.", "success");
+      return true;
     } catch (error) {
       setResume((current) => current ? { ...current, theme: previous } : current);
       notify(error instanceof Error ? error.message : "We could not save your template choice.", "error");
+      return false;
     } finally {
       setThemeSaving(false);
     }
@@ -251,16 +257,33 @@ export function ResumeReview() {
     }
   }
 
+  function themeLabel(value: ResumeTheme): string {
+    return THEME_OPTIONS.find((option) => option.value === value)?.label ?? "this style";
+  }
+
+  // Picking a style always changes the look right away unless a paid customer can
+  // actually choose a rewrite: then a visible choice asks how to handle the wording.
+  async function chooseStyle(value: ResumeTheme) {
+    if (!resume || value === resume.theme) { setPendingTrack(null); return; }
+    const generated = resume.status === "ready";
+    const differsFromWriting = generated && value !== resume.generationTrack;
+    if (differsFromWriting && resume.paid && resume.correctionsRemaining > 0) {
+      setPendingTrack(value);
+      return;
+    }
+    setPendingTrack(null);
+    const switched = await updateTheme(value);
+    if (switched && differsFromWriting) {
+      notify(resume.paid
+        ? `Look switched to ${themeLabel(value)} for free. Your wording stays written for ${themeLabel(resume.generationTrack)} because all three corrections have been used.`
+        : `Look switched to ${themeLabel(value)} for free. Your wording stays written for ${themeLabel(resume.generationTrack)}. After you unlock the package, you can rewrite it for ${themeLabel(value)} with one correction.`, "success");
+    }
+  }
+
   function renderThemePicker() {
     if (!resume) return null;
     return (
       <>
-      {pendingTrack && <div role="dialog" aria-label="Choose career track wording">
-        <p>Rewrite for the selected career track, or keep your current wording and its matching headings. Changing only the look is always free.</p>
-        <button type="button" disabled={working || !resume.paid || resume.correctionsRemaining < 1} onClick={async () => { if (await runGeneration(undefined, pendingTrack)) { await updateTheme(pendingTrack); setPendingTrack(null); } }}>Rewrite for this style</button>
-        <button type="button" disabled={working || themeSaving} onClick={async () => { await updateTheme(pendingTrack); setPendingTrack(null); }}>Keep my current wording</button>
-        <small>{!resume.paid ? "Unlock the package to rewrite." : resume.correctionsRemaining < 1 ? "All three corrections have been used." : "A rewrite uses exactly one correction and updates your resume and matching cover letter together."}</small>
-      </div>}
       <div className="rb-theme-picker" role="radiogroup" aria-label="Resume system">
         {THEME_OPTIONS.map((option) => {
           const selected = resume.theme === option.value;
@@ -270,9 +293,9 @@ export function ResumeReview() {
               key={option.value}
               role="radio"
               aria-checked={selected}
-              className={`rb-trade-card${selected ? " rb-trade-card-on" : ""}`}
+              className={`rb-trade-card${selected ? " rb-trade-card-on" : ""}${pendingTrack === option.value ? " rb-trade-card-pending" : ""}`}
               disabled={themeSaving || working}
-              onClick={() => resume.status === "ready" && option.value !== resume.generationTrack ? setPendingTrack(option.value) : void updateTheme(option.value)}
+              onClick={() => void chooseStyle(option.value)}
             >
               <span className={`rb-theme-preview rb-theme-preview-${option.value}`} aria-hidden="true">
                 <i /><i /><b /><i /><i />
@@ -284,6 +307,19 @@ export function ResumeReview() {
           );
         })}
       </div>
+      {pendingTrack ? (
+        <div className="rb-track-choice" ref={trackChoiceRef} role="group" aria-labelledby="track-choice-title" aria-live="polite">
+          <p className="rb-kicker">Switching to {themeLabel(pendingTrack)}</p>
+          <h3 id="track-choice-title">How should your wording change?</h3>
+          <p>Your resume was written for <strong>{themeLabel(resume.generationTrack)}</strong>. Keep that wording with the new look for free, or have HUSTL3 BOT rewrite your resume and matching cover letter for <strong>{themeLabel(pendingTrack)}</strong> using only your verified facts.</p>
+          <div className="rb-track-choice-actions">
+            <button className="rb-button rb-button-primary" type="button" disabled={working || themeSaving} onClick={async () => { const track = pendingTrack; if (await runGeneration(undefined, track)) { await updateTheme(track); setPendingTrack(null); } }}>Rewrite for {themeLabel(pendingTrack)} <span aria-hidden="true">· 1 correction</span></button>
+            <button className="rb-button rb-button-secondary-dark" type="button" disabled={working || themeSaving} onClick={async () => { const track = pendingTrack; setPendingTrack(null); await updateTheme(track); }}>Keep my wording <span aria-hidden="true">· free</span></button>
+          </div>
+          <button className="rb-track-choice-cancel" type="button" disabled={working || themeSaving} onClick={() => setPendingTrack(null)}>Cancel</button>
+          <small>{resume.correctionsRemaining} of 3 shared corrections remaining. A rewrite uses exactly one and updates your resume and matching cover letter together.</small>
+        </div>
+      ) : null}
       </>
     );
   }
@@ -434,55 +470,9 @@ export function ResumeReview() {
             <div className="rb-review-status"><p className="rb-kicker">{resume.paid ? "Review + refine" : "Preview before you pay"}</p><h2>{resume.paid ? "Make it sound like you." : "Review the whole package."}</h2><p className="rb-review-desc">{resume.paid ? "Check names, dates, certifications, job duties, contact information, and your included matching cover letter before downloading." : "Your resume is ready. Build the included matching cover-letter preview, review both tabs, then pay once to remove the watermarks and unlock the clean PDF + DOCX files."}</p>
               <span className="rb-theme-label">Resume system</span>
               {renderThemePicker()}
-              <small className="rb-theme-note">Your first build uses the selected system&apos;s writing profile and layout. After generation, switching systems refreshes the resume and matching cover-letter layout without using an AI correction; your verified written content stays unchanged unless you request a correction.</small>
+              <small className="rb-theme-note">Your first build uses the selected system&apos;s writing profile and layout. Switching the look later is always free. After you unlock the package, you can also rewrite the wording for a new system with one correction.</small>
             </div>
 
-            <section className="rb-quality-card" aria-labelledby="resume-quality-title">
-              <div className="rb-quality-head">
-                <div><p className="rb-kicker">Resume quality score</p><h2 id="resume-quality-title">{resume.qualityScore.total}<span>/100</span></h2></div>
-                <strong>{resume.qualityScore.label}</strong>
-              </div>
-              <p>Deterministic checks for complete work history, dates, credentials, ATS structure, and unsupported claims. Scoring uses no AI run.</p>
-              {resume.qualityScore.issues.length ? <ul>{resume.qualityScore.issues.map((issue) => <li key={issue}>{issue}</li>)}</ul> : <p className="rb-quality-pass">All verified jobs and protected facts passed the quality gate.</p>}
-            </section>
-
-            {resume.bulletEditor.length ? (
-              <section className="rb-bullet-editor" aria-labelledby="bullet-editor-title">
-                <p className="rb-kicker">HUSTL3 BOT bullet workshop</p>
-                <h2 id="bullet-editor-title">Improve one bullet at a time.</h2>
-                <p>We strengthen what you actually did. We never make up numbers, licenses, equipment experience, or certifications.</p>
-                {resume.bulletEditor.map((job) => (
-                  <div className="rb-bullet-job" key={job.jobIndex}>
-                    <h3>{job.jobTitle}</h3><small>{job.employer}</small>
-                    {job.bullets.map((bullet) => {
-                      const key = `${job.jobIndex}:${bullet.bulletIndex}`;
-                      const value = bulletDrafts[key] ?? bullet.suggestion;
-                      const saving = bulletSaving === key;
-                      return (
-                        <article className="rb-bullet-card" key={key}>
-                          <div className="rb-bullet-version"><strong>Original</strong><p>{bullet.original}</p></div>
-                          <label htmlFor={`bullet-${job.jobIndex}-${bullet.bulletIndex}`}>HUSTL3 BOT suggestion</label>
-                          <textarea
-                            id={`bullet-${job.jobIndex}-${bullet.bulletIndex}`}
-                            rows={4}
-                            maxLength={500}
-                            value={value}
-                            disabled={Boolean(bulletSaving)}
-                            onChange={(event) => setBulletDrafts((current) => ({ ...current, [key]: event.target.value }))}
-                          />
-                          <div className="rb-bullet-actions" aria-label={`Choose wording for bullet ${bullet.bulletIndex + 1}`}>
-                            <button type="button" className={bullet.choice === "suggestion" ? "selected" : ""} disabled={Boolean(bulletSaving)} onClick={() => void saveBullet(job.jobIndex, bullet.bulletIndex, "suggestion", bullet.suggestion)}>Accept</button>
-                            <button type="button" className={bullet.choice === "edited" ? "selected" : ""} disabled={Boolean(bulletSaving) || !value.trim()} onClick={() => void saveBullet(job.jobIndex, bullet.bulletIndex, "edited", bullet.suggestion)}>{saving ? "Saving…" : "Rewrite"}</button>
-                            <button type="button" className={bullet.choice === "original" ? "selected" : ""} disabled={Boolean(bulletSaving)} onClick={() => void saveBullet(job.jobIndex, bullet.bulletIndex, "original", bullet.suggestion)}>Keep Original</button>
-                          </div>
-                        </article>
-                      );
-                    })}
-                  </div>
-                ))}
-                <small className="rb-bullet-note">Each choice updates the protected preview and final PDF + DOCX without using a correction run.</small>
-              </section>
-            ) : null}
 
             {coverLetter ? (
               <CoverLetterPanel
@@ -521,6 +511,57 @@ export function ResumeReview() {
           </aside>
         </section>
       )}
+
+      {hasDraft ? (
+        <section className={`rb-review-details${resume.bulletEditor.length ? "" : " rb-review-details-single"}`} aria-label="Resume quality and bullet workshop">
+          <section className="rb-quality-card" aria-labelledby="resume-quality-title">
+            <div className="rb-quality-head">
+              <div><p className="rb-kicker">Resume quality score</p><h2 id="resume-quality-title">{resume.qualityScore.total}<span>/100</span></h2></div>
+              <strong>{resume.qualityScore.label}</strong>
+            </div>
+            <p>Deterministic checks for complete work history, dates, credentials, ATS structure, and unsupported claims. Scoring uses no AI run.</p>
+            {resume.qualityScore.issues.length ? <ul>{resume.qualityScore.issues.map((issue) => <li key={issue}>{issue}</li>)}</ul> : <p className="rb-quality-pass">All verified jobs and protected facts passed the quality gate.</p>}
+          </section>
+
+          {resume.bulletEditor.length ? (
+            <section className="rb-bullet-editor" aria-labelledby="bullet-editor-title">
+              <p className="rb-kicker">HUSTL3 BOT bullet workshop</p>
+              <h2 id="bullet-editor-title">Improve one bullet at a time.</h2>
+              <p>We strengthen what you actually did. We never make up numbers, licenses, equipment experience, or certifications.</p>
+              {resume.bulletEditor.map((job) => (
+                <div className="rb-bullet-job" key={job.jobIndex}>
+                  <h3>{job.jobTitle}</h3><small>{job.employer}</small>
+                  {job.bullets.map((bullet) => {
+                    const key = `${job.jobIndex}:${bullet.bulletIndex}`;
+                    const value = bulletDrafts[key] ?? bullet.suggestion;
+                    const saving = bulletSaving === key;
+                    return (
+                      <article className="rb-bullet-card" key={key}>
+                        <div className="rb-bullet-version"><strong>Original</strong><p>{bullet.original}</p></div>
+                        <label htmlFor={`bullet-${job.jobIndex}-${bullet.bulletIndex}`}>HUSTL3 BOT suggestion</label>
+                        <textarea
+                          id={`bullet-${job.jobIndex}-${bullet.bulletIndex}`}
+                          rows={4}
+                          maxLength={500}
+                          value={value}
+                          disabled={Boolean(bulletSaving)}
+                          onChange={(event) => setBulletDrafts((current) => ({ ...current, [key]: event.target.value }))}
+                        />
+                        <div className="rb-bullet-actions" aria-label={`Choose wording for bullet ${bullet.bulletIndex + 1}`}>
+                          <button type="button" className={bullet.choice === "suggestion" ? "selected" : ""} disabled={Boolean(bulletSaving)} onClick={() => void saveBullet(job.jobIndex, bullet.bulletIndex, "suggestion", bullet.suggestion)}>Accept</button>
+                          <button type="button" className={bullet.choice === "edited" ? "selected" : ""} disabled={Boolean(bulletSaving) || !value.trim()} onClick={() => void saveBullet(job.jobIndex, bullet.bulletIndex, "edited", bullet.suggestion)}>{saving ? "Saving…" : "Rewrite"}</button>
+                          <button type="button" className={bullet.choice === "original" ? "selected" : ""} disabled={Boolean(bulletSaving)} onClick={() => void saveBullet(job.jobIndex, bullet.bulletIndex, "original", bullet.suggestion)}>Keep Original</button>
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
+              ))}
+              <small className="rb-bullet-note">Each choice updates the protected preview and final PDF + DOCX without using a correction run.</small>
+            </section>
+          ) : null}
+        </section>
+      ) : null}
 
       {hasDraft ? renderNotice() : null}
       {working ? <div className="rb-working-overlay" role="status"><span /><strong>HUSTL3 BOT is building</strong><small>This can take a minute. Keep this page open.</small></div> : null}
