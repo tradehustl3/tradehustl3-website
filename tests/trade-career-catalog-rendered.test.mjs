@@ -29,6 +29,11 @@ test("resume catalog renders one focused H1, exact coverage, and canonical metad
   assert.match(html, /14[\s\S]*Guided builder tracks/i);
   assert.match(html, /7[\s\S]*Detailed trade guides/i);
   assert.match(html, /50[\s\S]*Field bullet examples/i);
+  assert.ok(
+    (html.match(/href="\/resume-examples\/skilled-trades"/gi) ?? []).length >= 2,
+    "expected catalog header and hero links to the detailed skilled-trades guide",
+  );
+  assert.match(html, /data-item="skilled_trades_resume_examples"/i);
 });
 
 test("resume catalog server-renders every family and the requested transportation breadth", async () => {
