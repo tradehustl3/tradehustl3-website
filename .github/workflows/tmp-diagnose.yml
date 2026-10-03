@@ -1,0 +1,27 @@
+name: TEMP diagnose tests (delete after use)
+permissions:
+  contents: read
+on:
+  push:
+    branches: [tmp/diagnose-generation-track-tests]
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - name: Run tests and report failures as annotations
+        run: |
+          set +e
+          node --import tsx --test --test-reporter=junit --test-reporter-destination=junit.xml --test-reporter=spec --test-reporter-destination=stdout tests/*.test.mjs tests/*.test.ts > spec.txt 2>&1
+          echo "exit=$?"
+          names=$(grep -E "^\s*✖" spec.txt | sed -E "s/ \([0-9.]+ms\)//" | sort -u | tr "\n" "|" | sed "s/%/%25/g")
+          echo "::error title=Failing tests::${names:-none}"
+          awk "/failing tests:/,0" spec.txt | grep -E "test.ts:|test.mjs:|expected|actual:|message|Error" | grep -v "node:internal" | head -30 | cut -c1-300 | sed "s/%/%25/g" | while IFS= read -r l; do echo "::warning::$l"; done
+          tail -12 spec.txt | sed 's/%/%25/g' | while IFS= read -r l; do echo "::warning::$l"; done
+          exit 0
