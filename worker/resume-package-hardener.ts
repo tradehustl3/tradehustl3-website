@@ -11,7 +11,8 @@ type HardenResult = {
 };
 
 function normalizeTheme(value: unknown): ResumeTheme {
-  return value === "navy" ? "navy" : "plain";
+  if (value === "navy" || value === "lead") return value;
+  return "plain";
 }
 
 async function sha256Hex(bytes: Uint8Array): Promise<string> {
@@ -53,7 +54,7 @@ export async function hardenGeneratedResumePackage(
   resumeId: string,
 ): Promise<HardenResult> {
   const record = await env.DB.prepare(
-    `SELECT user_id, title, intake_json, generated_json, theme
+    `SELECT user_id, title, intake_json, generated_json, theme, generation_track
      FROM resumes WHERE resume_id = ? AND deleted_at IS NULL LIMIT 1`,
   ).bind(resumeId).first<{
     user_id: string;
@@ -61,6 +62,7 @@ export async function hardenGeneratedResumePackage(
     intake_json: string;
     generated_json: string | null;
     theme: string;
+    generation_track?: string | null;
   }>();
 
   // A successful generation may be followed immediately by this hardening pass.
@@ -95,7 +97,10 @@ export async function hardenGeneratedResumePackage(
 
   if (!env.BOOKS) throw new Error("Resume file storage is unavailable.");
   const generationId = crypto.randomUUID();
+  // Appearance decides layout; the writing track decides section headings. Legacy
+  // rows without a recorded track fall back to their appearance, as before.
   const theme = normalizeTheme(record.theme);
+  const generationTrack = normalizeTheme(record.generation_track ?? record.theme);
   const newObjectKeys = (["docx", "pdf", "preview"] as const).map((format) => {
     const extension = format === "docx" ? "docx" : "pdf";
     return `resume-builder/${record.user_id}/${resumeId}/generations/${generationId}/${format}.${extension}`;
@@ -108,9 +113,9 @@ export async function hardenGeneratedResumePackage(
 
   try {
     const [docx, pdf, preview] = await Promise.all([
-      (dependencies.createDocx ?? createResumeDocx)(hardened, theme),
-      (dependencies.createPdf ?? createResumePdf)(hardened, false, theme),
-      (dependencies.createPdf ?? createResumePdf)(hardened, true, theme),
+      (dependencies.createDocx ?? createResumeDocx)(hardened, theme, generationTrack),
+      (dependencies.createPdf ?? createResumePdf)(hardened, false, theme, generationTrack),
+      (dependencies.createPdf ?? createResumePdf)(hardened, true, theme, generationTrack),
     ]);
     const fileStatements = await Promise.all([
       storeFile(env, record.user_id, resumeId, generationId, "docx", docx),

@@ -14,6 +14,7 @@ type Resume = {
   title: string;
   status: string;
   theme: ResumeTheme;
+  generationTrack: ResumeTheme;
   paid: boolean;
   runsUsed: number;
   runsTotal: number;
@@ -97,6 +98,7 @@ export function ResumeReview() {
   const [messageTone, setMessageTone] = useState<MessageTone>("info");
   const [retryGeneration, setRetryGeneration] = useState(false);
   const [intakeNotice, setIntakeNotice] = useState<GenerationFailure | null>(null);
+  const [pendingTrack, setPendingTrack] = useState<ResumeTheme | null>(null);
   const [themeSaving, setThemeSaving] = useState(false);
   const [bulletSaving, setBulletSaving] = useState("");
   const [bulletDrafts, setBulletDrafts] = useState<Record<string, string>>({});
@@ -142,7 +144,7 @@ export function ResumeReview() {
   // resume system first so HUSTL3 BOT can apply that writing profile on the
   // initial AI build instead of generating a generic default automatically.
 
-  async function runGeneration(correctionRequest?: string): Promise<boolean> {
+  async function runGeneration(correctionRequest?: string, generationTrack?: ResumeTheme): Promise<boolean> {
     if (!resumeId) return false;
     setWorking(true);
     notify("");
@@ -152,7 +154,7 @@ export function ResumeReview() {
         method: "POST",
         credentials: "same-origin",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(correctionRequest ? { correctionRequest } : {}),
+        body: JSON.stringify(generationTrack ? { generationTrack } : correctionRequest ? { correctionRequest } : {}),
       });
       const result = await response.json() as GenerationFailure & { sourceRecovery?: boolean };
       if (!response.ok) {
@@ -176,10 +178,10 @@ export function ResumeReview() {
       await load(resumeId);
       notify(result.sourceRecovery
         ? "Your preview was built from the verified details in your upload because the AI rewrite was unavailable. Review it before continuing."
-        : correctionRequest ? "Correction applied. Review the updated watermarked copy." : "Your first resume is ready for review.", "success");
+        : correctionRequest || generationTrack ? "Correction applied. Review the updated watermarked copy." : "Your first resume is ready for review.", "success");
       return true;
     } catch (error) {
-      notify(error instanceof Error ? error.message : "We could not complete this AI run.", "error", !correctionRequest);
+      notify(error instanceof Error ? error.message : "We could not complete this AI run.", "error", !correctionRequest && !generationTrack);
       return false;
     } finally {
       setWorking(false);
@@ -252,6 +254,13 @@ export function ResumeReview() {
   function renderThemePicker() {
     if (!resume) return null;
     return (
+      <>
+      {pendingTrack && <div role="dialog" aria-label="Choose career track wording">
+        <p>Rewrite for the selected career track, or keep your current wording and its matching headings. Changing only the look is always free.</p>
+        <button type="button" disabled={working || !resume.paid || resume.correctionsRemaining < 1} onClick={async () => { if (await runGeneration(undefined, pendingTrack)) { await updateTheme(pendingTrack); setPendingTrack(null); } }}>Rewrite for this style</button>
+        <button type="button" disabled={working || themeSaving} onClick={async () => { await updateTheme(pendingTrack); setPendingTrack(null); }}>Keep my current wording</button>
+        <small>{!resume.paid ? "Unlock the package to rewrite." : resume.correctionsRemaining < 1 ? "All three corrections have been used." : "A rewrite uses exactly one correction and updates your resume and matching cover letter together."}</small>
+      </div>}
       <div className="rb-theme-picker" role="radiogroup" aria-label="Resume system">
         {THEME_OPTIONS.map((option) => {
           const selected = resume.theme === option.value;
@@ -262,8 +271,8 @@ export function ResumeReview() {
               role="radio"
               aria-checked={selected}
               className={`rb-trade-card${selected ? " rb-trade-card-on" : ""}`}
-              disabled={themeSaving}
-              onClick={() => void updateTheme(option.value)}
+              disabled={themeSaving || working}
+              onClick={() => resume.status === "ready" && option.value !== resume.generationTrack ? setPendingTrack(option.value) : void updateTheme(option.value)}
             >
               <span className={`rb-theme-preview rb-theme-preview-${option.value}`} aria-hidden="true">
                 <i /><i /><b /><i /><i />
@@ -275,6 +284,7 @@ export function ResumeReview() {
           );
         })}
       </div>
+      </>
     );
   }
 
@@ -479,6 +489,7 @@ export function ResumeReview() {
                 resumeId={resumeId}
                 coverLetter={coverLetter}
                 paid={resume.paid}
+                theme={resume.theme}
                 onRefresh={async () => { await load(resumeId); setActivePreview("cover-letter"); }}
                 onMessage={notify}
               />
