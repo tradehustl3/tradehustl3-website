@@ -3,21 +3,21 @@ import test from "node:test";
 import { readFile } from "node:fs/promises";
 
 const pagePath = new URL("../app/resume-builder/review/page.tsx", import.meta.url);
-const fallbackPath = new URL("../app/resume-builder/review/preview-fallback.tsx", import.meta.url);
+const reviewPath = new URL("../app/resume-builder/review/resume-review.tsx", import.meta.url);
 
-test("review page exposes a mobile-safe protected preview viewer", async () => {
-  const [page, fallback] = await Promise.all([
+test("mobile review keeps the protected PDF inside the resume workspace", async () => {
+  const [page, review] = await Promise.all([
     readFile(pagePath, "utf8"),
-    readFile(fallbackPath, "utf8"),
+    readFile(reviewPath, "utf8"),
   ]);
 
-  assert.match(page, /<ResumePreviewFallback\s*\/>/);
-  assert.match(fallback, /createPortal/);
-  assert.match(fallback, /\.rb-preview-panel/);
-  assert.match(fallback, /MOBILE_PREVIEW_BREAKPOINT = 820/);
-  assert.match(fallback, /iframe\.style\.display/);
-  assert.match(fallback, /files\/preview\?view=1/);
-  assert.match(fallback, /View my watermarked resume/);
-  assert.match(fallback, /no additional AI run/i);
-  assert.match(fallback, /use Back to return here/);
+  // The old mobile fallback hid the iframe and sent customers to the raw PDF.
+  // With same-origin framing enabled, mobile must remain in the full review UI.
+  assert.doesNotMatch(page, /ResumePreviewFallback/);
+  assert.match(review, /className="rb-review-grid"/);
+  assert.match(review, /<iframe/);
+  assert.match(review, /renderThemePicker\(\)/);
+  assert.match(review, /Field Pro/);
+  assert.match(review, /Modern Trade/);
+  assert.match(review, /Lead \/ Supervisor/);
 });
