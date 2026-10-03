@@ -256,10 +256,10 @@ export function ResumeReview() {
     return (
       <>
       {pendingTrack && <div role="dialog" aria-label="Choose career track wording">
-        <p>Rewrite for the selected career track using one shared package correction, or keep your current wording and matching headings.</p>
+        <p>Rewrite for the selected career track, or keep your current wording and its matching headings. Changing only the look is always free.</p>
         <button type="button" disabled={working || !resume.paid || resume.correctionsRemaining < 1} onClick={async () => { if (await runGeneration(undefined, pendingTrack)) { await updateTheme(pendingTrack); setPendingTrack(null); } }}>Rewrite for this style</button>
         <button type="button" disabled={working || themeSaving} onClick={async () => { await updateTheme(pendingTrack); setPendingTrack(null); }}>Keep my current wording</button>
-        <small>{!resume.paid ? "Unlock the package to rewrite." : resume.correctionsRemaining < 1 ? "All three corrections have been used." : "A rewrite uses exactly one correction. The cover letter keeps its current wording until you request its own correction."}</small>
+        <small>{!resume.paid ? "Unlock the package to rewrite." : resume.correctionsRemaining < 1 ? "All three corrections have been used." : "A rewrite uses exactly one correction and updates your resume and matching cover letter together."}</small>
       </div>}
       <div className="rb-theme-picker" role="radiogroup" aria-label="Resume system">
         {THEME_OPTIONS.map((option) => {
