@@ -117,6 +117,7 @@ export const resumes = sqliteTable(
     targetJobPosting: text("target_job_posting"),
     status: text("status").notNull().default("draft"),
     theme: text("theme").notNull().default("plain"),
+    generationTrack: text("generation_track"),
     generatedAt: text("generated_at"),
     createdAt: text("created_at").notNull().default(sql`(CURRENT_TIMESTAMP)`),
     updatedAt: text("updated_at").notNull().default(sql`(CURRENT_TIMESTAMP)`),

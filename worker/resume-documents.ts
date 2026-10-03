@@ -60,6 +60,16 @@ export type GeneratedResume = {
 // plain = Field Pro, navy = Modern Trade, lead = Lead / Supervisor.
 export type ResumeTheme = "plain" | "navy" | "lead";
 
+const TRACK_HEADINGS = {
+  summary: { plain: "PROFESSIONAL SUMMARY", navy: "PROFESSIONAL PROFILE", lead: "LEADERSHIP PROFILE" },
+  skills: { plain: "CORE SKILLS", navy: "AREAS OF EXPERTISE", lead: "LEADERSHIP & OPERATIONS COMPETENCIES" },
+  additional: {
+    plain: "ADDITIONAL INFORMATION",
+    navy: "TECHNICAL TOOLS, SYSTEMS & TRAINING",
+    lead: "TECHNICAL EXPERTISE & ADDITIONAL QUALIFICATIONS",
+  },
+} as const;
+
 const BRAND_BLACK = "111111";
 const BRAND_BLACK_RGB = rgb(0x11 / 255, 0x11 / 255, 0x11 / 255);
 const BRAND_RED = "D71920";
@@ -157,7 +167,7 @@ function headerParagraphs(resume: GeneratedResume, contactLine: string, theme: R
   ];
 }
 
-export async function createResumeDocx(resume: GeneratedResume, theme: ResumeTheme = "plain"): Promise<Uint8Array> {
+export async function createResumeDocx(resume: GeneratedResume, theme: ResumeTheme = "plain", generationTrack: ResumeTheme = theme): Promise<Uint8Array> {
   const contactLine = [
     clean(resume.basics.location),
     clean(resume.basics.phone),
@@ -195,7 +205,7 @@ export async function createResumeDocx(resume: GeneratedResume, theme: ResumeThe
   };
   const addExperience = () => {
     if (!resume.experience.length) return;
-    children.push(sectionHeading(theme === "lead" ? "PROFESSIONAL EXPERIENCE" : "WORK EXPERIENCE", theme));
+    children.push(sectionHeading(generationTrack === "lead" ? "PROFESSIONAL EXPERIENCE" : "WORK EXPERIENCE", theme));
     for (const job of resume.experience) {
       const dates = [clean(job.startDate), clean(job.endDate)].filter(Boolean).join(" – ");
       const organizationLine = [clean(job.employer), clean(job.location)].filter(Boolean).join(" — ");
@@ -256,26 +266,26 @@ export async function createResumeDocx(resume: GeneratedResume, theme: ResumeThe
   };
 
   if (theme === "navy") {
-    addSummary("PROFESSIONAL PROFILE");
-    addSkills("AREAS OF EXPERTISE");
+    addSummary(TRACK_HEADINGS.summary[generationTrack]);
+    addSkills(TRACK_HEADINGS.skills[generationTrack]);
     addExperience();
     addCertifications();
-    addAdditional("TECHNICAL TOOLS, SYSTEMS & TRAINING");
+    addAdditional(TRACK_HEADINGS.additional[generationTrack]);
     addEducation();
   } else if (theme === "lead") {
-    addSummary("LEADERSHIP PROFILE");
-    addSkills("LEADERSHIP & OPERATIONS COMPETENCIES");
+    addSummary(TRACK_HEADINGS.summary[generationTrack]);
+    addSkills(TRACK_HEADINGS.skills[generationTrack]);
     addExperience();
-    addAdditional("TECHNICAL EXPERTISE & ADDITIONAL QUALIFICATIONS");
+    addAdditional(TRACK_HEADINGS.additional[generationTrack]);
     addCertifications();
     addEducation();
   } else {
-    addSummary("PROFESSIONAL SUMMARY");
-    addSkills("CORE SKILLS");
+    addSummary(TRACK_HEADINGS.summary[generationTrack]);
+    addSkills(TRACK_HEADINGS.skills[generationTrack]);
     addCertifications();
     addExperience();
     addEducation();
-    addAdditional("ADDITIONAL INFORMATION");
+    addAdditional(TRACK_HEADINGS.additional[generationTrack]);
   }
 
   const margin = theme === "plain" ? 864 : theme === "navy" ? 1008 : 1080;
@@ -724,7 +734,7 @@ function writeJob(writer: PdfWriter, job: ResumeExperience): void {
   writer.y -= writer.layout.jobAfter;
 }
 
-export async function createResumePdf(resume: GeneratedResume, watermarked = false, theme: ResumeTheme = "plain"): Promise<Uint8Array> {
+export async function createResumePdf(resume: GeneratedResume, watermarked = false, theme: ResumeTheme = "plain", generationTrack: ResumeTheme = theme): Promise<Uint8Array> {
   const document = await PDFDocument.create();
   document.registerFontkit(fontkit);
   const baseLayout = theme === "navy" ? MODERN_PDF_LAYOUT : theme === "lead" ? LEAD_PDF_LAYOUT : STANDARD_PDF_LAYOUT;
@@ -788,7 +798,7 @@ export async function createResumePdf(resume: GeneratedResume, watermarked = fal
     if (!resume.experience.length) return;
     const firstJob = resume.experience[0];
     const firstJobIntro = jobHeadingHeight(writer, firstJob) + (firstJob.bullets.length ? bulletHeight(writer, firstJob.bullets[0]) : 0);
-    writeSection(writer, theme === "lead" ? "PROFESSIONAL EXPERIENCE" : "WORK EXPERIENCE", firstJobIntro);
+    writeSection(writer, generationTrack === "lead" ? "PROFESSIONAL EXPERIENCE" : "WORK EXPERIENCE", firstJobIntro);
     for (const job of resume.experience) writeJob(writer, job);
   };
   const addEducation = () => {
@@ -807,26 +817,26 @@ export async function createResumePdf(resume: GeneratedResume, watermarked = fal
   };
 
   if (theme === "navy") {
-    addSummary("PROFESSIONAL PROFILE");
-    addSkills("AREAS OF EXPERTISE");
+    addSummary(TRACK_HEADINGS.summary[generationTrack]);
+    addSkills(TRACK_HEADINGS.skills[generationTrack]);
     addExperience();
     addCertifications();
-    addAdditional("TECHNICAL TOOLS, SYSTEMS & TRAINING");
+    addAdditional(TRACK_HEADINGS.additional[generationTrack]);
     addEducation();
   } else if (theme === "lead") {
-    addSummary("LEADERSHIP PROFILE");
-    addSkills("LEADERSHIP & OPERATIONS COMPETENCIES");
+    addSummary(TRACK_HEADINGS.summary[generationTrack]);
+    addSkills(TRACK_HEADINGS.skills[generationTrack]);
     addExperience();
-    addAdditional("TECHNICAL EXPERTISE & ADDITIONAL QUALIFICATIONS");
+    addAdditional(TRACK_HEADINGS.additional[generationTrack]);
     addCertifications();
     addEducation();
   } else {
-    addSummary("PROFESSIONAL SUMMARY");
-    addSkills("CORE SKILLS");
+    addSummary(TRACK_HEADINGS.summary[generationTrack]);
+    addSkills(TRACK_HEADINGS.skills[generationTrack]);
     addCertifications();
     addExperience();
     addEducation();
-    addAdditional("ADDITIONAL INFORMATION");
+    addAdditional(TRACK_HEADINGS.additional[generationTrack]);
   }
 
   if (watermarked) {

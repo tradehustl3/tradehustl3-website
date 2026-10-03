@@ -6,6 +6,7 @@ type CoverLetterState = {
   included: boolean;
   available: boolean;
   generated: boolean;
+  generationTrack?: string;
   correctionsRemaining: number;
   previewUrl: string | null;
   downloads: { pdf: string; docx: string } | null;
@@ -19,25 +20,27 @@ export function CoverLetterPanel({
   resumeId,
   coverLetter,
   paid,
+  theme,
   onRefresh,
   onMessage,
 }: {
   resumeId: string;
   coverLetter: CoverLetterState;
   paid: boolean;
+  theme: string;
   onRefresh: () => Promise<void>;
   onMessage: (message: string, tone?: "info" | "success" | "error") => void;
 }) {
   const [working, setWorking] = useState(false);
 
-  async function submit(event: FormEvent<HTMLFormElement>, correction = false) {
+  async function submit(event: FormEvent<HTMLFormElement>, correction = false, rewrite = false) {
     event.preventDefault();
     if (working) return;
     const form = new FormData(event.currentTarget);
     const correctionRequest = String(form.get("coverCorrection") ?? "").trim();
-    if (correction && !correctionRequest) return;
+    if (correction && !rewrite && !correctionRequest) return;
     const payload: Record<string, string> = correction
-      ? { correctionRequest }
+      ? rewrite ? { generationTrack: theme } : { correctionRequest }
       : {
           companyName: String(form.get("companyName") ?? "").trim(),
           hiringManager: String(form.get("hiringManager") ?? "").trim(),
@@ -106,6 +109,12 @@ export function CoverLetterPanel({
         </div>
       ) : null}
 
+      {coverLetter.generationTrack !== theme && <form onSubmit={(event) => void submit(event, true, true)}>
+        <p>The selected appearance differs from this letter&apos;s writing track.</p>
+        <button type="submit" disabled={working || !paid || coverLetter.correctionsRemaining < 1}>Rewrite for this style</button>
+        <button type="button" onClick={() => onMessage("Keeping your current cover-letter wording. Appearance changes are free.")}>Keep my current wording</button>
+        <small>A cover-letter rewrite uses one of the three shared corrections.</small>
+      </form>}
       {paid ? (
         <form onSubmit={(event) => void submit(event, true)}>
           <div className="rb-correction-count"><strong>{coverLetter.correctionsRemaining}</strong><span>package corrections remaining</span></div>

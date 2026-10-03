@@ -608,8 +608,8 @@ async function rerenderResumeTheme(
   theme: ResumeTheme,
 ): Promise<void> {
   const record = await env.DB.prepare(
-    "SELECT user_id, generated_json FROM resumes WHERE resume_id = ? AND deleted_at IS NULL LIMIT 1",
-  ).bind(resumeId).first<{ user_id: string; generated_json: string | null }>();
+    "SELECT user_id, generated_json, generation_track, theme FROM resumes WHERE resume_id = ? AND deleted_at IS NULL LIMIT 1",
+  ).bind(resumeId).first<{ user_id: string; generated_json: string | null; generation_track?: ResumeTheme; theme: ResumeTheme }>();
   if (!record?.generated_json) return;
   if (!env.BOOKS) throw new Error("Resume file storage is unavailable.");
 
@@ -627,9 +627,9 @@ async function rerenderResumeTheme(
 
   try {
     const [docx, pdf, preview] = await Promise.all([
-      (dependencies.createDocx ?? createResumeDocx)(generated, theme),
-      (dependencies.createPdf ?? createResumePdf)(generated, false, theme),
-      (dependencies.createPdf ?? createResumePdf)(generated, true, theme),
+      (dependencies.createDocx ?? createResumeDocx)(generated, theme, record.generation_track ?? record.theme),
+      (dependencies.createPdf ?? createResumePdf)(generated, false, theme, record.generation_track ?? record.theme),
+      (dependencies.createPdf ?? createResumePdf)(generated, true, theme, record.generation_track ?? record.theme),
     ]);
     const fileStatements = await Promise.all([
       storeThemeFile(env, record.user_id, resumeId, generationId, "docx", docx),

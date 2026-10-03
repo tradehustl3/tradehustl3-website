@@ -1,6 +1,7 @@
 import { errorKind } from "./resume-safe-log";
 import {
   handleResumeBuilderRoute as handleBaseResumeBuilderRoute,
+  resumeSystemProfile,
   type ResumeBuilderDependencies,
   type ResumeBuilderEnv,
 } from "./resume-builder-base";
@@ -24,6 +25,7 @@ type D1MutationResult = { meta?: { changes?: number } };
 type CoverFormat = "cover_json" | "cover_pdf" | "cover_docx";
 
 type StoredCoverLetter = GeneratedCoverLetter & {
+  generationTrack?: ResumeTheme;
   context: {
     companyName: string;
     hiringManager: string;
@@ -41,6 +43,7 @@ type ResumeProbe = {
     generated_json: string | null;
     target_job_posting: string | null;
     theme: string;
+    generation_track?: string;
   };
 };
 
@@ -186,7 +189,7 @@ async function probeResume(
     return json({ ok: false, message: "Resume not found." }, 404);
   }
   const record = await env.DB.prepare(
-    `SELECT user_id, generated_json, target_job_posting, theme
+    `SELECT user_id, generated_json, target_job_posting, theme, generation_track
      FROM resumes WHERE resume_id = ? AND deleted_at IS NULL LIMIT 1`,
   ).bind(resumeId).first<ResumeProbe["record"]>();
   if (!record) return json({ ok: false, message: "Resume not found." }, 404);
@@ -464,7 +467,13 @@ async function generateCoverLetter(
   const body = await readJsonBody(request, COVER_BODY_MAX_BYTES);
   if (!body) return json({ ok: false, message: "Cover-letter request is too large or invalid." }, 400);
   const existing = await loadStoredCoverLetter(env, probe.record.user_id, resumeId);
-  const correctionRequest = cleanText(body.correctionRequest, COVER_CORRECTION_MAX_CHARS);
+  if (body.generationTrack !== undefined && !["plain", "navy", "lead"].includes(String(body.generationTrack))) {
+    return json({ ok: false, message: "Choose a valid career track." }, 400);
+  }
+  const generationTrack = normalizeTheme(body.generationTrack ?? existing?.generationTrack ?? probe.record.generation_track ?? probe.record.theme);
+  const correctionRequest = body.generationTrack !== undefined
+    ? "Rewrite for the selected career track using only verified facts. Never invent responsibilities."
+    : cleanText(body.correctionRequest, COVER_CORRECTION_MAX_CHARS);
   if (existing && !correctionRequest) {
     return json({ ok: false, message: "Your matching cover letter already exists. Use the correction box to refine it." }, 409);
   }
@@ -525,7 +534,7 @@ async function generateCoverLetter(
 
   const context = { companyName, hiringManager, targetJobTitle, jobPosting };
   const supportedSource = JSON.stringify({ verifiedResume, targetJobContext: context });
-  const prompt = `${existing ? "Refine the existing cover letter using the correction request. Preserve all verified facts." : "Write the matching cover letter."}\n\n<VERIFIED_RESUME>\n${JSON.stringify(verifiedResume)}\n</VERIFIED_RESUME>\n\n<TARGET_JOB_CONTEXT>\n${JSON.stringify(context)}\n</TARGET_JOB_CONTEXT>${existing ? `\n\n<EXISTING_COVER_LETTER>\n${JSON.stringify(existing.paragraphs)}\n</EXISTING_COVER_LETTER>\n\n<CORRECTION_REQUEST>\n${correctionRequest}\n</CORRECTION_REQUEST>` : ""}`;
+  const prompt = `Career writing profile: ${resumeSystemProfile(generationTrack)}\nAdapt this profile to cover-letter paragraphs. Emphasize only verified facts appropriate to that track.\n\n${existing ? "Refine the existing cover letter using the correction request. Preserve all verified facts." : "Write the matching cover letter."}\n\n<VERIFIED_RESUME>\n${JSON.stringify(verifiedResume)}\n</VERIFIED_RESUME>\n\n<TARGET_JOB_CONTEXT>\n${JSON.stringify(context)}\n</TARGET_JOB_CONTEXT>${existing ? `\n\n<EXISTING_COVER_LETTER>\n${JSON.stringify(existing.paragraphs)}\n</EXISTING_COVER_LETTER>\n\n<CORRECTION_REQUEST>\n${correctionRequest}\n</CORRECTION_REQUEST>` : ""}`;
   const generationId = crypto.randomUUID();
   const previousRows = await Promise.all(([
     "cover_json", "cover_pdf", "cover_docx",
@@ -538,6 +547,7 @@ async function generateCoverLetter(
   try {
     const modelResult = await callCoverLetterModel(env, prompt, supportedSource, dependencies);
     const stored: StoredCoverLetter = {
+      generationTrack,
       basics: {
         fullName: verifiedResume.basics.fullName,
         location: verifiedResume.basics.location,
@@ -698,6 +708,7 @@ export async function augmentResumeWithCoverLetter(
         included: true,
         available,
         generated,
+        generationTrack: stored?.generationTrack ?? resume.generationTrack,
         correctionsRemaining: Number(resume.correctionsRemaining) || 0,
         previewUrl: generated ? `/api/resume-builder/resumes/${resumeId}/cover-letter/files/pdf?view=1` : null,
         downloads: paid && generated ? {
