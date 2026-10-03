@@ -134,11 +134,13 @@ test("hardener keeps writing-track headings when it changes content under a diff
   assert.equal(result.changed, true, "fixture must force the hardener to change and redraw the package");
   assert.doesNotMatch(generatedJson(), /Placeholder Person/);
   const xml = await docxText(storedFile("docx")!);
-  assert.match(xml, /PROFESSIONAL SUMMARY/); assert.match(xml, /CORE SKILLS/);
-  assert.doesNotMatch(xml, /LEADERSHIP PROFILE|LEADERSHIP &amp; OPERATIONS/);
+  // Field Pro labels experience "WORK EXPERIENCE"; Lead / Supervisor labels it "PROFESSIONAL EXPERIENCE".
+  assert.match(xml, /PROFESSIONAL SUMMARY/); assert.match(xml, /WORK EXPERIENCE/);
+  assert.doesNotMatch(xml, /LEADERSHIP PROFILE|LEADERSHIP &amp; OPERATIONS|PROFESSIONAL EXPERIENCE/);
   for (const format of ["pdf", "preview"]) {
     const text = await pdfText(storedFile(format)!);
-    assert.match(text, /PROFESSIONAL SUMMARY/); assert.doesNotMatch(text, /LEADERSHIP PROFILE/);
+    assert.match(text, /PROFESSIONAL SUMMARY/); assert.match(text, /WORK EXPERIENCE/);
+    assert.doesNotMatch(text, /LEADERSHIP PROFILE|PROFESSIONAL EXPERIENCE/);
   }
 });
 
