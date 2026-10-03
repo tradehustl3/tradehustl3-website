@@ -594,9 +594,25 @@ h2.rb-section-title { margin: 0 0 4px; font-size: 20px; }
 .rb-theme-preview-lead b { height: 3px; background: var(--rb-navy); }
 .rb-theme-note { display: block; margin-top: 12px; color: var(--rb-text-2); font-size: 13px; line-height: 1.5; }
 
+/* career-track choice (shown only when a paid rewrite is possible) */
+.rb-trade-card-pending { outline: 2px dashed var(--rb-red); outline-offset: 2px; }
+.rb-track-choice { display: grid; gap: 10px; margin-top: 12px; padding: 16px; border: 2px solid var(--rb-red); border-radius: var(--rb-radius); background: var(--rb-red-soft); }
+.rb-track-choice .rb-kicker { margin: 0; }
+.rb-track-choice h3 { margin: 0; color: var(--rb-text); font-size: 17px; line-height: 1.3; }
+.rb-track-choice p { margin: 0; color: var(--rb-text); font-size: 14px; line-height: 1.5; }
+.rb-track-choice-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.rb-track-choice-actions .rb-button { flex: 1 1 180px; min-height: 44px; justify-content: center; }
+.rb-track-choice-cancel { justify-self: start; min-height: 44px; padding: 0 4px; border: 0; background: none; color: var(--rb-text-2); font: inherit; font-size: 14px; text-decoration: underline; cursor: pointer; }
+.rb-track-choice small { color: var(--rb-text-2); font-size: 13px; line-height: 1.5; }
+
+/* quality score + bullet workshop sit side by side under the preview */
+.rb-review-details { display: grid; grid-template-columns: minmax(260px, .8fr) minmax(0, 1.6fr); gap: 20px; align-items: start; margin-top: 20px; }
+.rb-review-details-single { grid-template-columns: minmax(0, 1fr); }
+
 /* preview + sidebar */
 .rb-review-grid { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(320px, .6fr); gap: 20px; align-items: start; }
 .rb-preview-panel { min-width: 0; overflow: hidden; border: 1px solid var(--rb-border); border-radius: var(--rb-radius-lg); background: #f1f5f9; }
+@media (min-width: 1041px) { .rb-preview-panel { position: sticky; top: 16px; } }
 .rb-preview-tabs { display: flex; gap: 4px; margin: 12px 12px 0; padding: 4px; border-radius: var(--rb-radius); background: #e2e8f0; }
 .rb-preview-tabs .rb-button { flex: 1; min-height: 40px; border: 0; background: transparent; color: var(--rb-text-2); box-shadow: none; }
 .rb-preview-tabs .rb-button-primary, .rb-preview-tabs .rb-button[aria-selected="true"] { background: var(--rb-surface); color: var(--rb-text); box-shadow: var(--rb-shadow-sm); }
@@ -692,6 +708,7 @@ p.rb-quality-pass { margin: 12px 0 0; padding: 10px 12px; border: 1px solid var(
    Responsive
    ============================================================ */
 @media (max-width: 1040px) {
+  .rb-review-details { grid-template-columns: minmax(0, 1fr); }
   .rb-wiz-shell { grid-template-columns: minmax(0, 1fr); }
   .rb-wiz-side { position: static; order: -1; }
   .rb-wiz-shell-wide .rb-wiz-side { order: 1; }
