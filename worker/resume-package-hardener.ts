@@ -1,5 +1,7 @@
 import type { ResumeBuilderDependencies, ResumeBuilderEnv } from "./resume-builder-base";
 import { createResumeDocx, createResumePdf, type GeneratedResume, type ResumeTheme } from "./resume-documents";
+import { storedStyle } from "./resume-templates";
+import { withCustomerScope } from "./resume-presentation-content";
 import { evaluateCriticalResumeGate } from "./resume-quality-hard-gate";
 
 type HardenResult = {
@@ -54,7 +56,7 @@ export async function hardenGeneratedResumePackage(
   resumeId: string,
 ): Promise<HardenResult> {
   const record = await env.DB.prepare(
-    `SELECT user_id, title, intake_json, generated_json, theme, generation_track
+    `SELECT user_id, title, intake_json, generated_json, theme, generation_track, font, text_size, spacing, accent, template_version
      FROM resumes WHERE resume_id = ? AND deleted_at IS NULL LIMIT 1`,
   ).bind(resumeId).first<{
     user_id: string;
@@ -63,6 +65,11 @@ export async function hardenGeneratedResumePackage(
     generated_json: string | null;
     theme: string;
     generation_track?: string | null;
+    font?: string | null;
+    text_size?: string | null;
+    spacing?: string | null;
+    accent?: string | null;
+    template_version?: number | null;
   }>();
 
   // A successful generation may be followed immediately by this hardening pass.
@@ -101,6 +108,8 @@ export async function hardenGeneratedResumePackage(
   // rows without a recorded track fall back to their appearance, as before.
   const theme = normalizeTheme(record.theme);
   const generationTrack = normalizeTheme(record.generation_track ?? record.theme);
+  const style = storedStyle(record, theme);
+  const presentation = withCustomerScope(hardened, record.intake_json);
   const newObjectKeys = (["docx", "pdf", "preview"] as const).map((format) => {
     const extension = format === "docx" ? "docx" : "pdf";
     return `resume-builder/${record.user_id}/${resumeId}/generations/${generationId}/${format}.${extension}`;
@@ -113,9 +122,9 @@ export async function hardenGeneratedResumePackage(
 
   try {
     const [docx, pdf, preview] = await Promise.all([
-      (dependencies.createDocx ?? createResumeDocx)(hardened, theme, generationTrack),
-      (dependencies.createPdf ?? createResumePdf)(hardened, false, theme, generationTrack),
-      (dependencies.createPdf ?? createResumePdf)(hardened, true, theme, generationTrack),
+      (dependencies.createDocx ?? createResumeDocx)(presentation, theme, generationTrack, style),
+      (dependencies.createPdf ?? createResumePdf)(presentation, false, theme, generationTrack, style),
+      (dependencies.createPdf ?? createResumePdf)(presentation, true, theme, generationTrack, style),
     ]);
     const fileStatements = await Promise.all([
       storeFile(env, record.user_id, resumeId, generationId, "docx", docx),

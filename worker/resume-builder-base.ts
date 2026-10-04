@@ -1,3 +1,5 @@
+import { withCustomerScope } from './resume-presentation-content';
+import { storedStyle, defaultStyle } from './resume-templates';
 import { errorKind } from "./resume-safe-log";
 import { notifyResumeRecovery, type RecoveryContext } from "./resume-recovery";
 import { groundResumePrefill } from "./resume-extraction-grounding";
@@ -75,7 +77,9 @@ type ResumeRecord = {
   target_job_posting: string | null;
   status: string;
   theme: string;
+  updated_at?: string;
   generation_track?: string;
+  font?: string; text_size?: string; spacing?: string; accent?: string; template_version?: number;
 };
 
 const RESUME_THEMES: ReadonlySet<string> = new Set(["plain", "navy", "lead"]);
@@ -466,7 +470,7 @@ async function readBodyText(request: Request, maxBytes: number): Promise<string 
   }
 }
 
-async function parseJsonBody(request: Request, maxBytes = 50_000): Promise<Record<string, unknown> | null> {
+export async function parseJsonBody(request: Request, maxBytes = 50_000): Promise<Record<string, unknown> | null> {
   try {
     const text = await readBodyText(request, maxBytes);
     if (!text) return null;
@@ -744,9 +748,9 @@ async function createResume(request: Request, env: ResumeBuilderEnv, dependencie
   const { trade, title, targetJobPosting, intakeJson, theme } = parsed.value;
   const resumeId = crypto.randomUUID();
   await env.DB.prepare(
-    `INSERT INTO resumes (resume_id, user_id, trade, title, intake_json, target_job_posting, theme, status)
-     VALUES (?, ?, ?, ?, ?, ?, ?, 'draft')`,
-  ).bind(resumeId, user.userId, trade, title, intakeJson, targetJobPosting, theme).run();
+    `INSERT INTO resumes (resume_id, user_id, trade, title, intake_json, target_job_posting, theme, font, accent, template_version, status)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 2, 'draft')`,
+  ).bind(resumeId, user.userId, trade, title, intakeJson, targetJobPosting, theme, defaultStyle(theme).font, defaultStyle(theme).accent).run();
   // A persisted draft and a valid, magic-link-authenticated account email are
   // eligible for recovery. Never trust an uploaded resume's contact address.
   const email = user.email.trim();
@@ -757,7 +761,7 @@ async function createResume(request: Request, env: ResumeBuilderEnv, dependencie
 
 async function findOwnedResume(env: ResumeBuilderEnv, resumeId: string, userId: string): Promise<ResumeRecord | null> {
   return env.DB.prepare(
-    `SELECT resume_id, user_id, trade, title, intake_json, generated_json, target_job_posting, status, theme, generation_track
+    `SELECT resume_id, user_id, trade, title, intake_json, generated_json, target_job_posting, status, updated_at, theme, generation_track, font, text_size, spacing, accent, template_version
      FROM resumes WHERE resume_id = ? AND user_id = ? AND deleted_at IS NULL`,
   ).bind(resumeId, userId).first<ResumeRecord>();
 }
@@ -1022,6 +1026,7 @@ async function getResumeStatus(request: Request, env: ResumeBuilderEnv, resumeId
       targetJobPosting: resume.target_job_posting,
       status: resume.status,
       theme: normalizeTheme(resume.theme),
+      style: storedStyle(resume, normalizeTheme(resume.theme)),
       generationTrack: normalizeTheme(resume.generation_track ?? resume.theme),
       paid: Boolean(entitlement),
       runsUsed: entitlement?.credits_used ?? (generated ? INITIAL_PREVIEW_RUNS : 0),
@@ -1040,6 +1045,17 @@ async function getResumeStatus(request: Request, env: ResumeBuilderEnv, resumeId
   });
 }
 
+/** Shared authorization for free presentation changes; does not mutate content or credits. */
+export async function authorizeResumePresentation(request: Request, env: ResumeBuilderEnv, resumeId: string): Promise<ResumeRecord | Response> {
+  if (!hasTrustedOrigin(request)) return json({ ok: false, message: "Request origin rejected." }, 403);
+  const user = await requireUser(request, env);
+  if (!user) return json({ ok: false, message: "Sign in to continue." }, 401);
+  const resume = await findOwnedResume(env, resumeId, user.userId);
+  if (!resume) return json({ ok: false, message: "Resume not found." }, 404);
+  if (!await checkRateLimit(env, `resume-style:${user.userId}`, 120, 3600)) return json({ ok: false, message: "Too many design updates. Try again later." }, 429);
+  return resume;
+}
+
 async function updateResume(request: Request, env: ResumeBuilderEnv, resumeId: string): Promise<Response> {
   if (request.method !== "PUT" && request.method !== "PATCH") return methodNotAllowed("GET, PUT, PATCH");
   if (!hasTrustedOrigin(request)) return json({ ok: false, message: "Request origin rejected." }, 403);
@@ -1047,6 +1063,7 @@ async function updateResume(request: Request, env: ResumeBuilderEnv, resumeId: s
   if (!user) return json({ ok: false, message: "Sign in to continue." }, 401);
   const resume = await findOwnedResume(env, resumeId, user.userId);
   if (!resume) return json({ ok: false, message: "Resume not found." }, 404);
+  if (resume.status === "generating") return json({ ok: false, message: "A package update is already in progress." }, 409);
   const entitlement = await findEntitlement(env, resumeId, user.userId);
 
   const body = await parseJsonBody(request, MAX_RESUME_BODY_BYTES);
@@ -2936,6 +2953,7 @@ async function updateResumeBullet(
   if (!user) return json({ ok: false, message: "Sign in to continue." }, 401);
   const resume = await findOwnedResume(env, resumeId, user.userId);
   if (!resume?.generated_json) return json({ ok: false, message: "Build the protected preview first." }, 409);
+  if (resume.status === "generating") return json({ ok: false, message: "A package update is already in progress." }, 409);
   const body = await parseJsonBody(request, 8_000);
   const jobIndex = Number(body?.jobIndex);
   const bulletIndex = Number(body?.bulletIndex);
@@ -2999,9 +3017,9 @@ async function updateResumeBullet(
   try {
     const theme = normalizeTheme(resume.theme);
     const [docx, pdf, preview] = await Promise.all([
-      (dependencies.createDocx ?? createResumeDocx)(nextStored, theme, normalizeTheme(resume.generation_track ?? resume.theme)),
-      (dependencies.createPdf ?? createResumePdf)(nextStored, false, theme, normalizeTheme(resume.generation_track ?? resume.theme)),
-      (dependencies.createPdf ?? createResumePdf)(nextStored, true, theme, normalizeTheme(resume.generation_track ?? resume.theme)),
+      (dependencies.createDocx ?? createResumeDocx)(withCustomerScope(nextStored, resume.intake_json), theme, normalizeTheme(resume.generation_track ?? resume.theme), storedStyle(resume, theme)),
+      (dependencies.createPdf ?? createResumePdf)(withCustomerScope(nextStored, resume.intake_json), false, theme, normalizeTheme(resume.generation_track ?? resume.theme), storedStyle(resume, theme)),
+      (dependencies.createPdf ?? createResumePdf)(withCustomerScope(nextStored, resume.intake_json), true, theme, normalizeTheme(resume.generation_track ?? resume.theme), storedStyle(resume, theme)),
     ]);
     const fileStatements = await Promise.all([
       storeResumeFile(env, user.userId, resumeId, generationId, "docx", docx),
@@ -3112,6 +3130,18 @@ async function generateResume(
     return json({ ok: false, message: "A resume generation is already in progress." }, 409);
   }
 
+  // A free style update may have completed between the initial read and this
+  // generation lock. Refresh only presentation, leaving verified facts intact.
+  const latestPresentation = await findOwnedResume(env, resumeId, user.userId);
+  if (latestPresentation) {
+    resume.theme = latestPresentation.theme;
+    resume.font = latestPresentation.font;
+    resume.text_size = latestPresentation.text_size;
+    resume.spacing = latestPresentation.spacing;
+    resume.accent = latestPresentation.accent;
+    resume.template_version = latestPresentation.template_version;
+  }
+
   if (entitlement) {
     const reserved = await env.DB.prepare(
       `UPDATE entitlements SET credits_used = credits_used + 1, updated_at = CURRENT_TIMESTAMP
@@ -3152,9 +3182,9 @@ async function generateResume(
     const theme = normalizeTheme(resume.theme);
     try {
       [docx, pdf, preview] = await Promise.all([
-        (dependencies.createDocx ?? createResumeDocx)(generated.resume, theme, normalizeTheme(resume.generation_track ?? resume.theme)),
-        (dependencies.createPdf ?? createResumePdf)(generated.resume, false, theme, normalizeTheme(resume.generation_track ?? resume.theme)),
-        (dependencies.createPdf ?? createResumePdf)(generated.resume, true, theme, normalizeTheme(resume.generation_track ?? resume.theme)),
+        (dependencies.createDocx ?? createResumeDocx)(withCustomerScope(generated.resume, resume.intake_json), theme, normalizeTheme(resume.generation_track ?? resume.theme), storedStyle(resume, theme)),
+        (dependencies.createPdf ?? createResumePdf)(withCustomerScope(generated.resume, resume.intake_json), false, theme, normalizeTheme(resume.generation_track ?? resume.theme), storedStyle(resume, theme)),
+        (dependencies.createPdf ?? createResumePdf)(withCustomerScope(generated.resume, resume.intake_json), true, theme, normalizeTheme(resume.generation_track ?? resume.theme), storedStyle(resume, theme)),
       ]);
     } catch (error) {
       console.error("Resume document render failed", errorKind(error));

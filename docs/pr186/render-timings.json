@@ -1,0 +1,8 @@
+{
+  "environment": "local Node 24; resume PDF and DOCX generated together; excludes storage/network",
+  "milliseconds": {
+    "plain": 817,
+    "navy": 487,
+    "lead": 287
+  }
+}

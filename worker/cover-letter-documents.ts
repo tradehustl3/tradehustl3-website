@@ -1,3 +1,5 @@
+import { renderPdfV2, renderDocxV2 } from './resume-layout-v2';
+import type { ResumeStyle } from './resume-templates';
 import {
   AlignmentType,
   BorderStyle,
@@ -60,7 +62,9 @@ function accentRgb(theme: ResumeTheme): ReturnType<typeof rgb> {
 export async function createCoverLetterDocx(
   letter: GeneratedCoverLetter,
   theme: ResumeTheme = "plain",
+  style?: ResumeStyle,
 ): Promise<Uint8Array> {
+  if (style?.templateVersion === 2) return renderDocxV2(letter, theme, style, theme, true);
   const contactLine = [letter.basics.location, letter.basics.phone, letter.basics.email]
     .map(clean)
     .filter(Boolean)
@@ -228,7 +232,9 @@ export async function createCoverLetterPdf(
   letter: GeneratedCoverLetter,
   theme: ResumeTheme = "plain",
   watermarked = false,
+  style?: ResumeStyle,
 ): Promise<Uint8Array> {
+  if (style?.templateVersion === 2) return renderPdfV2(letter, theme, style, watermarked, theme, true);
   const document = await PDFDocument.create();
   document.registerFontkit(fontkit);
   const writer: PdfWriter = {

@@ -1,3 +1,5 @@
+import { renderPdfV2, renderDocxV2 } from './resume-layout-v2';
+import type { ResumeStyle } from './resume-templates';
 import {
   AlignmentType,
   BorderStyle,
@@ -30,6 +32,7 @@ export type ResumeExperience = {
   startDate?: string;
   endDate?: string;
   bullets: string[];
+  scope?: string;
 };
 
 export type ResumeEducation = {
@@ -167,7 +170,8 @@ function headerParagraphs(resume: GeneratedResume, contactLine: string, theme: R
   ];
 }
 
-export async function createResumeDocx(resume: GeneratedResume, theme: ResumeTheme = "plain", generationTrack: ResumeTheme = theme): Promise<Uint8Array> {
+export async function createResumeDocx(resume: GeneratedResume, theme: ResumeTheme = "plain", generationTrack: ResumeTheme = theme, style?: ResumeStyle): Promise<Uint8Array> {
+  if (style?.templateVersion === 2) return renderDocxV2(resume, theme, style, generationTrack);
   const contactLine = [
     clean(resume.basics.location),
     clean(resume.basics.phone),
@@ -734,7 +738,8 @@ function writeJob(writer: PdfWriter, job: ResumeExperience): void {
   writer.y -= writer.layout.jobAfter;
 }
 
-export async function createResumePdf(resume: GeneratedResume, watermarked = false, theme: ResumeTheme = "plain", generationTrack: ResumeTheme = theme): Promise<Uint8Array> {
+export async function createResumePdf(resume: GeneratedResume, watermarked = false, theme: ResumeTheme = "plain", generationTrack: ResumeTheme = theme, style?: ResumeStyle): Promise<Uint8Array> {
+  if (style?.templateVersion === 2) return renderPdfV2(resume, theme, style, watermarked, generationTrack);
   const document = await PDFDocument.create();
   document.registerFontkit(fontkit);
   const baseLayout = theme === "navy" ? MODERN_PDF_LAYOUT : theme === "lead" ? LEAD_PDF_LAYOUT : STANDARD_PDF_LAYOUT;

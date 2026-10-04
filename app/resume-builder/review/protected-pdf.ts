@@ -23,14 +23,10 @@ export type PreviewEnvironment = {
   coarsePointer: boolean;
 };
 
-/**
- * The browser's own PDF viewer in an iframe is used only where it is known to work:
- * a wide, fine-pointer (desktop) browser that reports a built-in PDF viewer. Phones
- * and tablets either have no inline viewer (Android Chrome shows a blank frame) or
- * show a single non-scrollable page (iOS Safari), so they get the canvas renderer.
- */
-export function choosePreviewRenderer(env: PreviewEnvironment): PreviewRenderer {
-  return env.pdfViewerEnabled === true && !env.narrowViewport && !env.coarsePointer ? "frame" : "canvas";
+/** Always use the controlled viewer, including desktops with native PDF support. */
+export function choosePreviewRenderer(_env: PreviewEnvironment): PreviewRenderer {
+  void _env;
+  return "canvas";
 }
 
 export type ProtectedPdfErrorCode = "unauthorized" | "unavailable" | "not_pdf";
