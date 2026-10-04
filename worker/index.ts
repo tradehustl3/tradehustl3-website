@@ -6,6 +6,7 @@ import bookSampleDataUrl from "./assets/trade-hustl3-seven-page-book-sample.pdf?
 import { handleResumeBuilderRoute, ResumeBuilderEnv, runResumeBuilderRetention, runReviewRequestEmails } from "./resume-builder-monitored";
 import { handleEbookStripeRoute, runEbookLaunchDelivery, EbookStripeEnv, EBOOK_RELEASE_AT } from "./ebook-stripe";
 import { getOperationsHealth, operationalEvent } from "./operations-monitoring";
+import { allowsSameOriginFraming, frameHeaders, withFrameAncestors } from "./frame-policy";
 
 interface Env extends ResumeBuilderEnv, EbookStripeEnv {
   ASSETS: Fetcher;
@@ -89,12 +90,13 @@ const CONTENT_SECURITY_POLICY = [
 
 function withSecurityHeaders(response: Response, pathname = ""): Response {
   const headers = new Headers(response.headers);
+  const frameable = allowsSameOriginFraming(pathname);
   headers.set("X-Content-Type-Options", "nosniff");
-  headers.set("X-Frame-Options", "DENY");
+  headers.set("X-Frame-Options", frameHeaders(frameable).xFrameOptions);
   headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
   headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=(self)");
   headers.set("Strict-Transport-Security", "max-age=31536000");
-  headers.set("Content-Security-Policy", CONTENT_SECURITY_POLICY);
+  headers.set("Content-Security-Policy", withFrameAncestors(CONTENT_SECURITY_POLICY, frameable));
   if (pathname === "/resume-builder/confirm") {
     headers.set("Cache-Control", "no-store");
     headers.set("Referrer-Policy", "no-referrer");

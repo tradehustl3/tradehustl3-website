@@ -13,7 +13,9 @@ import {
 import {
   augmentResumeWithCoverLetter,
   handleCoverLetterRoute,
+  hasGeneratedCoverLetter,
   rerenderCoverLetterTheme,
+  rewriteCoverLetterForPackageTrack,
 } from "./cover-letter";
 import { hardenGeneratedResumePackage } from "./resume-package-hardener";
 import { serverUploadReview } from "./resume-upload-requirements";
@@ -608,8 +610,8 @@ async function rerenderResumeTheme(
   theme: ResumeTheme,
 ): Promise<void> {
   const record = await env.DB.prepare(
-    "SELECT user_id, generated_json FROM resumes WHERE resume_id = ? AND deleted_at IS NULL LIMIT 1",
-  ).bind(resumeId).first<{ user_id: string; generated_json: string | null }>();
+    "SELECT user_id, generated_json, generation_track, theme FROM resumes WHERE resume_id = ? AND deleted_at IS NULL LIMIT 1",
+  ).bind(resumeId).first<{ user_id: string; generated_json: string | null; generation_track?: ResumeTheme; theme: ResumeTheme }>();
   if (!record?.generated_json) return;
   if (!env.BOOKS) throw new Error("Resume file storage is unavailable.");
 
@@ -627,9 +629,9 @@ async function rerenderResumeTheme(
 
   try {
     const [docx, pdf, preview] = await Promise.all([
-      (dependencies.createDocx ?? createResumeDocx)(generated, theme),
-      (dependencies.createPdf ?? createResumePdf)(generated, false, theme),
-      (dependencies.createPdf ?? createResumePdf)(generated, true, theme),
+      (dependencies.createDocx ?? createResumeDocx)(generated, theme, record.generation_track ?? record.theme),
+      (dependencies.createPdf ?? createResumePdf)(generated, false, theme, record.generation_track ?? record.theme),
+      (dependencies.createPdf ?? createResumePdf)(generated, true, theme, record.generation_track ?? record.theme),
     ]);
     const fileStatements = await Promise.all([
       storeThemeFile(env, record.user_id, resumeId, generationId, "docx", docx),
@@ -643,6 +645,120 @@ async function rerenderResumeTheme(
   } catch (error) {
     await Promise.allSettled(newObjectKeys.map((key) => env.BOOKS!.delete(key)));
     throw error;
+  }
+}
+
+// Requests already inside a package career-track rewrite. The inner pass runs the
+// normal generate pipeline (guards, numeric retry, hardening) for the resume.
+const PACKAGE_TRACK_REWRITE_INNER = new WeakSet<Request>();
+
+type PackageTrackSnapshot = {
+  user_id: string;
+  generated_json: string | null;
+  generation_track: string | null;
+  theme: string;
+};
+
+/**
+ * One customer-requested career-track rewrite of the whole package:
+ * - the resume is rewritten through the standard guarded correction path, which
+ *   reserves exactly one package correction (and restores it on its own failure);
+ * - an already-generated matching cover letter is then rewritten to the same
+ *   track from the rewritten resume, without reserving a second correction;
+ * - if the cover letter step fails, the resume text, writing track and files are
+ *   restored and the single correction is returned, so the package is never left
+ *   on two different tracks.
+ * With no generated cover letter, this is exactly a one-correction resume rewrite.
+ */
+async function packageTrackRewrite(
+  request: Request,
+  env: ResumeBuilderEnv,
+  dependencies: ResumeBuilderDependencies,
+  resumeId: string,
+  generationTrack: ResumeTheme,
+): Promise<Response | null> {
+  const before = await env.DB.prepare(
+    `SELECT user_id, generated_json, generation_track, theme
+     FROM resumes WHERE resume_id = ? AND deleted_at IS NULL LIMIT 1`,
+  ).bind(resumeId).first<PackageTrackSnapshot>();
+  const coverLetterExists = before?.generated_json
+    ? await hasGeneratedCoverLetter(env, before.user_id, resumeId)
+    : false;
+
+  PACKAGE_TRACK_REWRITE_INNER.add(request);
+  const resumeResponse = await handleResumeBuilderRoute(request, env, dependencies);
+  if (!resumeResponse || !resumeResponse.ok || !before?.generated_json || !coverLetterExists) {
+    return resumeResponse;
+  }
+
+  try {
+    await rewriteCoverLetterForPackageTrack(env, dependencies, resumeId, generationTrack);
+  } catch (error) {
+    console.error("Package career-track cover letter rewrite failed", errorKind(error));
+    const restored = await rollbackPackageTrackRewrite(env, dependencies, resumeId, before);
+    return rewrittenJson(resumeResponse, {
+      ok: false,
+      code: "PACKAGE_REWRITE_FAILED",
+      retryable: true,
+      paymentSafe: true,
+      runConsumed: false,
+      message: restored
+        ? "We could not rewrite your matching cover letter, so your resume was restored to its previous wording. No correction was used. Please try again."
+        : "We could not finish the rewrite. No correction was used. If your preview does not match your previous resume, contact support@tradehustl3.com.",
+    }, 502);
+  }
+
+  const payload = await responseJson(resumeResponse) ?? {};
+  return rewrittenJson(resumeResponse, {
+    ...payload,
+    coverLetterRewritten: true,
+    message: "Your resume and matching cover letter were rewritten for the selected career track. This used one package correction.",
+  });
+}
+
+async function rollbackPackageTrackRewrite(
+  env: ResumeBuilderEnv,
+  dependencies: ResumeBuilderDependencies,
+  resumeId: string,
+  before: PackageTrackSnapshot,
+): Promise<boolean> {
+  try {
+    await env.DB.batch([
+      env.DB.prepare(
+        `UPDATE resumes SET generated_json = ?, generation_track = ?, updated_at = CURRENT_TIMESTAMP
+         WHERE resume_id = ? AND user_id = ? AND deleted_at IS NULL`,
+      ).bind(before.generated_json, before.generation_track, resumeId, before.user_id),
+      env.DB.prepare(
+        `UPDATE entitlements SET credits_used = CASE WHEN credits_used > 0 THEN credits_used - 1 ELSE 0 END,
+         updated_at = CURRENT_TIMESTAMP
+         WHERE entitlement_id = (
+           SELECT entitlement_id FROM entitlements
+           WHERE resume_id = ? AND user_id = ? AND status = 'active'
+             AND (access_expires_at IS NULL OR access_expires_at > ?)
+           ORDER BY created_at DESC LIMIT 1
+         )`,
+      ).bind(resumeId, before.user_id, Math.floor(Date.now() / 1000)),
+      env.DB.prepare(
+        `INSERT INTO resume_generations
+         (generation_id, resume_id, user_id, mode, model, guard_flags, outcome)
+         VALUES (?, ?, ?, 'correction', 'package_rollback', ?, 'error')`,
+      ).bind(crypto.randomUUID(), resumeId, before.user_id, JSON.stringify({ reason: "cover_letter_track_rewrite_failed" })),
+    ]);
+  } catch (error) {
+    console.error("Package career-track rollback (database) failed", errorKind(error));
+    return false;
+  }
+  try {
+    // Redraw the resume files from the restored text with the restored writing track.
+    const current = await env.DB.prepare(
+      "SELECT theme FROM resumes WHERE resume_id = ? AND deleted_at IS NULL LIMIT 1",
+    ).bind(resumeId).first<{ theme: string }>();
+    const currentTheme = current?.theme;
+    await rerenderResumeTheme(env, dependencies, resumeId, isResumeTheme(currentTheme) ? currentTheme : "plain");
+    return true;
+  } catch (error) {
+    console.error("Package career-track rollback (files) failed", errorKind(error));
+    return false;
   }
 }
 
@@ -898,6 +1014,16 @@ export async function handleResumeBuilderRoute(
 
   const coverLetterResponse = await handleCoverLetterRoute(request, env, dependencies);
   if (coverLetterResponse) return coverLetterResponse;
+
+  const packageTrackMatch = request.method === "POST" && !PACKAGE_TRACK_REWRITE_INNER.has(request)
+    ? pathname.match(/^\/api\/resume-builder\/resumes\/([^/]+)\/generate$/)
+    : null;
+  if (packageTrackMatch) {
+    const trackBody = await jsonBody(request.clone());
+    if (trackBody && isResumeTheme(trackBody.generationTrack)) {
+      return packageTrackRewrite(request, env, dependencies, packageTrackMatch[1], trackBody.generationTrack);
+    }
+  }
 
   const importPath = pathname === "/api/resume-builder/resume-import";
   const generationPathMatch = pathname.match(/^\/api\/resume-builder\/resumes\/([^/]+)\/generate$/);

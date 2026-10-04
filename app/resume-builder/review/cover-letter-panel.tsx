@@ -6,6 +6,7 @@ type CoverLetterState = {
   included: boolean;
   available: boolean;
   generated: boolean;
+  generationTrack?: string;
   correctionsRemaining: number;
   previewUrl: string | null;
   downloads: { pdf: string; docx: string } | null;
@@ -19,21 +20,61 @@ export function CoverLetterPanel({
   resumeId,
   coverLetter,
   paid,
+  theme,
   onRefresh,
   onMessage,
 }: {
   resumeId: string;
   coverLetter: CoverLetterState;
   paid: boolean;
+  theme: string;
   onRefresh: () => Promise<void>;
   onMessage: (message: string, tone?: "info" | "success" | "error") => void;
 }) {
   const [working, setWorking] = useState(false);
+  // The appearance the customer chose to keep their current wording for. The banner
+  // stays hidden for that appearance and returns only if they pick another one.
+  const [keptWordingFor, setKeptWordingFor] = useState<string | null>(null);
+  const showTrackBanner = coverLetter.generated
+    && Boolean(coverLetter.generationTrack)
+    && coverLetter.generationTrack !== theme
+    && keptWordingFor !== theme;
+
+  async function rewritePackageForTrack() {
+    if (working) return;
+    setWorking(true);
+    onMessage("");
+    try {
+      // Package-level rewrite: the resume and this cover letter move to the selected
+      // career track together for one shared correction.
+      const response = await fetch(`/api/resume-builder/resumes/${encodeURIComponent(resumeId)}/generate`, {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ generationTrack: theme }),
+      });
+      const result = await response.json() as { message?: string };
+      if (!response.ok) throw new Error(result.message || "We could not rewrite your package for this style.");
+      await onRefresh();
+      onMessage(result.message || "Your resume and cover letter were rewritten for this style.", "success");
+    } catch (error) {
+      onMessage(error instanceof Error ? error.message : "We could not rewrite your package for this style.", "error");
+    } finally {
+      setWorking(false);
+    }
+  }
+
+  function keepCurrentWording() {
+    setKeptWordingFor(theme);
+    onMessage("Keeping your current cover-letter wording. Appearance changes are free and no correction was used.");
+  }
 
   async function submit(event: FormEvent<HTMLFormElement>, correction = false) {
     event.preventDefault();
     if (working) return;
-    const form = new FormData(event.currentTarget);
+    // React clears event.currentTarget once this handler awaits, so keep the form.
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
     const correctionRequest = String(form.get("coverCorrection") ?? "").trim();
     if (correction && !correctionRequest) return;
     const payload: Record<string, string> = correction
@@ -56,8 +97,8 @@ export function CoverLetterPanel({
       const result = await response.json() as { message?: string };
       if (!response.ok) throw new Error(result.message || "We could not generate the matching cover letter.");
       await onRefresh();
+      formElement.reset();
       onMessage(result.message || "Matching cover letter updated.", "success");
-      event.currentTarget.reset();
     } catch (error) {
       onMessage(error instanceof Error ? error.message : "We could not generate the matching cover letter.", "error");
     } finally {
@@ -106,6 +147,18 @@ export function CoverLetterPanel({
         </div>
       ) : null}
 
+      {showTrackBanner ? (
+        <div role="group" aria-label="Cover letter career track">
+          <p>The selected style differs from how this letter was written.</p>
+          <button type="button" disabled={working || !paid || coverLetter.correctionsRemaining < 1} onClick={() => void rewritePackageForTrack()}>Rewrite for this style</button>
+          <button type="button" disabled={working} onClick={keepCurrentWording}>Keep my current wording</button>
+          <small>{!paid
+            ? "Unlock the package to rewrite."
+            : coverLetter.correctionsRemaining < 1
+              ? "All three corrections have been used."
+              : "Rewriting updates your resume and this cover letter together and uses one shared correction."}</small>
+        </div>
+      ) : null}
       {paid ? (
         <form onSubmit={(event) => void submit(event, true)}>
           <div className="rb-correction-count"><strong>{coverLetter.correctionsRemaining}</strong><span>package corrections remaining</span></div>

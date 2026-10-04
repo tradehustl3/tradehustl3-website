@@ -594,9 +594,25 @@ h2.rb-section-title { margin: 0 0 4px; font-size: 20px; }
 .rb-theme-preview-lead b { height: 3px; background: var(--rb-navy); }
 .rb-theme-note { display: block; margin-top: 12px; color: var(--rb-text-2); font-size: 13px; line-height: 1.5; }
 
+/* career-track choice (shown only when a paid rewrite is possible) */
+.rb-trade-card-pending { outline: 2px dashed var(--rb-red); outline-offset: 2px; }
+.rb-track-choice { display: grid; gap: 10px; margin-top: 12px; padding: 16px; border: 2px solid var(--rb-red); border-radius: var(--rb-radius); background: var(--rb-red-soft); }
+.rb-track-choice .rb-kicker { margin: 0; }
+.rb-track-choice h3 { margin: 0; color: var(--rb-text); font-size: 17px; line-height: 1.3; }
+.rb-track-choice p { margin: 0; color: var(--rb-text); font-size: 14px; line-height: 1.5; }
+.rb-track-choice-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.rb-track-choice-actions .rb-button { flex: 1 1 180px; min-height: 44px; justify-content: center; }
+.rb-track-choice-cancel { justify-self: start; min-height: 44px; padding: 0 4px; border: 0; background: none; color: var(--rb-text-2); font: inherit; font-size: 14px; text-decoration: underline; cursor: pointer; }
+.rb-track-choice small { color: var(--rb-text-2); font-size: 13px; line-height: 1.5; }
+
+/* quality score + bullet workshop sit side by side under the preview */
+.rb-review-details { display: grid; grid-template-columns: minmax(260px, .8fr) minmax(0, 1.6fr); gap: 20px; align-items: start; margin-top: 20px; }
+.rb-review-details-single { grid-template-columns: minmax(0, 1fr); }
+
 /* preview + sidebar */
 .rb-review-grid { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(320px, .6fr); gap: 20px; align-items: start; }
 .rb-preview-panel { min-width: 0; overflow: hidden; border: 1px solid var(--rb-border); border-radius: var(--rb-radius-lg); background: #f1f5f9; }
+@media (min-width: 1041px) { .rb-preview-panel { position: sticky; top: 16px; } }
 .rb-preview-tabs { display: flex; gap: 4px; margin: 12px 12px 0; padding: 4px; border-radius: var(--rb-radius); background: #e2e8f0; }
 .rb-preview-tabs .rb-button { flex: 1; min-height: 40px; border: 0; background: transparent; color: var(--rb-text-2); box-shadow: none; }
 .rb-preview-tabs .rb-button-primary, .rb-preview-tabs .rb-button[aria-selected="true"] { background: var(--rb-surface); color: var(--rb-text); box-shadow: var(--rb-shadow-sm); }
@@ -605,6 +621,17 @@ h2.rb-section-title { margin: 0 0 4px; font-size: 20px; }
 .rb-preview-toolbar > div { display: flex; align-items: center; gap: 10px; }
 .rb-preview-toolbar small { color: var(--rb-text-2); font-size: 13px; font-weight: 400; }
 .rb-preview-panel iframe { width: calc(100% - 24px); height: 760px; display: block; margin: 0 12px 12px; border: 1px solid var(--rb-border); border-radius: 4px; background: white; box-shadow: var(--rb-shadow); }
+/* In-workspace canvas renderer for the protected PDF (phones, tablets, and browsers without a PDF viewer). */
+.rb-pdf-pages { display: grid; gap: 12px; margin: 0 12px 12px; }
+.rb-pdf-pages[aria-busy="true"] { min-height: 480px; place-items: center; border: 1px solid var(--rb-border); border-radius: 4px; background: #fff; }
+.rb-pdf-pages canvas { display: block; width: 100%; height: auto; border: 1px solid var(--rb-border); border-radius: 4px; background: #fff; box-shadow: var(--rb-shadow); }
+.rb-pdf-pages canvas[data-drawn="false"] { display: none; }
+.rb-pdf-status { margin: 0; color: var(--rb-text-2); font-size: 14px; }
+.rb-pdf-more { margin: 0 12px 12px; text-align: center; }
+.rb-pdf-error { display: grid; gap: 12px; justify-items: center; margin: 0 12px 12px; padding: 28px 18px; border: 1px solid var(--rb-border); border-radius: 4px; background: #fff; text-align: center; }
+.rb-pdf-error p { margin: 0; color: var(--rb-text-2); }
+.rb-pdf-error strong { color: var(--rb-text); }
+.rb-pdf-error .rb-button { width: min(100%, 320px); min-height: 44px; justify-content: center; }
 .rb-preview-empty { min-height: 480px; display: grid; place-items: center; margin: 12px; padding: 32px; border: 1px solid var(--rb-border); border-radius: 4px; background: #fff; text-align: center; }
 .rb-preview-empty h2 { margin: 4px 0 8px; font-size: 22px; }
 .rb-preview-empty p:not(.rb-kicker) { margin: 0 0 16px; color: var(--rb-text-2); }
@@ -692,6 +719,7 @@ p.rb-quality-pass { margin: 12px 0 0; padding: 10px 12px; border: 1px solid var(
    Responsive
    ============================================================ */
 @media (max-width: 1040px) {
+  .rb-review-details { grid-template-columns: minmax(0, 1fr); }
   .rb-wiz-shell { grid-template-columns: minmax(0, 1fr); }
   .rb-wiz-side { position: static; order: -1; }
   .rb-wiz-shell-wide .rb-wiz-side { order: 1; }
@@ -767,6 +795,8 @@ p.rb-quality-pass { margin: 12px 0 0; padding: 10px 12px; border: 1px solid var(
   .rb-review-status, .rb-correction-form, .rb-downloads, .rb-quality-card, .rb-bullet-editor, .rb-unpaid-card { padding: 18px 16px; }
   .rb-preview-toolbar small { display: none; }
   .rb-preview-panel iframe { width: calc(100% - 12px); height: 460px; margin-inline: 6px; }
+  .rb-pdf-pages, .rb-pdf-error, .rb-pdf-more { margin-inline: 6px; }
+  .rb-pdf-pages[aria-busy="true"] { min-height: 420px; }
   .rb-bullet-actions { grid-template-columns: minmax(0, 1fr); }
   .rb-centered-stage { padding: 24px var(--rb-gutter); }
 }

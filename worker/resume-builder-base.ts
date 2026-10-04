@@ -75,6 +75,7 @@ type ResumeRecord = {
   target_job_posting: string | null;
   status: string;
   theme: string;
+  generation_track?: string;
 };
 
 const RESUME_THEMES: ReadonlySet<string> = new Set(["plain", "navy", "lead"]);
@@ -756,7 +757,7 @@ async function createResume(request: Request, env: ResumeBuilderEnv, dependencie
 
 async function findOwnedResume(env: ResumeBuilderEnv, resumeId: string, userId: string): Promise<ResumeRecord | null> {
   return env.DB.prepare(
-    `SELECT resume_id, user_id, trade, title, intake_json, generated_json, target_job_posting, status, theme
+    `SELECT resume_id, user_id, trade, title, intake_json, generated_json, target_job_posting, status, theme, generation_track
      FROM resumes WHERE resume_id = ? AND user_id = ? AND deleted_at IS NULL`,
   ).bind(resumeId, userId).first<ResumeRecord>();
 }
@@ -1021,6 +1022,7 @@ async function getResumeStatus(request: Request, env: ResumeBuilderEnv, resumeId
       targetJobPosting: resume.target_job_posting,
       status: resume.status,
       theme: normalizeTheme(resume.theme),
+      generationTrack: normalizeTheme(resume.generation_track ?? resume.theme),
       paid: Boolean(entitlement),
       runsUsed: entitlement?.credits_used ?? (generated ? INITIAL_PREVIEW_RUNS : 0),
       runsTotal: entitlement?.credits_total ?? RESUME_TOTAL_AI_RUNS,
@@ -2321,7 +2323,7 @@ function compactModelValue(value: unknown): unknown {
   return value ?? undefined;
 }
 
-function resumeSystemProfile(theme: ResumeTheme): string {
+export function resumeSystemProfile(theme: ResumeTheme): string {
   if (theme === "navy") {
     return `MODERN TRADE
 - Position the candidate as a polished technical professional for commercial, industrial, facilities, or higher-responsibility field work.
@@ -2354,7 +2356,7 @@ function resumeUserPrompt(
 ): string {
   const compactIntake = JSON.stringify(compactModelValue(intake));
   const verifiedFacts = JSON.stringify(sourceFactCatalog(canonicalSourceRecord(intake, resume.title, resume.trade), correctionRequest));
-  const systemProfile = resumeSystemProfile(normalizeTheme(resume.theme));
+  const systemProfile = resumeSystemProfile(normalizeTheme(resume.generation_track ?? resume.theme));
   if (correctionRequest) {
     return `Revise the current resume using only the requested correction and original intake. Preserve accurate content not affected by the correction.\n\nRESUME SYSTEM:\n${systemProfile}\n\nVERIFIED FACT CATALOG:\n${verifiedFacts}\n\nORIGINAL INTAKE:\n${compactIntake}\n\nTARGET JOB POSTING:\n${resume.target_job_posting ?? ""}\n\nCURRENT RESUME:\n${JSON.stringify(compactModelValue(prior))}\n\nCUSTOMER CORRECTION:\n${correctionRequest}`;
   }
@@ -2997,9 +2999,9 @@ async function updateResumeBullet(
   try {
     const theme = normalizeTheme(resume.theme);
     const [docx, pdf, preview] = await Promise.all([
-      (dependencies.createDocx ?? createResumeDocx)(nextStored, theme),
-      (dependencies.createPdf ?? createResumePdf)(nextStored, false, theme),
-      (dependencies.createPdf ?? createResumePdf)(nextStored, true, theme),
+      (dependencies.createDocx ?? createResumeDocx)(nextStored, theme, normalizeTheme(resume.generation_track ?? resume.theme)),
+      (dependencies.createPdf ?? createResumePdf)(nextStored, false, theme, normalizeTheme(resume.generation_track ?? resume.theme)),
+      (dependencies.createPdf ?? createResumePdf)(nextStored, true, theme, normalizeTheme(resume.generation_track ?? resume.theme)),
     ]);
     const fileStatements = await Promise.all([
       storeResumeFile(env, user.userId, resumeId, generationId, "docx", docx),
@@ -3046,7 +3048,14 @@ async function generateResume(
   const entitlement = await findEntitlement(env, resumeId, user.userId);
 
   const body = await parseJsonBody(request, 8_000);
-  const correctionRequest = cleanText(body?.correctionRequest, 2_000) || null;
+  const requestedTrack = body?.generationTrack;
+  if (requestedTrack !== undefined && !RESUME_THEMES.has(String(requestedTrack))) {
+    return json({ ok: false, message: "Choose a valid career track." }, 400);
+  }
+  const rewriteTrack = requestedTrack === undefined ? null : normalizeTheme(requestedTrack);
+  const correctionRequest = rewriteTrack
+    ? "Rewrite the resume for the selected career track. Reframe only supported experience; preserve all verified facts and never invent leadership responsibilities."
+    : cleanText(body?.correctionRequest, 2_000) || null;
   const isCorrection = Boolean(resume.generated_json);
   if (isCorrection && !entitlement) {
     return json({
@@ -3064,6 +3073,10 @@ async function generateResume(
   if (!isCorrection && correctionRequest) {
     return json({ ok: false, message: "Create the initial resume before requesting corrections." }, 400);
   }
+
+  // Change the in-memory writing profile only; persist it after successful generation.
+  const generationTrack = rewriteTrack ?? normalizeTheme(resume.generated_json ? resume.generation_track ?? resume.theme : resume.theme);
+  resume.generation_track = generationTrack;
 
   const configuredGlobalLimit = Number.parseInt(env.RESUME_AI_DAILY_ATTEMPT_LIMIT ?? "", 10);
   const globalLimit = Number.isSafeInteger(configuredGlobalLimit) && configuredGlobalLimit > 0
@@ -3139,9 +3152,9 @@ async function generateResume(
     const theme = normalizeTheme(resume.theme);
     try {
       [docx, pdf, preview] = await Promise.all([
-        (dependencies.createDocx ?? createResumeDocx)(generated.resume, theme),
-        (dependencies.createPdf ?? createResumePdf)(generated.resume, false, theme),
-        (dependencies.createPdf ?? createResumePdf)(generated.resume, true, theme),
+        (dependencies.createDocx ?? createResumeDocx)(generated.resume, theme, normalizeTheme(resume.generation_track ?? resume.theme)),
+        (dependencies.createPdf ?? createResumePdf)(generated.resume, false, theme, normalizeTheme(resume.generation_track ?? resume.theme)),
+        (dependencies.createPdf ?? createResumePdf)(generated.resume, true, theme, normalizeTheme(resume.generation_track ?? resume.theme)),
       ]);
     } catch (error) {
       console.error("Resume document render failed", errorKind(error));
@@ -3168,9 +3181,9 @@ async function generateResume(
     );
     await env.DB.batch([
       env.DB.prepare(
-        `UPDATE resumes SET generated_json = ?, status = 'ready', generated_at = CURRENT_TIMESTAMP,
+        `UPDATE resumes SET generated_json = ?, generation_track = ?, status = 'ready', generated_at = CURRENT_TIMESTAMP,
          updated_at = CURRENT_TIMESTAMP WHERE resume_id = ? AND user_id = ?`,
-      ).bind(JSON.stringify(generated.resume), resumeId, user.userId),
+      ).bind(JSON.stringify(generated.resume), generationTrack, resumeId, user.userId),
       env.DB.prepare(
         `INSERT INTO resume_generations
          (generation_id, resume_id, user_id, mode, model, input_tokens, output_tokens, guard_flags, outcome)
