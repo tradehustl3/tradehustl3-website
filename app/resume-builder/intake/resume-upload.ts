@@ -5,6 +5,7 @@ import { uploadRequirementIssues, type UploadedResumeIssue } from "../../../work
 import { EXPERIENCE_LEVELS, isTradeTrack, type TradeTrack } from "../trade-content";
 import { type WizardData } from "./wizard-data";
 import { buildCanonicalSourceRecord, roleRepresented } from "../../../worker/resume-source-canonical";
+import { loadPdfjs } from "../pdfjs";
 
 export type { UploadedResumeIssue };
 
@@ -185,9 +186,7 @@ export async function extractResumeText(file: File, kind: ResumeUploadKind): Pro
     return rememberExtractedText(await docxResumeText(arrayBuffer));
   }
 
-  const { default: pdfWorkerUrl } = await import("pdfjs-dist/legacy/build/pdf.worker.min.mjs?url");
-  const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
-  pdfjs.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
+  const pdfjs = await loadPdfjs();
   const document = await pdfjs.getDocument({ data: new Uint8Array(arrayBuffer) }).promise;
   const pages: string[] = [];
   for (let pageNumber = 1; pageNumber <= document.numPages; pageNumber += 1) {

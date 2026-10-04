@@ -12,10 +12,10 @@ test("mobile review keeps the protected PDF inside the resume workspace", async 
   ]);
 
   // The old mobile fallback hid the iframe and sent customers to the raw PDF.
-  // With same-origin framing enabled, mobile must remain in the full review UI.
+  // Mobile must remain in the full review UI, with the PDF drawn in the panel.
   assert.doesNotMatch(page, /ResumePreviewFallback/);
   assert.match(review, /className="rb-review-grid"/);
-  assert.match(review, /<iframe/);
+  assert.match(review, /<ProtectedPdfPreview /);
   assert.match(review, /renderThemePicker\(\)/);
   assert.match(review, /Field Pro/);
   assert.match(review, /Modern Trade/);
