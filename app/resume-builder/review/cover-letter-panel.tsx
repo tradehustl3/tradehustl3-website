@@ -72,7 +72,9 @@ export function CoverLetterPanel({
   async function submit(event: FormEvent<HTMLFormElement>, correction = false) {
     event.preventDefault();
     if (working) return;
-    const form = new FormData(event.currentTarget);
+    // React clears event.currentTarget once this handler awaits, so keep the form.
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
     const correctionRequest = String(form.get("coverCorrection") ?? "").trim();
     if (correction && !correctionRequest) return;
     const payload: Record<string, string> = correction
@@ -95,8 +97,8 @@ export function CoverLetterPanel({
       const result = await response.json() as { message?: string };
       if (!response.ok) throw new Error(result.message || "We could not generate the matching cover letter.");
       await onRefresh();
+      formElement.reset();
       onMessage(result.message || "Matching cover letter updated.", "success");
-      event.currentTarget.reset();
     } catch (error) {
       onMessage(error instanceof Error ? error.message : "We could not generate the matching cover letter.", "error");
     } finally {

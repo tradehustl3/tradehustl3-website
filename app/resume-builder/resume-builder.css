@@ -621,6 +621,17 @@ h2.rb-section-title { margin: 0 0 4px; font-size: 20px; }
 .rb-preview-toolbar > div { display: flex; align-items: center; gap: 10px; }
 .rb-preview-toolbar small { color: var(--rb-text-2); font-size: 13px; font-weight: 400; }
 .rb-preview-panel iframe { width: calc(100% - 24px); height: 760px; display: block; margin: 0 12px 12px; border: 1px solid var(--rb-border); border-radius: 4px; background: white; box-shadow: var(--rb-shadow); }
+/* In-workspace canvas renderer for the protected PDF (phones, tablets, and browsers without a PDF viewer). */
+.rb-pdf-pages { display: grid; gap: 12px; margin: 0 12px 12px; }
+.rb-pdf-pages[aria-busy="true"] { min-height: 480px; place-items: center; border: 1px solid var(--rb-border); border-radius: 4px; background: #fff; }
+.rb-pdf-pages canvas { display: block; width: 100%; height: auto; border: 1px solid var(--rb-border); border-radius: 4px; background: #fff; box-shadow: var(--rb-shadow); }
+.rb-pdf-pages canvas[data-drawn="false"] { display: none; }
+.rb-pdf-status { margin: 0; color: var(--rb-text-2); font-size: 14px; }
+.rb-pdf-more { margin: 0 12px 12px; text-align: center; }
+.rb-pdf-error { display: grid; gap: 12px; justify-items: center; margin: 0 12px 12px; padding: 28px 18px; border: 1px solid var(--rb-border); border-radius: 4px; background: #fff; text-align: center; }
+.rb-pdf-error p { margin: 0; color: var(--rb-text-2); }
+.rb-pdf-error strong { color: var(--rb-text); }
+.rb-pdf-error .rb-button { width: min(100%, 320px); min-height: 44px; justify-content: center; }
 .rb-preview-empty { min-height: 480px; display: grid; place-items: center; margin: 12px; padding: 32px; border: 1px solid var(--rb-border); border-radius: 4px; background: #fff; text-align: center; }
 .rb-preview-empty h2 { margin: 4px 0 8px; font-size: 22px; }
 .rb-preview-empty p:not(.rb-kicker) { margin: 0 0 16px; color: var(--rb-text-2); }
@@ -784,6 +795,8 @@ p.rb-quality-pass { margin: 12px 0 0; padding: 10px 12px; border: 1px solid var(
   .rb-review-status, .rb-correction-form, .rb-downloads, .rb-quality-card, .rb-bullet-editor, .rb-unpaid-card { padding: 18px 16px; }
   .rb-preview-toolbar small { display: none; }
   .rb-preview-panel iframe { width: calc(100% - 12px); height: 460px; margin-inline: 6px; }
+  .rb-pdf-pages, .rb-pdf-error, .rb-pdf-more { margin-inline: 6px; }
+  .rb-pdf-pages[aria-busy="true"] { min-height: 420px; }
   .rb-bullet-actions { grid-template-columns: minmax(0, 1fr); }
   .rb-centered-stage { padding: 24px var(--rb-gutter); }
 }

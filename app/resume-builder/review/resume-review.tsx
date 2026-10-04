@@ -2,6 +2,7 @@
 
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { CoverLetterPanel } from "./cover-letter-panel";
+import { ProtectedPdfPreview } from "./protected-pdf-preview";
 import { generationFailureIntakeUrl, intakeReturnUrl } from "../return-urls";
 
 type ResumeTheme = "plain" | "navy" | "lead";
@@ -194,11 +195,11 @@ export function ResumeReview() {
 
   async function submitCorrection(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const form = new FormData(event.currentTarget);
-    const correction = String(form.get("correctionRequest") ?? "").trim();
+    // React clears event.currentTarget once this handler awaits, so keep the form.
+    const formElement = event.currentTarget;
+    const correction = String(new FormData(formElement).get("correctionRequest") ?? "").trim();
     if (!correction) return;
-    const applied = await runGeneration(correction);
-    if (applied) event.currentTarget.reset();
+    if (await runGeneration(correction)) formElement.reset();
   }
 
   async function updateTheme(theme: ResumeTheme): Promise<boolean> {
@@ -447,12 +448,12 @@ export function ResumeReview() {
             {activePreview === "resume" ? (
               <>
                 <div className="rb-preview-toolbar"><div><span className="rb-status-dot" />{resume.paid ? "Clean paid resume" : "Protected watermarked preview"}</div><small>{resume.paid ? "Watermark removed · clean files below" : "Preview only · pay to remove watermark"}</small></div>
-                <iframe key={`${resume.previewUrl}-${resume.runsUsed}-${resume.paid}-${resume.theme}`} src={resumePreviewSrc} title={resume.paid ? "Clean paid resume" : "Watermarked resume preview"} />
+                <ProtectedPdfPreview key={`${resume.previewUrl}-${resume.runsUsed}-${resume.paid}-${resume.theme}`} src={resumePreviewSrc} title={resume.paid ? "Clean paid resume" : "Watermarked resume preview"} />
               </>
             ) : coverPreviewReady && coverLetter?.previewUrl ? (
               <>
                 <div className="rb-preview-toolbar"><div><span className="rb-status-dot" />{resume.paid ? "Clean paid cover letter" : "Protected cover-letter preview"}</div><small>{resume.paid ? "Included with your package" : "Preview only · pay to unlock clean files"}</small></div>
-                <iframe key={`${coverLetter.previewUrl}-${resume.paid}-${resume.theme}`} src={`${coverLetter.previewUrl}&style=${resume.theme}`} title={resume.paid ? "Clean matching cover letter" : "Watermarked matching cover letter preview"} />
+                <ProtectedPdfPreview key={`${coverLetter.previewUrl}-${resume.paid}-${resume.theme}`} src={`${coverLetter.previewUrl}&style=${resume.theme}`} title={resume.paid ? "Clean matching cover letter" : "Watermarked matching cover letter preview"} />
               </>
             ) : (
               <div className="rb-preview-empty">
