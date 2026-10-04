@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import JSZip from "jszip";
+import { PDFDocument, PDFDict, PDFName } from "pdf-lib";
 import { readFileSync } from "node:fs";
 import { DatabaseSync } from "node:sqlite";
 import { createResumeDocx, createResumePdf } from "../worker/resume-documents";
@@ -234,4 +235,62 @@ test("cover letters keep their writing track across free appearance changes and 
   assert.match(lastCoverPrompt(), /FIELD PRO/);
   assert.equal(creditsUsed(), 2);
   assert.equal(coverTrack(), "plain");
+});
+
+for (const version of [2, 1] as const) test(`hardener preserves version-${version} Modern Trade rendering and stored customization`, async () => {
+  const placeholder = { ...draft, basics: { ...draft.basics, fullName: "Placeholder Person" } };
+  const { sqlite, env, generatedJson, storedFile, creditsUsed } = setup({ realRender: true, theme: "navy", generationTrack: "navy", generated: placeholder });
+  sqlite.prepare("UPDATE resumes SET template_version=?, font='Traditional', accent='Burgundy', text_size='Large', spacing='Spacious'").run(version);
+  const result = await hardenGeneratedResumePackage(env as never, {}, "r");
+  assert.equal(result.changed, true, "must actually rewrite content and all three outputs");
+  assert.doesNotMatch(generatedJson(), /Placeholder Person/);
+  assert.equal(creditsUsed(), 1, "hardening consumes no correction");
+  const xml = await docxText(storedFile("docx")!);
+  if (version === 2) {
+    assert.match(xml, /w:ascii="Georgia"/);
+    assert.match(xml, /7A243A/);
+    assert.match(xml, /w:sz w:val="22"/);
+  } else assert.doesNotMatch(xml, /w:ascii="Georgia"/);
+  const { getDocument } = await import("pdfjs-dist/legacy/build/pdf.mjs");
+  const { createCanvas } = await import("@napi-rs/canvas");
+  for (const format of ["pdf", "preview"]) {
+    const bytes = storedFile(format)!;
+    const document = await PDFDocument.load(bytes);
+    const fonts = document.context.enumerateIndirectObjects().flatMap(([, object]) => {
+      if (!(object instanceof PDFDict)) return [];
+      const name = object.get(PDFName.of("BaseFont"));
+      return name ? [name.toString()] : [];
+    }).join(" ");
+    assert.match(fonts, version === 2 ? /Gelasio/ : /Roboto/);
+    if (version === 1) assert.doesNotMatch(fonts, /Gelasio/);
+    const task = getDocument({ data: Uint8Array.from(bytes), isEvalSupported: false });
+    try {
+      const pdf = await task.promise, page = await pdf.getPage(1);
+      const canvas = createCanvas(612, 792), context = canvas.getContext("2d");
+      await page.render({ canvas: canvas as never, canvasContext: context as never, viewport: page.getViewport({ scale: 1 }) }).promise;
+      assert.deepEqual([...context.getImageData(2, 2, 1, 1).data].slice(0, 3), version === 2 ? [122, 36, 58] : [255, 255, 255], "v2 Modern Trade full-width Burgundy top bar; v1 legacy has no bar");
+      if (version === 2) {
+        const items = (await page.getTextContent()).items.filter(item => "str" in item);
+        assert.ok(items.some(item => Math.abs(item.height - 11) < .01), "stored Large text size");
+      }
+    } finally { await task.destroy(); }
+  }
+});
+
+test("hardener grounds rendered supervisor scope in customer intake", async () => {
+  const placeholder = { ...draft, basics: { ...draft.basics, fullName: "Placeholder Person" }, experience: draft.experience.map(job => ({ ...job, scope: "invented 99-person crew" })) };
+  const { sqlite, env, storedFile } = setup({ realRender: true, theme: "lead", generationTrack: "lead", generated: placeholder });
+  const intake = fixtureUploadedIntake();
+  const sourceScope = "two apprentice mechanics";
+  const scopedIntake = { ...intake, experience: (intake.experience as Array<Record<string, unknown>>).map((job, index) => ({ ...job, ...(index === 0 ? { scope: sourceScope } : {}) })) };
+  sqlite.prepare("UPDATE resumes SET template_version=2, intake_json=?").run(JSON.stringify(scopedIntake));
+  assert.equal((await hardenGeneratedResumePackage(env as never, {}, "r")).changed, true);
+  for (const format of ["pdf", "preview"]) {
+    const text = await pdfText(storedFile(format)!);
+    assert.match(text, /Scope: two apprentice mechanics/);
+    assert.doesNotMatch(text, /invented 99-person crew/);
+  }
+  const xml = await docxText(storedFile("docx")!);
+  assert.match(xml, /Scope: two apprentice mechanics/);
+  assert.doesNotMatch(xml, /invented 99-person crew/);
 });
