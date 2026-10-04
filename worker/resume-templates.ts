@@ -36,7 +36,7 @@ export function validStylePatch(body: Record<string, unknown>): boolean {
 export const TRACK_HEADINGS = {
   plain: { summary: 'PROFESSIONAL SUMMARY', skills: 'CORE SKILLS', additional: 'ADDITIONAL INFORMATION' },
   navy: { summary: 'PROFESSIONAL PROFILE', skills: 'AREAS OF EXPERTISE', additional: 'TECHNICAL TOOLS, SYSTEMS & TRAINING' },
-  lead: { summary: 'LEADERSHIP PROFILE', skills: 'LEADERSHIP & OPERATIONS COMPETENCIES', additional: 'TECHNICAL EXPERTISE & ADDITIONAL QUALIFICATIONS' },
+  lead: { summary: 'LEADERSHIP PROFILE', skills: 'TECHNICAL & OPERATIONS COMPETENCIES', additional: 'TECHNICAL EXPERTISE & ADDITIONAL QUALIFICATIONS' },
 } as const;
 /** Group only source skills. Unknown skills trigger a plain grid; never invent categories or skills. */
 export function skillGroups(skills: string[]): { labels: string[]; columns: string[][] } | null {

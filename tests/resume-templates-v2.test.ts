@@ -123,3 +123,17 @@ test('only exact presentation values and keys are accepted', () => {
   for (const body of [{ font: 'Classic' }, { theme: 'lead', textSize: 'Large', spacing: 'Compact', accent: 'Forest Green' }]) assert.ok(validStylePatch(body));
   for (const body of [{}, { font: 'classic' }, { accent: '#ffffff' }, { textSize: 9 }, { templateVersion: 2 }, { creditsUsed: 0 }, { theme: 'navy', bogus: true }]) assert.equal(validStylePatch(body), false);
 });
+
+test('v2 Lead PDF and DOCX use technical operations competencies', async () => {
+  const { pdf, task } = await parse(await createResumePdf(sampleResume, false, 'lead', 'lead', defaultStyle('lead')));
+  try {
+    let text = '';
+    for (let i = 1; i <= pdf.numPages; i++) text += (await (await pdf.getPage(i)).getTextContent()).items.map(item => 'str' in item ? item.str : '').join(' ');
+    assert.ok(text.replace(/\s+/g, '').includes('TECHNICAL&OPERATIONSCOMPETENCIES'));
+    assert.ok(!text.replace(/\s+/g, '').includes('LEADERSHIP&OPERATIONSCOMPETENCIES'));
+  } finally { await task.destroy(); }
+  const zip = await JSZip.loadAsync(await createResumeDocx(sampleResume, 'lead', 'lead', defaultStyle('lead')));
+  const xml = await zip.file('word/document.xml')!.async('string');
+  assert.match(xml, /TECHNICAL &amp; OPERATIONS COMPETENCIES/);
+  assert.doesNotMatch(xml, /LEADERSHIP &amp; OPERATIONS COMPETENCIES/);
+});
