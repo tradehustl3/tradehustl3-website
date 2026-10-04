@@ -97,7 +97,7 @@ const previewResume: GeneratedResume = {
 
 test("the canvas renderer draws the real server-watermarked preview, watermark included", async () => {
   const pdf = await createResumePdf(previewResume, true);
-  const { impl } = fakeFetch(new Response(pdf, { headers: { "Content-Type": "application/pdf" } }));
+  const { impl } = fakeFetch(new Response(Uint8Array.from(pdf).buffer, { headers: { "Content-Type": "application/pdf" } }));
   const data = await fetchProtectedPdf("/api/resume-builder/resumes/r1/files/preview", impl);
   // Same options the component uses: no eval (the site CSP has no 'unsafe-eval').
   const loaded = await getDocument({ data, isEvalSupported: false }).promise;
