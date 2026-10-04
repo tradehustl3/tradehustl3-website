@@ -16,7 +16,7 @@ const read = (path: string) => readFile(new URL(`../${path}`, import.meta.url), 
 
 test("phones, tablets, and browsers without a PDF viewer get the in-workspace canvas renderer", () => {
   const cases: Array<[string, Parameters<typeof choosePreviewRenderer>[0], "frame" | "canvas"]> = [
-    ["desktop Chrome/Edge/Firefox/Safari with a built-in viewer", { pdfViewerEnabled: true, narrowViewport: false, coarsePointer: false }, "frame"],
+    ["desktop Chrome/Edge/Firefox/Safari with a built-in viewer", { pdfViewerEnabled: true, narrowViewport: false, coarsePointer: false }, "canvas"],
     ["Android Chrome (no inline PDF viewer, blank iframe)", { pdfViewerEnabled: false, narrowViewport: true, coarsePointer: true }, "canvas"],
     ["iPhone Safari (reports a viewer, shows one unscrollable page)", { pdfViewerEnabled: true, narrowViewport: true, coarsePointer: true }, "canvas"],
     ["iPad Safari (wide but touch)", { pdfViewerEnabled: true, narrowViewport: false, coarsePointer: true }, "canvas"],
@@ -124,7 +124,7 @@ test("the review page renders both tabs through the in-workspace renderer and ke
   assert.doesNotMatch(review, /<iframe/, "the review page no longer embeds a raw PDF iframe directly");
   assert.equal(review.match(/<ProtectedPdfPreview /g)?.length, 2, "resume and cover-letter tabs");
   assert.match(review, /src=\{resumePreviewSrc\}/);
-  assert.match(review, /src=\{`\$\{coverLetter\.previewUrl\}&style=\$\{resume\.theme\}`\}/);
+  assert.match(review, /src=\{`\$\{coverLetter\.previewUrl\}&style=\$\{resume\.theme\}&revision=\$\{previewRevision\}`\}/);
   assert.match(review, /role="tablist" aria-label="Package preview"/);
   assert.match(review, /className="rb-review-grid"/);
   assert.equal(review.match(/\{renderThemePicker\(\)\}/g)?.length, 2, "first-build and sidebar theme pickers");
@@ -135,9 +135,10 @@ test("the review page renders both tabs through the in-workspace renderer and ke
   // existing sign-in redirect, and the last-resort link opens a separate tab.
   assert.match(preview, /window\.location\.assign\("\/resume-builder"\)/);
   assert.equal(preview.match(/window\.location/g)?.length, 1);
-  assert.match(preview, /href=\{src\} target="_blank" rel="noopener noreferrer"/);
+  assert.doesNotMatch(preview, /href=\{src\}/);
   assert.match(preview, /isEvalSupported: false/);
-  assert.match(preview, /if \(renderer === "frame"\) return <iframe src=\{src\} title=\{title\} \/>/);
+  assert.doesNotMatch(preview, /<iframe|window\.print|download=/);
+  assert.match(preview, /Fit to width/);
 });
 
 test("the mobile canvas preview has layout rules and the old raw-PDF fallback is gone", async () => {

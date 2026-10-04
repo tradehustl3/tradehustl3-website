@@ -1,6 +1,9 @@
+import { storedStyle } from './resume-templates';
+import { customizeResume } from './resume-customization';
 import { errorKind } from "./resume-safe-log";
 import {
   handleResumeBuilderRoute as handleBaseResumeBuilderRoute,
+  parseJsonBody,
   type ResumeBuilderDependencies,
   type ResumeBuilderEnv,
 } from "./resume-builder-base";
@@ -610,8 +613,8 @@ async function rerenderResumeTheme(
   theme: ResumeTheme,
 ): Promise<void> {
   const record = await env.DB.prepare(
-    "SELECT user_id, generated_json, generation_track, theme FROM resumes WHERE resume_id = ? AND deleted_at IS NULL LIMIT 1",
-  ).bind(resumeId).first<{ user_id: string; generated_json: string | null; generation_track?: ResumeTheme; theme: ResumeTheme }>();
+    "SELECT user_id, generated_json, generation_track, theme, font, text_size, spacing, accent, template_version FROM resumes WHERE resume_id = ? AND deleted_at IS NULL LIMIT 1",
+  ).bind(resumeId).first<{ user_id: string; generated_json: string | null; generation_track?: ResumeTheme; theme: ResumeTheme; font?: string; text_size?: string; spacing?: string; accent?: string; template_version?: number }>();
   if (!record?.generated_json) return;
   if (!env.BOOKS) throw new Error("Resume file storage is unavailable.");
 
@@ -629,9 +632,9 @@ async function rerenderResumeTheme(
 
   try {
     const [docx, pdf, preview] = await Promise.all([
-      (dependencies.createDocx ?? createResumeDocx)(generated, theme, record.generation_track ?? record.theme),
-      (dependencies.createPdf ?? createResumePdf)(generated, false, theme, record.generation_track ?? record.theme),
-      (dependencies.createPdf ?? createResumePdf)(generated, true, theme, record.generation_track ?? record.theme),
+      (dependencies.createDocx ?? createResumeDocx)(generated, theme, record.generation_track ?? record.theme, storedStyle(record, theme)),
+      (dependencies.createPdf ?? createResumePdf)(generated, false, theme, record.generation_track ?? record.theme, storedStyle(record, theme)),
+      (dependencies.createPdf ?? createResumePdf)(generated, true, theme, record.generation_track ?? record.theme, storedStyle(record, theme)),
     ]);
     const fileStatements = await Promise.all([
       storeThemeFile(env, record.user_id, resumeId, generationId, "docx", docx),
@@ -1031,7 +1034,10 @@ export async function handleResumeBuilderRoute(
   const checkoutPathMatch = pathname.match(/^\/api\/resume-builder\/resumes\/([^/]+)\/checkout$/);
   const resumePathMatch = pathname.match(/^\/api\/resume-builder\/resumes\/([^/]+)$/);
   const themeRequestCopy = request.method === "PATCH" && resumePathMatch ? request.clone() : null;
-  const themeBody = themeRequestCopy ? await jsonBody(themeRequestCopy) : null;
+  const themeBody = themeRequestCopy ? await parseJsonBody(themeRequestCopy as unknown as BaseResumeRequest, 160_000) : null;
+  if (themeBody && resumePathMatch && Object.keys(themeBody).some(key => ['theme', 'font', 'textSize', 'spacing', 'accent'].includes(key)) && !('intake' in themeBody) && !('trade' in themeBody)) {
+    return customizeResume(request, env, dependencies, resumePathMatch[1], themeBody);
+  }
   const themeChange = themeOnlyBody(themeBody) ? themeBody : null;
   const importContactCopy = importPath ? request.clone() : null;
   const importCoverageCopy = importPath ? request.clone() : null;

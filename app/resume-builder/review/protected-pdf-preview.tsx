@@ -1,16 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState } from "react";
 import { loadPdfjs } from "../pdfjs";
 import {
-  COARSE_POINTER_QUERY,
   MAX_PREVIEW_PAGES,
-  NARROW_PREVIEW_QUERY,
   ProtectedPdfError,
-  choosePreviewRenderer,
   fetchProtectedPdf,
   pageRenderScale,
-  type PreviewRenderer,
 } from "./protected-pdf";
 
 type Pdfjs = Awaited<ReturnType<typeof loadPdfjs>>;
@@ -20,46 +16,16 @@ type LoadState =
   | { status: "ready"; pdf: PdfDocument; pageCount: number }
   | { status: "error" };
 
-function watch(query: MediaQueryList, onChange: () => void): () => void {
-  if (typeof query.addEventListener === "function") {
-    query.addEventListener("change", onChange);
-    return () => query.removeEventListener("change", onChange);
-  }
-  query.addListener(onChange);
-  return () => query.removeListener(onChange);
-}
-
-function subscribe(onChange: () => void): () => void {
-  const stops = [NARROW_PREVIEW_QUERY, COARSE_POINTER_QUERY].map((query) => watch(window.matchMedia(query), onChange));
-  return () => stops.forEach((stop) => stop());
-}
-
-function clientRenderer(): PreviewRenderer {
-  return choosePreviewRenderer({
-    pdfViewerEnabled: navigator.pdfViewerEnabled,
-    narrowViewport: window.matchMedia(NARROW_PREVIEW_QUERY).matches,
-    coarsePointer: window.matchMedia(COARSE_POINTER_QUERY).matches,
-  });
-}
-
-// Canvas works everywhere, so it is the safe answer when there is no browser yet.
-const serverRenderer = (): PreviewRenderer => "canvas";
-
-/**
- * Shows the customer's protected PDF inside the review workspace. Desktop browsers
- * with a built-in PDF viewer keep the iframe; phones, tablets, and browsers without
- * one get the same authenticated, server-watermarked file drawn with pdf.js. Either
- * way the customer never leaves the workspace and the server decides what is shown.
- */
+/** Controlled canvas preview on every device. No native viewer or text layer. */
 export function ProtectedPdfPreview({ src, title }: { src: string; title: string }) {
-  const renderer = useSyncExternalStore(subscribe, clientRenderer, serverRenderer);
   const [attempt, setAttempt] = useState(0);
-  if (renderer === "frame") return <iframe src={src} title={title} />;
   return <CanvasPdfPreview key={`${src}#${attempt}`} src={src} title={title} onRetry={() => setAttempt((value) => value + 1)} />;
 }
 
 function CanvasPdfPreview({ src, title, onRetry }: { src: string; title: string; onRetry: () => void }) {
   const [state, setState] = useState<LoadState>({ status: "loading" });
+  const [zoom, setZoom] = useState(1);
+  const [currentPage, setCurrentPage] = useState(1);
   const [width, setWidth] = useState(0);
   const [drawnPages, setDrawnPages] = useState(0);
   const pagesRef = useRef<HTMLDivElement | null>(null);
@@ -128,7 +94,7 @@ function CanvasPdfPreview({ src, title, onRetry }: { src: string; title: string;
           const page = await pdf.getPage(pageNumber);
           if (cancelled) return;
           const natural = page.getViewport({ scale: 1 });
-          const viewport = page.getViewport({ scale: pageRenderScale(natural.width, natural.height, width, window.devicePixelRatio) });
+          const viewport = page.getViewport({ scale: pageRenderScale(natural.width, natural.height, width * zoom, window.devicePixelRatio) });
           // Draw off-screen and copy, so a resize never flashes a blank page.
           const buffer = document.createElement("canvas");
           buffer.width = Math.floor(viewport.width);
@@ -140,6 +106,7 @@ function CanvasPdfPreview({ src, title, onRetry }: { src: string; title: string;
           if (cancelled || !canvas) return;
           canvas.width = buffer.width;
           canvas.height = buffer.height;
+          canvas.style.width = `${width * zoom}px`;
           canvas.getContext("2d")?.drawImage(buffer, 0, 0);
           buffer.width = 0;
           buffer.height = 0;
@@ -153,7 +120,7 @@ function CanvasPdfPreview({ src, title, onRetry }: { src: string; title: string;
       cancelled = true;
       renderTask?.cancel();
     };
-  }, [state, width]);
+  }, [state, width, zoom]);
 
   if (state.status === "error") {
     return (
@@ -161,7 +128,7 @@ function CanvasPdfPreview({ src, title, onRetry }: { src: string; title: string;
         <p><strong>We couldn&apos;t display this preview here.</strong></p>
         <p>Nothing was changed and no AI run was used.</p>
         <button className="rb-button rb-button-primary" type="button" onClick={onRetry}>Try again</button>
-        <a className="rb-button rb-button-secondary-dark" href={src} target="_blank" rel="noopener noreferrer">Open in a new tab</a>
+
       </div>
     );
   }
@@ -170,11 +137,21 @@ function CanvasPdfPreview({ src, title, onRetry }: { src: string; title: string;
   const loading = drawnPages === 0;
   return (
     <>
+      <div className="rb-pdf-controls" role="toolbar" aria-label="Preview controls">
+        <button type="button" aria-label="Zoom out" disabled={zoom <= 0.5} onClick={() => setZoom(value => Math.max(0.5, value - 0.25))}>−</button>
+        <span aria-live="polite">{Math.round(zoom * 100)}%</span>
+        <button type="button" aria-label="Zoom in" disabled={zoom >= 3} onClick={() => setZoom(value => Math.min(3, value + 0.25))}>+</button>
+        <button type="button" onClick={() => setZoom(1)}>Fit to width</button>
+        <button type="button" aria-label="Previous page" disabled={currentPage <= 1} onClick={() => setCurrentPage(value => value - 1)}>←</button>
+        <span aria-live="polite">{currentPage} / {pageCount || '…'}</span>
+        <button type="button" aria-label="Next page" disabled={currentPage >= pageCount} onClick={() => setCurrentPage(value => value + 1)}>→</button>
+      </div>
       <div className="rb-pdf-pages" ref={pagesRef} role="group" aria-label={title} aria-busy={loading}>
         {loading ? <p className="rb-pdf-status" role="status">Loading your protected preview…</p> : null}
         {Array.from({ length: pageCount }, (_, index) => (
           <canvas
             key={index}
+            hidden={index + 1 !== currentPage}
             ref={(node) => { canvasRefs.current[index] = node; }}
             role="img"
             aria-label={`${title}, page ${index + 1} of ${pageCount}`}

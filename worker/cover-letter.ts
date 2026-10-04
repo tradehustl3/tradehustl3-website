@@ -1,3 +1,4 @@
+import { storedStyle, type ResumeStyle } from './resume-templates';
 import { errorKind } from "./resume-safe-log";
 import {
   handleResumeBuilderRoute as handleBaseResumeBuilderRoute,
@@ -44,6 +45,7 @@ type ResumeProbe = {
     target_job_posting: string | null;
     theme: string;
     generation_track?: string;
+    font?: string; text_size?: string; spacing?: string; accent?: string; template_version?: number;
   };
 };
 
@@ -189,7 +191,7 @@ async function probeResume(
     return json({ ok: false, message: "Resume not found." }, 404);
   }
   const record = await env.DB.prepare(
-    `SELECT user_id, generated_json, target_job_posting, theme, generation_track
+    `SELECT user_id, generated_json, target_job_posting, theme, generation_track, font, text_size, spacing, accent, template_version
      FROM resumes WHERE resume_id = ? AND deleted_at IS NULL LIMIT 1`,
   ).bind(resumeId).first<ResumeProbe["record"]>();
   if (!record) return json({ ok: false, message: "Resume not found." }, 404);
@@ -407,7 +409,7 @@ async function callCoverLetterModel(
   }
 }
 
-async function acquireCoverLock(env: ResumeBuilderEnv, userId: string, resumeId: string): Promise<boolean> {
+export async function acquireCoverLock(env: ResumeBuilderEnv, userId: string, resumeId: string): Promise<boolean> {
   const row = await env.DB.prepare(
     `INSERT INTO resume_generations
        (generation_id, resume_id, user_id, mode, model, outcome)
@@ -420,7 +422,7 @@ async function acquireCoverLock(env: ResumeBuilderEnv, userId: string, resumeId:
   return Boolean(row);
 }
 
-async function releaseCoverLock(env: ResumeBuilderEnv, resumeId: string): Promise<void> {
+export async function releaseCoverLock(env: ResumeBuilderEnv, resumeId: string): Promise<void> {
   await env.DB.prepare("DELETE FROM resume_generations WHERE generation_id = ?")
     .bind(`cover-letter-lock:${resumeId}`).run();
 }
@@ -549,6 +551,7 @@ async function generateCoverLetter(
       correctionRequest,
       context,
       theme: normalizeTheme(probe.record.theme),
+      style: storedStyle(probe.record, normalizeTheme(probe.record.theme)),
     });
     await releaseCoverLock(env, resumeId);
     return json({
@@ -578,6 +581,7 @@ type CoverLetterWrite = {
   correctionRequest: string;
   context: StoredCoverLetter["context"];
   theme: ResumeTheme;
+  style?: ResumeStyle;
 };
 
 /**
@@ -590,7 +594,7 @@ async function writeCoverLetter(
   dependencies: ResumeBuilderDependencies,
   input: CoverLetterWrite,
 ): Promise<void> {
-  const { userId, resumeId, verifiedResume, existing, generationTrack, correctionRequest, context, theme } = input;
+  const { userId, resumeId, verifiedResume, existing, generationTrack, correctionRequest, context, theme, style } = input;
   const supportedSource = JSON.stringify({ verifiedResume, targetJobContext: context });
   const prompt = `Career writing profile: ${resumeSystemProfile(generationTrack)}\nAdapt this profile to cover-letter paragraphs. Emphasize only verified facts appropriate to that track.\n\n${existing ? "Refine the existing cover letter using the correction request. Preserve all verified facts." : "Write the matching cover letter."}\n\n<VERIFIED_RESUME>\n${JSON.stringify(verifiedResume)}\n</VERIFIED_RESUME>\n\n<TARGET_JOB_CONTEXT>\n${JSON.stringify(context)}\n</TARGET_JOB_CONTEXT>${existing ? `\n\n<EXISTING_COVER_LETTER>\n${JSON.stringify(existing.paragraphs)}\n</EXISTING_COVER_LETTER>\n\n<CORRECTION_REQUEST>\n${correctionRequest}\n</CORRECTION_REQUEST>` : ""}`;
   const generationId = crypto.randomUUID();
@@ -621,9 +625,14 @@ async function writeCoverLetter(
       closing: "Sincerely,",
       context,
     };
+    // The probe precedes lock acquisition. Read presentation again under the
+    // cover lock so a just-completed free customization cannot be overwritten.
+    const presentation = await env.DB.prepare("SELECT theme, font, text_size, spacing, accent, template_version FROM resumes WHERE resume_id = ? AND user_id = ? AND deleted_at IS NULL").bind(resumeId, userId).first<{ theme: string; font?: string; text_size?: string; spacing?: string; accent?: string; template_version?: number }>();
+    const currentTheme = presentation ? normalizeTheme(presentation.theme) : theme;
+    const currentStyle = presentation ? storedStyle(presentation, currentTheme) : style;
     const [pdf, docx] = await Promise.all([
-      createCoverLetterPdf(stored, theme),
-      createCoverLetterDocx(stored, theme),
+      createCoverLetterPdf(stored, currentTheme, false, currentStyle),
+      createCoverLetterDocx(stored, currentTheme, currentStyle),
     ]);
     const jsonBytes = encoder.encode(JSON.stringify(stored));
     const statements = await Promise.all([
@@ -679,9 +688,9 @@ export async function rewriteCoverLetterForPackageTrack(
   generationTrack: ResumeTheme,
 ): Promise<boolean> {
   const record = await env.DB.prepare(
-    `SELECT user_id, generated_json, target_job_posting, theme
+    `SELECT user_id, generated_json, target_job_posting, theme, font, text_size, spacing, accent, template_version
      FROM resumes WHERE resume_id = ? AND deleted_at IS NULL LIMIT 1`,
-  ).bind(resumeId).first<{ user_id: string; generated_json: string | null; target_job_posting: string | null; theme: string }>();
+  ).bind(resumeId).first<{ user_id: string; generated_json: string | null; target_job_posting: string | null; theme: string; font?: string; text_size?: string; spacing?: string; accent?: string; template_version?: number }>();
   if (!record) throw new Error("Resume not found for package rewrite.");
   const verifiedResume = generatedResume(record.generated_json);
   if (!verifiedResume) throw new Error("Rewritten resume is unavailable for the cover letter.");
@@ -705,6 +714,7 @@ export async function rewriteCoverLetterForPackageTrack(
         correctionRequest: PACKAGE_TRACK_COVER_REQUEST,
         context,
         theme: normalizeTheme(record.theme),
+        style: storedStyle(record, normalizeTheme(record.theme)),
       });
     } catch (error) {
       await recordCoverLetterFailure(env, record.user_id, resumeId, error);
@@ -735,7 +745,7 @@ async function serveCoverLetterFile(
     const stored = await loadStoredCoverLetter(env, probe.record.user_id, resumeId);
     if (!stored) return json({ ok: false, message: "File not found." }, 404);
     try {
-      const preview = await createCoverLetterPdf(stored, normalizeTheme(probe.record.theme), true);
+      const preview = await createCoverLetterPdf(stored, normalizeTheme(probe.record.theme), true, storedStyle(probe.record, normalizeTheme(probe.record.theme)));
       const headers = new Headers();
       headers.set("Content-Type", "application/pdf");
       headers.set("Content-Disposition", "inline; filename=\"TRADE-HUSTL3-Cover-Letter-Preview.pdf\"");
@@ -840,8 +850,8 @@ export async function rerenderCoverLetterTheme(
   theme: ResumeTheme,
 ): Promise<boolean> {
   const record = await env.DB.prepare(
-    "SELECT user_id FROM resumes WHERE resume_id = ? AND deleted_at IS NULL LIMIT 1",
-  ).bind(resumeId).first<{ user_id: string }>();
+    "SELECT user_id, font, text_size, spacing, accent, template_version FROM resumes WHERE resume_id = ? AND deleted_at IS NULL LIMIT 1",
+  ).bind(resumeId).first<{ user_id: string; font?: string; text_size?: string; spacing?: string; accent?: string; template_version?: number }>();
   if (!record || !env.BOOKS) return false;
   const stored = await loadStoredCoverLetter(env, record.user_id, resumeId);
   if (!stored) return false;
@@ -856,8 +866,8 @@ export async function rerenderCoverLetterTheme(
   ];
   try {
     const [pdf, docx] = await Promise.all([
-      createCoverLetterPdf(stored, theme),
-      createCoverLetterDocx(stored, theme),
+      createCoverLetterPdf(stored, theme, false, storedStyle(record, theme)),
+      createCoverLetterDocx(stored, theme, storedStyle(record, theme)),
     ]);
     const statements = await Promise.all([
       storeCoverFile(env, record.user_id, resumeId, generationId, "cover_pdf", pdf),

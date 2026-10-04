@@ -809,3 +809,17 @@ p.rb-quality-pass { margin: 12px 0 0; padding: 10px 12px; border: 1px solid var(
   .rb-button, .rb-trade-card, .rb-level-card, .rb-chip, .rb-upload-zone { transition: none; }
   .rb-wiz-loading span, .rb-review-loading span, .rb-working-overlay > span { animation: none; }
 }
+
+/* Controlled PDF viewer and free document settings. */
+.rb-pdf-controls { display:flex; flex-wrap:wrap; gap:8px; align-items:center; padding:10px; background:#eef1f4; color:#111; }
+.rb-pdf-controls button { min-width:44px; min-height:44px; padding:8px 12px; border:1px solid #b8bec6; background:white; color:#111; border-radius:6px; cursor:pointer; }
+.rb-pdf-controls button:disabled { opacity:.45; cursor:default; }
+.rb-pdf-pages { overflow:auto; user-select:none; }
+.rb-pdf-pages canvas[hidden] { display:none; }
+.rb-style-controls { border:1px solid #545b68; border-radius:8px; padding:14px; margin:16px 0; }
+.rb-style-controls legend { font-weight:700; }
+.rb-style-controls label { display:block; margin:10px 0; }
+.rb-style-controls select { display:block; width:100%; min-height:44px; margin-top:5px; padding:8px; color:#111; background:white; border-radius:6px; }
+.rb-theme-preview:has(img) { height:auto; padding:0; overflow:hidden; background:white; }
+.rb-theme-preview img { display:block; width:100%; height:auto; }
+@media print { .rb-pdf-pages, .rb-pdf-controls { display:none !important; } }

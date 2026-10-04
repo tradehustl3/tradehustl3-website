@@ -2,6 +2,8 @@
 
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { CoverLetterPanel } from "./cover-letter-panel";
+import { StyleControls } from "./style-controls";
+import { defaultStyle, type ResumeStyle } from "../../../worker/resume-templates";
 import { ProtectedPdfPreview } from "./protected-pdf-preview";
 import { generationFailureIntakeUrl, intakeReturnUrl } from "../return-urls";
 
@@ -15,6 +17,7 @@ type Resume = {
   title: string;
   status: string;
   theme: ResumeTheme;
+  style?: ResumeStyle;
   generationTrack: ResumeTheme;
   paid: boolean;
   runsUsed: number;
@@ -104,6 +107,8 @@ export function ResumeReview() {
   useEffect(() => {
     if (pendingTrack) trackChoiceRef.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
   }, [pendingTrack]);
+  const [previewRevision, setPreviewRevision] = useState(0);
+  const [styleSaving, setStyleSaving] = useState(false);
   const [themeSaving, setThemeSaving] = useState(false);
   const [bulletSaving, setBulletSaving] = useState("");
   const [bulletDrafts, setBulletDrafts] = useState<Record<string, string>>({});
@@ -203,7 +208,7 @@ export function ResumeReview() {
   }
 
   async function updateTheme(theme: ResumeTheme): Promise<boolean> {
-    if (!resumeId || !resume || resume.theme === theme || themeSaving) return false;
+    if (!resumeId || !resume || resume.theme === theme || themeSaving || styleSaving) return false;
     const previous = resume.theme;
     setThemeSaving(true);
     notify("");
@@ -218,6 +223,7 @@ export function ResumeReview() {
       const result = await response.json() as { message?: string };
       if (!response.ok) throw new Error(result.message || "We could not save your template choice.");
       await load(resumeId);
+      setPreviewRevision(value => value + 1);
       notify(result.message || "Resume style updated without using an AI run.", "success");
       return true;
     } catch (error) {
@@ -295,11 +301,12 @@ export function ResumeReview() {
               role="radio"
               aria-checked={selected}
               className={`rb-trade-card${selected ? " rb-trade-card-on" : ""}${pendingTrack === option.value ? " rb-trade-card-pending" : ""}`}
-              disabled={themeSaving || working}
+              disabled={themeSaving || styleSaving || working}
               onClick={() => void chooseStyle(option.value)}
             >
               <span className={`rb-theme-preview rb-theme-preview-${option.value}`} aria-hidden="true">
-                <i /><i /><b /><i /><i />
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={`/resume-templates/${option.value}.png`} alt="" />
               </span>
               <span className="rb-trade-card-name">{option.label}</span>
               <span className="rb-theme-tagline">{option.tagline}</span>
@@ -314,10 +321,10 @@ export function ResumeReview() {
           <h3 id="track-choice-title">How should your wording change?</h3>
           <p>Your resume was written for <strong>{themeLabel(resume.generationTrack)}</strong>. Keep that wording with the new look for free, or have HUSTL3 BOT rewrite your resume and matching cover letter for <strong>{themeLabel(pendingTrack)}</strong> using only your verified facts.</p>
           <div className="rb-track-choice-actions">
-            <button className="rb-button rb-button-primary" type="button" disabled={working || themeSaving} onClick={async () => { const track = pendingTrack; if (await runGeneration(undefined, track)) { await updateTheme(track); setPendingTrack(null); } }}>Rewrite for {themeLabel(pendingTrack)} <span aria-hidden="true">· 1 correction</span></button>
-            <button className="rb-button rb-button-secondary-dark" type="button" disabled={working || themeSaving} onClick={async () => { const track = pendingTrack; setPendingTrack(null); await updateTheme(track); }}>Keep my wording <span aria-hidden="true">· free</span></button>
+            <button className="rb-button rb-button-primary" type="button" disabled={working || themeSaving || styleSaving} onClick={async () => { const track = pendingTrack; if (await runGeneration(undefined, track)) { await updateTheme(track); setPendingTrack(null); } }}>Rewrite for {themeLabel(pendingTrack)} <span aria-hidden="true">· 1 correction</span></button>
+            <button className="rb-button rb-button-secondary-dark" type="button" disabled={working || themeSaving || styleSaving} onClick={async () => { const track = pendingTrack; setPendingTrack(null); await updateTheme(track); }}>Keep my wording <span aria-hidden="true">· free</span></button>
           </div>
-          <button className="rb-track-choice-cancel" type="button" disabled={working || themeSaving} onClick={() => setPendingTrack(null)}>Cancel</button>
+          <button className="rb-track-choice-cancel" type="button" disabled={working || themeSaving || styleSaving} onClick={() => setPendingTrack(null)}>Cancel</button>
           <small>{resume.correctionsRemaining} of 3 shared corrections remaining. A rewrite uses exactly one and updates your resume and matching cover letter together.</small>
         </div>
       ) : null}
@@ -381,8 +388,8 @@ export function ResumeReview() {
   const coverLetter = resume.coverLetter;
   const coverPreviewReady = Boolean(coverLetter?.generated && coverLetter.previewUrl);
   const resumePreviewSrc = resume.paid && resume.downloads
-    ? `${resume.downloads.pdf}?view=1&run=${resume.runsUsed}&style=${resume.theme}`
-    : `${resume.previewUrl}?run=${resume.runsUsed}&style=${resume.theme}`;
+    ? `${resume.downloads.pdf}?view=1&run=${resume.runsUsed}&style=${resume.theme}&revision=${previewRevision}`
+    : `${resume.previewUrl}?run=${resume.runsUsed}&style=${resume.theme}&revision=${previewRevision}`;
 
   return (
     <div className="rb-review-workspace">
@@ -448,12 +455,12 @@ export function ResumeReview() {
             {activePreview === "resume" ? (
               <>
                 <div className="rb-preview-toolbar"><div><span className="rb-status-dot" />{resume.paid ? "Clean paid resume" : "Protected watermarked preview"}</div><small>{resume.paid ? "Watermark removed · clean files below" : "Preview only · pay to remove watermark"}</small></div>
-                <ProtectedPdfPreview key={`${resume.previewUrl}-${resume.runsUsed}-${resume.paid}-${resume.theme}`} src={resumePreviewSrc} title={resume.paid ? "Clean paid resume" : "Watermarked resume preview"} />
+                <ProtectedPdfPreview key={`${resume.previewUrl}-${resume.runsUsed}-${resume.paid}-${resume.theme}-${previewRevision}`} src={resumePreviewSrc} title={resume.paid ? "Clean paid resume" : "Watermarked resume preview"} />
               </>
             ) : coverPreviewReady && coverLetter?.previewUrl ? (
               <>
                 <div className="rb-preview-toolbar"><div><span className="rb-status-dot" />{resume.paid ? "Clean paid cover letter" : "Protected cover-letter preview"}</div><small>{resume.paid ? "Included with your package" : "Preview only · pay to unlock clean files"}</small></div>
-                <ProtectedPdfPreview key={`${coverLetter.previewUrl}-${resume.paid}-${resume.theme}`} src={`${coverLetter.previewUrl}&style=${resume.theme}`} title={resume.paid ? "Clean matching cover letter" : "Watermarked matching cover letter preview"} />
+                <ProtectedPdfPreview key={`${coverLetter.previewUrl}-${resume.paid}-${resume.theme}-${previewRevision}`} src={`${coverLetter.previewUrl}&style=${resume.theme}&revision=${previewRevision}`} title={resume.paid ? "Clean matching cover letter" : "Watermarked matching cover letter preview"} />
               </>
             ) : (
               <div className="rb-preview-empty">
@@ -471,6 +478,7 @@ export function ResumeReview() {
             <div className="rb-review-status"><p className="rb-kicker">{resume.paid ? "Review + refine" : "Preview before you pay"}</p><h2>{resume.paid ? "Make it sound like you." : "Review the whole package."}</h2><p className="rb-review-desc">{resume.paid ? "Check names, dates, certifications, job duties, contact information, and your included matching cover letter before downloading." : "Your resume is ready. Build the included matching cover-letter preview, review both tabs, then pay once to remove the watermarks and unlock the clean PDF + DOCX files."}</p>
               <span className="rb-theme-label">Resume system</span>
               {renderThemePicker()}
+              <StyleControls key={`${resume.theme}-${JSON.stringify(resume.style)}`} resumeId={resumeId} style={resume.style ?? defaultStyle(resume.theme)} disabled={working || themeSaving} onBusy={setStyleSaving} onSaved={async () => { await load(resumeId); setPreviewRevision(value => value + 1); }} />
               <small className="rb-theme-note">Your first build uses the selected system&apos;s writing profile and layout. Switching the look later is always free. After you unlock the package, you can also rewrite the wording for a new system with one correction.</small>
             </div>
 
