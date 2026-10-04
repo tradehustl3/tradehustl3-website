@@ -10,7 +10,7 @@ This branch implements the three layouts from Resume Design Mockups.pdf as versi
 | Modern Trade | [PDF](samples/navy.pdf) | [DOCX](samples/navy.docx) | [PDF](samples/navy-cover.pdf) | [DOCX](samples/navy-cover.docx) |
 | Lead / Supervisor | [PDF](samples/lead.pdf) | [DOCX](samples/lead.docx) | [PDF](samples/lead-cover.pdf) | [DOCX](samples/lead-cover.docx) |
 
-Shared content retains its writing-track headings when a customer changes the presentation. The samples use each design's corresponding writing track. Scope is displayed only for Lead / Supervisor when an explicit scope value exists; the renderer does not infer scope from a title or invent leadership responsibilities. Modern Trade groups existing skills deterministically, falling back to a plain two-column grid when a skill cannot be classified.
+Shared content retains its writing-track headings when a customer changes the presentation. The samples use each design's corresponding writing track. Scope is displayed only for Lead / Supervisor when explicit customer scope or crew/account responsibility exists in a uniquely matched intake role; the renderer does not infer scope from a title or invent leadership responsibilities. Modern Trade groups existing skills deterministically, falling back to a plain two-column grid when a skill cannot be classified.
 
 All 486 design and customization combinations are covered by output tests. Settings are free, never call AI, and do not reserve or modify correction credits. Resume and existing cover-letter outputs are staged in new immutable storage objects, then file pointers and settings switch in a single D1 batch. A failed render or upload preserves the previous package. Existing immutable objects are retained for rollback and standard account cleanup.
 

@@ -1,3 +1,4 @@
+import { withCustomerScope } from './resume-presentation-content';
 import { acquireCoverLock, releaseCoverLock } from './cover-letter';
 import { authorizeResumePresentation, type ResumeBuilderEnv, type ResumeBuilderDependencies } from './resume-builder-base';
 import { createResumeDocx, createResumePdf, type GeneratedResume, type ResumeTheme } from './resume-documents';
@@ -28,7 +29,7 @@ export async function customizeResume(request: Request, env: ResumeBuilderEnv, d
   if (!env.BOOKS) { await unlock(); await releaseCoverLock(env, resumeId); return json({ ok: false, message: 'File storage is unavailable.' }, 503); }
   const generationId = crypto.randomUUID(), stagedKeys: string[] = [];
   try {
-    const generated = JSON.parse(record.generated_json) as GeneratedResume;
+    const generated = withCustomerScope(JSON.parse(record.generated_json) as GeneratedResume, record.intake_json);
     const track: ResumeTheme = record.generation_track === 'navy' || record.generation_track === 'lead' ? record.generation_track : record.generation_track === 'plain' ? 'plain' : previousTheme;
     const files: Array<{ format: string; bytes: Uint8Array }> = await Promise.all([
       (dependencies.createDocx ?? createResumeDocx)(generated, theme, track, style).then(bytes => ({ format: 'docx', bytes })),

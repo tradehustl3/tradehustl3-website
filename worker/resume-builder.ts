@@ -1,3 +1,4 @@
+import { withCustomerScope } from './resume-presentation-content';
 import { storedStyle } from './resume-templates';
 import { customizeResume } from './resume-customization';
 import { errorKind } from "./resume-safe-log";
@@ -613,12 +614,12 @@ async function rerenderResumeTheme(
   theme: ResumeTheme,
 ): Promise<void> {
   const record = await env.DB.prepare(
-    "SELECT user_id, generated_json, generation_track, theme, font, text_size, spacing, accent, template_version FROM resumes WHERE resume_id = ? AND deleted_at IS NULL LIMIT 1",
-  ).bind(resumeId).first<{ user_id: string; generated_json: string | null; generation_track?: ResumeTheme; theme: ResumeTheme; font?: string; text_size?: string; spacing?: string; accent?: string; template_version?: number }>();
+    "SELECT user_id, generated_json, intake_json, generation_track, theme, font, text_size, spacing, accent, template_version FROM resumes WHERE resume_id = ? AND deleted_at IS NULL LIMIT 1",
+  ).bind(resumeId).first<{ user_id: string; generated_json: string | null; intake_json?: string; generation_track?: ResumeTheme; theme: ResumeTheme; font?: string; text_size?: string; spacing?: string; accent?: string; template_version?: number }>();
   if (!record?.generated_json) return;
   if (!env.BOOKS) throw new Error("Resume file storage is unavailable.");
 
-  const generated = JSON.parse(record.generated_json) as GeneratedResume;
+  const generated = withCustomerScope(JSON.parse(record.generated_json) as GeneratedResume, record.intake_json);
   const generationId = crypto.randomUUID();
   const newObjectKeys = (["docx", "pdf", "preview"] as const).map((format) => {
     const extension = format === "docx" ? "docx" : "pdf";

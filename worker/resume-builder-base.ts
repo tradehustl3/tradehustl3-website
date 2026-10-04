@@ -1,3 +1,4 @@
+import { withCustomerScope } from './resume-presentation-content';
 import { storedStyle, defaultStyle } from './resume-templates';
 import { errorKind } from "./resume-safe-log";
 import { notifyResumeRecovery, type RecoveryContext } from "./resume-recovery";
@@ -3016,9 +3017,9 @@ async function updateResumeBullet(
   try {
     const theme = normalizeTheme(resume.theme);
     const [docx, pdf, preview] = await Promise.all([
-      (dependencies.createDocx ?? createResumeDocx)(nextStored, theme, normalizeTheme(resume.generation_track ?? resume.theme), storedStyle(resume, theme)),
-      (dependencies.createPdf ?? createResumePdf)(nextStored, false, theme, normalizeTheme(resume.generation_track ?? resume.theme), storedStyle(resume, theme)),
-      (dependencies.createPdf ?? createResumePdf)(nextStored, true, theme, normalizeTheme(resume.generation_track ?? resume.theme), storedStyle(resume, theme)),
+      (dependencies.createDocx ?? createResumeDocx)(withCustomerScope(nextStored, resume.intake_json), theme, normalizeTheme(resume.generation_track ?? resume.theme), storedStyle(resume, theme)),
+      (dependencies.createPdf ?? createResumePdf)(withCustomerScope(nextStored, resume.intake_json), false, theme, normalizeTheme(resume.generation_track ?? resume.theme), storedStyle(resume, theme)),
+      (dependencies.createPdf ?? createResumePdf)(withCustomerScope(nextStored, resume.intake_json), true, theme, normalizeTheme(resume.generation_track ?? resume.theme), storedStyle(resume, theme)),
     ]);
     const fileStatements = await Promise.all([
       storeResumeFile(env, user.userId, resumeId, generationId, "docx", docx),
@@ -3131,8 +3132,15 @@ async function generateResume(
 
   // A free style update may have completed between the initial read and this
   // generation lock. Refresh only presentation, leaving verified facts intact.
-  const latestPresentation = await env.DB.prepare("SELECT theme, font, text_size, spacing, accent, template_version FROM resumes WHERE resume_id = ? AND user_id = ? AND deleted_at IS NULL").bind(resumeId, user.userId).first<Partial<ResumeRecord>>();
-  if (latestPresentation) Object.assign(resume, latestPresentation);
+  const latestPresentation = await findOwnedResume(env, resumeId, user.userId);
+  if (latestPresentation) {
+    resume.theme = latestPresentation.theme;
+    resume.font = latestPresentation.font;
+    resume.text_size = latestPresentation.text_size;
+    resume.spacing = latestPresentation.spacing;
+    resume.accent = latestPresentation.accent;
+    resume.template_version = latestPresentation.template_version;
+  }
 
   if (entitlement) {
     const reserved = await env.DB.prepare(
@@ -3174,9 +3182,9 @@ async function generateResume(
     const theme = normalizeTheme(resume.theme);
     try {
       [docx, pdf, preview] = await Promise.all([
-        (dependencies.createDocx ?? createResumeDocx)(generated.resume, theme, normalizeTheme(resume.generation_track ?? resume.theme), storedStyle(resume, theme)),
-        (dependencies.createPdf ?? createResumePdf)(generated.resume, false, theme, normalizeTheme(resume.generation_track ?? resume.theme), storedStyle(resume, theme)),
-        (dependencies.createPdf ?? createResumePdf)(generated.resume, true, theme, normalizeTheme(resume.generation_track ?? resume.theme), storedStyle(resume, theme)),
+        (dependencies.createDocx ?? createResumeDocx)(withCustomerScope(generated.resume, resume.intake_json), theme, normalizeTheme(resume.generation_track ?? resume.theme), storedStyle(resume, theme)),
+        (dependencies.createPdf ?? createResumePdf)(withCustomerScope(generated.resume, resume.intake_json), false, theme, normalizeTheme(resume.generation_track ?? resume.theme), storedStyle(resume, theme)),
+        (dependencies.createPdf ?? createResumePdf)(withCustomerScope(generated.resume, resume.intake_json), true, theme, normalizeTheme(resume.generation_track ?? resume.theme), storedStyle(resume, theme)),
       ]);
     } catch (error) {
       console.error("Resume document render failed", errorKind(error));
