@@ -43,14 +43,83 @@ Unpaid-resume retention may delete them after 37 idle days; the next sign-in rec
    GitHub Actions repository secret `SMOKE_TEST_LOGIN_SECRET`. Do not paste the value
    anywhere else.
 3. Cloudflare edge: smoke traffic is currently challenged before it reaches the Worker
-   (see `docs/pr186/README.md`). A narrowly scoped WAF custom rule that skips the
-   challenge only when `X-Smoke-Token` equals the `SMOKE_BYPASS_TOKEN` value is required
-   for any production smoke step to pass, including this one. The Worker endpoint still
-   requires its own, separate secret.
+   (see `docs/pr186/README.md`). No smoke step passes until this is resolved. See
+   "Cloudflare edge rule" below. The Worker endpoint still requires its own,
+   separate secret either way.
 
 Until step 2 is done, the workflow step logs a warning and skips.
 
-To disable: delete the Cloudflare secret. The endpoint immediately returns 404.
+## Cloudflare edge rule
+
+### First: find which product issues the challenge
+
+In the Cloudflare dashboard, open **Security → Analytics → Events**. Filter on the
+smoke User-Agent `TRADE-HUSTL3-Production-Smoke` and read the **Service** field.
+
+- **Bot Fight Mode** (Free plan): it cannot be skipped by any custom rule, whatever
+  the expression (Cloudflare docs: "Bot Fight Mode cannot be skipped"). Do not add a
+  rule; it would do nothing. Choose one of these instead (owner decision):
+  - upgrade the zone to Pro and use Super Bot Fight Mode with the rule below, or
+  - turn Bot Fight Mode off, which removes it for all visitors, or
+  - accept that the production smoke stays blocked.
+- **Super Bot Fight Mode** (Pro and above), or a managed challenge from a custom or
+  managed rule: use the rule below.
+
+### The rule (exact value match only)
+
+Create a custom rule with the action **Skip**, placed first in the custom rules list:
+
+```txt
+(http.host eq "tradehustl3.com"
+ and len(http.request.headers["x-smoke-token"]) eq 1
+ and http.request.headers["x-smoke-token"][0] eq "<SMOKE_BYPASS_TOKEN value>")
+```
+
+Each clause has a job:
+
+- `eq` is exact, case-sensitive equality on the whole value. Never use
+  `contains`, `matches`, `wildcard`, `starts_with`, or a check that the header
+  merely exists (`has_key`, `len(...) gt 0`). With any of those, anyone could add
+  the header and skip the challenge.
+- `len(...) eq 1` rejects requests that send the header twice, so no
+  first-or-any-value ambiguity applies.
+- `http.host` limits the rule to the production hostname.
+
+Skip settings:
+
+- Skip **only** "All Super Bot Fight Mode rules" (phase `http_request_sbfm`). If the
+  challenge comes from a specific custom rule, place this rule above it and skip
+  only "All remaining custom rules".
+- Do **not** skip Managed Rules (`http_request_firewall_managed`) or rate limiting
+  (`http_ratelimit`). Smoke traffic has no reason to bypass attack protection.
+- Turn on **Log matching requests**, so every bypass is visible in Security Events.
+
+### Secret handling
+
+- `SMOKE_BYPASS_TOKEN` is a different value from `SMOKE_TEST_LOGIN_SECRET`. Generate
+  32+ random characters. Leaking the edge token alone must not grant a sign-in.
+- The value is stored in plain text inside the rule expression, so anyone with
+  dashboard or API read access to WAF rules can see it. Keep that access to the owner.
+- To rotate: update the GitHub secret and the rule expression together. A mismatch
+  only fails the smoke run; it never opens access.
+
+### Verify the rule once after creating it
+
+Look at Security Events, not at status codes alone. A request that is not
+challenged is not proof the rule matched, because Cloudflare does not challenge
+every request.
+
+1. A request with no header, or a wrong value (for example `X-Smoke-Token: wrong`),
+   must still be challenged or logged as challenged. It must never appear as a
+   skip-rule match.
+2. The next Production Smoke run, which sends the correct value, must appear as a
+   match of the skip rule and reach the Worker.
+
+## Disable
+
+To disable sign-in: delete the Cloudflare Worker secret `SMOKE_TEST_LOGIN_SECRET`. The
+endpoint immediately returns 404. To remove the edge bypass: delete the skip rule.
+Each control works on its own.
 
 ## Running locally against another origin
 
