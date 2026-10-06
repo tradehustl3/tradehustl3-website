@@ -19,7 +19,7 @@ jobs:
       github.event.check_run.app.slug == 'cloudflare-workers-and-pages' &&
       github.event.check_run.check_suite.head_branch == 'main'
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
     env:
       CUSTOM_ORIGIN: https://tradehustl3.com
       SMOKE_BYPASS_TOKEN: ${{ secrets.SMOKE_BYPASS_TOKEN }}
@@ -178,3 +178,33 @@ jobs:
             echo "::error::Logged-out review admin API returned HTTP $status instead of 401"
             exit 1
           fi
+
+      # Authenticated review-flow smoke. Signs in as the synthetic
+      # smoke-test@tradehustl3.invalid account through the secret-protected
+      # smoke session endpoint (no email), using two server-reset fixtures.
+      - name: Check out smoke runner
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          # The exact commit Cloudflare just deployed, not whatever main is now.
+          ref: ${{ github.event.check_run.head_sha }}
+          persist-credentials: false
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Verify signed-in Resume Builder review flow
+        shell: bash
+        env:
+          SMOKE_ORIGIN: ${{ env.CUSTOM_ORIGIN }}
+          SMOKE_TEST_LOGIN_SECRET: ${{ secrets.SMOKE_TEST_LOGIN_SECRET }}
+        run: |
+          set -euo pipefail
+          if [ -z "${SMOKE_TEST_LOGIN_SECRET:-}" ]; then
+            echo '::warning::SMOKE_TEST_LOGIN_SECRET is not configured; signed-in Resume Builder smoke skipped.'
+            exit 0
+          fi
+          # Production dependencies only, exactly as locked (pdfjs-dist reads the preview).
+          npm ci --omit=dev --ignore-scripts --no-audit --no-fund
+          node tools/smoke/resume-builder-smoke.mjs
