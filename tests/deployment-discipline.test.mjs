@@ -63,6 +63,12 @@ test("a Cloudflare edge challenge is reported as inconclusive, never as a pass, 
   }
 });
 
+test("grouped dependency bumps never carry a pdfjs-dist major upgrade", async () => {
+  const source = await readFile(new URL("../.github/dependabot.yml", import.meta.url), "utf8");
+  const npmBlock = source.slice(source.indexOf("package-ecosystem: npm"), source.indexOf("package-ecosystem: github-actions"));
+  assert.match(npmBlock, /ignore:\s*\n(?:\s*#.*\n)*\s*- dependency-name: "pdfjs-dist"\s*\n\s*update-types: \["version-update:semver-major"\]/);
+});
+
 test("Cloudflare Worker deployment owns the production custom domain", async () => {
   const source = await readFile(viteConfig, "utf8");
   assert.match(source, /pattern:\s*"tradehustl3\.com"/);

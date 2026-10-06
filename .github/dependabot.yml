@@ -5,6 +5,13 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+    ignore:
+      # pdfjs-dist 6 is a breaking release (PDFDocumentProxy.destroy was removed)
+      # and it reads customer-uploaded resumes. Upgrade it in its own reviewed
+      # change with upload and preview tests, not inside a grouped bump.
+      # Minor and patch releases of 5.x still arrive automatically.
+      - dependency-name: "pdfjs-dist"
+        update-types: ["version-update:semver-major"]
     groups:
       production-security:
         dependency-type: production
