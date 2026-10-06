@@ -35,7 +35,8 @@ test("only the customer's own preview file routes may be framed, and only by thi
 test("the worker applies the frame policy and keeps DENY as the default", () => {
   const source = read("worker/index.ts");
   assert.match(source, /import \{ allowsSameOriginFraming, frameHeaders, withFrameAncestors \} from "\.\/frame-policy"/);
-  assert.match(source, /"frame-ancestors 'none'"/);
+  assert.match(source, /import \{ CONTENT_SECURITY_POLICY \} from "\.\/content-security-policy"/);
+  assert.match(read("worker/content-security-policy.ts"), /"frame-ancestors 'none'"/);
   assert.match(source, /headers\.set\("X-Frame-Options", frameHeaders\(frameable\)\.xFrameOptions\)/);
   assert.match(source, /withFrameAncestors\(CONTENT_SECURITY_POLICY, frameable\)/);
 });

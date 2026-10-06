@@ -90,6 +90,28 @@ jobs:
           source "$RUNNER_TEMP/smoke-fetch.sh"
           smoke_fetch "$CUSTOM_ORIGIN/" /dev/null 6 3
 
+      - name: Verify analytics collection is allowed by the live CSP
+        shell: bash
+        run: |
+          set -euo pipefail
+          # GA4 hits were silently blocked by connect-src from 2026-09-22 to the fix.
+          # Fail the smoke run if the deployed policy ever drops a collection host.
+          csp="$(curl --silent --show-error --head --location \
+            --header 'User-Agent: Mozilla/5.0 (compatible; TRADE-HUSTL3-Production-Smoke/1.0)' \
+            "$CUSTOM_ORIGIN/" | tr -d '\r' | awk 'BEGIN{IGNORECASE=1} /^content-security-policy:/{sub(/^[^:]*:[[:space:]]*/,""); line=$0} END{print line}')"
+          connect="$(tr ';' '\n' <<<"$csp" | grep -E '^[[:space:]]*connect-src ' || true)"
+          if [ -z "$connect" ]; then
+            echo "::error::Live homepage has no connect-src directive."
+            exit 1
+          fi
+          for host in 'https://analytics.google.com' 'https://\*.analytics.google.com' 'https://\*.google-analytics.com'; do
+            if ! grep -qE "(^|[[:space:]])${host}([[:space:]]|$)" <<<"$connect"; then
+              echo "::error::Live connect-src is missing ${host//\\/} — GA4 page views will be blocked."
+              exit 1
+            fi
+          done
+          echo 'Live CSP allows GA4 collection hosts.'
+
       - name: Verify production Resume Builder entry point
         shell: bash
         run: |
