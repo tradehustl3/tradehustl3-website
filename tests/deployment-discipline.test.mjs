@@ -43,6 +43,26 @@ test("production smoke validates the real custom domain end to end", async () =>
   assert.match(source, /for attempt in \$\(seq 1 "\$attempts"\)/);
 });
 
+test("a Cloudflare edge challenge is reported as inconclusive, never as a pass, and points to manual verification", async () => {
+  const source = await readFile(smokeWorkflow, "utf8");
+  const challenge = source.slice(source.indexOf("cloudflare-challenge-page: yes"), source.indexOf("cloudflare-challenge-page: no"));
+  assert.ok(challenge.length > 0, "challenge branch must exist");
+  assert.match(challenge, /Smoke inconclusive - Cloudflare challenge/);
+  assert.match(challenge, /NOT evidence the site is down or up/);
+  assert.match(challenge, /docs\/production-verification\.md/);
+  assert.match(challenge, /GITHUB_STEP_SUMMARY/);
+  assert.match(challenge, /return 1/);
+  assert.doesNotMatch(challenge, /return 0/, "a challenged run must never count as a pass");
+  assert.doesNotMatch(challenge, /\$SMOKE_BYPASS_TOKEN/, "the bypass token must never be echoed");
+
+  const doc = await readFile(new URL("../docs/production-verification.md", import.meta.url), "utf8");
+  assert.match(doc, /Bot Fight Mode/);
+  assert.match(doc, /READ-ONLY\. Do not edit files, commit, push, or merge anything\./);
+  for (const check of ["/resume-builder/intake", "Continue with email", "UPLOAD IT OR START FRESH", "https://analytics.google.com", "reviews/public", "reviews/admin must be 401", "headless Chrome"]) {
+    assert.ok(doc.includes(check), `manual verification must cover ${check}`);
+  }
+});
+
 test("Cloudflare Worker deployment owns the production custom domain", async () => {
   const source = await readFile(viteConfig, "utf8");
   assert.match(source, /pattern:\s*"tradehustl3\.com"/);

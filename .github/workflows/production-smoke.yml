@@ -65,6 +65,25 @@ jobs:
               if grep -qiE '^cf-mitigated:[[:space:]]*challenge' "$work/headers" 2>/dev/null \
                 || grep -qiE 'Just a moment\.\.\.|/cdn-cgi/challenge-platform|cf-chl-|Attention Required! \| Cloudflare' "$work/body" 2>/dev/null; then
                 echo "  cloudflare-challenge-page: yes"
+                # Cloudflare Bot Fight Mode (free plan) challenges GitHub runners at the
+                # edge and cannot be skipped by a WAF rule. The site was never reached,
+                # so this run proves nothing either way. Never report it as a pass, and
+                # never report it as an outage: stop retrying and point to the manual
+                # verification. See docs/production-verification.md.
+                rm -rf "$work"
+                touch "$RUNNER_TEMP/cloudflare-challenged"
+                echo "::error title=Smoke inconclusive - Cloudflare challenge::Cloudflare Bot Fight Mode challenged the GitHub runner before it reached the site ($url). This is NOT evidence the site is down or up. Run the manual production verification in docs/production-verification.md."
+                if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
+                  {
+                    echo "## Production smoke inconclusive: Cloudflare challenge"
+                    echo
+                    echo "Cloudflare Bot Fight Mode challenged the GitHub runner before it reached \`$url\`."
+                    echo "The deployed site was **not checked**. This is not evidence of an outage or of a healthy deploy."
+                    echo
+                    echo "**Next step:** run the manual production verification in \`docs/production-verification.md\`."
+                  } >> "$GITHUB_STEP_SUMMARY"
+                fi
+                return 1
               else
                 echo "  cloudflare-challenge-page: no"
               fi
