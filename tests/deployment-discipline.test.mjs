@@ -48,3 +48,17 @@ test("Cloudflare Worker deployment owns the production custom domain", async () 
   assert.match(source, /pattern:\s*"tradehustl3\.com"/);
   assert.match(source, /custom_domain:\s*true/);
 });
+
+test("production smoke runs the signed-in review flow without gating deploys on the delivery queue", async () => {
+  const source = await readFile(smokeWorkflow, "utf8");
+  assert.match(source, /SMOKE_TEST_LOGIN_SECRET: \$\{\{ secrets\.SMOKE_TEST_LOGIN_SECRET \}\}/);
+  assert.match(source, /node tools\/smoke\/resume-builder-smoke\.mjs/);
+  assert.match(source, /ref: \$\{\{ github\.event\.check_run\.head_sha \}\}/);
+  assert.match(source, /persist-credentials: false/);
+  assert.match(source, /npm ci --omit=dev --ignore-scripts/);
+  const runner = await readFile(new URL("../tools/smoke/resume-builder-smoke.mjs", import.meta.url), "utf8");
+  assert.doesNotMatch(runner, /call\("\/api\/health"/, "the queue-coupled health endpoint must not gate deploys");
+  for (const step of ["smoke sign-in", "switch template", "inspect heading", "change customization", "Download/Print absent", "open legacy resume"]) {
+    assert.ok(runner.includes(step), `runner covers: ${step}`);
+  }
+});

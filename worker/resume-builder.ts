@@ -1,6 +1,7 @@
 import { withCustomerScope } from './resume-presentation-content';
 import { storedStyle } from './resume-templates';
 import { customizeResume } from './resume-customization';
+import { handleSmokeSession, SMOKE_SESSION_PATH } from './resume-smoke-session';
 import { errorKind } from "./resume-safe-log";
 import {
   handleResumeBuilderRoute as handleBaseResumeBuilderRoute,
@@ -1015,6 +1016,9 @@ export async function handleResumeBuilderRoute(
   dependencies: ResumeBuilderDependencies = {},
 ): Promise<Response | null> {
   const pathname = new URL(request.url).pathname;
+
+  // Without a DB binding this falls through to the base router's 503.
+  if (pathname === SMOKE_SESSION_PATH && env.DB) return handleSmokeSession(request, env, dependencies);
 
   const coverLetterResponse = await handleCoverLetterRoute(request, env, dependencies);
   if (coverLetterResponse) return coverLetterResponse;

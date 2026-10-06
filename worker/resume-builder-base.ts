@@ -44,6 +44,11 @@ export interface ResumeBuilderEnv {
   RESUME_AI_PROVIDER?: string;
   RESUME_AI_DAILY_ATTEMPT_LIMIT?: string;
   REVIEW_ADMIN_EMAILS?: string;
+  /**
+   * Production smoke-test sign-in (32+ random characters). Unset or short
+   * disables the endpoint entirely; see worker/resume-smoke-session.ts.
+   */
+  SMOKE_TEST_LOGIN_SECRET?: string;
 }
 
 export interface ResumeBuilderDependencies {
@@ -99,6 +104,15 @@ const SITE_URL = "https://tradehustl3.com";
 const SESSION_COOKIE_NAME = "tradehustl3_resume_session";
 const SESSION_TTL_SECONDS = 60 * 60 * 24 * 14;
 const MAGIC_LINK_TTL_SECONDS = 60 * 20;
+/**
+ * Synthetic production smoke-test account. The .invalid TLD (RFC 2606) can never
+ * receive mail, and magic-link requests for it are refused, so the only way to
+ * sign in as it is the secret-protected smoke session endpoint.
+ */
+export const SMOKE_TEST_EMAIL = "smoke-test@tradehustl3.invalid";
+export function isSmokeTestEmail(email: string): boolean {
+  return email.trim().toLowerCase() === SMOKE_TEST_EMAIL;
+}
 const RESUME_PRICE_CENTS = 999;
 const RESUME_PLAN = "resume_mvp_999";
 const RESUME_TOTAL_AI_RUNS = 4;
@@ -345,7 +359,7 @@ const ALLOWED_TRADES = new Set([
   "Automotive, Diesel & Fleet Maintenance",
 ]);
 
-function json(body: Record<string, unknown>, status = 200, headers?: HeadersInit): Response {
+export function json(body: Record<string, unknown>, status = 200, headers?: HeadersInit): Response {
   const responseHeaders = new Headers(headers);
   responseHeaders.set("Cache-Control", "no-store");
   responseHeaders.set("Content-Type", "application/json; charset=utf-8");
@@ -391,12 +405,12 @@ function randomToken(): string {
   return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
 }
 
-async function sha256Hex(value: string | Uint8Array): Promise<string> {
+export async function sha256Hex(value: string | Uint8Array): Promise<string> {
   const input = typeof value === "string" ? encoder.encode(value) : value;
   const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", Uint8Array.from(input).buffer));
   return Array.from(digest, (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
-async function secureSecretMatch(provided: string, expected: string): Promise<boolean> {
+export async function secureSecretMatch(provided: string, expected: string): Promise<boolean> {
   const [providedDigest, expectedDigest] = await Promise.all([
     crypto.subtle.digest("SHA-256", encoder.encode(provided)),
     crypto.subtle.digest("SHA-256", encoder.encode(expected)),
@@ -410,7 +424,7 @@ async function secureSecretMatch(provided: string, expected: string): Promise<bo
   return mismatch === 0;
 }
 
-function requestIp(request: Request): string {
+export function requestIp(request: Request): string {
   return request.headers.get("CF-Connecting-IP")?.trim() || "unknown";
 }
 
@@ -490,7 +504,7 @@ function cookieValue(request: Request, name: string): string {
   return "";
 }
 
-async function checkRateLimit(
+export async function checkRateLimit(
   env: ResumeBuilderEnv,
   bucket: string,
   limit: number,
@@ -573,6 +587,8 @@ async function requestMagicLink(request: Request, env: ResumeBuilderEnv): Promis
   const fullName = cleanText(body?.fullName, 120) || null;
   const generic = { ok: true, message: "If that email can be used, a confirmation link is on its way." };
   if (!isValidEmail(email)) return json(generic);
+  // Reserved synthetic account: identical generic response, no user row, no email.
+  if (isSmokeTestEmail(email)) return json(generic);
 
   const emailBucket = await sha256Hex(email);
   const ipBucket = await sha256Hex(requestIp(request));
@@ -643,27 +659,35 @@ async function confirmMagicLink(request: Request, env: ResumeBuilderEnv): Promis
     return json({ ok: false, message: "This confirmation link has already been used." }, 400);
   }
 
-  const rawSession = randomToken();
-  const sessionHash = await sha256Hex(rawSession);
-  await env.DB.batch([
-    env.DB.prepare(
-      "UPDATE sessions SET revoked_at = CURRENT_TIMESTAMP WHERE user_id = ? AND revoked_at IS NULL",
-    ).bind(token.user_id),
-    env.DB.prepare(
-      "INSERT INTO sessions (session_hash, user_id, expires_at) VALUES (?, ?, ?)",
-    ).bind(sessionHash, token.user_id, nowSeconds() + SESSION_TTL_SECONDS),
-    env.DB.prepare("UPDATE users SET last_login_at = CURRENT_TIMESTAMP WHERE user_id = ?").bind(token.user_id),
-  ]);
+  const sessionCookie = await issueResumeSession(env, token.user_id, SESSION_TTL_SECONDS);
   const user = await env.DB.prepare("SELECT email, full_name FROM users WHERE user_id = ?")
     .bind(token.user_id).first<{ email: string; full_name: string | null }>();
 
   return json(
     { ok: true, user: { email: user?.email ?? "", fullName: user?.full_name ?? null } },
     200,
-    {
-      "Set-Cookie": `${SESSION_COOKIE_NAME}=${encodeURIComponent(rawSession)}; Max-Age=${SESSION_TTL_SECONDS}; Path=/; HttpOnly; Secure; SameSite=Lax`,
-    },
+    { "Set-Cookie": sessionCookie },
   );
+}
+
+/**
+ * The single place a Resume Builder session is created. Revokes the user's other
+ * live sessions, stores only the SHA-256 of the token, and returns the Set-Cookie
+ * value. The raw token exists only in that cookie.
+ */
+export async function issueResumeSession(env: ResumeBuilderEnv, userId: string, ttlSeconds: number): Promise<string> {
+  const rawSession = randomToken();
+  const sessionHash = await sha256Hex(rawSession);
+  await env.DB.batch([
+    env.DB.prepare(
+      "UPDATE sessions SET revoked_at = CURRENT_TIMESTAMP WHERE user_id = ? AND revoked_at IS NULL",
+    ).bind(userId),
+    env.DB.prepare(
+      "INSERT INTO sessions (session_hash, user_id, expires_at) VALUES (?, ?, ?)",
+    ).bind(sessionHash, userId, nowSeconds() + ttlSeconds),
+    env.DB.prepare("UPDATE users SET last_login_at = CURRENT_TIMESTAMP WHERE user_id = ?").bind(userId),
+  ]);
+  return `${SESSION_COOKIE_NAME}=${encodeURIComponent(rawSession)}; Max-Age=${ttlSeconds}; Path=/; HttpOnly; Secure; SameSite=Lax`;
 }
 
 async function getCurrentUser(request: Request, env: ResumeBuilderEnv): Promise<Response> {
@@ -3472,6 +3496,13 @@ async function recordFunnelEvent(
 
   if (!eventName || !FUNNEL_EVENT_NAMES.has(eventName)) {
     return json({ ok: false, message: "Invalid funnel event." }, 400);
+  }
+
+  // Synthetic smoke traffic must never reach Agent 1 / funnel metrics. Only
+  // requests that carry a session cookie pay for the lookup.
+  if (cookieValue(request, SESSION_COOKIE_NAME)) {
+    const user = await requireUser(request, env);
+    if (user && isSmokeTestEmail(user.email)) return json({ ok: true, recorded: false }, 202);
   }
 
   // occurred_at is the server receive time. This endpoint is public, so a
