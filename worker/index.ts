@@ -7,6 +7,7 @@ import { handleResumeBuilderRoute, ResumeBuilderEnv, runResumeBuilderRetention, 
 import { handleEbookStripeRoute, runEbookLaunchDelivery, EbookStripeEnv, EBOOK_RELEASE_AT } from "./ebook-stripe";
 import { getOperationsHealth, operationalEvent } from "./operations-monitoring";
 import { allowsSameOriginFraming, frameHeaders, withFrameAncestors } from "./frame-policy";
+import { CONTENT_SECURITY_POLICY } from "./content-security-policy";
 
 interface Env extends ResumeBuilderEnv, EbookStripeEnv {
   ASSETS: Fetcher;
@@ -71,22 +72,6 @@ function jsonResponse(body: Record<string, unknown>, status = 200): Response {
     headers: { "Cache-Control": "no-store" },
   });
 }
-
-const CONTENT_SECURITY_POLICY = [
-  "default-src 'self'",
-  "base-uri 'self'",
-  "object-src 'none'",
-  "frame-ancestors 'none'",
-  "form-action 'self' https://checkout.stripe.com",
-  "script-src 'self' 'unsafe-inline' https://connect.facebook.net https://s.pinimg.com https://www.googletagmanager.com https://www.google-analytics.com",
-  "script-src-attr 'none'",
-  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-  "font-src 'self' https://fonts.gstatic.com data:",
-  "img-src 'self' data: https://www.facebook.com https://connect.facebook.net https://ct.pinterest.com https://*.google-analytics.com",
-  "connect-src 'self' https://api.brevo.com https://www.google-analytics.com https://region1.google-analytics.com https://www.facebook.com https://ct.pinterest.com",
-  "frame-src 'self' https://checkout.stripe.com https://js.stripe.com",
-  "upgrade-insecure-requests",
-].join("; ");
 
 function withSecurityHeaders(response: Response, pathname = ""): Response {
   const headers = new Headers(response.headers);
