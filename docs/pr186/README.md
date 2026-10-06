@@ -37,3 +37,5 @@ Regenerate samples with `node --import tsx tools/pr186/generate-samples.ts`; rec
 ## Production Smoke release blocker
 
 The latest main-branch Production Smoke run (37165554396) fails on the homepage with HTTP 403 and `cf-mitigated: challenge`. Cloudflare challenges requests before they reach the Worker. The existing `X-Smoke-Token` header alone cannot bypass this challenge. A narrowly scoped Cloudflare rule and secret coordination require separate approval; this branch does not silently weaken edge protection or treat a challenge response as success. The smoke job remains a release gate until that external configuration is resolved.
+
+Update 2026-10-06: Cloudflare Security Events identify the challenge as **Bot Fight Mode**. On the free plan it cannot be skipped by any WAF rule. The owner kept it on, and a challenged run now reports "Smoke inconclusive - Cloudflare challenge". Deploys are verified manually per `docs/production-verification.md`.

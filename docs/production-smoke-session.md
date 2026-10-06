@@ -42,11 +42,14 @@ Unpaid-resume retention may delete them after 37 idle days; the next sign-in rec
 2. Store it as the Cloudflare Worker secret `SMOKE_TEST_LOGIN_SECRET` and as the
    GitHub Actions repository secret `SMOKE_TEST_LOGIN_SECRET`. Do not paste the value
    anywhere else.
-3. Cloudflare edge: smoke traffic is currently challenged before it reaches the Worker
-   (see `docs/pr186/README.md`). A narrowly scoped WAF custom rule that skips the
-   challenge only when `X-Smoke-Token` equals the `SMOKE_BYPASS_TOKEN` value is required
-   for any production smoke step to pass, including this one. The Worker endpoint still
-   requires its own, separate secret.
+3. Cloudflare edge: Cloudflare Bot Fight Mode challenges smoke traffic before it reaches
+   the Worker. On the free plan, Bot Fight Mode cannot be skipped by a WAF custom rule.
+   The owner decided on 2026-10-06 to keep it on, so no production smoke step can pass
+   automatically, including this one. Each run ends as "Smoke inconclusive - Cloudflare
+   challenge". Verify each deploy manually using `docs/production-verification.md`. The
+   upgrade path to automation (Pro plan, Super Bot Fight Mode, and a Skip rule keyed to
+   `SMOKE_BYPASS_TOKEN`) is described there. The Worker endpoint still requires its own,
+   separate secret.
 
 Until step 2 is done, the workflow step logs a warning and skips.
 
