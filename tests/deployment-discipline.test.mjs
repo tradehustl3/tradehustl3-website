@@ -63,10 +63,17 @@ test("a Cloudflare edge challenge is reported as inconclusive, never as a pass, 
   }
 });
 
-test("grouped dependency bumps never carry a pdfjs-dist major upgrade", async () => {
+test("grouped dependency bumps never move pdfjs-dist (it parses customer uploads)", async () => {
   const source = await readFile(new URL("../.github/dependabot.yml", import.meta.url), "utf8");
   const npmBlock = source.slice(source.indexOf("package-ecosystem: npm"), source.indexOf("package-ecosystem: github-actions"));
-  assert.match(npmBlock, /ignore:\s*\n(?:\s*#.*\n)*\s*- dependency-name: "pdfjs-dist"\s*\n\s*update-types: \["version-update:semver-major"\]/);
+  const rule = npmBlock.match(/- dependency-name: "pdfjs-dist"\s*\n([\s\S]*?)(?=\n\s*-\s|\n\s*groups:)/);
+  assert.ok(rule, "pdfjs-dist must be in the npm ignore list");
+  assert.doesNotMatch(rule[1], /update-types:/, "every pdfjs-dist update must be ignored, not only majors (GHSA-hq66-cqwq-w95j affects 5.6.83 to <6.2.108)");
+  assert.match(npmBlock, /GHSA-hq66-cqwq-w95j/);
+  const pkg = JSON.parse(await readFile(new URL("../package.json", import.meta.url), "utf8"));
+  const [major, minor] = pkg.dependencies["pdfjs-dist"].split(".").map(Number);
+  assert.ok(major > 6 || (major === 6 && minor >= 2) || major < 5 || (major === 5 && minor < 6),
+    `pinned pdfjs-dist ${pkg.dependencies["pdfjs-dist"]} is inside the GHSA-hq66-cqwq-w95j vulnerable range`);
 });
 
 test("Cloudflare Worker deployment owns the production custom domain", async () => {

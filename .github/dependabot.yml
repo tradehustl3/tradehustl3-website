@@ -6,12 +6,14 @@ updates:
       interval: weekly
     open-pull-requests-limit: 5
     ignore:
-      # pdfjs-dist 6 is a breaking release (PDFDocumentProxy.destroy was removed)
-      # and it reads customer-uploaded resumes. Upgrade it in its own reviewed
-      # change with upload and preview tests, not inside a grouped bump.
-      # Minor and patch releases of 5.x still arrive automatically.
+      # Hold every pdfjs-dist update out of grouped bumps. It parses
+      # customer-uploaded resumes, so it moves only in its own reviewed change.
+      # - 5.6.83 to <6.2.108 is affected by GHSA-hq66-cqwq-w95j (arbitrary
+      #   JavaScript execution when opening a malicious PDF). main pins 5.4.149,
+      #   below that range; a grouped bump to 5.7.x would introduce it.
+      # - 6.x is breaking (PDFDocumentProxy.destroy removed). The fix is a
+      #   dedicated migration to >=6.2.108 with upload and preview tests.
       - dependency-name: "pdfjs-dist"
-        update-types: ["version-update:semver-major"]
     groups:
       production-security:
         dependency-type: production
