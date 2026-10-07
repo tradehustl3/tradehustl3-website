@@ -47,6 +47,23 @@ test("policy pages are never stored by browsers or CDNs", async () => {
   }
 });
 
+test("crawler discovery files are never stored by browsers or CDNs", async () => {
+  const config = await readFile(new URL("../next.config.ts", import.meta.url), "utf8");
+
+  const definition = config.match(/const discoveryNoStoreHeaders = \[([\s\S]*?)\n\];/);
+  assert.ok(definition, "next.config.ts must define discoveryNoStoreHeaders");
+  assert.match(definition[1], /key: "Cache-Control", value: "no-store, max-age=0"/);
+  assert.match(definition[1], /key: "Cloudflare-CDN-Cache-Control", value: "no-store"/);
+  assert.match(definition[1], /key: "CDN-Cache-Control", value: "no-store"/);
+
+  for (const route of ["/sitemap.xml", "/robots.txt"]) {
+    assert.ok(
+      config.includes(`{ source: "${route}", headers: discoveryNoStoreHeaders }`),
+      `${route} must map to discoveryNoStoreHeaders`,
+    );
+  }
+});
+
 test("sitemap advertises the latest public-content refresh", async () => {
   const sitemap = await readFile(new URL("../app/sitemap.ts", import.meta.url), "utf8");
 

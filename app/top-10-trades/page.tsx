@@ -75,7 +75,7 @@ export default function TopTenTradesPage() {
           <Link href="/book">The book</Link>
           <Link
             className={styles.navCta}
-            href="/resume-builder"
+            href="/#resume-start"
             data-cta="resume-builder"
             data-cta-location="top-10-header"
           >
@@ -156,7 +156,7 @@ export default function TopTenTradesPage() {
         </div>
         <Link
           className={styles.primaryButton}
-          href="/resume-builder"
+          href="/#resume-start"
           data-cta="resume-builder"
           data-cta-location="top-10-next-step"
         >

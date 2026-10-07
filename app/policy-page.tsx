@@ -22,7 +22,7 @@ export function PolicyPage({
         <Link className="policy-brand" href="/">TRADE HUSTL<span>3</span></Link>
         <nav aria-label="Policy navigation">
           <Link href="/book">The Book</Link>
-          <Link href="/resume-builder">Resume Builder</Link>
+          <Link href="/#resume-start">Resume Builder</Link>
           <Link href="/contact">Support</Link>
         </nav>
       </header>

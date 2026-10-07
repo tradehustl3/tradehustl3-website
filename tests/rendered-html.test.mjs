@@ -127,6 +127,73 @@ test("publishes a canonical XML sitemap and robots discovery hints", async () =>
   assert.match(robots, /Sitemap:\s*https:\/\/tradehustl3\.com\/sitemap\.xml/i);
 });
 
+test("serves the crawler discovery files with no-store caching headers", async () => {
+  for (const pathname of ["/sitemap.xml", "/robots.txt"]) {
+    const response = await renderPath(pathname);
+    assert.equal(response.status, 200, pathname);
+    for (const header of ["cache-control", "cloudflare-cdn-cache-control", "cdn-cache-control"]) {
+      assert.match(response.headers.get(header) ?? "", /no-store/i, `${pathname} ${header}`);
+    }
+  }
+});
+
+function metaDescriptions(html) {
+  return Array.from(html.matchAll(/<meta\b[^>]*\bname="description"[^>]*>/gi), ([tag]) => {
+    const content = tag.match(/\bcontent="([^"]*)"/i);
+    assert.ok(content, `meta description without content: ${tag}`);
+    return content[1];
+  });
+}
+
+test("policy pages publish their own meta description and link straight to the builder start point", async () => {
+  const homeDescriptions = metaDescriptions(await (await render()).text());
+  assert.equal(homeDescriptions.length, 1, "homepage meta description count");
+  const [homeDescription] = homeDescriptions;
+
+  const seen = new Map();
+  for (const pathname of [
+    "/privacy",
+    "/terms",
+    "/contact",
+    "/data-deletion",
+    "/resume-builder/ai-disclosure",
+    "/resume-builder/refund-policy",
+    "/book/refund-policy",
+  ]) {
+    const response = await renderPath(pathname);
+    assert.equal(response.status, 200, pathname);
+    const html = await response.text();
+
+    const descriptions = metaDescriptions(html);
+    assert.equal(descriptions.length, 1, `${pathname} meta description count`);
+    const [description] = descriptions;
+    assert.notEqual(description, homeDescription, `${pathname} reuses the homepage description`);
+    assert.ok(
+      description.length >= 50 && description.length <= 160,
+      `${pathname} description is ${description.length} characters`,
+    );
+    assert.ok(html.includes(`<p>${description}</p>`), `${pathname} description must match the visible summary`);
+    assert.equal(seen.has(description), false, `${pathname} shares a description with ${seen.get(description)}`);
+    seen.set(description, pathname);
+
+    assert.equal(html.includes('href="/resume-builder"'), false, `${pathname} links to the redirecting route`);
+    assert.ok(html.includes('href="/#resume-start"'), `${pathname} must link to the builder start point`);
+  }
+  assert.equal(seen.size, 7);
+});
+
+test("Top 10 Trades CTAs link straight to the builder start point", async () => {
+  const response = await renderPath("/top-10-trades");
+  assert.equal(response.status, 200);
+  const html = await response.text();
+
+  assert.equal(html.includes('href="/resume-builder"'), false);
+  assert.equal(html.match(/href="\/#resume-start"/g)?.length ?? 0, 2);
+  for (const location of ["top-10-header", "top-10-next-step"]) {
+    assert.ok(html.includes(`data-cta-location="${location}"`), `missing data-cta-location ${location}`);
+  }
+});
+
 test("publishes the customer protection pages with TRADE HUSTL3 LLC contact details", async () => {
   const pages = [
     ["/privacy", /Privacy Policy/i],
