@@ -37,7 +37,8 @@ test("production smoke validates the real custom domain end to end", async () =>
   assert.match(source, /"\$CUSTOM_ORIGIN\/resume-builder"/);
   assert.match(source, /"\$CUSTOM_ORIGIN\/resume-builder\/intake"/);
   assert.match(source, /Continue with email/);
-  assert.match(source, /UPLOAD IT OR START FRESH/);
+  assert.match(source, /Upload your resume once\./);
+  assert.doesNotMatch(source, /UPLOAD IT OR START FRESH/, "retired intake heading");
   assert.match(source, /TRADE-HUSTL3-Production-Smoke/);
   assert.match(source, /smoke_fetch\(\)/);
   assert.match(source, /for attempt in \$\(seq 1 "\$attempts"\)/);
@@ -58,7 +59,7 @@ test("a Cloudflare edge challenge is reported as inconclusive, never as a pass, 
   const doc = await readFile(new URL("../docs/production-verification.md", import.meta.url), "utf8");
   assert.match(doc, /Bot Fight Mode/);
   assert.match(doc, /READ-ONLY\. Do not edit files, commit, push, or merge anything\./);
-  for (const check of ["/resume-builder/intake", "Continue with email", "UPLOAD IT OR START FRESH", "https://analytics.google.com", "reviews/public", "reviews/admin must be 401", "headless Chrome"]) {
+  for (const check of ["/resume-builder/intake", "Continue with email", "Upload your resume once.", "308", "https://analytics.google.com", "reviews/public", "reviews/admin must be 401", "headless Chrome"]) {
     assert.ok(doc.includes(check), `manual verification must cover ${check}`);
   }
 });

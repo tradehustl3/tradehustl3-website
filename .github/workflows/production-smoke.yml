@@ -153,7 +153,8 @@ jobs:
 
           smoke_fetch "$CUSTOM_ORIGIN/resume-builder/intake" /tmp/custom-intake.html 9 5 \
             --header 'Cache-Control: no-cache'
-          grep -Fq 'UPLOAD IT OR START FRESH' /tmp/custom-intake.html
+          # Intake heading since the 2026-09-24 design unification (see tests/rendered-html.test.mjs).
+          grep -Fq 'Upload your resume once.' /tmp/custom-intake.html
 
       - name: Verify verified-review surfaces
         shell: bash
