@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import { PolicyPage, PolicySection, SUPPORT_EMAIL } from "../policy-page";
 
-export const metadata: Metadata = { title: "Terms of Service", alternates: { canonical: "/terms" } };
+const PAGE_DESCRIPTION = "The terms governing use of TRADE HUSTL3 LLC websites, digital products, and the Resume Builder.";
+
+export const metadata: Metadata = { title: "Terms of Service", description: PAGE_DESCRIPTION, alternates: { canonical: "/terms" } };
 
 export default function TermsPage() {
   return (
-    <PolicyPage eyebrow="RULES OF THE PLATFORM" title="TERMS OF SERVICE" summary="The terms governing use of TRADE HUSTL3 LLC websites, digital products, and the Resume Builder.">
+    <PolicyPage eyebrow="RULES OF THE PLATFORM" title="TERMS OF SERVICE" summary={PAGE_DESCRIPTION}>
       <PolicySection title="1. Agreement"><p>By using this website, creating an account, joining an email list, or purchasing a product, you agree to these Terms, the Privacy Policy, and the policy that applies to your purchase. If you do not agree, do not use or purchase the service.</p></PolicySection>
       <PolicySection title="2. Eligibility"><p>You must be at least 18 years old to create a Resume Builder account or purchase a paid digital product. You must provide accurate information and use an email address you control.</p></PolicySection>
       <PolicySection title="3. Resume Builder purchase"><p>The Resume Builder creates one initial AI-assisted resume and protected watermarked preview before payment. The $9.99 one-time purchase removes the watermark and includes one completed resume, one matching cover letter, clean PDF and editable DOCX files for both documents, and up to three AI-assisted correction runs shared across the resume and cover letter during the seven-day correction period. The first cover-letter generation does not use a correction. It is not a subscription and does not renew automatically.</p></PolicySection>

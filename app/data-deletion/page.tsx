@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import { PolicyPage, PolicySection, SUPPORT_EMAIL } from "../policy-page";
 
-export const metadata: Metadata = { title: "Account and Data Requests", alternates: { canonical: "/data-deletion" } };
+const PAGE_DESCRIPTION = "How to request access, correction, or deletion of information connected to your TRADE HUSTL3 account.";
+
+export const metadata: Metadata = { title: "Account and Data Requests", description: PAGE_DESCRIPTION, alternates: { canonical: "/data-deletion" } };
 
 export default function DataDeletionPage() {
   return (
-    <PolicyPage eyebrow="YOUR DATA" title="ACCOUNT + DATA REQUESTS" summary="How to request access, correction, or deletion of information connected to your TRADE HUSTL3 account.">
+    <PolicyPage eyebrow="YOUR DATA" title="ACCOUNT + DATA REQUESTS" summary={PAGE_DESCRIPTION}>
       <PolicySection title="Submit a request"><p>Email <a href={`mailto:${SUPPORT_EMAIL}?subject=Account%20and%20data%20request`}>{SUPPORT_EMAIL}</a> from the email connected to your account. Use the subject “Account and data request” and state whether you are requesting access, correction, or deletion.</p></PolicySection>
       <PolicySection title="Verification"><p>To protect your resume and account, we may ask you to confirm control of the connected email or provide limited order information. Do not send a password, Social Security number, or complete card number.</p></PolicySection>
       <PolicySection title="What deletion covers"><p>Once verified, a deletion request may cover account-profile information, resume intake, generated resume content, correction requests, and stored resume files that TRADE HUSTL3 LLC is not required to retain.</p></PolicySection>

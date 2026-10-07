@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import { PolicyPage, PolicySection, SUPPORT_EMAIL } from "../../policy-page";
 
-export const metadata: Metadata = { title: "Resume Builder Refund Policy", alternates: { canonical: "/resume-builder/refund-policy" } };
+const PAGE_DESCRIPTION = "A straightforward policy for the $9.99 one-time TRADE HUSTL3 Resume Builder purchase.";
+
+export const metadata: Metadata = { title: "Resume Builder Refund Policy", description: PAGE_DESCRIPTION, alternates: { canonical: "/resume-builder/refund-policy" } };
 
 export default function ResumeRefundPolicyPage() {
   return (
-    <PolicyPage eyebrow="RESUME BUILDER" title="REFUND POLICY" summary="A straightforward policy for the $9.99 one-time TRADE HUSTL3 Resume Builder purchase.">
+    <PolicyPage eyebrow="RESUME BUILDER" title="REFUND POLICY" summary={PAGE_DESCRIPTION}>
       <PolicySection title="What the purchase includes"><p>Your initial AI-assisted resume and protected watermarked preview are created before payment. Your $9.99 purchase removes the watermark and includes one completed resume, one matching cover letter, clean PDF and editable DOCX downloads for both documents, and up to three AI-assisted correction runs shared across the resume and cover letter during the seven-day correction period. The first cover-letter generation does not use a correction.</p></PolicySection>
       <PolicySection title="When a refund is available"><p>A full refund is available when TRADE HUSTL3 LLC permanently cannot generate or deliver the purchased resume after a reasonable opportunity to correct the problem. Duplicate charges and charges confirmed to be unauthorized will also be reviewed and corrected as appropriate.</p></PolicySection>
       <PolicySection title="Failed attempts"><p>A resume or cover-letter generation attempt that fails before successful delivery is designed not to consume a correction run. Your payment remains attached to the paid package while you retry or correct required intake information.</p></PolicySection>

@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import { PolicyPage, PolicySection, SUPPORT_EMAIL } from "../../policy-page";
 
-export const metadata: Metadata = { title: "eBook Delivery and Refund Policy", alternates: { canonical: "/book/refund-policy" } };
+const PAGE_DESCRIPTION = "Delivery, permitted use, and refund terms for the direct TRADE HUSTL3 eBook.";
+
+export const metadata: Metadata = { title: "eBook Delivery and Refund Policy", description: PAGE_DESCRIPTION, alternates: { canonical: "/book/refund-policy" } };
 
 export default function EbookPolicyPage() {
   return (
-    <PolicyPage eyebrow="DIRECT EBOOK" title="DELIVERY + REFUNDS" summary="Delivery, permitted use, and refund terms for the direct TRADE HUSTL3 eBook.">
+    <PolicyPage eyebrow="DIRECT EBOOK" title="DELIVERY + REFUNDS" summary={PAGE_DESCRIPTION}>
       <PolicySection title="Release and delivery"><p>The direct eBook is available now. After a successful eligible purchase, a protected PDF download link is sent to the email address used at checkout. Delivery may take several minutes. Check spam and promotions folders before requesting assistance.</p></PolicySection>
       <PolicySection title="Your email responsibility"><p>You are responsible for entering a working email address you control. If you used the wrong email or did not receive delivery, contact us so we can verify the order and attempt redelivery.</p></PolicySection>
       <PolicySection title="Refund eligibility"><p>Duplicate charges and permanent nondelivery that TRADE HUSTL3 LLC cannot correct qualify for review and, when confirmed, a refund. Except when required by law, change-of-mind refunds are not offered after the protected digital product has been successfully delivered or accessed.</p></PolicySection>
