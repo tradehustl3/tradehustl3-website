@@ -83,7 +83,7 @@ export const metadata: Metadata = {
         url: "/optimized/og.webp",
         width: 1200,
         height: 630,
-        alt: "TRADE HUSTL3 — Built by Hustle, Backed by Trades",
+        alt: "TRADE HUSTL3 — Built by Trades. Backed by HUSTL3.",
       },
     ],
   },
