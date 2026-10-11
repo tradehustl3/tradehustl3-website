@@ -585,9 +585,6 @@ test("two empty Gemini drafts without a fallback provider ask the customer to tr
   assert.equal(h.state.creditsUsed, 0);
 });
 
-  assert.equal(seeds.length, 1);
-});
-
 test("unsupported numeric wording removed by deterministic repair completes without another customer build", async () => {
   const h = harness();
   const inflated = { ...entryLevelResume, summary: "Reduced callbacks by 35 percent across service visits." };
