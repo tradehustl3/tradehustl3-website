@@ -49,12 +49,32 @@ type Resume = {
     jobTitle: string;
     bullets: Array<{
       bulletIndex: number;
+      /** Unpaid only: wording stays on the server until the package is unlocked. */
+      locked?: boolean;
       original: string;
       suggestion: string;
       choice: "suggestion" | "original" | "edited";
     }>;
   }>;
+  /** Unpaid only: bullets drawn as locked bars in the protected preview. */
+  previewLockedBullets?: number;
 };
+
+const PACKAGE_INCLUDES = [
+  "Every line of your resume — no watermark, nothing locked",
+  "Clean PDF + editable Word (DOCX) resume",
+  "Matching cover letter in PDF + Word",
+  "Up to 3 AI corrections shared across both",
+];
+
+function LockIcon() {
+  return (
+    <svg className="rb-lock-icon" viewBox="0 0 20 20" width="16" height="16" aria-hidden="true" focusable="false">
+      <path d="M6 9V6.5a4 4 0 1 1 8 0V9" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      <rect x="3.5" y="9" width="13" height="8.5" rx="2" fill="currentColor" />
+    </svg>
+  );
+}
 
 // Persisted keys stay backward compatible while customers see the three
 // production TRADE HUSTL3 resume systems.
@@ -98,6 +118,9 @@ export function ResumeReview() {
   const [loading, setLoading] = useState(true);
   const [working, setWorking] = useState(false);
   const [checkingOut, setCheckingOut] = useState(false);
+  // Checkout can start from the fixed bar, far from the page-level notice, so its
+  // failure is also shown right where the customer tapped.
+  const [checkoutError, setCheckoutError] = useState("");
   const [message, setMessageText] = useState("");
   const [messageTone, setMessageTone] = useState<MessageTone>("info");
   const [retryGeneration, setRetryGeneration] = useState(false);
@@ -113,6 +136,18 @@ export function ResumeReview() {
   const [bulletSaving, setBulletSaving] = useState("");
   const [bulletDrafts, setBulletDrafts] = useState<Record<string, string>>({});
   const [activePreview, setActivePreview] = useState<PreviewTab>("resume");
+  // The fixed unlock bar steps aside while the full purchase card is on screen,
+  // so a customer never sees two checkout buttons stacked on top of each other.
+  const unpaidCardRef = useRef<HTMLDivElement | null>(null);
+  const [unpaidCardVisible, setUnpaidCardVisible] = useState(false);
+  const showUnlockBar = Boolean(resume && resume.previewUrl && !resume.paid);
+  useEffect(() => {
+    const card = unpaidCardRef.current;
+    if (!showUnlockBar || !card || typeof IntersectionObserver === "undefined") return;
+    const observer = new IntersectionObserver(([entry]) => setUnpaidCardVisible(entry.isIntersecting), { threshold: 0.35 });
+    observer.observe(card);
+    return () => observer.disconnect();
+  }, [showUnlockBar]);
 
   // Presentation only: the tone picks the alert style; `retry` offers the same
   // first-build request again after a failed generation.
@@ -335,6 +370,7 @@ export function ResumeReview() {
   async function startCheckout() {
     if (!resumeId) return;
     setCheckingOut(true);
+    setCheckoutError("");
     notify("");
     try {
       const response = await fetch(`/api/resume-builder/resumes/${encodeURIComponent(resumeId)}/checkout`, {
@@ -347,7 +383,9 @@ export function ResumeReview() {
       if (!response.ok || !result.checkoutUrl) throw new Error(result.message || "Secure checkout is temporarily unavailable.");
       window.location.assign(result.checkoutUrl);
     } catch (error) {
-      notify(error instanceof Error ? error.message : "Secure checkout is temporarily unavailable.", "error");
+      const text = error instanceof Error ? error.message : "Secure checkout is temporarily unavailable.";
+      notify(text, "error");
+      setCheckoutError(text);
       setCheckingOut(false);
     }
   }
@@ -369,6 +407,17 @@ export function ResumeReview() {
     return <p className={`rb-workspace-message rb-workspace-message-${messageTone}`} role="status">{message}</p>;
   }
 
+  // Shown under an unpaid preview. The locked lines themselves are drawn by the
+  // server; this only explains them and puts checkout next to what was locked.
+  function renderLockNote(text: string) {
+    return (
+      <div className="rb-lock-note">
+        <p><LockIcon /><span>{text} Unlock the package to see every line and download clean files.</span></p>
+        <button className="rb-button rb-button-primary" type="button" disabled={checkingOut} onClick={() => void startCheckout()}>{checkingOut ? "Opening checkout…" : "Unlock — $9.99"}</button>
+      </div>
+    );
+  }
+
   if (loading) {
     return <div className="rb-review-loading" role="status"><span /><p>Loading your secure workspace…</p></div>;
   }
@@ -385,6 +434,8 @@ export function ResumeReview() {
   }
 
   const hasDraft = Boolean(resume.previewUrl);
+  const lockedBullets = resume.paid ? 0 : resume.previewLockedBullets ?? 0;
+  const checkoutLabel = checkingOut ? "Opening secure checkout…" : "Unlock full resume + cover letter — $9.99";
   const coverLetter = resume.coverLetter;
   const coverPreviewReady = Boolean(coverLetter?.generated && coverLetter.previewUrl);
   const resumePreviewSrc = resume.paid && resume.downloads
@@ -392,7 +443,7 @@ export function ResumeReview() {
     : `${resume.previewUrl}?run=${resume.runsUsed}&style=${resume.theme}&revision=${previewRevision}`;
 
   return (
-    <div className="rb-review-workspace">
+    <div className={`rb-review-workspace${hasDraft && !resume.paid ? " rb-review-workspace-unpaid" : ""}`}>
       <section className="rb-review-topbar">
         <div><p className="rb-kicker">Your resume workspace</p><h1>{resume.title}</h1><span>{resume.trade}</span></div>
         <div className="rb-run-meter" aria-label={`${resume.runsUsed} of ${resume.runsTotal} AI runs used`}>
@@ -454,13 +505,17 @@ export function ResumeReview() {
 
             {activePreview === "resume" ? (
               <>
-                <div className="rb-preview-toolbar"><div><span className="rb-status-dot" />{resume.paid ? "Clean paid resume" : "Protected watermarked preview"}</div><small>{resume.paid ? "Watermark removed · clean files below" : "Preview only · pay to remove watermark"}</small></div>
-                <ProtectedPdfPreview key={`${resume.previewUrl}-${resume.runsUsed}-${resume.paid}-${resume.theme}-${previewRevision}`} src={resumePreviewSrc} title={resume.paid ? "Clean paid resume" : "Watermarked resume preview"} />
+                <div className="rb-preview-toolbar"><div><span className="rb-status-dot" />{resume.paid ? "Clean paid resume" : "Protected watermarked preview"}</div><small>{resume.paid ? "Watermark removed · clean files below" : "Gray lines unlock after purchase"}</small></div>
+                <ProtectedPdfPreview key={`${resume.previewUrl}-${resume.runsUsed}-${resume.paid}-${resume.theme}-${previewRevision}`} src={resumePreviewSrc} title={resume.paid ? "Clean paid resume" : "Watermarked resume preview with locked lines"} />
+                {!resume.paid ? renderLockNote(lockedBullets > 0
+                  ? `${lockedBullets} of your experience bullet${lockedBullets === 1 ? " is" : "s are"} locked in this preview.`
+                  : "This preview is watermarked.") : null}
               </>
             ) : coverPreviewReady && coverLetter?.previewUrl ? (
               <>
                 <div className="rb-preview-toolbar"><div><span className="rb-status-dot" />{resume.paid ? "Clean paid cover letter" : "Protected cover-letter preview"}</div><small>{resume.paid ? "Included with your package" : "Preview only · pay to unlock clean files"}</small></div>
                 <ProtectedPdfPreview key={`${coverLetter.previewUrl}-${resume.paid}-${resume.theme}-${previewRevision}`} src={`${coverLetter.previewUrl}&style=${resume.theme}&revision=${previewRevision}`} title={resume.paid ? "Clean matching cover letter" : "Watermarked matching cover letter preview"} />
+                {!resume.paid ? renderLockNote("Your opening paragraph is shown. The rest of your letter is locked in this preview.") : null}
               </>
             ) : (
               <div className="rb-preview-empty">
@@ -475,7 +530,7 @@ export function ResumeReview() {
           </div>
 
           <aside className="rb-review-sidebar">
-            <div className="rb-review-status"><p className="rb-kicker">{resume.paid ? "Review + refine" : "Preview before you pay"}</p><h2>{resume.paid ? "Make it sound like you." : "Review the whole package."}</h2><p className="rb-review-desc">{resume.paid ? "Check names, dates, certifications, job duties, contact information, and your included matching cover letter before downloading." : "Your resume is ready. Build the included matching cover-letter preview, review both tabs, then pay once to remove the watermarks and unlock the clean PDF + DOCX files."}</p>
+            <div className="rb-review-status"><p className="rb-kicker">{resume.paid ? "Review + refine" : "Preview before you pay"}</p><h2>{resume.paid ? "Make it sound like you." : "Review the whole package."}</h2><p className="rb-review-desc">{resume.paid ? "Check names, dates, certifications, job duties, contact information, and your included matching cover letter before downloading." : "Your resume is ready. The preview shows your header, summary, skills, credentials and first highlights; gray bars mark the lines that unlock after purchase. Build the included cover-letter preview, then pay once to unlock every line and the clean PDF + Word files."}</p>
               <span className="rb-theme-label">Resume system</span>
               {renderThemePicker()}
               <StyleControls key={`${resume.theme}-${JSON.stringify(resume.style)}`} resumeId={resumeId} style={resume.style ?? defaultStyle(resume.theme)} disabled={working || themeSaving} onBusy={setStyleSaving} onSaved={async () => { await load(resumeId); setPreviewRevision(value => value + 1); }} />
@@ -501,11 +556,15 @@ export function ResumeReview() {
               <button className="rb-button rb-button-secondary-dark rb-button-full" type="submit" disabled={working || resume.correctionsRemaining < 1}>{working ? "Applying correction…" : resume.correctionsRemaining > 0 ? "Apply one package correction" : "All corrections used"} <span>↻</span></button>
               <small>The three corrections are shared across the resume and cover letter. One submitted correction uses one run. Failed generations are restored automatically.</small>
             </form> : (
-              <div className="rb-unpaid-card">
+              <div className="rb-unpaid-card" id="unlock-package" ref={unpaidCardRef}>
                 <p className="rb-kicker">One-time purchase</p>
                 <h2>Unlock the full package.</h2>
-                <p>Pay $9.99 once. No subscription. Review the resume and matching cover letter first, then unlock the clean resume PDF + DOCX, clean cover-letter PDF + DOCX, and up to three shared corrections.</p>
-                <button className="rb-button rb-button-primary rb-button-full" type="button" disabled={checkingOut} onClick={() => void startCheckout()}>{checkingOut ? "Opening secure checkout…" : "Unlock resume + cover letter — $9.99"} <span>↗</span></button>
+                <p>Pay $9.99 once. No subscription. Your resume and matching cover letter are already built; unlocking reveals every line and gives you files ready to send today.</p>
+                <ul className="rb-unpaid-includes">
+                  {PACKAGE_INCLUDES.map((item) => <li key={item}>{item}</li>)}
+                </ul>
+                <button className="rb-button rb-button-primary rb-button-full" type="button" disabled={checkingOut} onClick={() => void startCheckout()}>{checkoutLabel} <span aria-hidden="true">↗</span></button>
+                {checkoutError ? <p className="rb-unpaid-error" role="alert">{checkoutError} Nothing was charged.</p> : null}
                 <small>Secure checkout powered by Stripe · one-time $9.99 · no subscription. TRADE HUSTL3 does not receive or store your full card number. Need help? <a href="mailto:support@tradehustl3.com">support@tradehustl3.com</a></small>
               </div>
             )}
@@ -542,6 +601,14 @@ export function ResumeReview() {
                   <h3>{job.jobTitle}</h3><small>{job.employer}</small>
                   {job.bullets.map((bullet) => {
                     const key = `${job.jobIndex}:${bullet.bulletIndex}`;
+                    if (bullet.locked) {
+                      return (
+                        <article className="rb-bullet-card rb-bullet-card-locked" key={key}>
+                          {bullet.original ? <div className="rb-bullet-version"><strong>Your original</strong><p>{bullet.original}</p></div> : null}
+                          <p className="rb-bullet-locked"><LockIcon /><span>HUSTL3 BOT&apos;s rewrite of this bullet unlocks with your package.</span></p>
+                        </article>
+                      );
+                    }
                     const value = bulletDrafts[key] ?? bullet.suggestion;
                     const saving = bulletSaving === key;
                     return (
@@ -566,13 +633,26 @@ export function ResumeReview() {
                   })}
                 </div>
               ))}
-              <small className="rb-bullet-note">Each choice updates the protected preview and final PDF + DOCX without using a correction run.</small>
+              <small className="rb-bullet-note">Each choice updates the protected preview and final PDF + DOCX without using a correction run.{resume.paid ? "" : " Locked bullets open for editing after you unlock the package."}</small>
             </section>
           ) : null}
         </section>
       ) : null}
 
       {hasDraft ? renderNotice() : null}
+      {hasDraft && !resume.paid ? (
+        <div className="rb-unlock-bar" role="region" aria-label="Unlock your resume package" hidden={unpaidCardVisible || working}>
+          {checkoutError ? (
+            <p className="rb-unlock-bar-error" role="alert">{checkoutError}</p>
+          ) : (
+            <div className="rb-unlock-bar-copy">
+              <strong>$9.99 <small>one-time</small></strong>
+              <span>Full resume + cover letter · clean PDF &amp; Word</span>
+            </div>
+          )}
+          <button className="rb-button rb-button-primary" type="button" disabled={checkingOut} onClick={() => void startCheckout()}>{checkingOut ? "Opening checkout…" : "Unlock & download"} <span aria-hidden="true">→</span></button>
+        </div>
+      ) : null}
       {working ? <div className="rb-working-overlay" role="status"><span /><strong>HUSTL3 BOT is building</strong><small>This can take a minute. Keep this page open.</small></div> : null}
     </div>
   );

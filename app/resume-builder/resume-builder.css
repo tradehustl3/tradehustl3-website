@@ -687,6 +687,55 @@ p.rb-quality-pass { margin: 12px 0 0; padding: 10px 12px; border: 1px solid var(
 .rb-download b { width: 36px; height: 36px; display: grid; place-items: center; border-radius: var(--rb-radius-sm); background: var(--rb-red-soft); color: var(--rb-red); font-size: 18px; }
 .rb-download:hover b { background: var(--rb-red); color: #fff; }
 
+/* Unpaid preview: locked-line notes, purchase card checklist, fixed unlock bar. */
+.rb-lock-icon { flex: 0 0 auto; color: var(--rb-navy); }
+.rb-lock-note { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0 12px 12px; padding: 12px 14px; border: 1px solid var(--rb-border-strong); border-radius: var(--rb-radius); background: var(--rb-surface); }
+.rb-lock-note p { display: flex; align-items: flex-start; gap: 8px; margin: 0; color: var(--rb-text); font-size: 14px; line-height: 1.5; }
+.rb-lock-note p .rb-lock-icon { margin-top: 2px; }
+.rb-lock-note .rb-button { flex: 0 0 auto; min-height: 44px; padding: 0 16px; font-size: 14px; white-space: nowrap; }
+.rb-unpaid-includes { display: grid; gap: 8px; margin: 16px 0 0; padding: 0; list-style: none; }
+.rb-unpaid-includes li { position: relative; padding-left: 26px; color: var(--rb-text); font-size: 15px; line-height: 1.45; }
+.rb-unpaid-includes li::before { content: ""; position: absolute; left: 0; top: 2px; width: 18px; height: 18px; border-radius: 50%; background: var(--rb-success-soft) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='m5.5 10.5 3 3 6-6.5' fill='none' stroke='%2315803d' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 14px no-repeat; }
+.rb-unpaid-card { scroll-margin-top: 16px; }
+.rb-unpaid-card > small { display: block; margin-top: 12px; color: var(--rb-text-2); font-size: 13px; line-height: 1.5; }
+.rb-bullet-card-locked { background: var(--rb-surface); border-style: dashed; }
+.rb-bullet-locked { display: flex; align-items: flex-start; gap: 8px; margin: 0; color: var(--rb-text-2); font-size: 14px; line-height: 1.5; }
+.rb-bullet-locked .rb-lock-icon { margin-top: 2px; }
+.rb-review-workspace-unpaid { padding-bottom: 96px; }
+.rb-unlock-bar {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 15;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px max(var(--rb-gutter), calc((100% - var(--rb-container)) / 2)) calc(12px + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--rb-border);
+  background: var(--rb-surface);
+  box-shadow: 0 -8px 24px rgb(15 23 42 / .08);
+}
+.rb-unlock-bar[hidden] { display: none; }
+.rb-unlock-bar-copy { display: grid; gap: 2px; min-width: 0; }
+.rb-unlock-bar-copy strong { color: var(--rb-text); font-size: 20px; font-weight: 800; line-height: 1.1; }
+.rb-unlock-bar-copy strong small { color: var(--rb-text-2); font-size: 13px; font-weight: 500; }
+.rb-unlock-bar-copy span { color: var(--rb-text-2); font-size: 13px; line-height: 1.35; }
+.rb-unlock-bar .rb-button { flex: 0 0 auto; min-height: 48px; padding: 0 22px; }
+.rb-unlock-bar-error, .rb-unpaid-error { margin: 0; color: var(--rb-error); font-size: 14px; font-weight: 500; line-height: 1.4; }
+.rb-unpaid-error { margin-top: 12px; }
+@media (max-width: 640px) {
+  .rb-lock-note { flex-direction: column; align-items: stretch; margin-inline: 6px; }
+  .rb-lock-note .rb-button { width: 100%; justify-content: center; }
+  .rb-unlock-bar { padding-inline: 16px; }
+  .rb-unlock-bar .rb-button { padding: 0 16px; }
+}
+@media (max-width: 380px) {
+  .rb-unlock-bar-copy span { display: none; }
+}
+@media print { .rb-unlock-bar, .rb-lock-note { display: none !important; } }
+
 .rb-review-loading { min-height: 480px; display: grid; place-items: center; align-content: center; gap: 16px; color: var(--rb-text-2); }
 .rb-review-empty { width: min(640px, 100% - 2 * var(--rb-gutter)); margin: clamp(32px, 6vw, 72px) auto; padding: clamp(24px, 5vw, 40px); }
 .rb-review-empty p:not(.rb-kicker) { margin: 12px 0 20px; color: var(--rb-text-2); line-height: 1.6; }

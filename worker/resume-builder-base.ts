@@ -6,6 +6,7 @@ import { groundResumePrefill } from "./resume-extraction-grounding";
 import { serverUploadReview } from "./resume-upload-requirements";
 import { INTAKE_SCHEMA_VERSION, intakeSchemaVersion } from "../app/resume-builder/intake/wizard-data";
 import { createResumeDocx, createResumePdf, GeneratedResume, ResumeTheme } from "./resume-documents";
+import { lockedBulletCount, readableBulletKeys } from "./resume-preview-lock";
 import {
   canonicalSourceRecord,
   editorialSelection,
@@ -1025,6 +1026,9 @@ async function getResumeStatus(request: Request, env: ResumeBuilderEnv, resumeId
   }
   const source = canonicalSourceRecord(intake, resume.title, resume.trade);
   const qualityScore = scoreResume(generatedResume, source);
+  // Unpaid customers get the same lock as the watermarked preview: AI-written
+  // wording for locked bullets never leaves the server before purchase.
+  const readable = generatedResume && !entitlement ? readableBulletKeys(generatedResume.experience) : null;
   const bulletEditor = generatedResume ? generatedResume.experience.map((job, jobIndex) => {
     const sourceJob = source.roles.find((role) => role.sourceIndex === jobIndex)
       ?? source.roles.find((role) => role.jobTitle.toLowerCase() === job.jobTitle.toLowerCase());
@@ -1032,12 +1036,18 @@ async function getResumeStatus(request: Request, env: ResumeBuilderEnv, resumeId
       jobIndex,
       employer: job.employer ?? "",
       jobTitle: job.jobTitle,
-      bullets: job.bullets.map((suggestion, bulletIndex) => ({
-        bulletIndex,
-        original: sourceJob?.bullets[bulletIndex] ?? sourceJob?.bullets[0] ?? suggestion,
-        suggestion: editorialSuggestion(generatedResume!, jobIndex, bulletIndex, suggestion),
-        choice: editorialSelection(generatedResume!, jobIndex, bulletIndex),
-      })),
+      bullets: job.bullets.map((suggestion, bulletIndex) => {
+        const locked = readable ? !readable.has(`${jobIndex}:${bulletIndex}`) : false;
+        return {
+          bulletIndex,
+          locked,
+          original: locked
+            ? sourceJob?.bullets[bulletIndex] ?? ""
+            : sourceJob?.bullets[bulletIndex] ?? sourceJob?.bullets[0] ?? suggestion,
+          suggestion: locked ? "" : editorialSuggestion(generatedResume!, jobIndex, bulletIndex, suggestion),
+          choice: editorialSelection(generatedResume!, jobIndex, bulletIndex),
+        };
+      }),
     };
   }) : [];
   return json({
@@ -1065,6 +1075,7 @@ async function getResumeStatus(request: Request, env: ResumeBuilderEnv, resumeId
       } : null,
       qualityScore,
       bulletEditor,
+      previewLockedBullets: generatedResume && !entitlement ? lockedBulletCount(generatedResume.experience) : 0,
     },
   });
 }
@@ -3407,8 +3418,9 @@ async function serveResumeFile(
   if (!resume) {
     return json({ ok: false, message: "File not found." }, 404);
   }
+  if (format === "preview") return serveProtectedPreview(resume);
   const entitlement = await findEntitlement(env, resumeId, user.userId);
-  if (format !== "preview" && !entitlement) return json({ ok: false, message: "File not found." }, 404);
+  if (!entitlement) return json({ ok: false, message: "File not found." }, 404);
   const file = await env.DB.prepare(
     `SELECT object_key FROM resume_files WHERE resume_id = ? AND user_id = ? AND format = ?
      ORDER BY created_at DESC LIMIT 1`,
@@ -3418,19 +3430,45 @@ async function serveResumeFile(
   if (!object) return json({ ok: false, message: "File not found." }, 404);
 
   const isDocx = format === "docx";
-  const isPreview = format === "preview";
   const filename = isDocx ? "TRADE-HUSTL3-Resume.docx" : "TRADE-HUSTL3-Resume.pdf";
   const headers = new Headers();
   headers.set("Content-Type", isDocx
     ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
     : "application/pdf");
-  const showInline = isPreview || (format === "pdf" && new URL(request.url).searchParams.get("view") === "1");
+  const showInline = format === "pdf" && new URL(request.url).searchParams.get("view") === "1";
   headers.set("Content-Disposition", `${showInline ? "inline" : "attachment"}; filename="${filename}"`);
   headers.set("Cache-Control", "private, no-store");
   headers.set("Referrer-Policy", "no-referrer");
   headers.set("X-Content-Type-Options", "nosniff");
   headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
   return new Response(object.body, { status: 200, headers });
+}
+
+/**
+ * The watermarked preview is rendered from the saved resume on every request,
+ * the same way the cover-letter preview is. Previews stored before the locked
+ * preview policy contain every line in clear text, so they are never served:
+ * each customer gets the current lock policy without a backfill. On a render
+ * failure it returns 503 rather than falling back to a stored, unlocked file.
+ */
+async function serveProtectedPreview(resume: ResumeRecord): Promise<Response> {
+  if (!resume.generated_json) return json({ ok: false, message: "File not found." }, 404);
+  try {
+    const theme = normalizeTheme(resume.theme);
+    const generated = withCustomerScope(JSON.parse(resume.generated_json) as GeneratedResume, resume.intake_json);
+    const preview = await createResumePdf(generated, true, theme, normalizeTheme(resume.generation_track ?? resume.theme), storedStyle(resume, theme));
+    const headers = new Headers();
+    headers.set("Content-Type", "application/pdf");
+    headers.set("Content-Disposition", 'inline; filename="TRADE-HUSTL3-Resume-Preview.pdf"');
+    headers.set("Cache-Control", "private, no-store");
+    headers.set("Referrer-Policy", "no-referrer");
+    headers.set("X-Content-Type-Options", "nosniff");
+    headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
+    return new Response(Uint8Array.from(preview).buffer, { status: 200, headers });
+  } catch (error) {
+    console.error("Resume preview render failed", errorKind(error));
+    return json({ ok: false, message: "The protected preview is temporarily unavailable." }, 503);
+  }
 }
 
 
