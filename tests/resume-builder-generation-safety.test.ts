@@ -493,18 +493,96 @@ test("self-employed candidate with no named employer generates successfully", as
   assert.doesNotMatch(h.state.generatedJson, /"employer"/);
 });
 
-test("non-substantive output returns an intake action and restores the reserved run", async () => {
+// The intake passed the substance gate, so an empty draft is the model's failure.
+// Sending the customer back to a complete intake was the 2026-10-11 Lead bug.
+test("empty model output from a sufficient intake is a retryable model error, not an intake action", async () => {
   const h = harness();
   const { response, payload } = await run(h, dependenciesFor(emptyOutput));
-  assert.equal(response.status, 422);
-  assert.equal(payload.code, "INTAKE_INFORMATION_REQUIRED");
-  assert.equal(payload.retryable, false);
-  assert.equal(payload.action, "return_to_intake");
+  assert.equal(response.status, 502);
+  assert.equal(payload.code, "MODEL_OUTPUT_ERROR");
+  assert.equal(payload.retryable, true);
+  assert.equal(payload.action, "retry_generation");
   assert.equal(payload.paymentSafe, true);
   assert.equal(payload.runConsumed, false);
-  assert.equal(payload.intakeUrl, "/resume-builder/intake?resume_id=resume-1");
+  assert.equal(payload.intakeUrl, null);
   assert.equal(h.state.creditsUsed, 0);
   assert.equal(h.state.status, "draft");
+  const generation = h.batched.find((item) => /INSERT INTO resume_generations/i.test(item.sql));
+  const telemetry = JSON.parse(String(generation?.values[5]));
+  assert.equal(telemetry.stage, "empty_output");
+  assert.equal(telemetry.draft.summaryChars, 0);
+  assert.equal(telemetry.draft.experience, 0);
+  assert.doesNotMatch(String(generation?.values[5]), /Devon|Brazing|Akron/, "telemetry carries counts, never candidate text");
+});
+
+test("empty model output from an insufficient intake still returns the intake action", async () => {
+  // A correction can run against an intake that no longer passes the gate.
+  const h = harness({ generated: entryLevelResume, used: 1, intake: { contact: { fullName: "Devon Price" }, experience: [] } });
+  const { response, payload } = await run(h, dependenciesFor(emptyOutput), { correctionRequest: "Shorten the summary" });
+  assert.equal(response.status, 422);
+  assert.equal(payload.code, "INTAKE_INFORMATION_REQUIRED");
+  assert.equal(payload.action, "return_to_intake");
+  assert.equal(h.state.creditsUsed, 1, "the reserved correction is restored");
+});
+
+function geminiEnv(h: ReturnType<typeof harness>, extra: Record<string, unknown> = {}) {
+  return {
+    DB: h.DB as unknown as D1Database, BOOKS: h.BOOKS as unknown as R2Bucket,
+    RESUME_AI_PROVIDER: "gemini", RESUME_AI_BRIDGE_URL: "https://bridge.example", RESUME_AI_BRIDGE_SECRET: "test-secret",
+    ...extra,
+  };
+}
+
+function geminiSequence(outputs: unknown[], seeds: number[]): typeof fetch {
+  let call = 0;
+  return (async (_url: unknown, init?: RequestInit) => {
+    seeds.push(JSON.parse(String(init?.body)).generationConfig.seed);
+    const output = outputs[Math.min(call++, outputs.length - 1)];
+    return new Response(JSON.stringify({ candidates: [{ finishReason: "STOP", content: { parts: [{ text: JSON.stringify(output) }] } }] }));
+  }) as typeof fetch;
+}
+
+for (const theme of ["plain", "navy", "lead"] as const) {
+  test(`${theme}: an empty Gemini draft is retried once with a new seed and the retry is used`, async () => {
+    const h = harness({ theme });
+    const seeds: number[] = [];
+    const response = await handleResumeBuilderRoute(request(), geminiEnv(h), {
+      ...dependenciesFor(entryLevelResume),
+      geminiFetch: geminiSequence([emptyOutput, entryLevelResume], seeds),
+    });
+    assert.equal(response?.status, 200, await response?.clone().text());
+    assert.deepEqual(seeds, [17, 29]);
+    assert.equal(h.state.creditsUsed, 1);
+    assert.equal(JSON.parse(h.state.generatedJson!).basics.fullName, "Devon Price");
+  });
+}
+
+test("two empty Gemini drafts fall back to the configured Anthropic provider", async () => {
+  const h = harness({ theme: "lead" });
+  const seeds: number[] = [];
+  const response = await handleResumeBuilderRoute(request(), geminiEnv(h, { ANTHROPIC_API_KEY: "test-key" }), {
+    ...dependenciesFor(entryLevelResume),
+    geminiFetch: geminiSequence([emptyOutput], seeds),
+  });
+  assert.equal(response?.status, 200, await response?.clone().text());
+  assert.deepEqual(seeds, [17, 29]);
+  assert.ok(h.state.generatedJson);
+});
+
+test("two empty Gemini drafts without a fallback provider ask the customer to try again", async () => {
+  const h = harness({ theme: "lead" });
+  const seeds: number[] = [];
+  const response = await handleResumeBuilderRoute(request(), geminiEnv(h), {
+    ...dependenciesFor(entryLevelResume),
+    geminiFetch: geminiSequence([emptyOutput], seeds),
+  });
+  const payload = await response!.json() as Record<string, unknown>;
+  assert.equal(response?.status, 502);
+  assert.equal(payload.code, "MODEL_OUTPUT_ERROR");
+  assert.equal(payload.action, "retry_generation");
+  assert.equal(payload.runConsumed, false);
+  assert.deepEqual(seeds, [17, 29], "exactly one retry");
+  assert.equal(h.state.creditsUsed, 0);
 });
 
 test("unsupported numeric wording removed by deterministic repair completes without another customer build", async () => {
@@ -524,8 +602,9 @@ test("unsupported numeric wording removed by deterministic repair completes with
 test("a deterministic failure can repeat without reducing the four-run allowance", async () => {
   const h = harness();
   for (let attempt = 0; attempt < 6; attempt += 1) {
-    const { response } = await run(h, dependenciesFor(emptyOutput));
-    assert.equal(response.status, 422);
+    const { response, payload } = await run(h, dependenciesFor(emptyOutput));
+    assert.equal(response.status, 502);
+    assert.equal(payload.code, "MODEL_OUTPUT_ERROR");
     assert.equal(h.state.creditsUsed, 0);
   }
   const { response } = await run(h, dependenciesFor(entryLevelResume));
@@ -756,20 +835,25 @@ for (const provider of ["gemini", "anthropic"] as const) {
   }
 }
 
-test("Gemini schema rejection does not call a fallback model or consume an AI run", async () => {
+// Changed 2026-10-11: an empty draft from a sufficient intake is a model failure,
+// so after one Gemini retry it may use the fallback provider (whose output still
+// passes every factual guard). It must still never consume a run or store files.
+test("empty Gemini drafts get one retry and one fallback call, and never consume an AI run", async () => {
   const h = harness();
   let fallbackCalls = 0;
+  let geminiCalls = 0;
   const response = await handleResumeBuilderRoute(request(), {
     DB: h.DB as unknown as D1Database, BOOKS: h.BOOKS as unknown as R2Bucket,
     RESUME_AI_PROVIDER: "gemini", RESUME_AI_BRIDGE_URL: "https://bridge.example",
     RESUME_AI_BRIDGE_SECRET: "test-secret", ANTHROPIC_API_KEY: "test-key",
   }, { ...dependenciesFor(entryLevelResume),
-    geminiFetch: (async () => Response.json({ candidates: [{ finishReason: "STOP",
-      content: { parts: [{ text: JSON.stringify(emptyOutput) }] } }] })) as typeof fetch,
+    geminiFetch: (async () => { geminiCalls++; return Response.json({ candidates: [{ finishReason: "STOP",
+      content: { parts: [{ text: JSON.stringify(emptyOutput) }] } }] }); }) as typeof fetch,
     anthropicFetch: (async () => { fallbackCalls++; return Response.json({}); }) as typeof fetch,
   });
-  assert.equal(response?.status, 422);
-  assert.equal(fallbackCalls, 0);
+  assert.equal(response?.status, 502);
+  assert.equal(geminiCalls, 2);
+  assert.equal(fallbackCalls, 1);
   assert.equal(h.state.creditsUsed, 0);
   assert.equal(h.objects.size, 0);
 });

@@ -8,6 +8,7 @@ import { INTAKE_SCHEMA_VERSION, intakeSchemaVersion } from "../app/resume-builde
 import { createResumeDocx, createResumePdf, GeneratedResume, ResumeTheme } from "./resume-documents";
 import { lockedBulletCount, readableBulletKeys } from "./resume-preview-lock";
 import {
+  assessIntakeSubstance,
   canonicalSourceRecord,
   editorialSelection,
   editorialSuggestion,
@@ -274,11 +275,37 @@ type ModelFailureStage = "configuration" | "transport" | "http" | "provider_json
   | "provider_envelope" | "truncated" | "provider_stop" | "empty_output" | "resume_json";
 
 class ResumeModelFailure extends ResumeGenerationError {
-  constructor(readonly stage: ModelFailureStage, provider: ResumeAiProvider, status?: number) {
+  constructor(
+    readonly stage: ModelFailureStage,
+    provider: ResumeAiProvider,
+    status?: number,
+    /** Counts and section names only; never candidate text. */
+    detail?: Record<string, unknown>,
+  ) {
     super("MODEL_OUTPUT_ERROR", "Model output error.", [], {
-      code: "model_output_error", stage, provider, ...(status === undefined ? {} : { status }),
+      code: "model_output_error", stage, provider, ...(status === undefined ? {} : { status }), ...(detail ?? {}),
     });
   }
+}
+
+/** Shape of a rejected draft for telemetry: lengths and counts, no candidate text. */
+function draftShape(parsed: unknown): Record<string, number | boolean> {
+  const root = parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed as Record<string, unknown> : {};
+  const count = (value: unknown) => Array.isArray(value) ? value.length : -1;
+  const experience = Array.isArray(root.experience) ? root.experience : [];
+  return {
+    object: Boolean(parsed && typeof parsed === "object" && !Array.isArray(parsed)),
+    summaryChars: typeof root.summary === "string" ? root.summary.trim().length : -1,
+    skills: count(root.skills),
+    certifications: count(root.certifications),
+    experience: count(root.experience),
+    experienceWithBullets: experience.filter((job) => Boolean(job) && typeof job === "object"
+      && Array.isArray((job as Record<string, unknown>).bullets)
+      && ((job as Record<string, unknown>).bullets as unknown[]).length > 0).length,
+    education: count(root.education),
+    additionalInformation: count(root.additionalInformation),
+    claimSources: count(root.claimSources),
+  };
 }
 
 // Never log provider bodies, parser messages, intake, or generated candidate facts.
@@ -2681,10 +2708,21 @@ function validateModelResume(
   intake: unknown,
   resume: ResumeRecord,
   correctionRequest: string | null,
+  provider: ResumeAiProvider,
 ): { resume: StoredGeneratedResume; guardFlags: UnsupportedNumericClaim[] } {
   const claimSources = modelClaimSources(parsed);
   const validation = validateGeneratedResume(parsed);
   if (!validation.ok) {
+    // The intake already passed the substance gate, so a draft that comes back
+    // without a summary or sections is the model's failure, not the customer's.
+    // Report it as a retryable model error (eligible for the retry and provider
+    // fallback) instead of sending the customer back to an intake that is fine.
+    if (assessIntakeSubstance(intake, resume.title).ready) {
+      throw new ResumeModelFailure("empty_output", provider, undefined, {
+        missing: validation.missing,
+        draft: draftShape(parsed),
+      });
+    }
     throw new ResumeGenerationError(
       "INTAKE_INFORMATION_REQUIRED",
       "The generated resume did not contain enough supported information.",
@@ -2741,11 +2779,16 @@ function validateModelResume(
   return { resume: { ...generated, grounding }, guardFlags };
 }
 
+// Seed for each Gemini attempt. The fixed first seed keeps normal builds stable;
+// the retry uses a different seed so an empty draft is not simply reproduced.
+const GEMINI_ATTEMPT_SEEDS = [17, 29] as const;
+
 async function callGemini(
   env: ResumeBuilderEnv,
   resume: ResumeRecord,
   correctionRequest: string | null,
   dependencies: ResumeBuilderDependencies,
+  attempt: 0 | 1 = 0,
 ): Promise<ResumeModelResult> {
   const bridgeUrl = env.RESUME_AI_BRIDGE_URL?.trim().replace(/\/$/, "");
   const bridgeSecret = env.RESUME_AI_BRIDGE_SECRET?.trim();
@@ -2770,7 +2813,7 @@ async function callGemini(
         candidateCount: 1,
         maxOutputTokens: GEMINI_MAX_OUTPUT_TOKENS,
         temperature: 0.2,
-        seed: 17,
+        seed: GEMINI_ATTEMPT_SEEDS[attempt],
         responseMimeType: "application/json",
         responseSchema: GEMINI_RESUME_RESPONSE_SCHEMA,
         thinkingConfig: { thinkingLevel: "LOW", includeThoughts: false },
@@ -2796,7 +2839,7 @@ async function callGemini(
   if (candidate.finishReason === "MAX_TOKENS") throw new ResumeModelFailure("truncated", "gemini");
   if (candidate.finishReason && candidate.finishReason !== "STOP") throw new ResumeModelFailure("provider_stop", "gemini");
   const raw = generationText(candidate.content?.parts, "gemini");
-  const validated = validateModelResume(parseGenerationResume(raw, "gemini"), intake, resume, correctionRequest);
+  const validated = validateModelResume(parseGenerationResume(raw, "gemini"), intake, resume, correctionRequest, "gemini");
   const visibleOutputTokens = typeof payload.usageMetadata?.candidatesTokenCount === "number"
     ? payload.usageMetadata.candidatesTokenCount
     : 0;
@@ -2852,7 +2895,7 @@ async function callAnthropic(
     throw new ResumeModelFailure("provider_stop", "anthropic");
   }
   const raw = generationText(payload.content, "anthropic");
-  const validated = validateModelResume(parseGenerationResume(raw, "anthropic"), intake, resume, correctionRequest);
+  const validated = validateModelResume(parseGenerationResume(raw, "anthropic"), intake, resume, correctionRequest, "anthropic");
   return {
     ...validated,
     model,
@@ -2870,22 +2913,35 @@ async function callResumeModel(
   if (resumeAiProvider(env) !== "gemini") {
     return callAnthropic(env, resume, correctionRequest, dependencies);
   }
+  let primaryError: unknown;
   try {
     return await callGemini(env, resume, correctionRequest, dependencies);
-  } catch (primaryError) {
-    // A source/quality rejection must never be bypassed by another model call.
-    if (!(primaryError instanceof ResumeModelFailure) || !env.ANTHROPIC_API_KEY?.trim()) throw primaryError;
-    console.warn("Gemini resume generation unavailable; using configured Anthropic fallback.", primaryError.guardTelemetry);
+  } catch (error) {
+    primaryError = error;
+  }
+  // An empty draft from a sufficient intake gets one more Gemini attempt with a
+  // different seed. Source/quality rejections are never retried.
+  if (primaryError instanceof ResumeModelFailure && primaryError.stage === "empty_output") {
+    console.warn("Gemini returned an empty resume draft; retrying once.", primaryError.guardTelemetry);
     try {
-      return await callAnthropic(env, resume, correctionRequest, dependencies);
-    } catch (fallbackError) {
-      // Do not turn rejected primary output plus a fallback outage into a
-      // chargeable source-recovery result. Preserve the primary diagnostic.
-      if (!["transport", "http", "configuration"].includes(primaryError.stage)
-        && fallbackError instanceof ResumeModelFailure
-        && ["transport", "http", "configuration"].includes(fallbackError.stage)) throw primaryError;
-      throw fallbackError;
+      return await callGemini(env, resume, correctionRequest, dependencies, 1);
+    } catch (retryError) {
+      primaryError = retryError;
     }
+  }
+  // A source/quality rejection must never be bypassed by another model call.
+  if (!(primaryError instanceof ResumeModelFailure) || !env.ANTHROPIC_API_KEY?.trim()) throw primaryError;
+  const primary = primaryError;
+  console.warn("Gemini resume generation unavailable; using configured Anthropic fallback.", primary.guardTelemetry);
+  try {
+    return await callAnthropic(env, resume, correctionRequest, dependencies);
+  } catch (fallbackError) {
+    // Do not turn rejected primary output plus a fallback outage into a
+    // chargeable source-recovery result. Preserve the primary diagnostic.
+    if (!["transport", "http", "configuration"].includes(primary.stage)
+      && fallbackError instanceof ResumeModelFailure
+      && ["transport", "http", "configuration"].includes(fallbackError.stage)) throw primary;
+    throw fallbackError;
   }
 }
 
