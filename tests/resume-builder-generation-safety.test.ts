@@ -602,8 +602,9 @@ test("unsupported numeric wording removed by deterministic repair completes with
 test("a deterministic failure can repeat without reducing the four-run allowance", async () => {
   const h = harness();
   for (let attempt = 0; attempt < 6; attempt += 1) {
-    const { response } = await run(h, dependenciesFor(emptyOutput));
-    assert.equal(response.status, 422);
+    const { response, payload } = await run(h, dependenciesFor(emptyOutput));
+    assert.equal(response.status, 502);
+    assert.equal(payload.code, "MODEL_OUTPUT_ERROR");
     assert.equal(h.state.creditsUsed, 0);
   }
   const { response } = await run(h, dependenciesFor(entryLevelResume));
@@ -834,20 +835,25 @@ for (const provider of ["gemini", "anthropic"] as const) {
   }
 }
 
-test("Gemini schema rejection does not call a fallback model or consume an AI run", async () => {
+// Changed 2026-10-11: an empty draft from a sufficient intake is a model failure,
+// so after one Gemini retry it may use the fallback provider (whose output still
+// passes every factual guard). It must still never consume a run or store files.
+test("empty Gemini drafts get one retry and one fallback call, and never consume an AI run", async () => {
   const h = harness();
   let fallbackCalls = 0;
+  let geminiCalls = 0;
   const response = await handleResumeBuilderRoute(request(), {
     DB: h.DB as unknown as D1Database, BOOKS: h.BOOKS as unknown as R2Bucket,
     RESUME_AI_PROVIDER: "gemini", RESUME_AI_BRIDGE_URL: "https://bridge.example",
     RESUME_AI_BRIDGE_SECRET: "test-secret", ANTHROPIC_API_KEY: "test-key",
   }, { ...dependenciesFor(entryLevelResume),
-    geminiFetch: (async () => Response.json({ candidates: [{ finishReason: "STOP",
-      content: { parts: [{ text: JSON.stringify(emptyOutput) }] } }] })) as typeof fetch,
+    geminiFetch: (async () => { geminiCalls++; return Response.json({ candidates: [{ finishReason: "STOP",
+      content: { parts: [{ text: JSON.stringify(emptyOutput) }] } }] }); }) as typeof fetch,
     anthropicFetch: (async () => { fallbackCalls++; return Response.json({}); }) as typeof fetch,
   });
-  assert.equal(response?.status, 422);
-  assert.equal(fallbackCalls, 0);
+  assert.equal(response?.status, 502);
+  assert.equal(geminiCalls, 2);
+  assert.equal(fallbackCalls, 1);
   assert.equal(h.state.creditsUsed, 0);
   assert.equal(h.objects.size, 0);
 });
