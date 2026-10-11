@@ -8,20 +8,23 @@ import { decodeFont } from './roboto-fonts';
 import { RESUME_WATERMARK_LOGO_BASE64 } from './resume-watermark-logo';
 import { TEMPLATE_FONTS } from './resume-template-fonts';
 import { ACCENT_HEX, BODY_SIZES, FONT_FAMILIES, RESUME_TEMPLATES, SPACE_FACTORS, TRACK_HEADINGS, skillGroups, type ResumeStyle } from './resume-templates';
+import { drawLockedLine, letterParagraphLocked, resumePreviewLock, type ResumePreviewLock } from './resume-preview-lock';
+import { presentableSkills } from './resume-skill-casing';
 
 const WIDTH = 612, HEIGHT = 792, MARGIN = 48;
 const clean = (s: string | undefined) => (s ?? '').replace(/\s+/g, ' ').trim();
 const color = (hex: string) => rgb(parseInt(hex.slice(0, 2), 16) / 255, parseInt(hex.slice(2, 4), 16) / 255, parseInt(hex.slice(4, 6), 16) / 255);
 const contact = (b: GeneratedResume['basics']) => [b.location, b.phone, b.email].map(clean).filter(Boolean).join(' | ');
-type Block = { kind: 'heading' | 'text' | 'grid' | 'job' | 'education'; text?: string; bold?: boolean; italic?: boolean; accent?: boolean; right?: string; columns?: string[][]; labels?: string[]; bullet?: boolean; keepNext?: boolean };
-function blocksForResume(resume: GeneratedResume, theme: ResumeTheme, track: ResumeTheme): Block[] {
+type Block = { kind: 'heading' | 'text' | 'grid' | 'job' | 'education'; text?: string; bold?: boolean; italic?: boolean; accent?: boolean; right?: string; columns?: string[][]; labels?: string[]; bullet?: boolean; keepNext?: boolean; locked?: boolean };
+// `lock` is only passed for the unpaid watermarked PDF; DOCX and paid files never lock.
+function blocksForResume(resume: GeneratedResume, theme: ResumeTheme, track: ResumeTheme, lock?: ResumePreviewLock): Block[] {
   const blocks: Block[] = [], headings = TRACK_HEADINGS[track];
   const heading = (text: string) => blocks.push({ kind: 'heading', text, keepNext: true });
   for (const section of RESUME_TEMPLATES[theme].sections) {
     switch (section) {
       case 'summary': if (clean(resume.summary)) { heading(headings.summary); blocks.push({ kind: 'text', text: resume.summary }); } break;
       case 'skills': {
-        const skills = resume.skills.map(clean).filter(Boolean);
+        const skills = presentableSkills(resume.skills);
         if (!skills.length) break;
         heading(headings.skills);
         const grouped = theme === 'navy' ? skillGroups(skills) : null;
@@ -37,14 +40,14 @@ function blocksForResume(resume: GeneratedResume, theme: ResumeTheme, track: Res
       } break;
       case 'experience': if (resume.experience.length) {
         heading(track === 'lead' ? 'PROFESSIONAL EXPERIENCE' : 'WORK EXPERIENCE');
-        for (const job of resume.experience) {
+        resume.experience.forEach((job, jobIndex) => {
           blocks.push({ kind: 'job', text: job.jobTitle, bold: true, right: [job.startDate, job.endDate].map(clean).filter(Boolean).join(' – '), keepNext: true });
           const org = [job.employer, job.location].map(clean).filter(Boolean).join(' — ');
           if (org) blocks.push({ kind: 'text', text: org, bold: theme === 'lead', italic: theme === 'plain', accent: theme === 'lead', keepNext: job.bullets.length > 0 });
           // No inferred scope, duties, or numbers are introduced by presentation.
           if (theme === 'lead' && clean(job.scope)) blocks.push({ kind: 'text', text: `Scope: ${clean(job.scope)}`, italic: true, keepNext: job.bullets.length > 0 });
-          for (const item of job.bullets) blocks.push({ kind: 'text', text: item, bullet: true });
-        }
+          job.bullets.forEach((item, bulletIndex) => blocks.push({ kind: 'text', text: item, bullet: true, locked: lock?.bulletLocked(jobIndex, bulletIndex) }));
+        });
       } break;
       case 'education': if (resume.education.length) {
         heading('EDUCATION & TRAINING');
@@ -52,14 +55,19 @@ function blocksForResume(resume: GeneratedResume, theme: ResumeTheme, track: Res
       } break;
       case 'additional': if (resume.additionalInformation.length) {
         heading(headings.additional);
-        for (const text of resume.additionalInformation) blocks.push({ kind: 'text', text, bullet: true });
+        for (const text of resume.additionalInformation) blocks.push({ kind: 'text', text, bullet: true, locked: lock?.additionalLocked });
       } break;
     }
   }
   return blocks;
 }
-function blocksForLetter(letter: GeneratedCoverLetter): Block[] {
-  return [letter.date, letter.hiringManager, letter.companyName, letter.targetJobTitle ? `Re: ${letter.targetJobTitle}` : '', letter.salutation, ...letter.paragraphs, letter.closing, letter.basics.fullName].filter(Boolean).map(text => ({ kind: 'text', text }));
+function blocksForLetter(letter: GeneratedCoverLetter, locked = false): Block[] {
+  const text = (value: string | undefined): Block[] => value ? [{ kind: 'text', text: value }] : [];
+  return [
+    ...[letter.date, letter.hiringManager, letter.companyName, letter.targetJobTitle ? `Re: ${letter.targetJobTitle}` : '', letter.salutation].flatMap(text),
+    ...letter.paragraphs.flatMap((paragraph, index): Block[] => paragraph ? [{ kind: 'text', text: paragraph, locked: locked && letterParagraphLocked(index) }] : []),
+    ...[letter.closing, letter.basics.fullName].flatMap(text),
+  ];
 }
 function wrap(text: string, font: PDFFont, size: number, width: number): string[] {
   const lines: string[] = []; let line = '';
@@ -85,7 +93,10 @@ export async function renderPdfV2(input: GeneratedResume | GeneratedCoverLetter,
   const italic = await document.embedFont(subsetTrueType(decodeFont(source.italic), usedText), { subset: false, features: { liga: false, clig: false, calt: false } });
   const accent = color(ACCENT_HEX[style.accent]), black = color('111111');
   const size = BODY_SIZES[style.textSize], factor = SPACE_FACTORS[style.spacing];
-  const blocks = letter ? blocksForLetter(input as GeneratedCoverLetter) : blocksForResume(input as GeneratedResume, theme, track);
+  // The unpaid preview locks most AI-written lines; see resume-preview-lock.ts.
+  const blocks = letter
+    ? blocksForLetter(input as GeneratedCoverLetter, watermarked)
+    : blocksForResume(input as GeneratedResume, theme, track, watermarked ? resumePreviewLock((input as GeneratedResume).experience) : undefined);
   let page: PDFPage = document.addPage([WIDTH, HEIGHT]), y = HEIGHT - MARGIN;
   const newPage = () => { page = document.addPage([WIDTH, HEIGHT]); y = HEIGHT - MARGIN; };
   const ensure = (height: number) => { if (y - height < MARGIN) newPage(); };
@@ -170,7 +181,8 @@ export async function renderPdfV2(input: GeneratedResume | GeneratedCoverLetter,
       for (let i = 0; i < lines.length; i++) {
         ensure(lh);
         if (b.bullet && i === 0) draw('•', MARGIN + 2, y - size, regular, size);
-        draw(lines[i], MARGIN + (b.bullet ? 14 : 0), y - size, font, size, b.accent ? accent : black);
+        if (b.locked) drawLockedLine(page, lines[i], { x: MARGIN + (b.bullet ? 14 : 0), baseline: y - size, font, size });
+        else draw(lines[i], MARGIN + (b.bullet ? 14 : 0), y - size, font, size, b.accent ? accent : black);
         if (i === 0 && b.right) draw(clean(b.right), WIDTH - MARGIN - rightWidth + 18, rightY, rightFont, size);
         y -= lh;
       }

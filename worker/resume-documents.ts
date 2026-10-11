@@ -18,6 +18,8 @@ import {
   ROBOTO_REGULAR_BASE64,
 } from "./roboto-fonts";
 import { RESUME_WATERMARK_LOGO_BASE64 } from "./resume-watermark-logo";
+import { drawLockedLine, resumePreviewLock, type ResumePreviewLock } from "./resume-preview-lock";
+import { presentableSkills } from "./resume-skill-casing";
 
 export type ResumeCertification = {
   name: string;
@@ -192,7 +194,7 @@ export async function createResumeDocx(resume: GeneratedResume, theme: ResumeThe
     );
   };
   const addSkills = (label: string) => {
-    const skillsText = resume.skills.map(clean).filter(Boolean).join("  •  ");
+    const skillsText = presentableSkills(resume.skills).join("  •  ");
     if (!skillsText) return;
     children.push(
       sectionHeading(label, theme),
@@ -322,6 +324,7 @@ type PdfWriter = {
   y: number;
   theme: ResumeTheme;
   layout: PdfLayout;
+  lock?: ResumePreviewLock;
 };
 
 const PDF_WIDTH = 612;
@@ -541,7 +544,7 @@ function resumeHeight(writer: PdfWriter, resume: GeneratedResume): number {
   height += sectionHeight(writer.layout)
     + textHeight(
       writer,
-      resume.skills.map(clean).filter(Boolean).join("  •  "),
+      presentableSkills(resume.skills).join("  •  "),
       writer.regular,
       writer.layout.bodySize,
       0,
@@ -574,7 +577,7 @@ function onePageCapacity(layout: PdfLayout): number {
 function writeLines(
   writer: PdfWriter,
   text: string,
-  options: { font?: PDFFont; size?: number; indent?: number; lineHeight?: number; after?: number; color?: ReturnType<typeof rgb> } = {},
+  options: { font?: PDFFont; size?: number; indent?: number; lineHeight?: number; after?: number; color?: ReturnType<typeof rgb>; locked?: boolean } = {},
 ): void {
   const font = options.font ?? writer.regular;
   const size = options.size ?? 10.5;
@@ -584,13 +587,17 @@ function writeLines(
   const lines = wrapText(text, font, size, PDF_WIDTH - writer.layout.margin * 2 - indent);
   ensureSpace(writer, Math.max(1, lines.length) * lineHeight + after);
   for (const line of lines) {
-    writer.page.drawText(line, {
-      x: writer.layout.margin + indent,
-      y: writer.y - size,
-      size,
-      font,
-      color: options.color ?? rgb(0.07, 0.07, 0.07),
-    });
+    if (options.locked) {
+      drawLockedLine(writer.page, line, { x: writer.layout.margin + indent, baseline: writer.y - size, font, size });
+    } else {
+      writer.page.drawText(line, {
+        x: writer.layout.margin + indent,
+        y: writer.y - size,
+        size,
+        font,
+        color: options.color ?? rgb(0.07, 0.07, 0.07),
+      });
+    }
     writer.y -= lineHeight;
   }
   writer.y -= after;
@@ -641,10 +648,10 @@ function writeSection(writer: PdfWriter, title: string, firstContentHeight = 0):
   writer.y -= writer.layout.sectionLineGap;
 }
 
-function writeBullet(writer: PdfWriter, text: string): void {
+function writeBullet(writer: PdfWriter, text: string, locked = false): void {
   ensureSpace(writer, bulletHeight(writer, text));
   writer.page.drawText("•", { x: writer.layout.margin + 7, y: writer.y - writer.layout.bulletSize, size: writer.layout.bulletSize, font: writer.regular, color: themeBulletColor(writer.theme) });
-  writeLines(writer, text, { indent: 20, size: writer.layout.bulletSize, lineHeight: writer.layout.bulletLineHeight, after: writer.layout.bulletAfter });
+  writeLines(writer, text, { indent: 20, size: writer.layout.bulletSize, lineHeight: writer.layout.bulletLineHeight, after: writer.layout.bulletAfter, locked });
 }
 
 function wrapSegments(
@@ -722,19 +729,19 @@ function writeJobHeading(writer: PdfWriter, job: ResumeExperience, continued = f
 
 // Reserve room for the heading, employer line, and first bullet so a heading is
 // never orphaned; later bullets flow onto the next page under a "(continued)" heading.
-function writeJob(writer: PdfWriter, job: ResumeExperience): void {
+function writeJob(writer: PdfWriter, job: ResumeExperience, jobIndex: number): void {
   const firstBulletHeight = job.bullets.length ? bulletHeight(writer, job.bullets[0]) : 0;
   ensureSpace(writer, jobHeadingHeight(writer, job) + firstBulletHeight);
 
   writeJobHeading(writer, job);
-  for (const item of job.bullets) {
+  job.bullets.forEach((item, bulletIndex) => {
     const height = bulletHeight(writer, item);
     if (writer.y - height < writer.layout.margin) {
       addPage(writer);
       writeJobHeading(writer, job, true);
     }
-    writeBullet(writer, item);
-  }
+    writeBullet(writer, item, writer.lock?.bulletLocked(jobIndex, bulletIndex) ?? false);
+  });
   writer.y -= writer.layout.jobAfter;
 }
 
@@ -752,6 +759,8 @@ export async function createResumePdf(resume: GeneratedResume, watermarked = fal
     y: PDF_HEIGHT - baseLayout.margin,
     theme,
     layout: baseLayout,
+    // Only the unpaid watermarked preview locks content (resume-preview-lock.ts).
+    lock: watermarked ? resumePreviewLock(resume.experience) : undefined,
   };
 
   const standardHeight = resumeHeight(writer, resume);
@@ -788,7 +797,7 @@ export async function createResumePdf(resume: GeneratedResume, watermarked = fal
     writeLines(writer, resume.summary, { size: writer.layout.bodySize, lineHeight: writer.layout.bodyLineHeight, after: writer.layout.bodyAfter });
   };
   const addSkills = (label: string) => {
-    const skillsText = resume.skills.map(clean).filter(Boolean).join("  •  ");
+    const skillsText = presentableSkills(resume.skills).join("  •  ");
     if (!skillsText) return;
     const height = textHeight(writer, skillsText, writer.regular, writer.layout.bodySize, 0, writer.layout.bodyLineHeight, writer.layout.bodyAfter);
     writeSection(writer, label, height);
@@ -804,7 +813,7 @@ export async function createResumePdf(resume: GeneratedResume, watermarked = fal
     const firstJob = resume.experience[0];
     const firstJobIntro = jobHeadingHeight(writer, firstJob) + (firstJob.bullets.length ? bulletHeight(writer, firstJob.bullets[0]) : 0);
     writeSection(writer, generationTrack === "lead" ? "PROFESSIONAL EXPERIENCE" : "WORK EXPERIENCE", firstJobIntro);
-    for (const job of resume.experience) writeJob(writer, job);
+    resume.experience.forEach((job, jobIndex) => writeJob(writer, job, jobIndex));
   };
   const addEducation = () => {
     if (!resume.education.length) return;
@@ -818,7 +827,7 @@ export async function createResumePdf(resume: GeneratedResume, watermarked = fal
   const addAdditional = (label: string) => {
     if (!resume.additionalInformation.length) return;
     writeSection(writer, label, bulletHeight(writer, resume.additionalInformation[0]));
-    for (const item of resume.additionalInformation) writeBullet(writer, item);
+    for (const item of resume.additionalInformation) writeBullet(writer, item, writer.lock?.additionalLocked ?? false);
   };
 
   if (theme === "navy") {

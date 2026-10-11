@@ -16,6 +16,7 @@ import {
   ROBOTO_REGULAR_BASE64,
 } from "./roboto-fonts";
 import type { ResumeTheme } from "./resume-documents";
+import { drawLockedLine, letterParagraphLocked } from "./resume-preview-lock";
 
 export type GeneratedCoverLetter = {
   basics: {
@@ -177,7 +178,7 @@ function ensureSpace(writer: PdfWriter, height: number): void {
 function writeLines(
   writer: PdfWriter,
   text: string,
-  options: { font?: PDFFont; size?: number; lineHeight?: number; after?: number; color?: ReturnType<typeof rgb> } = {},
+  options: { font?: PDFFont; size?: number; lineHeight?: number; after?: number; color?: ReturnType<typeof rgb>; locked?: boolean } = {},
 ): void {
   const font = options.font ?? writer.regular;
   const size = options.size ?? 10.8;
@@ -186,13 +187,17 @@ function writeLines(
   const lines = wrapText(text, font, size, PDF_WIDTH - PDF_MARGIN * 2);
   ensureSpace(writer, Math.max(1, lines.length) * lineHeight + after);
   for (const line of lines) {
-    writer.page.drawText(line, {
-      x: PDF_MARGIN,
-      y: writer.y - size,
-      size,
-      font,
-      color: options.color ?? rgb(0.07, 0.07, 0.07),
-    });
+    if (options.locked) {
+      drawLockedLine(writer.page, line, { x: PDF_MARGIN, baseline: writer.y - size, font, size });
+    } else {
+      writer.page.drawText(line, {
+        x: PDF_MARGIN,
+        y: writer.y - size,
+        size,
+        font,
+        color: options.color ?? rgb(0.07, 0.07, 0.07),
+      });
+    }
     writer.y -= lineHeight;
   }
   writer.y -= after;
@@ -279,9 +284,10 @@ export async function createCoverLetterPdf(
     after: 14,
   });
   writeLines(writer, letter.salutation, { after: 10 });
-  for (const paragraph of letter.paragraphs) {
-    writeLines(writer, paragraph, { lineHeight: 14.6, after: 11 });
-  }
+  // The unpaid preview shows the opening paragraph; the rest unlock with the package.
+  letter.paragraphs.forEach((paragraph, index) => {
+    writeLines(writer, paragraph, { lineHeight: 14.6, after: 11, locked: watermarked && letterParagraphLocked(index) });
+  });
   writer.y -= 4;
   writeLines(writer, letter.closing, { after: 8 });
   writeLines(writer, letter.basics.fullName, { font: writer.bold, after: 0 });
