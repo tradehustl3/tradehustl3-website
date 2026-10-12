@@ -160,7 +160,7 @@ const faqItems = [
   {
     question: "What does the TRADE HUSTL3 Resume Builder cost?",
     answer:
-      "You can complete the intake and review a protected preview without a credit card. A one-time $9.99 payment unlocks the resume and matching cover letter as PDF and editable DOCX files, with up to three corrections within seven days. There is no subscription.",
+      "You can complete the intake and review a protected preview without a credit card. A one-time $9.99 payment unlocks the resume and matching cover letter as PDF and editable DOCX files, with up to three corrections. There is no subscription.",
   },
 ];
 
@@ -376,7 +376,7 @@ export default function SkilledTradesResumeExamplesPage() {
       </section>
 
       <footer className="rb-footer">
-        <strong>TRADE HUSTL<span>3</span></strong><p>Built by Hustle. Backed by Trades.</p>
+        <strong>TRADE HUSTL<span>3</span></strong><p>BUILT BY HUSTL3. BACKED BY TRADE.</p>
         <div className="rb-footer-links"><Link href="/#resume-start">Resume Builder</Link><Link href="/resume-examples">Resume Examples</Link><a href="/top-10-trades">Top 10 Trades</a>
           <a href="/privacy">Privacy</a><a href="/terms">Terms</a><a href="/contact">Support</a></div>
       </footer>

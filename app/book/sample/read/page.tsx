@@ -210,7 +210,7 @@ export default function BookSampleReaderPage() {
 
       <footer className={styles.footer}>
         <Link href="/">TRADE HUSTL<span>3</span> LLC</Link>
-        <p>Built by Hustle, Backed by Trades.</p>
+        <p>BUILT BY HUSTL3. BACKED BY TRADE.</p>
         <nav aria-label="Footer links">
           <Link href="/privacy">Privacy</Link>
           <Link href="/terms">Terms</Link>

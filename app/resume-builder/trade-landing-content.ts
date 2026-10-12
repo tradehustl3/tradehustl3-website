@@ -162,7 +162,7 @@ const HOW_IT_WORKS = (tradeLabel: string, intakeTrade: string, botFocus: string)
   {
     title: "Unlock for $9.99 one-time",
     body:
-      "Remove the watermark and download a clean PDF plus an editable DOCX. Up to 3 corrections within 7 days. "
+      "Remove the watermark and download a clean PDF plus an editable DOCX. Up to 3 corrections. "
       + "No subscription, no auto-renewal.",
   },
 ];
@@ -208,7 +208,7 @@ export const HVAC_LANDING: TradeLandingContent = {
     proofStats: [
       { value: "$9.99", label: "One-time · no subscription" },
       { value: "EPA 608", label: "Certifications up top" },
-      { value: "3", label: "Corrections within 7 days" },
+      { value: "3", label: "Corrections included" },
     ],
   },
 
@@ -221,7 +221,7 @@ export const HVAC_LANDING: TradeLandingContent = {
       "One completed HVAC resume · watermarked preview before payment",
       "EPA 608 and certifications placed where ATS looks first",
       "ATS-friendly structure across the HVAC & Refrigeration track",
-      "Up to 3 corrections within 7 days",
+      "Up to 3 corrections",
       "Clean PDF + editable DOCX after payment",
       "No subscription · no auto-renewal",
     ],
@@ -253,7 +253,7 @@ export const HVAC_LANDING: TradeLandingContent = {
       {
         label: "$9.99 once",
         items: [
-          "Preview the watermarked resume before you pay. No subscription. Up to 3 corrections within 7 days, then a clean PDF and editable DOCX.",
+          "Preview the watermarked resume before you pay. No subscription. Up to 3 corrections, then a clean PDF and editable DOCX.",
         ],
       },
     ],
@@ -427,7 +427,7 @@ export const HVAC_LANDING: TradeLandingContent = {
     },
     {
       title: "Unlock for $9.99 one-time",
-      body: "Remove the watermark and download a clean PDF plus an editable DOCX. Up to 3 corrections within 7 days. No subscription, no auto-renewal.",
+      body: "Remove the watermark and download a clean PDF plus an editable DOCX. Up to 3 corrections. No subscription, no auto-renewal.",
     },
   ],
 
@@ -482,7 +482,7 @@ export const HVAC_LANDING: TradeLandingContent = {
       {
         question: "What do I get, and what does it cost?",
         answer:
-          "A one-time $9.99 payment unlocks a clean PDF and an editable DOCX. The preview is watermarked and free, and you review it before you pay. You get up to 3 corrections within 7 days. There is no subscription and no auto-renewal.",
+          "A one-time $9.99 payment unlocks a clean PDF and an editable DOCX. The preview is watermarked and free, and you review it before you pay. You get up to 3 corrections. There is no subscription and no auto-renewal.",
       },
     ],
   },
@@ -536,7 +536,7 @@ export const FACILITIES_MAINTENANCE_LANDING: TradeLandingContent = {
     proofStats: [
       { value: "$9.99", label: "One-time · no subscription" },
       { value: "Multi-trade", label: "HVAC · electrical · plumbing" },
-      { value: "3", label: "Corrections within 7 days" },
+      { value: "3", label: "Corrections included" },
     ],
   },
 
@@ -549,7 +549,7 @@ export const FACILITIES_MAINTENANCE_LANDING: TradeLandingContent = {
       "One completed maintenance resume · watermarked preview before payment",
       "Certifications, licenses, and CMMS experience placed where ATS looks first",
       "ATS-friendly structure across the Facilities Maintenance track",
-      "Up to 3 corrections within 7 days",
+      "Up to 3 corrections",
       "Clean PDF + editable DOCX after payment",
       "No subscription · no auto-renewal",
     ],
@@ -581,7 +581,7 @@ export const FACILITIES_MAINTENANCE_LANDING: TradeLandingContent = {
       {
         label: "$9.99 once",
         items: [
-          "Preview the watermarked resume before you pay. No subscription. Up to 3 corrections within 7 days, then a clean PDF and editable DOCX.",
+          "Preview the watermarked resume before you pay. No subscription. Up to 3 corrections, then a clean PDF and editable DOCX.",
         ],
       },
     ],
@@ -790,7 +790,7 @@ export const FACILITIES_MAINTENANCE_LANDING: TradeLandingContent = {
       {
         question: "What do I get, and what does it cost?",
         answer:
-          "A one-time $9.99 payment unlocks a clean PDF and an editable DOCX. The preview is watermarked and free, and you review it before you pay. You get up to 3 corrections within 7 days. There is no subscription and no auto-renewal.",
+          "A one-time $9.99 payment unlocks a clean PDF and an editable DOCX. The preview is watermarked and free, and you review it before you pay. You get up to 3 corrections. There is no subscription and no auto-renewal.",
       },
     ],
   },
@@ -844,7 +844,7 @@ export const ELECTRICIAN_LANDING: TradeLandingContent = {
     proofStats: [
       { value: "$9.99", label: "One-time · no subscription" },
       { value: "Any level", label: "Apprentice to journeyman" },
-      { value: "3", label: "Corrections within 7 days" },
+      { value: "3", label: "Corrections included" },
     ],
   },
 
@@ -857,7 +857,7 @@ export const ELECTRICIAN_LANDING: TradeLandingContent = {
       "One completed electrician resume · watermarked preview before payment",
       "Licenses, apprenticeship hours, and certs placed where ATS looks first",
       "ATS-friendly structure across the Electrical track",
-      "Up to 3 corrections within 7 days",
+      "Up to 3 corrections",
       "Clean PDF + editable DOCX after payment",
       "No subscription · no auto-renewal",
     ],
@@ -889,7 +889,7 @@ export const ELECTRICIAN_LANDING: TradeLandingContent = {
       {
         label: "$9.99 once",
         items: [
-          "Preview the watermarked resume before you pay. No subscription. Up to 3 corrections within 7 days, then a clean PDF and editable DOCX.",
+          "Preview the watermarked resume before you pay. No subscription. Up to 3 corrections, then a clean PDF and editable DOCX.",
         ],
       },
     ],
@@ -1103,7 +1103,7 @@ export const ELECTRICIAN_LANDING: TradeLandingContent = {
       {
         question: "What do I get, and what does it cost?",
         answer:
-          "A one-time $9.99 payment unlocks a clean PDF and an editable DOCX. The preview is watermarked and free, and you review it before you pay. You get up to 3 corrections within 7 days. There is no subscription and no auto-renewal.",
+          "A one-time $9.99 payment unlocks a clean PDF and an editable DOCX. The preview is watermarked and free, and you review it before you pay. You get up to 3 corrections. There is no subscription and no auto-renewal.",
       },
     ],
   },
@@ -1157,7 +1157,7 @@ export const PLUMBING_LANDING: TradeLandingContent = {
     proofStats: [
       { value: "$9.99", label: "One-time · no subscription" },
       { value: "Any level", label: "Apprentice to master" },
-      { value: "3", label: "Corrections within 7 days" },
+      { value: "3", label: "Corrections included" },
     ],
   },
 
@@ -1170,7 +1170,7 @@ export const PLUMBING_LANDING: TradeLandingContent = {
       "One completed plumber resume · watermarked preview before payment",
       "Licenses, apprenticeship hours, and certs placed where ATS looks first",
       "ATS-friendly structure across the Plumbing track",
-      "Up to 3 corrections within 7 days",
+      "Up to 3 corrections",
       "Clean PDF + editable DOCX after payment",
       "No subscription · no auto-renewal",
     ],
@@ -1202,7 +1202,7 @@ export const PLUMBING_LANDING: TradeLandingContent = {
       {
         label: "$9.99 once",
         items: [
-          "Preview the watermarked resume before you pay. No subscription. Up to 3 corrections within 7 days, then a clean PDF and editable DOCX.",
+          "Preview the watermarked resume before you pay. No subscription. Up to 3 corrections, then a clean PDF and editable DOCX.",
         ],
       },
     ],
@@ -1416,7 +1416,7 @@ export const PLUMBING_LANDING: TradeLandingContent = {
       {
         question: "What do I get, and what does it cost?",
         answer:
-          "A one-time $9.99 payment unlocks a clean PDF and an editable DOCX. The preview is watermarked and free, and you review it before you pay. You get up to 3 corrections within 7 days. There is no subscription and no auto-renewal.",
+          "A one-time $9.99 payment unlocks a clean PDF and an editable DOCX. The preview is watermarked and free, and you review it before you pay. You get up to 3 corrections. There is no subscription and no auto-renewal.",
       },
     ],
   },
@@ -1471,7 +1471,7 @@ export const WELDING_FABRICATION_LANDING: TradeLandingContent = {
     proofStats: [
       { value: "$9.99", label: "One-time · no subscription" },
       { value: "All processes", label: "MIG · TIG · stick · flux-core" },
-      { value: "3", label: "Corrections within 7 days" },
+      { value: "3", label: "Corrections included" },
     ],
   },
 
@@ -1484,7 +1484,7 @@ export const WELDING_FABRICATION_LANDING: TradeLandingContent = {
       "One completed welder resume · watermarked preview before payment",
       "AWS and code qualifications placed where ATS looks first",
       "ATS-friendly structure across the Welding & Fabrication track",
-      "Up to 3 corrections within 7 days",
+      "Up to 3 corrections",
       "Clean PDF + editable DOCX after payment",
       "No subscription · no auto-renewal",
     ],
@@ -1516,7 +1516,7 @@ export const WELDING_FABRICATION_LANDING: TradeLandingContent = {
       {
         label: "$9.99 once",
         items: [
-          "Preview the watermarked resume before you pay. No subscription. Up to 3 corrections within 7 days, then a clean PDF and editable DOCX.",
+          "Preview the watermarked resume before you pay. No subscription. Up to 3 corrections, then a clean PDF and editable DOCX.",
         ],
       },
     ],
@@ -1727,7 +1727,7 @@ export const WELDING_FABRICATION_LANDING: TradeLandingContent = {
       {
         question: "What do I get, and what does it cost?",
         answer:
-          "A one-time $9.99 payment unlocks a clean PDF and an editable DOCX. The preview is watermarked and free, and you review it before you pay. You get up to 3 corrections within 7 days. There is no subscription and no auto-renewal.",
+          "A one-time $9.99 payment unlocks a clean PDF and an editable DOCX. The preview is watermarked and free, and you review it before you pay. You get up to 3 corrections. There is no subscription and no auto-renewal.",
       },
     ],
   },
@@ -1781,7 +1781,7 @@ export const CONSTRUCTION_CARPENTRY_LANDING: TradeLandingContent = {
     proofStats: [
       { value: "$9.99", label: "One-time · no subscription" },
       { value: "Rough → finish", label: "Framing to trim" },
-      { value: "3", label: "Corrections within 7 days" },
+      { value: "3", label: "Corrections included" },
     ],
   },
 
@@ -1794,7 +1794,7 @@ export const CONSTRUCTION_CARPENTRY_LANDING: TradeLandingContent = {
       "One completed construction resume · watermarked preview before payment",
       "OSHA cards and equipment certs placed where ATS looks first",
       "ATS-friendly structure across the Construction & Carpentry track",
-      "Up to 3 corrections within 7 days",
+      "Up to 3 corrections",
       "Clean PDF + editable DOCX after payment",
       "No subscription · no auto-renewal",
     ],
@@ -1826,7 +1826,7 @@ export const CONSTRUCTION_CARPENTRY_LANDING: TradeLandingContent = {
       {
         label: "$9.99 once",
         items: [
-          "Preview the watermarked resume before you pay. No subscription. Up to 3 corrections within 7 days, then a clean PDF and editable DOCX.",
+          "Preview the watermarked resume before you pay. No subscription. Up to 3 corrections, then a clean PDF and editable DOCX.",
         ],
       },
     ],
@@ -2038,7 +2038,7 @@ export const CONSTRUCTION_CARPENTRY_LANDING: TradeLandingContent = {
       {
         question: "What do I get, and what does it cost?",
         answer:
-          "A one-time $9.99 payment unlocks a clean PDF and an editable DOCX. The preview is watermarked and free, and you review it before you pay. You get up to 3 corrections within 7 days. There is no subscription and no auto-renewal.",
+          "A one-time $9.99 payment unlocks a clean PDF and an editable DOCX. The preview is watermarked and free, and you review it before you pay. You get up to 3 corrections. There is no subscription and no auto-renewal.",
       },
     ],
   },
@@ -2092,7 +2092,7 @@ export const GENERAL_LABOR_LANDING: TradeLandingContent = {
     proofStats: [
       { value: "$9.99", label: "One-time · no subscription" },
       { value: "Cross-trade", label: "Labor + light maintenance" },
-      { value: "3", label: "Corrections within 7 days" },
+      { value: "3", label: "Corrections included" },
     ],
   },
 
@@ -2105,7 +2105,7 @@ export const GENERAL_LABOR_LANDING: TradeLandingContent = {
       "One completed resume · watermarked preview before payment",
       "Certifications, safety training, and equipment cards placed where ATS looks first",
       "ATS-friendly structure across the General Labor & Maintenance track",
-      "Up to 3 corrections within 7 days",
+      "Up to 3 corrections",
       "Clean PDF + editable DOCX after payment",
       "No subscription · no auto-renewal",
     ],
@@ -2137,7 +2137,7 @@ export const GENERAL_LABOR_LANDING: TradeLandingContent = {
       {
         label: "$9.99 once",
         items: [
-          "Preview the watermarked resume before you pay. No subscription. Up to 3 corrections within 7 days, then a clean PDF and editable DOCX.",
+          "Preview the watermarked resume before you pay. No subscription. Up to 3 corrections, then a clean PDF and editable DOCX.",
         ],
       },
     ],
@@ -2350,7 +2350,7 @@ export const GENERAL_LABOR_LANDING: TradeLandingContent = {
       {
         question: "What do I get, and what does it cost?",
         answer:
-          "A one-time $9.99 payment unlocks a clean PDF and an editable DOCX. The preview is watermarked and free, and you review it before you pay. You get up to 3 corrections within 7 days. There is no subscription and no auto-renewal.",
+          "A one-time $9.99 payment unlocks a clean PDF and an editable DOCX. The preview is watermarked and free, and you review it before you pay. You get up to 3 corrections. There is no subscription and no auto-renewal.",
       },
     ],
   },

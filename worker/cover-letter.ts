@@ -362,7 +362,6 @@ async function callAnthropicCoverLetter(
     body: JSON.stringify({
       model,
       max_tokens: 1_800,
-      temperature: 0.2,
       system: coverLetterSystemPrompt(),
       messages: [{ role: "user", content: prompt }],
     }),
