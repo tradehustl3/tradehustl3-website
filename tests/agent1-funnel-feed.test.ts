@@ -600,6 +600,28 @@ test("mixed ISO and SQLite timestamp formats produce correct totals", async (t) 
   assert.equal(payload.counts.checkoutStarted, 1);
 });
 
+test("anchored reporting windows align sources and exclude the end boundary", async (t) => {
+  t.mock.timers.enable({ apis: ["Date"], now: Date.parse(NOW) });
+  const { DB, sqlite } = sqliteD1();
+  const start = "2026-09-21T04:00:00.000Z", end = "2026-09-28T04:00:00.000Z";
+  insertStart(sqlite, "anchor-start", start);
+  insertStart(sqlite, "anchor-end", end);
+  insertPaidOrder(sqlite, "anchor-paid-inside", "2026-09-27 12:00:00");
+  insertPaidOrder(sqlite, "anchor-paid-end", "2026-09-28 04:00:00");
+  const query = new URLSearchParams({window:"7d",start,end});
+  const response = await handleResumeBuilderRoute(new Request(
+    `https://tradehustl3.com/api/resume-builder/internal/agent1/funnel-snapshot?${query}`,
+    {headers:{Authorization:`Bearer ${AGENT1_SECRET}`}}), {DB,AGENT1_FUNNEL_SECRET:AGENT1_SECRET});
+  assert.ok(response);
+  assert.equal(response.status,200);
+  const payload = await response.json() as SnapshotPayload & {windowEndExclusive:boolean};
+  assert.equal(payload.counts.starts,1);
+  assert.equal(payload.counts.verifiedPurchases,1);
+  assert.equal(payload.windowEnd,end);
+  assert.equal(payload.windowEndExclusive,true);
+  assert.equal(payload.generatedAt,NOW);
+});
+
 test("paid_at uses the identical bounded window as funnel events", async (t) => {
   const { DB, sqlite } = sqliteD1();
   // Included: lower boundary (both formats), inside, upper boundary.
