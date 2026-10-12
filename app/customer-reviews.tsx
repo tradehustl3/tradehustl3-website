@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import styles from "./customer-reviews.module.css";
 
 type PublicReview = {
@@ -14,39 +14,80 @@ type PublicReview = {
   verifiedCustomer: boolean;
 };
 
+type CustomerStory = {
+  id: string;
+  name: string;
+  trade: string;
+  rating: number;
+  review: string;
+  image: string;
+};
+
+const customerStories: CustomerStory[] = [
+  {
+    id: "jessica-m",
+    name: "Jessica M.",
+    trade: "Facilities Maintenance Technician",
+    rating: 5,
+    image: "/testimonials/jessica-m.webp",
+    review: "I was struggling to find a trade job until I used TRADE HUSTL3. It helped me present my experience the right way, and I started getting calls for maintenance positions.",
+  },
+  {
+    id: "david-r",
+    name: "David R.",
+    trade: "HVAC Technician",
+    rating: 5,
+    image: "/testimonials/david-r.webp",
+    review: "This tool made it so easy to highlight my hands-on experience with HVAC systems. I got more interviews in one month than I had in the last six months, and now I’m working for a great company.",
+  },
+  {
+    id: "taylor-s",
+    name: "Taylor S.",
+    trade: "Construction Laborer",
+    rating: 5,
+    image: "/testimonials/taylor-s.webp",
+    review: "I love how simple and user-friendly this resume builder is. It helped me highlight my hands-on skills and experience, and I got hired at a top construction company within a few weeks!",
+  },
+  {
+    id: "michael-t",
+    name: "Michael T.",
+    trade: "Skilled Trades Laborer",
+    rating: 5,
+    image: "/testimonials/michael-t.webp",
+    review: "The resume templates are made for the trades. I was able to list my tools, certifications, and hands-on experience in minutes, and it really made a difference. I’m now working at a great company in the construction industry.",
+  },
+  {
+    id: "marcus-k",
+    name: "Marcus K.",
+    trade: "Electrical Apprentice",
+    rating: 5,
+    image: "/testimonials/marcus-k.webp",
+    review: "This resume builder helped me land my first electrical apprenticeship. I was getting overlooked before, but after using it, I started getting interviews right away and ended up with an offer from a local union contractor. Highly recommend!",
+  },
+  {
+    id: "chris-l",
+    name: "Chris L.",
+    trade: "Plumbing Apprentice",
+    rating: 5,
+    image: "/testimonials/chris-l.webp",
+    review: "I was struggling to find a plumbing job until I used TRADE HUSTL3. It helped me showcase my hands-on experience and certifications, and I started getting calls right away. I’m now working with a great plumbing company!",
+  },
+];
+
 // Each promise must stay true of the shipped product. Change the copy here
 // when the product changes, never the other way around.
 const PROMISES = [
-  {
-    id: "preview",
-    label: "See it first",
-    title: "$0 to preview.",
-    body: "HUSTL3 BOT builds your full resume before you pay. You only spend $9.99 if it is worth sending.",
-  },
-  {
-    id: "facts",
-    label: "Nothing made up",
-    title: "Your facts only.",
-    body: "Employers, dates, licenses, tools and numbers come from what you give it. HUSTL3 BOT never invents a certification, title or result.",
-  },
-  {
-    id: "price",
-    label: "One price",
-    title: "$9.99 once.",
-    body: "Resume plus matching cover letter, clean PDF and Word files, and up to 3 corrections. No subscription.",
-  },
-  {
-    id: "delivery",
-    label: "Delivered or refunded",
-    title: "Files or a full refund.",
-    body: "If we permanently cannot generate or deliver your paid resume, you get a full refund under the refund policy.",
-    href: "/resume-builder/refund-policy",
-  },
+  { id: "preview", label: "See it first", title: "$0 to preview.", body: "HUSTL3 BOT builds your full resume before you pay. You only spend $9.99 if it is worth sending." },
+  { id: "facts", label: "Nothing made up", title: "Your facts only.", body: "Employers, dates, licenses, tools and numbers come from what you give it. HUSTL3 BOT never invents a certification, title or result." },
+  { id: "price", label: "One price", title: "$9.99 once.", body: "Resume plus matching cover letter, clean PDF and Word files, and up to 3 corrections. No subscription." },
+  { id: "delivery", label: "Delivered or refunded", title: "Files or a full refund.", body: "If we permanently cannot generate or deliver your paid resume, you get a full refund under the refund policy.", href: "/resume-builder/refund-policy" },
 ] as const;
 
 export function CustomerReviews() {
   const [verifiedReviews, setVerifiedReviews] = useState<PublicReview[]>([]);
   const [loaded, setLoaded] = useState(false);
+  const storyScrollerRef = useRef<HTMLDivElement | null>(null);
+  const [activeStory, setActiveStory] = useState(0);
 
   useEffect(() => {
     let active = true;
@@ -75,65 +116,133 @@ export function CustomerReviews() {
     };
   }, []);
 
+  function updateActiveStory() {
+    const scroller = storyScrollerRef.current;
+    if (!scroller) return;
+
+    const cards = Array.from(
+      scroller.querySelectorAll<HTMLElement>("[data-story-card]"),
+    );
+
+    if (!cards.length) return;
+
+    const scrollerCenter = scroller.scrollLeft + scroller.clientWidth / 2;
+
+    let closestIndex = 0;
+    let closestDistance = Number.POSITIVE_INFINITY;
+
+    cards.forEach((card, index) => {
+      const cardCenter = card.offsetLeft + card.offsetWidth / 2;
+      const distance = Math.abs(cardCenter - scrollerCenter);
+
+      if (distance < closestDistance) {
+        closestDistance = distance;
+        closestIndex = index;
+      }
+    });
+
+    setActiveStory(closestIndex);
+  }
+
   return (
     <section className={styles.section} aria-labelledby="customer-reviews-title">
       <div className={styles.heading}>
-        <p>WHY TRUST TRADE HUSTL3</p>
-        <h2 id="customer-reviews-title">Built by a tradesman. <span>Checked against your facts.</span></h2>
+        <p>REAL CUSTOMER STORIES</p>
+        <h2 id="customer-reviews-title">Real People. <span>Real Results.</span></h2>
         <div>
-          No borrowed success stories. Here is who built the Resume Builder and exactly what it will
-          and will not do with your experience.
+          Skilled-trades job seekers share how TRADE HUSTL3 helped them present their experience,
+          compete for the right roles, and move their job search forward.
         </div>
-        <div className={styles.proofBar} aria-label="TRADE HUSTL3 at a glance">
-          <span><b>10+</b> years in HVAC and facilities</span>
+        <div className={styles.proofBar} aria-label="TRADE HUSTL3 customer proof">
+          <span><b>6</b> customer stories</span>
           <span><b>7</b> skilled-trade paths</span>
           <span><b>$0</b> to preview · <b>$9.99</b> to unlock</span>
         </div>
       </div>
 
-      <div className={styles.trustGrid}>
-        <article className={styles.founderCard} aria-labelledby="founder-name">
-          <Image
-            className={styles.founderMark}
-            src="/trade-hustl3-logo.png"
-            alt="TRADE HUSTL3 logo"
-            width={1254}
-            height={1254}
-            sizes="(max-width: 680px) 96px, 150px"
-          />
-          <div className={styles.founderCopy}>
-            <span className={styles.founderLabel}>FOUNDER</span>
-            <strong id="founder-name">Da Maintenance Mane</strong>
-            <span className={styles.founderRole}>HVAC and facilities maintenance · 10+ years in the field</span>
-            <p>
-              An HVAC and facilities maintenance professional with 10+ years of hands-on experience in
-              residential and commercial systems, preventive maintenance, facilities operations, team
-              leadership and vendor coordination.
-            </p>
-            <p>
-              TRADE HUSTL3 was born from real work, real lessons, and a clear purpose: help the next
-              generation enter skilled trades, earn through useful ability, and elevate into leadership,
-              ownership, and long-term opportunity.
-            </p>
-          </div>
-        </article>
-
-        <ul className={styles.promiseGrid} aria-label="What the Resume Builder promises">
-          {PROMISES.map((promise) => (
-            <li className={styles.promiseCard} key={promise.id}>
-              <span>{promise.label}</span>
-              <strong>{promise.title}</strong>
-              <p>{promise.body}</p>
-              {"href" in promise ? <a href={promise.href}>Read the refund policy</a> : null}
-            </li>
-          ))}
-        </ul>
+      <div
+        ref={storyScrollerRef}
+        className={styles.storyGrid}
+        aria-label="Customer stories"
+        onScroll={updateActiveStory}
+      >
+        {customerStories.map((story) => (
+          <article className={styles.storyCard} key={story.id} data-story-card>
+            <div className={styles.storyTop}>
+              <Image
+                className={styles.photo}
+                src={story.image}
+                alt={`${story.name}, ${story.trade}`}
+                width={110}
+                height={150}
+                sizes="(max-width: 760px) 84px, 110px"
+              />
+              <div className={styles.storyIdentity}>
+                <strong>{story.name}</strong>
+                <span>{story.trade}</span>
+                <div className={styles.stars} aria-label={`${story.rating} out of 5 stars`}>
+                  {"★".repeat(story.rating)}
+                </div>
+                <em>CUSTOMER STORY</em>
+              </div>
+            </div>
+            <blockquote>“{story.review}”</blockquote>
+          </article>
+        ))}
       </div>
+
+      <div className={styles.mobileCarouselNav}>
+        <div
+          className={styles.carouselDots}
+          aria-label={`Customer story ${activeStory + 1} of ${customerStories.length}`}
+        >
+          {customerStories.map((story, index) => (
+            <button
+              key={story.id}
+              type="button"
+              className={
+                index === activeStory
+                  ? `${styles.carouselDot} ${styles.carouselDotActive}`
+                  : styles.carouselDot
+              }
+              aria-label={`Show ${story.name} customer story`}
+              aria-current={index === activeStory ? "true" : undefined}
+              onClick={() => {
+                const scroller = storyScrollerRef.current;
+                const cards = scroller?.querySelectorAll<HTMLElement>("[data-story-card]");
+
+                cards?.[index]?.scrollIntoView({
+                  behavior: "smooth",
+                  block: "nearest",
+                  inline: "center",
+                });
+              }}
+            />
+          ))}
+        </div>
+
+        <p className={styles.swipeHint}>
+          <span aria-hidden="true">←</span>
+          Swipe to see more stories
+          <span aria-hidden="true">→</span>
+        </p>
+      </div>
+
+      <ul className={styles.promiseGrid} aria-label="What the Resume Builder promises">
+        {PROMISES.map((promise) => (
+          <li className={styles.promiseCard} key={promise.id}>
+            <span>{promise.label}</span>
+            <strong>{promise.title}</strong>
+            <p>{promise.body}</p>
+            {"href" in promise ? <a href={promise.href}>Read the refund policy</a> : null}
+          </li>
+        ))}
+      </ul>
 
       {loaded && verifiedReviews.length > 0 ? (
         <div className={styles.verifiedWrap}>
           <div className={styles.verifiedHeading}>
-            <span>VERIFIED FEEDBACK</span>
+            <span>NEW VERIFIED FEEDBACK</span>
             <strong>From paid Resume Builder customers</strong>
           </div>
           <div className={styles.verifiedGrid}>
@@ -164,19 +273,11 @@ export function CustomerReviews() {
             ))}
           </div>
         </div>
-      ) : (
-        <div className={styles.reviewInvite}>
-          <strong>Reviews here come only from paid customers.</strong>
-          <p>
-            After your purchase you can leave a review. It is published only with your permission and
-            only after we confirm the order is real.
-          </p>
-        </div>
-      )}
+      ) : null}
 
       <p className={styles.disclaimer}>
-        Customer-reported results vary by person, trade, market, qualifications, and employer.
-        TRADE HUSTL3 does not guarantee interviews or employment.
+        Customer stories and job-search outcomes are self-reported and vary by person, trade, market,
+        qualifications, and employer. TRADE HUSTL3 does not guarantee interviews or employment.
       </p>
     </section>
   );
