@@ -4,37 +4,29 @@ import test from "node:test";
 
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 
-const TESTIMONIAL_NAMES = [
-  "Jessica M.",
-  "David R.",
-  "Taylor S.",
-  "Michael T.",
-  "Marcus K.",
-  "Chris L.",
-];
-
 function publicReviewsHandler(worker) {
   const start = worker.indexOf("async function getPublicCustomerReviews");
   assert.ok(start >= 0, "public review handler exists");
   return worker.slice(start, worker.indexOf("\n}\n", start));
 }
 
-test("homepage includes the approved customer stories and their portraits", () => {
+// 2026-10-11 audit: six "Customer story" cards had no matching customers in the
+// records. Homepage proof must come from the founder, product promises, or the
+// verified paid-review API only.
+test("homepage proof uses no unverified customer stories", () => {
   const reviews = read("app/customer-reviews.tsx");
-  assert.match(reviews, /const customerStories: CustomerStory\[\]/);
-  assert.match(reviews, /next\/image/);
-  for (const name of TESTIMONIAL_NAMES) {
-    assert.match(reviews, new RegExp(name.replace(".", "\\.")));
+  assert.doesNotMatch(reviews, /customerStories|CUSTOMER STORY|Real People\. <span>Real Results/);
+  for (const name of ["Jessica M.", "David R.", "Taylor S.", "Michael T.", "Marcus K.", "Chris L."]) {
+    assert.ok(!reviews.includes(name), `${name} removed`);
   }
-  for (const photo of ["jessica-m", "david-r", "taylor-s", "michael-t", "marcus-k", "chris-l"]) {
-    assert.match(reviews, new RegExp(`/testimonials/${photo}\\.webp`));
-    assert.equal(existsSync(new URL(`../public/testimonials/${photo}.webp`, import.meta.url)), true);
-  }
-  assert.match(reviews, /Real People\. <span>Real Results\.<\/span>/);
-  assert.match(reviews, /CUSTOMER STORY/);
+  assert.equal(existsSync(new URL("../public/testimonials", import.meta.url)), false);
+  assert.match(reviews, /Built by a tradesman\. <span>Checked against your facts\.<\/span>/);
+  assert.match(reviews, /src="\/zachary-ellis-author\.jpg"/);
+  assert.match(reviews, /Reviews here come only from paid customers\./);
+  assert.match(reviews, /href: "\/resume-builder\/refund-policy"/);
 });
 
-test("homepage combines customer stories with the verified paid-customer review API", () => {
+test("homepage shows verified paid-customer reviews from the review API", () => {
   const page = read("app/page.tsx");
   const reviews = read("app/customer-reviews.tsx");
   assert.equal(page.match(/<CustomerReviews \/>/g)?.length, 1);
@@ -43,7 +35,7 @@ test("homepage combines customer stories with the verified paid-customer review 
   assert.match(reviews, /verifiedReviews\.length > 0/);
   assert.match(reviews, /VERIFIED PAID CUSTOMER/);
   assert.match(reviews, /Customer-reported result/);
-  assert.match(reviews, /job-search outcomes are self-reported/i);
+  assert.match(reviews, /Customer-reported results vary/i);
   assert.match(reviews, /TRADE HUSTL3 does not guarantee interviews or employment/i);
 });
 
@@ -53,9 +45,6 @@ test("homepage customer proof avoids unsupported aggregate claims", () => {
     assert.doesNotMatch(source, /500\+/);
     assert.doesNotMatch(source, /tradespeople helped/i);
   }
-  const reviews = read("app/customer-reviews.tsx");
-  assert.match(reviews, /Real People\. <span>Real Results\.<\/span>/);
-  assert.equal((reviews.match(/id: "(jessica-m|david-r|taylor-s|michael-t|marcus-k|chris-l)"/g) ?? []).length, 6);
 });
 
 test("public review API requires approval, publication consent, and a paid order", () => {
