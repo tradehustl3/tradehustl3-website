@@ -67,7 +67,7 @@
   color:#fff;
   box-shadow:0 20px 60px rgba(7,26,43,.12);
 }
-.founderPhoto{width:150px;height:200px;object-fit:cover;object-position:center 15%;border-radius:16px;border:1px solid rgba(255,255,255,.18)}
+.founderMark{width:150px;height:150px;object-fit:contain}
 .founderCopy{display:grid;gap:6px;min-width:0}
 .founderLabel{color:#ff5a4f;font-size:.68rem;font-weight:950;letter-spacing:.16em}
 .founderCopy strong{font-size:1.3rem;line-height:1.15}
@@ -151,7 +151,7 @@
   .proofBar span{padding:8px 10px;font-size:.7rem}
   .trustGrid{width:auto;margin:0 18px;gap:14px}
   .founderCard{grid-template-columns:96px 1fr;padding:18px;gap:14px;border-radius:20px}
-  .founderPhoto{width:96px;height:128px}
+  .founderMark{width:96px;height:96px}
   .founderCopy p{font-size:.94rem}
   .promiseGrid{grid-template-columns:minmax(0,1fr);gap:12px}
   .promiseCard{padding:18px;border-radius:18px}

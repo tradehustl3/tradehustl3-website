@@ -21,7 +21,9 @@ test("homepage proof uses no unverified customer stories", () => {
   }
   assert.equal(existsSync(new URL("../public/testimonials", import.meta.url)), false);
   assert.match(reviews, /Built by a tradesman\. <span>Checked against your facts\.<\/span>/);
-  assert.match(reviews, /src="\/zachary-ellis-author\.jpg"/);
+  // The founder asked not to show his face on the homepage; the brand logo stands in.
+  assert.match(reviews, /src="\/trade-hustl3-logo\.png"/);
+  assert.doesNotMatch(reviews, /zachary-ellis/);
   assert.match(reviews, /Reviews here come only from paid customers\./);
   assert.match(reviews, /href: "\/resume-builder\/refund-policy"/);
 });

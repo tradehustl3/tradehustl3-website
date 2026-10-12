@@ -94,12 +94,12 @@ export function CustomerReviews() {
       <div className={styles.trustGrid}>
         <article className={styles.founderCard} aria-labelledby="founder-name">
           <Image
-            className={styles.founderPhoto}
-            src="/zachary-ellis-author.jpg"
-            alt="Da Maintenance Mane, founder of TRADE HUSTL3"
-            width={1086}
-            height={1449}
-            sizes="(max-width: 680px) 112px, 150px"
+            className={styles.founderMark}
+            src="/trade-hustl3-logo.png"
+            alt="TRADE HUSTL3 logo"
+            width={1254}
+            height={1254}
+            sizes="(max-width: 680px) 96px, 150px"
           />
           <div className={styles.founderCopy}>
             <span className={styles.founderLabel}>FOUNDER</span>
