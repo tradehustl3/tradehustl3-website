@@ -95,7 +95,8 @@ test("public brand identity and checkout reassurance stay consistent", () => {
   assert.match(layout, /"@type": "WebApplication"/);
   assert.match(layout, /price: "9\.99"/);
 
-  assert.match(book, /Built by Trades\. Backed by HUSTL3\./);
+  assert.match(book, /BUILT BY HUSTL3\. BACKED BY TRADE\./);
+  assert.doesNotMatch(book, /href="\/#join"/, "the homepage has no #join section");
   assert.match(book, /Secure checkout powered by Stripe/i);
 
   assert.match(tradeLanding, /Secure checkout powered by Stripe/i);

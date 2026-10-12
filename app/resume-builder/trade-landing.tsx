@@ -268,14 +268,14 @@ export function TradeLandingPage({ content }: { content: TradeLandingContent }) 
           <p><strong>$9.99</strong><span>Unlock once · no subscription</span></p>
           <BuildCta content={content} location={content.ctaLocations.closing} label={content.closingCta.ctaLabel}
             className="rb-button rb-button-primary rb-button-full" />
-          <small>Resume, matching cover letter, PDF + DOCX downloads, and up to 3 corrections within 7 days.</small>
+          <small>Resume, matching cover letter, PDF + DOCX downloads, and up to 3 corrections.</small>
           <small>Secure checkout powered by Stripe · Need help? support@tradehustl3.com</small>
         </div>
       </section>
 
       <SiblingGuides content={content} />
       <footer className="rb-footer">
-        <strong>TRADE HUSTL<span>3</span></strong><p>Built by Hustle. Backed by Trades.</p>
+        <strong>TRADE HUSTL<span>3</span></strong><p>BUILT BY HUSTL3. BACKED BY TRADE.</p>
         <div className="rb-footer-links"><a href={HUB_HREF}>Resume Builder</a><a href="/top-10-trades">Top 10 Trades</a>
           <a href="/privacy">Privacy</a><a href="/terms">Terms</a>
           <a href="/resume-builder/refund-policy">Refunds</a><a href="/contact">Support</a></div>
