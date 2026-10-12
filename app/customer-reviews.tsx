@@ -74,6 +74,15 @@ const customerStories: CustomerStory[] = [
   },
 ];
 
+// Each promise must stay true of the shipped product. Change the copy here
+// when the product changes, never the other way around.
+const PROMISES = [
+  { id: "preview", label: "See it first", title: "$0 to preview.", body: "HUSTL3 BOT builds your full resume before you pay. You only spend $9.99 if it is worth sending." },
+  { id: "facts", label: "Nothing made up", title: "Your facts only.", body: "Employers, dates, licenses, tools and numbers come from what you give it. HUSTL3 BOT never invents a certification, title or result." },
+  { id: "price", label: "One price", title: "$9.99 once.", body: "Resume plus matching cover letter, clean PDF and Word files, and up to 3 corrections. No subscription." },
+  { id: "delivery", label: "Delivered or refunded", title: "Files or a full refund.", body: "If we permanently cannot generate or deliver your paid resume, you get a full refund under the refund policy.", href: "/resume-builder/refund-policy" },
+] as const;
+
 export function CustomerReviews() {
   const [verifiedReviews, setVerifiedReviews] = useState<PublicReview[]>([]);
   const [loaded, setLoaded] = useState(false);
@@ -218,6 +227,17 @@ export function CustomerReviews() {
           <span aria-hidden="true">→</span>
         </p>
       </div>
+
+      <ul className={styles.promiseGrid} aria-label="What the Resume Builder promises">
+        {PROMISES.map((promise) => (
+          <li className={styles.promiseCard} key={promise.id}>
+            <span>{promise.label}</span>
+            <strong>{promise.title}</strong>
+            <p>{promise.body}</p>
+            {"href" in promise ? <a href={promise.href}>Read the refund policy</a> : null}
+          </li>
+        ))}
+      </ul>
 
       {loaded && verifiedReviews.length > 0 ? (
         <div className={styles.verifiedWrap}>

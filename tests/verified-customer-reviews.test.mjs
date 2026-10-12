@@ -58,6 +58,14 @@ test("homepage customer proof avoids unsupported aggregate claims", () => {
   assert.equal((reviews.match(/id: "(jessica-m|david-r|taylor-s|michael-t|marcus-k|chris-l)"/g) ?? []).length, 6);
 });
 
+test("homepage pairs the customer stories with promises the product keeps", () => {
+  const reviews = read("app/customer-reviews.tsx");
+  assert.match(reviews, /const PROMISES = \[/);
+  assert.match(reviews, /Your facts only\./);
+  assert.match(reviews, /href: "\/resume-builder\/refund-policy"/);
+  assert.doesNotMatch(reviews, /7 days/);
+});
+
 test("public review API requires approval, publication consent, and a paid order", () => {
   const handler = publicReviewsHandler(read("worker/resume-builder-base.ts"));
   assert.match(handler, /cr\.status = 'approved'/);
