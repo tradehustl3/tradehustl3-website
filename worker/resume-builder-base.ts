@@ -1,4 +1,5 @@
 import { withCustomerScope } from './resume-presentation-content';
+import { agentReportWindow } from './agent-report-window';
 import { storedStyle, defaultStyle } from './resume-templates';
 import { errorKind } from "./resume-safe-log";
 import { notifyResumeRecovery, type RecoveryContext } from "./resume-recovery";
@@ -875,16 +876,23 @@ async function getAgent1FunnelSnapshot(
     );
   }
 
-  // One server clock reading defines the window for every query and for
-  // generatedAt. Stored timestamps mix ISO-8601 ("2026-09-27T12:00:00.000Z",
+  // One clock reading validates bounds and timestamps the response. Optional
+  // anchored bounds match the seven completed GA4 calendar days. Stored
+  // timestamps mix ISO-8601 ("2026-09-27T12:00:00.000Z",
   // written by recordFunnelEvent) and SQLite CURRENT_TIMESTAMP
   // ("2026-09-27 12:00:00", paid_at). Text comparison between the two is
   // wrong ('T' sorts after ' '), so both sides go through julianday().
-  // Both bounds are inclusive; unparseable values yield NULL and are excluded.
-  const windowEnd = new Date();
-  const windowStart = new Date(windowEnd.getTime() - windowHours * 60 * 60 * 1000);
-  const windowEndIso = windowEnd.toISOString();
-  const windowStartIso = windowStart.toISOString();
+  // Anchored windows exclude their end so adjacent periods do not overlap.
+  const generatedAt = new Date();
+  let reportWindow: ReturnType<typeof agentReportWindow>;
+  try {
+    reportWindow = agentReportWindow(url.searchParams, generatedAt);
+  } catch {
+    return json({ ok: false, message: "Invalid reporting window." }, 400);
+  }
+  const windowEndIso = reportWindow.end.toISOString();
+  const windowStartIso = reportWindow.start.toISOString();
+  const endOperator = reportWindow.endExclusive ? "<" : "<=";
 
   const behavioral = await env.DB.prepare(
     `SELECT
@@ -895,7 +903,7 @@ async function getAgent1FunnelSnapshot(
        SUM(CASE WHEN event_name = 'begin_checkout' THEN 1 ELSE 0 END) AS checkout_started
      FROM funnel_events
      WHERE julianday(occurred_at) >= julianday(?)
-       AND julianday(occurred_at) <= julianday(?)`
+       AND julianday(occurred_at) ${endOperator} julianday(?)`
   )
     .bind(windowStartIso, windowEndIso)
     .first<{
@@ -916,7 +924,7 @@ async function getAgent1FunnelSnapshot(
      WHERE status = 'paid'
        AND paid_at IS NOT NULL
        AND julianday(paid_at) >= julianday(?)
-       AND julianday(paid_at) <= julianday(?)`
+       AND julianday(paid_at) ${endOperator} julianday(?)`
   )
     .bind(windowStartIso, windowEndIso)
     .first<{
@@ -944,7 +952,8 @@ async function getAgent1FunnelSnapshot(
     source: "trade_hustl3_production",
     product: "resume_builder",
     window: requestedWindow,
-    generatedAt: windowEndIso,
+    generatedAt: generatedAt.toISOString(),
+    windowEndExclusive: reportWindow.endExclusive,
     windowStart: windowStartIso,
     windowEnd: windowEndIso,
 
