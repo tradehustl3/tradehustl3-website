@@ -8,6 +8,8 @@ import { serverUploadReview } from "./resume-upload-requirements";
 import { INTAKE_SCHEMA_VERSION, intakeSchemaVersion } from "../app/resume-builder/intake/wizard-data";
 import { createResumeDocx, createResumePdf, GeneratedResume, ResumeTheme } from "./resume-documents";
 import { lockedBulletCount, readableBulletKeys } from "./resume-preview-lock";
+import { acceptsCurrentPurchaseTerms, PURCHASE_DISCLOSURE, PURCHASE_TERMS_VERSION } from "../shared/purchase-terms";
+import { policyAcceptanceStatement, recordCleanFileDelivery, recordResumeDispute, stripeObjectId, type DeliveredResumeFile } from "./purchase-protection";
 import {
   assessIntakeSubstance,
   canonicalSourceRecord,
@@ -1179,6 +1181,11 @@ async function createCheckout(request: Request, env: ResumeBuilderEnv, resumeId:
     return json({ ok: false, message: "Generate and review the watermarked preview before checkout." }, 409);
   }
 
+  const body = await parseJsonBody(request, 8_000);
+  if (!acceptsCurrentPurchaseTerms(body)) {
+    return json({ ok: false, message: "Read and accept the current Terms and Refund Policy before paying. Refresh the page if the policy has changed." }, 400);
+  }
+
   const stripeKey = env.STRIPE_SECRET_KEY?.trim();
   const priceId = env.STRIPE_RESUME_PRICE_ID?.trim();
   if (!stripeKey || !priceId) return json({ ok: false, message: "Checkout is temporarily unavailable." }, 503);
@@ -1189,11 +1196,13 @@ async function createCheckout(request: Request, env: ResumeBuilderEnv, resumeId:
   }
 
   const orderId = crypto.randomUUID();
-  await env.DB.prepare(
+  const acceptanceId = crypto.randomUUID();
+  await env.DB.batch([env.DB.prepare(
     `INSERT INTO resume_orders
      (order_id, user_id, resume_id, email, plan, amount_total, currency, status)
      VALUES (?, ?, ?, ?, ?, ?, 'usd', 'pending')`,
-  ).bind(orderId, user.userId, resumeId, user.email, RESUME_PLAN, RESUME_PRICE_CENTS).run();
+  ).bind(orderId, user.userId, resumeId, user.email, RESUME_PLAN, RESUME_PRICE_CENTS),
+  policyAcceptanceStatement(env.DB, user.userId, resumeId, "checkout", acceptanceId, orderId)]);
 
   const form = new URLSearchParams();
   form.set("mode", "payment");
@@ -1207,8 +1216,12 @@ async function createCheckout(request: Request, env: ResumeBuilderEnv, resumeId:
   form.set("metadata[order_id]", orderId);
   form.set("metadata[resume_id]", resumeId);
   form.set("metadata[user_id]", user.userId);
+  form.set("metadata[policy_acceptance_id]", acceptanceId);
+  form.set("metadata[policy_version]", PURCHASE_TERMS_VERSION);
+  form.set("custom_text[submit][message]", PURCHASE_DISCLOSURE);
   form.set("payment_intent_data[metadata][product]", "resume_builder_mvp");
   form.set("payment_intent_data[metadata][order_id]", orderId);
+  form.set("payment_intent_data[metadata][policy_acceptance_id]", acceptanceId);
 
   let stripeResponse: Response;
   try {
@@ -1236,6 +1249,19 @@ async function createCheckout(request: Request, env: ResumeBuilderEnv, resumeId:
   await env.DB.prepare("UPDATE resume_orders SET stripe_session_id = ? WHERE order_id = ?")
     .bind(stripe.id, orderId).run();
   return json({ ok: true, checkoutUrl: stripe.url });
+}
+
+async function acceptResumePolicy(request: Request, env: ResumeBuilderEnv, resumeId: string): Promise<Response> {
+  if (request.method !== "POST") return methodNotAllowed("POST");
+  if (!hasTrustedOrigin(request)) return json({ ok: false, message: "Request origin rejected." }, 403);
+  const user = await requireUser(request, env);
+  if (!user) return json({ ok: false, message: "Sign in to continue." }, 401);
+  if (!await findOwnedResume(env, resumeId, user.userId)) return json({ ok: false, message: "Resume not found." }, 404);
+  if (!acceptsCurrentPurchaseTerms(await parseJsonBody(request, 8_000))) {
+    return json({ ok: false, message: "Read and accept the current policies before continuing. Refresh the page if the policy has changed." }, 400);
+  }
+  await policyAcceptanceStatement(env.DB, user.userId, resumeId, "intake", crypto.randomUUID()).run();
+  return json({ ok: true });
 }
 
 function hexToBytes(value: string): Uint8Array | null {
@@ -1388,7 +1414,30 @@ async function handleResumeStripeWebhook(request: Request, env: ResumeBuilderEnv
   if (eventType === "charge.refunded") {
     return handleResumeRefund(env, eventId, eventType, event.data?.object);
   }
-  if (eventType !== "checkout.session.completed") {
+  if (eventType === "charge.dispute.created" || eventType === "charge.dispute.funds_withdrawn") {
+    const object = event.data?.object;
+    if (!object || typeof object !== "object" || Array.isArray(object)) return json({ received: false }, 400);
+    const dispute = { ...object } as Record<string, unknown>;
+    // payment_intent is expandable and nullable on the Dispute object. Resolve
+    // a charge-only event without recording it as processed if Stripe is down.
+    if (!stripeObjectId(dispute.payment_intent)) {
+      const chargeId = stripeObjectId(dispute.charge);
+      const key = env.STRIPE_SECRET_KEY?.trim();
+      if (!chargeId || !key) return json({ received: false }, 503);
+      const response = await fetch(`https://api.stripe.com/v1/charges/${encodeURIComponent(chargeId)}`, {
+        headers: { Authorization: `Bearer ${key}` }, signal: AbortSignal.timeout(8_000),
+      });
+      if (!response.ok) return json({ received: false }, 503);
+      const charge = await response.json() as { payment_intent?: unknown };
+      dispute.payment_intent = charge.payment_intent;
+      // Legacy charges without a PaymentIntent cannot belong to this Checkout
+      // product. Acknowledge those without changing any resume entitlement.
+      if (!stripeObjectId(dispute.payment_intent)) return json({ received: true });
+    }
+    if (!await recordResumeDispute(env.DB, eventId, eventType, dispute)) return json({ received: false }, 400);
+    return json({ received: true });
+  }
+  if (eventType !== "checkout.session.completed" && eventType !== "checkout.session.async_payment_succeeded") {
     await stripeEventStatement(env, eventId, eventType).run();
     return json({ received: true });
   }
@@ -1402,13 +1451,13 @@ async function handleResumeStripeWebhook(request: Request, env: ResumeBuilderEnv
   const metadataOrderId = typeof metadata.order_id === "string" ? metadata.order_id : "";
   const resumeId = typeof metadata.resume_id === "string" ? metadata.resume_id : "";
   const userId = typeof metadata.user_id === "string" ? metadata.user_id : "";
-  const paymentIntent = typeof session?.payment_intent === "string" ? session.payment_intent : null;
+  const paymentIntent = stripeObjectId(session?.payment_intent) || null;
   const stripeCustomer = typeof session?.customer === "string" ? session.customer : null;
   const emailValue = session?.customer_details?.email ?? session?.customer_email;
   const email = normalizeEmail(emailValue);
 
   if (
-    !eventId || !sessionId || !orderId || metadataOrderId !== orderId || !resumeId || !userId
+    !eventId || !sessionId || !orderId || metadataOrderId !== orderId || !resumeId || !userId || !paymentIntent
     || metadata.product !== "resume_builder_mvp"
     || session?.payment_status !== "paid"
     || session.amount_total !== RESUME_PRICE_CENTS
@@ -1447,10 +1496,12 @@ async function handleResumeStripeWebhook(request: Request, env: ResumeBuilderEnv
     stripeEventStatement(env, eventId, eventType),
     env.DB.prepare(
       `UPDATE resume_orders SET
-         status = CASE WHEN status = 'refunded' THEN 'refunded' ELSE 'paid' END,
+         status = CASE WHEN status IN ('refunded', 'disputed') THEN status
+           WHEN EXISTS (SELECT 1 FROM resume_dispute_events WHERE payment_intent_id = ?) THEN 'disputed'
+           ELSE 'paid' END,
          stripe_session_id = ?, stripe_payment_intent_id = ?, paid_at = COALESCE(paid_at, CURRENT_TIMESTAMP)
        WHERE order_id = ?`,
-    ).bind(sessionId, paymentIntent, orderId),
+    ).bind(paymentIntent, sessionId, paymentIntent, orderId),
     env.DB.prepare(
       `INSERT INTO entitlements
        (entitlement_id, user_id, resume_id, kind, plan, status, credits_total, credits_used,
@@ -3487,9 +3538,9 @@ async function serveResumeFile(
   const entitlement = await findEntitlement(env, resumeId, user.userId);
   if (!entitlement) return json({ ok: false, message: "File not found." }, 404);
   const file = await env.DB.prepare(
-    `SELECT object_key FROM resume_files WHERE resume_id = ? AND user_id = ? AND format = ?
+    `SELECT object_key, file_id, byte_size, sha256 FROM resume_files WHERE resume_id = ? AND user_id = ? AND format = ?
      ORDER BY created_at DESC LIMIT 1`,
-  ).bind(resumeId, user.userId, format).first<{ object_key: string }>();
+  ).bind(resumeId, user.userId, format).first<DeliveredResumeFile & { object_key: string }>();
   if (!file || !env.BOOKS) return json({ ok: false, message: "File not found." }, 404);
   const object = await env.BOOKS.get(file.object_key);
   if (!object) return json({ ok: false, message: "File not found." }, 404);
@@ -3501,6 +3552,9 @@ async function serveResumeFile(
     ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
     : "application/pdf");
   const showInline = format === "pdf" && new URL(request.url).searchParams.get("view") === "1";
+  if (!await recordCleanFileDelivery(env.DB, user.userId, resumeId, isDocx ? "docx" : "pdf", showInline ? "inline" : "attachment", file)) {
+    return json({ ok: false, message: "File not found." }, 404);
+  }
   headers.set("Content-Disposition", `${showInline ? "inline" : "attachment"}; filename="${filename}"`);
   headers.set("Cache-Control", "private, no-store");
   headers.set("Referrer-Policy", "no-referrer");
@@ -3663,7 +3717,7 @@ export async function handleResumeBuilderRoute(
     if (pathname === "/api/resume-builder/resumes") return createResume(request, env, dependencies);
     if (pathname === "/api/resume-builder/internal/agent1/funnel-snapshot") return getAgent1FunnelSnapshot(request, env);
     if (pathname === "/api/resume-builder/internal/n8n/purchase-status") return getN8nResumePurchaseStatus(request, env);
-    if (pathname === "/api/resume-builder/stripe/webhook") return handleResumeStripeWebhook(request, env);
+    if (pathname === "/api/resume-builder/stripe/webhook") return await handleResumeStripeWebhook(request, env);
     if (pathname === "/api/resume-builder/reviews/public") return getPublicCustomerReviews(request, env);
     if (pathname === "/api/resume-builder/reviews/request") return getReviewRequest(request, env);
     if (pathname === "/api/resume-builder/reviews/submit") return submitCustomerReview(request, env);
@@ -3676,11 +3730,13 @@ export async function handleResumeBuilderRoute(
     const bulletMatch = pathname.match(/^\/api\/resume-builder\/resumes\/([^/]+)\/bullets$/);
     if (bulletMatch) return updateResumeBullet(request, env, bulletMatch[1], dependencies);
     const checkoutMatch = pathname.match(/^\/api\/resume-builder\/resumes\/([^/]+)\/checkout$/);
-    if (checkoutMatch) return createCheckout(request, env, checkoutMatch[1]);
+    if (checkoutMatch) return await createCheckout(request, env, checkoutMatch[1]);
+    const acceptanceMatch = pathname.match(/^\/api\/resume-builder\/resumes\/([^/]+)\/policy-acceptance$/);
+    if (acceptanceMatch) return await acceptResumePolicy(request, env, acceptanceMatch[1]);
     const generationMatch = pathname.match(/^\/api\/resume-builder\/resumes\/([^/]+)\/generate$/);
     if (generationMatch) return generateResume(request, env, generationMatch[1], dependencies);
     const fileMatch = pathname.match(/^\/api\/resume-builder\/resumes\/([^/]+)\/files\/(pdf|docx|preview)$/);
-    if (fileMatch) return serveResumeFile(request, env, fileMatch[1], fileMatch[2]);
+    if (fileMatch) return await serveResumeFile(request, env, fileMatch[1], fileMatch[2]);
     const resumeMatch = pathname.match(/^\/api\/resume-builder\/resumes\/([^/]+)$/);
     if (resumeMatch) {
       return request.method === "GET"

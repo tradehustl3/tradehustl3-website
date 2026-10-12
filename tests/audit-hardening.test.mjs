@@ -4,9 +4,16 @@ import test from "node:test";
 
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 
-test("the $9.99 package is described consistently", () => {
+test("the $9.99 package is described consistently", async () => {
   const terms = read("app/terms/page.tsx");
-  const refund = read("app/resume-builder/refund-policy/page.tsx");
+  const worker = (await import("../dist/server/index.js")).default;
+  const response = await worker.fetch(
+    new Request("http://localhost/resume-builder/refund-policy", { headers: { accept: "text/html" } }),
+    { ASSETS: { fetch: async () => new Response("Not found", { status: 404 }) } },
+    { waitUntil() {}, passThroughOnException() {} },
+  );
+  assert.equal(response.status, 200);
+  const refund = await response.text();
   const payment = read("app/resume-builder/payment-confirmed/payment-status.tsx");
   const tradeLanding = read("app/resume-builder/trade-landing.tsx");
 

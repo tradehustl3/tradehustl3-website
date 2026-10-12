@@ -6,6 +6,7 @@ import { StyleControls } from "./style-controls";
 import { defaultStyle, type ResumeStyle } from "../../../worker/resume-templates";
 import { ProtectedPdfPreview } from "./protected-pdf-preview";
 import { generationFailureIntakeUrl, intakeReturnUrl } from "../return-urls";
+import { PURCHASE_DISCLOSURE, PURCHASE_TERMS_VERSION } from "../../../shared/purchase-terms";
 
 type ResumeTheme = "plain" | "navy" | "lead";
 type PreviewTab = "resume" | "cover-letter";
@@ -121,6 +122,8 @@ export function ResumeReview() {
   // Checkout can start from the fixed bar, far from the page-level notice, so its
   // failure is also shown right where the customer tapped.
   const [checkoutError, setCheckoutError] = useState("");
+  const [purchaseAccepted, setPurchaseAccepted] = useState(false);
+  const purchaseAgreementRef = useRef<HTMLInputElement | null>(null);
   const [message, setMessageText] = useState("");
   const [messageTone, setMessageTone] = useState<MessageTone>("info");
   const [retryGeneration, setRetryGeneration] = useState(false);
@@ -369,6 +372,12 @@ export function ResumeReview() {
 
   async function startCheckout() {
     if (!resumeId) return;
+    if (!purchaseAccepted) {
+      setCheckoutError("Read and check the Terms and Refund Policy agreement before paying.");
+      unpaidCardRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      purchaseAgreementRef.current?.focus({ preventScroll: true });
+      return;
+    }
     setCheckingOut(true);
     setCheckoutError("");
     notify("");
@@ -377,7 +386,7 @@ export function ResumeReview() {
         method: "POST",
         credentials: "same-origin",
         headers: { "Content-Type": "application/json" },
-        body: "{}",
+        body: JSON.stringify({ accepted: purchaseAccepted, policyVersion: PURCHASE_TERMS_VERSION }),
       });
       const result = await response.json() as { checkoutUrl?: string; message?: string };
       if (!response.ok || !result.checkoutUrl) throw new Error(result.message || "Secure checkout is temporarily unavailable.");
@@ -563,6 +572,11 @@ export function ResumeReview() {
                 <ul className="rb-unpaid-includes">
                   {PACKAGE_INCLUDES.map((item) => <li key={item}>{item}</li>)}
                 </ul>
+                <p className="rb-purchase-disclosure" id="purchase-disclosure">{PURCHASE_DISCLOSURE} <a href="/resume-builder/refund-policy" target="_blank" rel="noreferrer">Read the Refund Policy</a>.</p>
+                <label className="rb-legal-consent rb-purchase-agreement">
+                  <input ref={purchaseAgreementRef} type="checkbox" checked={purchaseAccepted} disabled={checkingOut} aria-describedby="purchase-disclosure" onChange={(event) => { setPurchaseAccepted(event.target.checked); setCheckoutError(""); }} />
+                  <span>I agree to the <a href="/terms" target="_blank" rel="noreferrer">Terms of Service</a> and <a href="/resume-builder/refund-policy" target="_blank" rel="noreferrer">Refund Policy</a> and understand the digital-product purchase terms above.</span>
+                </label>
                 <button className="rb-button rb-button-primary rb-button-full" type="button" disabled={checkingOut} onClick={() => void startCheckout()}>{checkoutLabel} <span aria-hidden="true">↗</span></button>
                 {checkoutError ? <p className="rb-unpaid-error" role="alert">{checkoutError} Nothing was charged.</p> : null}
                 <small>Secure checkout powered by Stripe · one-time $9.99 · no subscription. TRADE HUSTL3 does not receive or store your full card number. Need help? <a href="mailto:support@tradehustl3.com">support@tradehustl3.com</a></small>

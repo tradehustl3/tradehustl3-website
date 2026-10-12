@@ -47,6 +47,7 @@ import {
 } from "./resume-upload";
 
 import { createDraftSaver, UPLOAD_SAVE_DEBOUNCE_MS } from "./draft-save";
+import { PURCHASE_TERMS_VERSION } from "../../../shared/purchase-terms";
 import { fieldStates, recordUserCorrections, uploadValues } from "./upload-field-state";
 
 type User = { email: string; fullName: string | null };
@@ -289,7 +290,25 @@ export function ResumeWizard() {
       setError("We could not save your intake. Check your connection and try again.");
       return;
     }
+    if (!paid && !await savePolicyAcceptance(id, legalConsent)) { setSubmitting(false); return; }
     window.location.assign(`/resume-builder/review?resume_id=${encodeURIComponent(id)}`);
+  }
+
+  async function savePolicyAcceptance(id: string, accepted: boolean): Promise<boolean> {
+    try {
+      const response = await fetch(`/api/resume-builder/resumes/${encodeURIComponent(id)}/policy-acceptance`, {
+        method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ accepted, policyVersion: PURCHASE_TERMS_VERSION }),
+      });
+      const result = await response.json() as { message?: string };
+      if (!response.ok) throw new Error(result.message || "We could not save your policy agreement. Please try again.");
+      return true;
+    } catch (cause) {
+      const message = cause instanceof Error ? cause.message : "We could not save your policy agreement. Please try again.";
+      setError(message);
+      setImportMessage(message);
+      return false;
+    }
   }
 
   async function importResume(file: File | null) {
@@ -383,6 +402,7 @@ export function ResumeWizard() {
       setImportMessage("We could not save the imported resume. Check your connection and try again.");
       return;
     }
+    if (!paid && !await savePolicyAcceptance(id, importConsent)) { setImportState("build-error"); return; }
     window.location.assign(`/resume-builder/review?resume_id=${encodeURIComponent(id)}`);
   }
 
@@ -705,8 +725,9 @@ export function ResumeWizard() {
                 disabled={importBusy}
               />
               <span>
-                I confirm this resume belongs to me, that the corrected information is accurate, and that I am at least 18 years old. I also agree to the <a href="/terms" target="_blank" rel="noreferrer">Terms</a>,{" "}
-                <a href="/privacy" target="_blank" rel="noreferrer">Privacy Policy</a>, and{" "}
+                I confirm this resume belongs to me, that the corrected information is accurate, and that I am at least 18 years old. I also agree to the <a href="/terms" target="_blank" rel="noreferrer">Terms of Service</a>,{" "}
+                <a href="/privacy" target="_blank" rel="noreferrer">Privacy Policy</a>,{" "}
+                <a href="/resume-builder/refund-policy" target="_blank" rel="noreferrer">Refund Policy</a>, and{" "}
                 <a href="/resume-builder/ai-disclosure" target="_blank" rel="noreferrer">AI Disclosure</a>.
               </span>
             </label>

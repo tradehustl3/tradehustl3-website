@@ -155,6 +155,66 @@ export const resumeOrders = sqliteTable(
   ],
 );
 
+export const resumePolicyAcceptances = sqliteTable(
+  "resume_policy_acceptances",
+  {
+    acceptanceId: text("acceptance_id").primaryKey(),
+    userId: text("user_id").notNull(),
+    resumeId: text("resume_id").notNull(),
+    orderId: text("order_id").unique(),
+    source: text("source").notNull(),
+    policyVersion: text("policy_version").notNull(),
+    agreementText: text("agreement_text").notNull(),
+    policySnapshotJson: text("policy_snapshot_json").notNull(),
+    acceptedAt: text("accepted_at").notNull().default(sql`(CURRENT_TIMESTAMP)`),
+  },
+  (table) => [
+    check("resume_policy_acceptances_source_check", sql`${table.source} IN ('intake', 'checkout')`),
+    uniqueIndex("resume_policy_acceptances_intake_idx").on(table.userId, table.resumeId, table.policyVersion).where(sql`${table.source} = 'intake'`),
+    index("resume_policy_acceptances_resume_idx").on(table.resumeId, table.acceptedAt),
+  ],
+);
+
+export const resumeFileDeliveries = sqliteTable(
+  "resume_file_deliveries",
+  {
+    deliveryId: text("delivery_id").primaryKey(),
+    userId: text("user_id").notNull(),
+    resumeId: text("resume_id").notNull(),
+    orderId: text("order_id").notNull(),
+    fileId: text("file_id").notNull(),
+    format: text("format").notNull(),
+    disposition: text("disposition").notNull(),
+    byteSize: integer("byte_size").notNull(),
+    sha256: text("sha256").notNull(),
+    servedAt: text("served_at").notNull().default(sql`(CURRENT_TIMESTAMP)`),
+  },
+  (table) => [
+    check("resume_file_deliveries_format_check", sql`${table.format} IN ('pdf', 'docx', 'cover_pdf', 'cover_docx')`),
+    check("resume_file_deliveries_disposition_check", sql`${table.disposition} IN ('inline', 'attachment')`),
+    check("resume_file_deliveries_byte_size_check", sql`${table.byteSize} > 0`),
+    check("resume_file_deliveries_sha256_check", sql`length(${table.sha256}) = 64`),
+    index("resume_file_deliveries_order_idx").on(table.orderId, table.servedAt),
+    index("resume_file_deliveries_resume_idx").on(table.resumeId, table.servedAt),
+  ],
+);
+
+export const resumeDisputeEvents = sqliteTable(
+  "resume_dispute_events",
+  {
+    eventId: text("event_id").primaryKey(),
+    disputeId: text("dispute_id").notNull(),
+    paymentIntentId: text("payment_intent_id").notNull(),
+    amount: integer("amount").notNull(),
+    currency: text("currency").notNull(),
+    receivedAt: text("received_at").notNull().default(sql`(CURRENT_TIMESTAMP)`),
+  },
+  (table) => [
+    check("resume_dispute_events_amount_check", sql`${table.amount} > 0`),
+    index("resume_dispute_events_payment_idx").on(table.paymentIntentId),
+  ],
+);
+
 export const reviewRequests = sqliteTable(
   "review_requests",
   {
