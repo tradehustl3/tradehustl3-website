@@ -44,7 +44,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
     ...TRADE_LANDING_PAGES.map((page) => ({
       url: `${SITE_URL}${tradeLandingPath(page)}`,
-      lastModified: CONTENT_REFRESHED_AT,
+      lastModified: page.slug === "facilities-maintenance"
+        ? new Date("2026-10-13T00:00:00.000Z")
+        : CONTENT_REFRESHED_AT,
       changeFrequency: "daily" as const,
       priority: 0.8,
     })),
