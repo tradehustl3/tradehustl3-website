@@ -84,6 +84,22 @@ test('actual PDF structures distinguish mockups: centered header, solid top bar,
   }
 });
 
+test('section headings extract as whole words at every template and text size (ATS)', async () => {
+  for (const theme of themes) for (const textSize of TEXT_SIZES) {
+    const style = { ...defaultStyle(theme), textSize };
+    const { pdf, task } = await parse(await createResumePdf(sampleResume, false, theme, 'plain', style));
+    try {
+      let text = '';
+      for (let i = 1; i <= pdf.numPages; i++) text += ' ' + (await (await pdf.getPage(i)).getTextContent()).items.map(item => 'str' in item ? item.str : '').join(' ');
+      text = text.replace(/\s+/g, ' ');
+      for (const heading of ['PROFESSIONAL SUMMARY', 'CORE SKILLS', 'WORK EXPERIENCE']) {
+        assert.ok(text.includes(heading), `${theme}/${textSize}: "${heading}" not extracted as words`);
+      }
+      assert.doesNotMatch(text, /P R O F E S S I O N A L/, `${theme}/${textSize}: letter-spaced heading`);
+    } finally { await task.destroy(); }
+  }
+});
+
 test('presentation settings do not change the writing track or invent scope', async () => {
   const resume = { ...sampleResume, experience: sampleResume.experience.map(({ scope: _scope, ...job }) => { void _scope; return job; }) };
   const { pdf, task } = await parse(await createResumePdf(resume, false, 'lead', 'plain', defaultStyle('lead')));
