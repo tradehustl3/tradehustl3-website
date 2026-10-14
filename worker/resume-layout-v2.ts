@@ -154,7 +154,9 @@ export async function renderPdfV2(input: GeneratedResume | GeneratedCoverLetter,
     ensure(Math.min(reserve, HEIGHT - MARGIN * 2));
     if (b.kind === 'heading') {
       y -= 7 * space;
-      page.pushOperators(beginText(), setCharacterSpacing(theme === 'navy' ? 1.2 : theme === 'plain' ? 0.7 : 0.4), endText());
+      // Keep tracking well under 0.1 em: PDF text extractors (and ATS parsers) read
+      // wider letter gaps as word breaks, turning a heading into spaced letters.
+      page.pushOperators(beginText(), setCharacterSpacing(theme === 'navy' ? 0.9 : theme === 'plain' ? 0.7 : 0.4), endText());
       draw(b.text!, MARGIN, y - size * 1.12, bold, size * 1.12, theme === 'navy' ? accent : black);
       page.pushOperators(beginText(), setCharacterSpacing(0), endText());
       y -= size * 1.12 + 4 * space;
