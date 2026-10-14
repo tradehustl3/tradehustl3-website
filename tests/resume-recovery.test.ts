@@ -4,13 +4,18 @@ import { notifyResumeRecovery } from "../worker/resume-recovery";
 import { handleResumeBuilderRoute } from "../worker/resume-builder-monitored";
 
 const webhook = "https://recovery.example.test/webhook";
+const secret = "recovery-webhook-test-secret-0123456789abcdef";
 
 function configure(t: TestContext) {
   const previous = process.env.N8N_RESUME_RECOVERY_WEBHOOK_URL;
+  const previousSecret = process.env.N8N_RESUME_RECOVERY_WEBHOOK_SECRET;
   process.env.N8N_RESUME_RECOVERY_WEBHOOK_URL = webhook;
+  process.env.N8N_RESUME_RECOVERY_WEBHOOK_SECRET = secret;
   t.after(() => {
     if (previous === undefined) delete process.env.N8N_RESUME_RECOVERY_WEBHOOK_URL;
     else process.env.N8N_RESUME_RECOVERY_WEBHOOK_URL = previous;
+    if (previousSecret === undefined) delete process.env.N8N_RESUME_RECOVERY_WEBHOOK_SECRET;
+    else process.env.N8N_RESUME_RECOVERY_WEBHOOK_SECRET = previousSecret;
   });
   const jobs: Promise<unknown>[] = [];
   const context = { waitUntil(job: Promise<unknown>) { jobs.push(job); } };
@@ -28,10 +33,41 @@ test("recovery POST contains exactly the normalized payload", async (t) => {
   assert.equal(url, webhook);
   assert.equal(init?.method, "POST");
   assert.equal(new Headers(init?.headers).get("content-type"), "application/json");
+  assert.equal(new Headers(init?.headers).get("authorization"), `Bearer ${secret}`);
   assert.deepEqual(JSON.parse(String(init?.body)), {
     resumeId: "resume-1", email: "member@example.com", emailEligible: true,
   });
   assert.ok(init?.signal instanceof AbortSignal);
+});
+
+test("recovery never calls the webhook without a 32+ character secret", async (t) => {
+  const { jobs, context } = configure(t);
+  const request = t.mock.method(globalThis, "fetch", async () => new Response(null, { status: 204 }));
+  for (const value of [undefined, "", "   ", "too-short-secret"]) {
+    if (value === undefined) delete process.env.N8N_RESUME_RECOVERY_WEBHOOK_SECRET;
+    else process.env.N8N_RESUME_RECOVERY_WEBHOOK_SECRET = value;
+    notifyResumeRecovery({ resumeId: "resume-1", email: "member@example.com", emailEligible: true }, context);
+  }
+  await Promise.all(jobs);
+  assert.equal(request.mock.callCount(), 0);
+  assert.equal(jobs.length, 0);
+});
+
+test("worker bindings take precedence over process.env", async (t) => {
+  const { jobs, context } = configure(t);
+  delete process.env.N8N_RESUME_RECOVERY_WEBHOOK_URL;
+  delete process.env.N8N_RESUME_RECOVERY_WEBHOOK_SECRET;
+  const request = t.mock.method(globalThis, "fetch", async () => new Response(null, { status: 204 }));
+  const bindingSecret = "binding-recovery-secret-0123456789abcdefghij";
+  notifyResumeRecovery({ resumeId: "resume-1", email: "member@example.com", emailEligible: true }, context, {
+    N8N_RESUME_RECOVERY_WEBHOOK_URL: " https://binding.example.test/hook ",
+    N8N_RESUME_RECOVERY_WEBHOOK_SECRET: bindingSecret,
+  });
+  await Promise.all(jobs);
+  assert.equal(request.mock.callCount(), 1);
+  const [url, init] = request.mock.calls[0].arguments;
+  assert.equal(url, "https://binding.example.test/hook");
+  assert.equal(new Headers(init?.headers).get("authorization"), `Bearer ${bindingSecret}`);
 });
 
 test("recovery skips missing data, ineligible email, and missing configuration", async (t) => {

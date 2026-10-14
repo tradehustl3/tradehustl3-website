@@ -91,6 +91,16 @@ SET status = 'pending', attempts = 0, next_attempt_at = unixepoch(), updated_at 
 WHERE job_id = ?;
 ```
 
+## n8n resume recovery
+
+When a signed-in customer saves a new resume draft, the Worker posts `{resumeId, email, emailEligible}` to the n8n recovery webhook. n8n later checks `/api/resume-builder/internal/n8n/purchase-status` before any reminder is sent.
+
+- `N8N_RESUME_RECOVERY_WEBHOOK_URL` (regular variable): the n8n production webhook URL.
+- `N8N_RESUME_RECOVERY_WEBHOOK_SECRET` (encrypted secret, 32+ characters): sent as `Authorization: Bearer <secret>`. The n8n Webhook node must use Header Auth with the same value. Without it the Worker never calls the webhook.
+- `N8N_RESUME_STATUS_SECRET` (encrypted secret, 32+ characters): the bearer secret n8n sends to the purchase-status endpoint. Store it in n8n as its own Header Auth credential; never reuse an agent bridge credential.
+
+Purchase-status returns `404` for an unknown or deleted resume, `{ok: true, paid: true}` once Stripe has confirmed payment (even if later refunded), and `{ok: true, paid: false}` otherwise. n8n must send a reminder only on `ok === true && paid === false`.
+
 ## Verified customer reviews
 
 The Resume Builder review pipeline is limited to verified paid orders. A review invitation is queued after a successful Resume Builder checkout and becomes eligible for email delivery three days later. The existing scheduled Worker sends a private 30-day review link through Brevo.
