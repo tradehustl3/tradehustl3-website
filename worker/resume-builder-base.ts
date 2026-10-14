@@ -38,6 +38,10 @@ export interface ResumeBuilderEnv {
   STRIPE_RESUME_WEBHOOK_SECRET?: string;
   /** Shared bearer secret for the n8n Resume Builder recovery status check. */
   N8N_RESUME_STATUS_SECRET?: string;
+  /** n8n recovery webhook URL. Falls back to process.env for older deployments. */
+  N8N_RESUME_RECOVERY_WEBHOOK_URL?: string;
+  /** Bearer secret (32+ chars) the recovery webhook requires. Unset disables the webhook call. */
+  N8N_RESUME_RECOVERY_WEBHOOK_SECRET?: string;
   AGENT1_FUNNEL_SECRET?: string;
   ANTHROPIC_API_KEY?: string;
   CLAUDE_MODEL?: string;
@@ -808,7 +812,7 @@ async function createResume(request: Request, env: ResumeBuilderEnv, dependencie
   // eligible for recovery. Never trust an uploaded resume's contact address.
   const email = user.email.trim();
   const emailEligible = isValidEmail(email);
-  notifyResumeRecovery({ resumeId, email, emailEligible }, dependencies.recoveryContext);
+  notifyResumeRecovery({ resumeId, email, emailEligible }, dependencies.recoveryContext, env);
   return json({ ok: true, resumeId, status: "draft", price: { amount: RESUME_PRICE_CENTS, currency: "usd" } }, 201);
 }
 
@@ -1015,6 +1019,14 @@ async function getN8nResumePurchaseStatus(request: Request, env: ResumeBuilderEn
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(resumeId)) {
     return json({ ok: false, message: "A valid resumeId is required." }, 400);
   }
+
+  // A recovery message is only ever about a resume that exists. Unknown or
+  // deleted resumes get 404 so n8n cannot read "paid: false" for an invented ID
+  // and email whoever it was told to.
+  const resume = await env.DB.prepare(
+    "SELECT 1 AS found FROM resumes WHERE resume_id = ? AND deleted_at IS NULL LIMIT 1",
+  ).bind(resumeId).first<{ found: number }>();
+  if (!resume) return json({ ok: false, message: "Resume not found." }, 404);
 
   // Recovery messages must stop after a confirmed purchase even if that order
   // is later refunded. paid_at is written only by the verified Stripe webhook

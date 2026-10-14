@@ -1011,7 +1011,7 @@ test("n8n purchase-status endpoint reports unpaid when Stripe has never confirme
       return {
         bind() {
           return {
-            async first() { return null; },
+            async first() { return /FROM resumes WHERE/i.test(sql) ? { found: 1 } : null; },
           };
         },
       };
@@ -1033,6 +1033,31 @@ test("n8n purchase-status endpoint reports unpaid when Stripe has never confirme
   assert.equal(sqlSeen.some((sql) => /FROM resume_orders[\s\S]*paid_at IS NOT NULL/i.test(sql)), true);
 });
 
+test("n8n purchase-status endpoint returns 404 for an unknown or deleted resume", async () => {
+  const sqlSeen: string[] = [];
+  const DB = {
+    prepare(sql: string) {
+      sqlSeen.push(sql);
+      return { bind() { return { async first() { return null; } }; } };
+    },
+  };
+  const response = await handleResumeBuilderRoute(
+    new Request("https://tradehustl3.com/api/resume-builder/internal/n8n/purchase-status", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${n8nResumeStatusSecret}` },
+      body: JSON.stringify({ resumeId: n8nResumeId }),
+    }),
+    {
+      DB: DB as unknown as D1Database,
+      N8N_RESUME_STATUS_SECRET: n8nResumeStatusSecret,
+    },
+  );
+  assert.equal(response?.status, 404);
+  assert.deepEqual(await response?.json(), { ok: false, message: "Resume not found." });
+  assert.equal(sqlSeen.some((sql) => /deleted_at IS NULL/i.test(sql)), true);
+  assert.equal(sqlSeen.some((sql) => /FROM resume_orders/i.test(sql)), false);
+});
+
 test("n8n purchase-status endpoint suppresses recovery after a confirmed purchase", async () => {
   const DB = {
     prepare(sql: string) {
@@ -1040,6 +1065,7 @@ test("n8n purchase-status endpoint suppresses recovery after a confirmed purchas
         bind(...values: unknown[]) {
           return {
             async first() {
+              if (/FROM resumes WHERE/i.test(sql) && values[0] === n8nResumeId) return { found: 1 };
               if (/FROM resume_orders[\s\S]*paid_at IS NOT NULL/i.test(sql) && values[0] === n8nResumeId) {
                 return { paid: 1 };
               }
