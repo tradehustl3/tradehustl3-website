@@ -22,6 +22,15 @@ export type FaqItem = { question: string; answer: string };
 export type StatItem = { value: string; label: string };
 export type SectionHead = { kicker: string; heading: string };
 export type CtaLocations = { header: string; hero: string; pricing: string; closing: string };
+export type TradeResumeExample = SectionHead & {
+  intro: string;
+  name: string;
+  contact: string;
+  targetTitle: string;
+  sections: { label: string; body?: string; items?: string[] }[];
+  guidance: { label: string; body: string }[];
+  bulletTip: string;
+};
 
 export type TradeLandingContent = {
   /** Route slug, e.g. "hvac" for /resume-builder/hvac. A canonical trade slug. */
@@ -66,6 +75,8 @@ export type TradeLandingContent = {
   certifications: SectionHead & { intro: string; items: string[]; note: string };
   tools: SectionHead & { intro: string; groups: LabeledGroup[] };
   accomplishments: SectionHead & { intro: string; examples: string[]; disclaimer: string };
+  /** Optional complete example; absent pages keep the existing landing layout. */
+  resumeExample?: TradeResumeExample;
   howItWorks: { title: string; body: string }[];
   ats: { heading: string; body: string[] };
   faq: SectionHead & { items: FaqItem[] };
@@ -511,25 +522,25 @@ export const FACILITIES_MAINTENANCE_LANDING: TradeLandingContent = {
     pricing: "facilities_pricing",
     closing: "facilities_closing",
   },
-  seoTitle: "Facilities Maintenance Resume Builder | TRADE HUSTL3",
+  seoTitle: "Facility Maintenance Resume Example & Builder | TRADE HUSTL3",
   seoDescription:
-    "Turn your PMs, work orders, CMMS history, and multi-trade repairs into an ATS-ready maintenance technician resume. $9.99 one-time, no subscription — TRADE HUSTL3.",
+    "See a facility maintenance resume example with CMMS, preventive maintenance, and work-order bullets. Build a free preview; unlock for $9.99 once.",
   ogImage: "/optimized/og.webp",
   targetQueries: [
     "facilities maintenance resume builder",
     "facilities maintenance resume",
     "facilities maintenance technician resume",
-    "maintenance technician resume builder",
+    "facility maintenance resume example",
     "building maintenance resume",
     "facility maintenance resume",
-    "maintenance technician resume",
+    "facility maintenance technician resume",
     "facilities technician resume",
   ],
 
   hero: {
     kicker: "/ FACILITIES MAINTENANCE RESUME BUILDER",
-    heading: "A FACILITIES RESUME BUILT",
-    headingAccent: "FOR THE WHOLE BUILDING.",
+    heading: "FACILITY MAINTENANCE RESUME",
+    headingAccent: "EXAMPLE + BUILDER.",
     lead:
       "You close work orders across HVAC, plumbing, electrical, and mechanical, run PM routes, handle turnovers, and keep the CMMS current. A generic resume buries all of that under “general maintenance.” TRADE HUSTL3 turns the systems you service, the tools you run, and the work you’ve completed into an ATS-ready facilities maintenance resume.",
     ctaLabel: "Build my maintenance resume",
@@ -544,9 +555,9 @@ export const FACILITIES_MAINTENANCE_LANDING: TradeLandingContent = {
     kicker: "/ ONE STRAIGHTFORWARD PACKAGE",
     heading: "PREVIEW FIRST. PAY ONCE.",
     subhead:
-      "Your maintenance resume is built before checkout. Review the watermarked preview, then pay once to remove the watermark.",
+      "Your maintenance resume is built before checkout. Review the protected preview, then pay once to unlock the complete files.",
     bullets: [
-      "One completed maintenance resume · watermarked preview before payment",
+      "One completed maintenance resume · protected preview before payment",
       "Certifications, licenses, and CMMS experience placed where ATS looks first",
       "ATS-friendly structure across the Facilities Maintenance track",
       "Up to 3 corrections",
@@ -737,6 +748,84 @@ export const FACILITIES_MAINTENANCE_LANDING: TradeLandingContent = {
       "These are examples of how facilities work turns into resume language. Your resume is built only from the details you enter — TRADE HUSTL3 matches wording, it does not invent experience or numbers.",
   },
 
+  resumeExample: {
+    kicker: "/ COMPLETE FACILITY MAINTENANCE RESUME EXAMPLE",
+    heading: "SHOW HOW YOU KEEP A BUILDING RUNNING.",
+    intro:
+      "This illustrative, fill-in example shows how the sections fit together. Replace every bracket with your own verified details. Delete any task, skill, or credential you cannot support; these are not customer results.",
+    name: "[Your Name]",
+    contact: "[City, State] · [Phone] · [Email]",
+    targetTitle: "Facility Maintenance Technician",
+    sections: [
+      {
+        label: "Professional summary",
+        body:
+          "Facility maintenance technician with [X years] supporting [commercial / apartment / institutional] properties. Experienced in preventive maintenance, HVAC filter and belt service, plumbing-fixture repairs, doors and hardware, and CMMS work-order documentation. Communicates repair status with occupants and coordinates specialist work when it exceeds assigned duties.",
+      },
+      {
+        label: "Skills",
+        items: [
+          "Preventive and corrective maintenance · inspections · work-order prioritization",
+          "HVAC filters and belts · plumbing fixtures · lighting · doors and hardware",
+          "[CMMS platform actually used] · close-out notes · parts inventory · vendor coordination",
+        ],
+      },
+      {
+        label: "Experience",
+        body: "Facility Maintenance Technician · [Employer, City, State] · [Month Year–Present]",
+        items: [
+          "Closed [X] work orders per week across [N] buildings, documenting the fault, repair, and parts used in [CMMS].",
+          "Completed scheduled filter, belt, and drain-line checks on [N] HVAC units; recorded readings and follow-up repairs in the PM log.",
+          "Finished [X of Y] scheduled PM tasks by the due date during [period], with overdue work escalated to [supervisor or team].",
+          "Repaired leaking faucets, door closers, and lighting within assigned duties; coordinated licensed contractors for work outside authorization.",
+        ],
+      },
+      {
+        label: "Earlier experience",
+        body: "Maintenance Helper · [Employer, City, State] · [Month Year–Month Year]",
+        items: [
+          "Assisted with [N] unit turnovers per month, completing paint, patch, and hardware punch lists before supervisor inspection.",
+          "Staged parts, checked tools, and updated completion notes for assigned repairs under technician supervision.",
+        ],
+      },
+      {
+        label: "Education and training",
+        items: ["[Diploma or maintenance program] · [School or training provider] · [Year]"],
+      },
+      {
+        label: "Credentials",
+        items: [
+          "[Credential actually held, exact type, issuer, and year]",
+          "[Relevant current license and expiration, if applicable]",
+        ],
+      },
+    ],
+    guidance: [
+      {
+        label: "Apartment and multifamily maintenance",
+        body:
+          "Lead with resident work orders, make-ready punch lists, unit counts, appliance or plumbing repairs, and on-call response. Name Yardi or another property platform only if you used it. Include CAMT, CPO, or EPA 608 only when held; a make-ready role should not imply licensed trade work.",
+      },
+      {
+        label: "Commercial and institutional facilities",
+        body:
+          "Name the offices, schools, hospitals, or campuses you supported and the equipment you serviced. Show PM schedules, documented inspections, CMMS close-outs, occupant communication, and vendor access. Separate routine building care from specialist service you coordinated.",
+      },
+      {
+        label: "Warehouse building maintenance",
+        body:
+          "Focus on the building: dock doors, lighting, HVAC, plumbing, and site inspections. If your work is mainly conveyors, PLCs, or production equipment, choose the Industrial & Warehouse Maintenance family in the career catalog and describe those assets instead.",
+      },
+      {
+        label: "Match your experience level",
+        body:
+          "Entry level: use training, supervised repairs, and completed punch lists. Experienced technician: show systems handled independently, work-order scope, and PM records. Lead or supervisor: add verified crew size, scheduling, vendors, and backlog ownership. Keep your actual job titles.",
+      },
+    ],
+    bulletTip:
+      "Build each bullet from action + system or task + scope + verified result. A completion rate needs both counts: [PM tasks finished on time] ÷ [PM tasks due] × 100. Use the same period and name the work-order or PM record that supports it. If you have no reliable percentage, describe the equipment, workload, and work completed without inventing a result.",
+  },
+
   howItWorks: HOW_IT_WORKS("maintenance", "Facilities Maintenance", "CMMS and building systems"),
 
   ats: {
@@ -785,12 +874,17 @@ export const FACILITIES_MAINTENANCE_LANDING: TradeLandingContent = {
       {
         question: "Are there maintenance resume examples I can follow?",
         answer:
-          "This page lists example accomplishment bullets that show the shape of a strong facilities line — system, volume, result. Instead of copying a sample, you answer a guided intake and the builder turns your own work into that format, then shows a free preview before payment.",
+          "This page includes a complete, fill-in facility maintenance resume example and accomplishment bullets. Replace the placeholders with your own facts and keep only work you performed. The guided builder uses your intake details to create your resume, with a free protected preview before payment.",
+      },
+      {
+        question: "How do I quantify preventive maintenance on my resume?",
+        answer:
+          "Use equipment counts, work orders completed, or PM tasks finished by their due dates during a named period. Calculate an on-time PM rate as tasks finished on time divided by tasks due, multiplied by 100. Keep the underlying CMMS or PM records. If you cannot verify a result, describe the work and scope without adding a percentage.",
       },
       {
         question: "What do I get, and what does it cost?",
         answer:
-          "A one-time $9.99 payment unlocks a clean PDF and an editable DOCX. The preview is watermarked and free, and you review it before you pay. You get up to 3 corrections. There is no subscription and no auto-renewal.",
+          "A one-time $9.99 payment unlocks your complete resume and matching cover letter as clean PDF and editable DOCX files. Build and review a protected preview without a credit card. You get up to 3 corrections. There is no subscription and no auto-renewal.",
       },
     ],
   },

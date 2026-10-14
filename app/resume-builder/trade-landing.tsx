@@ -104,6 +104,57 @@ function SiblingGuides({ content }: { content: TradeLandingContent }) {
   );
 }
 
+function CompleteResumeExample({ content }: { content: TradeLandingContent }) {
+  const example = content.resumeExample;
+  if (!example) return null;
+
+  return (
+    <section className={`${styles.section} ${styles.whiteSection}`} aria-labelledby="resume-example-title">
+      <header className={styles.sectionHeader}>
+        <p className="rb-kicker">{example.kicker}</p>
+        <h2 id="resume-example-title">{example.heading}</h2>
+        <p>{example.intro}</p>
+      </header>
+      <div className={styles.resumeExampleGrid}>
+        <article className={styles.resumeSample} aria-label="Fill-in resume example">
+          <header>
+            <strong>{example.name}</strong>
+            <p>{example.contact}</p>
+            <h3>{example.targetTitle}</h3>
+          </header>
+          {example.sections.map((section) => (
+            <section key={section.label}>
+              <h4>{section.label}</h4>
+              {section.body ? <p>{section.body}</p> : null}
+              {section.items ? <ul>{section.items.map((item) => <li key={item}>{item}</li>)}</ul> : null}
+            </section>
+          ))}
+        </article>
+        <aside className={styles.resumeGuidance} aria-labelledby="resume-guidance-title">
+          <h3 id="resume-guidance-title">Choose the right emphasis</h3>
+          {example.guidance.map((note) => (
+            <div className={styles.groupCard} key={note.label}>
+              <h4>{note.label}</h4><p>{note.body}</p>
+            </div>
+          ))}
+          <div className={styles.groupCard}>
+            <h4>Use numbers you can verify</h4><p>{example.bulletTip}</p>
+          </div>
+        </aside>
+      </div>
+      <div className={styles.exampleNextStep}>
+        <BuildCta content={content} location={`${content.ctaLocations.hero}_resume_example`}
+          label="Build my free preview" className="rb-button rb-button-primary" />
+        <p>$9.99 once to unlock your resume and matching cover letter as PDF + DOCX. No subscription.</p>
+        <nav aria-label="More skilled-trades resume guidance">
+          <a href="/resume-examples/skilled-trades">Compare examples across seven trades</a>
+          <a href="/resume-examples">Browse all trade career families</a>
+        </nav>
+      </div>
+    </section>
+  );
+}
+
 export function TradeLandingPage({ content }: { content: TradeLandingContent }) {
   const worksiteImage = TRADE_WORKSITE_IMAGES[content.trade] ?? {
     src: "/trade-hustl3-resume-builder-home-hero.webp",
@@ -188,6 +239,8 @@ export function TradeLandingPage({ content }: { content: TradeLandingContent }) 
           ))}
         </div>
       </section>
+
+      <CompleteResumeExample content={content} />
 
       <section className={`${styles.section} ${styles.proofSection}`} aria-labelledby="examples-title">
         <div className={styles.botPanel}>

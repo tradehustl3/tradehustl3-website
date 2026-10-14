@@ -41,8 +41,8 @@ const PAGES = [
   },
   {
     slug: "facilities-maintenance",
-    title: "Facilities Maintenance Resume Builder | TRADE HUSTL3",
-    descPrefix: "Turn your PMs, work orders, CMMS history, and multi-trade repairs into an ATS-ready maintenance technician resume.",
+    title: "Facility Maintenance Resume Example & Builder | TRADE HUSTL3",
+    descPrefix: "See a facility maintenance resume example with CMMS, preventive maintenance, and work-order bullets.",
     breadcrumb: "Facilities Maintenance",
     heroLocation: "facilities_hero",
     analyticsItem: "resume_builder_facilities_maintenance",
@@ -287,4 +287,45 @@ test("regression: trade SEO pages keep the shared Resume Builder header", async 
   const html = await res.text();
   assert.match(html, /\/optimized\/resume-builder-logo-header\.webp/, `${p} approved logo`);
   assert.doesNotMatch(html, /src="[^"]*\/trade-hustl3-logo\.png/, `${p} standalone logo leaked`);
+});
+
+test("facilities example is crawlable, clearly illustrative, and enters the correct builder track", async () => {
+  const html = await (await renderPath("/resume-builder/facilities-maintenance")).text();
+  assert.equal((html.match(/<h1[ >]/g) ?? []).length, 1);
+  assert.match(html, /FACILITY MAINTENANCE RESUME/);
+  assert.match(html, /aria-label="Fill-in resume example"/);
+  assert.match(html, /Replace every bracket with your own verified details/);
+  assert.match(html, /these are not customer results/);
+  for (const heading of ["Professional summary", "Skills", "Experience", "Earlier experience", "Education and training", "Credentials"]) {
+    assert.ok(html.includes(`<h4>${heading}</h4>`), `missing resume section: ${heading}`);
+  }
+  assert.match(html, /Closed \[X\] work orders per week across \[N\] buildings/);
+  assert.match(html, /Apartment and multifamily maintenance/);
+  assert.match(html, /Commercial and institutional facilities/);
+  assert.match(html, /Warehouse building maintenance/);
+  assert.match(html, /\[PM tasks finished on time\] ÷ \[PM tasks due\] × 100/);
+
+  const cta = html.match(/<a\b[^>]*data-location="facilities_hero_resume_example"[^>]*>/)?.[0];
+  assert.ok(cta, "example has its own measurable CTA");
+  assert.match(cta, /href="\/\?trade=facilities-maintenance#resume-start"/);
+  assert.match(cta, /data-analytics-event="cta_click"/);
+  assert.match(cta, /data-item="resume_builder_facilities_maintenance"/);
+  assert.match(html, /href="\/resume-examples\/skilled-trades"/);
+  assert.match(html, /href="\/resume-examples"/);
+  assert.match(html, /\$9\.99 once to unlock your resume and matching cover letter as PDF \+ DOCX/);
+
+  const graphs = [...html.matchAll(/<script type="application\/ld\+json">([^<]+)<\/script>/g)]
+    .flatMap((match) => JSON.parse(match[1])["@graph"] ?? []);
+  const faq = graphs.find((item) => item["@type"] === "FAQPage");
+  const pmQuestion = faq.mainEntity.find((item) => item.name === "How do I quantify preventive maintenance on my resume?");
+  assert.ok(pmQuestion, "PM guidance is present in structured data");
+  assert.ok(html.includes(pmQuestion.acceptedAnswer.text), "schema answer matches the visible FAQ");
+});
+
+test("a facilities-only example does not appear on sibling guides or create another sitemap URL", async () => {
+  const html = await (await renderPath("/resume-builder/plumbing")).text();
+  assert.doesNotMatch(html, /aria-label="Fill-in resume example"/);
+  const xml = await (await renderPath("/sitemap.xml")).text();
+  assert.equal((xml.match(/<loc>https:\/\/tradehustl3\.com\/resume-builder\/facilities-maintenance<\/loc>/g) ?? []).length, 1);
+  assert.match(xml, /facilities-maintenance<\/loc>[\s\S]*?<lastmod>2026-10-13T00:00:00\.000Z<\/lastmod>/);
 });
