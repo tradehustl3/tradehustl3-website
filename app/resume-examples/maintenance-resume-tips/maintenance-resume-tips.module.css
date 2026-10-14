@@ -1,0 +1,33 @@
+/* Guide-specific pieces; page chrome comes from ../skilled-trades/skilled-trades.module.css. */
+
+.fixList { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; }
+.fixList li { display: grid; grid-template-columns: 38px minmax(0, 1fr); gap: 12px; align-items: center; padding: 14px 0; border-top: 1px solid var(--rb-border); }
+.fixList li > span { width: 32px; height: 32px; display: grid; place-items: center; border-radius: 50%; background: var(--rb-red); color: #fff; font-size: 12px; font-weight: 800; }
+.fixList a { color: var(--rb-navy); font-size: 16px; font-weight: 700; text-decoration: none; }
+.fixList a:hover { color: var(--rb-red); text-decoration: underline; text-underline-offset: 3px; }
+
+.systemGrid, .credentialGrid { display: grid; gap: 14px; margin: 0; padding: 0; list-style: none; }
+.systemGrid { grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); }
+.credentialGrid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.systemGrid li, .credentialGrid li { padding: 22px; border: 1px solid var(--rb-border); border-radius: var(--rb-radius-lg); background: var(--rb-soft); }
+.credentialGrid li { border-top: 4px solid var(--rb-red); }
+.systemGrid strong, .credentialGrid strong { display: block; color: var(--rb-navy); font-size: 18px; }
+.systemGrid span, .credentialGrid span { display: block; margin-top: 8px; color: var(--rb-text-2); font-size: 15px; line-height: 1.6; }
+
+.rewriteList { display: grid; gap: 4px; }
+.rewriteList > div { margin-top: 12px; }
+
+.sourceNote { margin: 18px 0 0; color: var(--rb-text-2); font-size: 13px; line-height: 1.6; }
+.sourceNote a { color: var(--rb-navy); text-decoration: underline; text-underline-offset: 3px; }
+
+.exampleSection { background: var(--rb-surface); }
+.nextLinks { display: flex; flex-wrap: wrap; gap: 12px 28px; }
+.nextLinks a { display: inline-flex; gap: 7px; color: var(--rb-navy); font-size: 16px; font-weight: 750; text-decoration: underline; text-underline-offset: 4px; }
+.nextLinks a:hover { color: var(--rb-red); }
+
+.sideNote { margin: 12px 0 0; color: var(--rb-text-2); font-size: 15px; }
+.sideNote a { color: var(--rb-navy); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+
+@media (max-width: 980px) {
+  .credentialGrid { grid-template-columns: minmax(0, 1fr); }
+}
