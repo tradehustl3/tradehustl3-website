@@ -72,6 +72,7 @@
 .credential strong { color: var(--rb-text); }
 .guideLink { display: inline-flex; gap: 6px; margin-top: 18px; color: var(--rb-navy); font-size: 14px; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
 .guideLink:hover { color: var(--rb-red); }
+.guideLink:not(:last-child) { margin-right: 22px; }
 
 .checklistSection { border-block: 1px solid var(--rb-border); background: var(--rb-surface); }
 .checklist { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin: 0 0 28px; padding: 0; list-style: none; }

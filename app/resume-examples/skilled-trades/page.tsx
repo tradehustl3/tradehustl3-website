@@ -17,6 +17,8 @@ type TradeExample = {
   trade: string;
   role: string;
   guideHref: string;
+  /** Optional deeper how-to guide for this trade. */
+  howToGuide?: { href: string; label: string };
   summary: string;
   bullets: string[];
   skills: string[];
@@ -89,6 +91,7 @@ const tradeExamples: TradeExample[] = [
     trade: "Facilities Maintenance",
     role: "Facilities / Maintenance Technician",
     guideHref: "/resume-builder/facilities-maintenance",
+    howToGuide: { href: "/resume-examples/maintenance-resume-tips", label: "How to write a maintenance resume" },
     summary:
       "Facilities maintenance technician supporting [X] square feet, [X] units, or [X] buildings through preventive maintenance, work-order response, and multi-trade repairs.",
     bullets: [
@@ -331,6 +334,9 @@ export default function SkilledTradesResumeExamplesPage() {
               </div>
               <p className={styles.credential}><strong>Credential line:</strong> {example.credentials}</p>
               <a className={styles.guideLink} href={example.guideHref}>Open the {example.trade} resume guide <span aria-hidden="true">→</span></a>
+              {example.howToGuide ? (
+                <a className={styles.guideLink} href={example.howToGuide.href}>{example.howToGuide.label} <span aria-hidden="true">→</span></a>
+              ) : null}
             </article>
           ))}
         </div>

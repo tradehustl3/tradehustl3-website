@@ -42,6 +42,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "weekly",
       priority: 0.9,
     },
+    {
+      url: `${SITE_URL}/resume-examples/maintenance-resume-tips`,
+      lastModified: new Date("2026-10-14T00:00:00.000Z"),
+      changeFrequency: "weekly",
+      priority: 0.7,
+    },
     ...TRADE_LANDING_PAGES.map((page) => ({
       url: `${SITE_URL}${tradeLandingPath(page)}`,
       lastModified: page.slug === "facilities-maintenance"
