@@ -694,6 +694,10 @@ p.rb-quality-pass { margin: 12px 0 0; padding: 10px 12px; border: 1px solid var(
 .rb-lock-note p .rb-lock-icon { margin-top: 2px; }
 .rb-lock-note .rb-button { flex: 0 0 auto; min-height: 44px; padding: 0 16px; font-size: 14px; white-space: nowrap; }
 .rb-unpaid-includes { display: grid; gap: 8px; margin: 16px 0 0; padding: 0; list-style: none; }
+.rb-unpaid-card .rb-purchase-disclosure { margin: 18px 0 12px; font-size: 13px; line-height: 1.6; color: var(--rb-text-2); }
+.rb-purchase-agreement { margin: 12px 0 18px; font-size: 13px; line-height: 1.5; }
+.rb-purchase-agreement input { flex-shrink: 0; }
+.rb-purchase-agreement a, .rb-purchase-disclosure a { text-decoration: underline; text-underline-offset: 3px; }
 .rb-unpaid-includes li { position: relative; padding-left: 26px; color: var(--rb-text); font-size: 15px; line-height: 1.45; }
 .rb-unpaid-includes li::before { content: ""; position: absolute; left: 0; top: 2px; width: 18px; height: 18px; border-radius: 50%; background: var(--rb-success-soft) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='m5.5 10.5 3 3 6-6.5' fill='none' stroke='%2315803d' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 14px no-repeat; }
 .rb-unpaid-card { scroll-margin-top: 16px; }

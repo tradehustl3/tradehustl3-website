@@ -1,5 +1,6 @@
 import { storedStyle, type ResumeStyle } from './resume-templates';
 import { errorKind } from "./resume-safe-log";
+import { recordCleanFileDelivery, type DeliveredResumeFile } from "./purchase-protection";
 import {
   handleResumeBuilderRoute as handleBaseResumeBuilderRoute,
   resumeSystemProfile,
@@ -203,12 +204,12 @@ async function findCoverFile(
   userId: string,
   resumeId: string,
   format: CoverFormat,
-): Promise<{ object_key: string } | null> {
+): Promise<(DeliveredResumeFile & { object_key: string }) | null> {
   return env.DB.prepare(
-    `SELECT object_key FROM resume_files
+    `SELECT object_key, file_id, byte_size, sha256 FROM resume_files
      WHERE resume_id = ? AND user_id = ? AND format = ?
      ORDER BY created_at DESC LIMIT 1`,
-  ).bind(resumeId, userId, format).first<{ object_key: string }>();
+  ).bind(resumeId, userId, format).first<DeliveredResumeFile & { object_key: string }>();
 }
 
 async function loadStoredCoverLetter(
@@ -764,6 +765,14 @@ async function serveCoverLetterFile(
   if (!row || !env.BOOKS) return json({ ok: false, message: "File not found." }, 404);
   const object = await env.BOOKS.get(row.object_key);
   if (!object) return json({ ok: false, message: "File not found." }, 404);
+  try {
+    if (!await recordCleanFileDelivery(env.DB, probe.record.user_id, resumeId, storedFormat, showInline ? "inline" : "attachment", row)) {
+      return json({ ok: false, message: "File not found." }, 404);
+    }
+  } catch (error) {
+    console.error("Cover letter delivery record failed", errorKind(error));
+    return json({ ok: false, message: "File delivery is temporarily unavailable. Please try again." }, 503);
+  }
   const headers = new Headers();
   headers.set("Content-Type", isDocx
     ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document"

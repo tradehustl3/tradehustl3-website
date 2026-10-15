@@ -8,6 +8,7 @@ import { isCurrentDate, parseResumeDate, resumeDateInSource } from "../worker/re
 import { credentialKey } from "../worker/resume-section-classifier";
 import { handleResumeBuilderRoute, runResumeBuilderRetention } from "../worker/resume-builder";
 import { handleResumeBuilderRoute as handleBaseResumeRoute } from "../worker/resume-builder-base";
+import { PURCHASE_TERMS_VERSION } from "../shared/purchase-terms";
 import { serverUploadReview } from "../worker/resume-upload-requirements";
 import {
   emptyWizardData,
@@ -393,7 +394,7 @@ test("checkout redirect keeps resume_id on both Stripe return URLs", async () =>
     const response = await handleBaseResumeRoute(new Request("https://tradehustl3.com/api/resume-builder/resumes/draft-123/checkout", {
       method: "POST",
       headers: { Origin: "https://tradehustl3.com", Cookie: `tradehustl3_resume_session=${TEST_SESSION}`, "Content-Type": "application/json" },
-      body: "{}",
+      body: JSON.stringify({ accepted: true, policyVersion: PURCHASE_TERMS_VERSION }),
     }), env(DB, { STRIPE_SECRET_KEY: "sk_test", STRIPE_RESUME_PRICE_ID: "price_test" }));
     assert.equal(response?.status, 200);
   } finally {

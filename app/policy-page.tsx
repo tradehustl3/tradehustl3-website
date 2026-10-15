@@ -9,11 +9,13 @@ export function PolicyPage({
   eyebrow,
   title,
   summary,
+  updated = LEGAL_UPDATED,
   children,
 }: {
   eyebrow: string;
   title: string;
   summary: string;
+  updated?: string;
   children: ReactNode;
 }) {
   return (
@@ -31,7 +33,7 @@ export function PolicyPage({
         <p className="section-label">/ {eyebrow}</p>
         <h1>{title}</h1>
         <p>{summary}</p>
-        <small>Last updated {LEGAL_UPDATED}</small>
+        <small>Last updated {updated}</small>
       </section>
 
       <article className="policy-content">{children}</article>
