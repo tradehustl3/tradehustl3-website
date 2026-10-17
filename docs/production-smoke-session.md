@@ -5,7 +5,7 @@ the review flow:
 
 API health → smoke sign-in → open seeded resume → confirm Download/Print absent →
 switch template (Field Pro → Modern Trade) → inspect heading → change customization →
-switch template (→ Lead / Supervisor) → inspect heading → Lead / Supervisor rewrite
+inspect rendered customization → switch template (→ Lead / Supervisor) → inspect heading → Lead / Supervisor rewrite
 requires payment → open legacy resume → sign out.
 
 Section headings follow the writing track, not the template. An unpaid look switch to
@@ -14,6 +14,19 @@ run asserts that `TECHNICAL & OPERATIONS COMPETENCIES` is absent and that the tr
 rewrite returns 402 without using a correction. The Lead track heading itself is
 covered by the renderer tests (`tests/resume-templates-v2.test.ts`); the smoke fixture
 is unpaid by design and cannot reach it.
+
+Customization is checked in the rendered preview as well as in the saved values. The
+runner renders the watermarked preview before and after the font / size / accent change,
+in the same template, and compares a render signature extracted with pdf.js: body font
+family, body text size, painted fill colors, every text size, fonts and page count, hashed
+into a short fingerprint. Raw PDF bytes are not compared for this: pdf-lib writes creation
+and modification dates, so two renders of identical input already differ. The step fails
+if the fingerprint is unchanged, the body font did not change, the body size did not
+grow, the requested accent (`#24543c`, Forest Green) is not painted, or the previous
+accent is still painted. The fixture's core facts must appear in both renders, and the
+resume must stay unpaid, without downloads, and with the same AI usage, template, and
+track. The preview is rendered from the saved style on every request
+(`serveProtectedPreview`), so this checks the same render customers see.
 
 - Endpoint: `POST /api/resume-builder/internal/smoke/session` (`worker/resume-smoke-session.ts`)
 - Runner: `tools/smoke/resume-builder-smoke.mjs`
