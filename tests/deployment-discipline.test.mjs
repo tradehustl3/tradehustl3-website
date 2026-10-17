@@ -92,7 +92,12 @@ test("production smoke runs the signed-in review flow without gating deploys on 
   assert.match(source, /npm ci --omit=dev --ignore-scripts/);
   const runner = await readFile(new URL("../tools/smoke/resume-builder-smoke.mjs", import.meta.url), "utf8");
   assert.doesNotMatch(runner, /call\("\/api\/health"/, "the queue-coupled health endpoint must not gate deploys");
-  for (const step of ["smoke sign-in", "switch template", "inspect heading", "change customization", "inspect rendered preview after customization", "render fingerprint", "Download/Print absent", "Lead / Supervisor", "TECHNICAL & OPERATIONS COMPETENCIES", "open legacy resume"]) {
+  for (const step of ["smoke sign-in", "switch template", "inspect heading", "change customization", "inspect rendered preview after customization", "render fingerprint", "Download/Print absent", "review page shows no Download/Print controls while unpaid (browser)", "inspectUnpaidReviewUi", "Lead / Supervisor", "TECHNICAL & OPERATIONS COMPETENCIES", "open legacy resume"]) {
     assert.ok(runner.includes(step), `runner covers: ${step}`);
   }
+  // The browser step must never let the page change server state or load third parties.
+  const browserCheck = await readFile(new URL("../tools/smoke/review-ui.mjs", import.meta.url), "utf8");
+  assert.match(browserCheck, /!\["GET", "HEAD", "OPTIONS"\]\.includes\(request\.method\)[\s\S]*?Fetch\.fulfillRequest/, "non-GET requests are answered in the browser");
+  assert.match(browserCheck, /url\.origin !== site\.origin[\s\S]*?Fetch\.failRequest/, "third-party requests are blocked");
+  assert.match(browserCheck, /Browser\.setDownloadBehavior", \{ behavior: "deny"/, "downloads are denied");
 });

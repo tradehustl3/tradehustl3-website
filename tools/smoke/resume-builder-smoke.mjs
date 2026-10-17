@@ -3,6 +3,7 @@
  * Authenticated production smoke test for the Resume Builder review flow.
  *
  * API health → smoke sign-in → open seeded resume → confirm Download/Print absent →
+ * review page in a browser (no Download/Print controls) →
  * switch template (Modern Trade) → inspect heading → customize → inspect rendered
  * customization → switch template (Lead / Supervisor) → inspect heading →
  * Lead rewrite requires payment → open legacy resume → sign out
@@ -11,12 +12,15 @@
  *   SMOKE_ORIGIN               default https://tradehustl3.com
  *   SMOKE_TEST_LOGIN_SECRET    required; bearer for the smoke session endpoint
  *   SMOKE_BYPASS_TOKEN         optional; sent as X-Smoke-Token (edge rule)
+ *   SMOKE_CHROME_PATH          optional; Chrome/Chromium for the browser step
  *
  * Output never contains secrets, cookies, or response bodies beyond the
  * server's short `message` field.
  */
 import { createHash } from "node:crypto";
 import { getDocument, OPS } from "pdfjs-dist/legacy/build/pdf.mjs";
+import { BrowserUnavailable } from "./cdp-browser.mjs";
+import { inspectUnpaidReviewUi } from "./review-ui.mjs";
 
 const ORIGIN = (process.env.SMOKE_ORIGIN || "https://tradehustl3.com").replace(/\/+$/, "");
 const LOGIN_SECRET = process.env.SMOKE_TEST_LOGIN_SECRET || "";
@@ -206,6 +210,70 @@ async function main() {
     }
     const view = await call(`/api/resume-builder/resumes/${ids.current}/files/pdf?view=1`);
     expect(view.status === 404, `print view returned HTTP ${view.status} without payment`);
+  });
+
+  // Same unpaid state, seen the way a customer sees it. Failure messages say whether
+  // the API granted access (entitlement) or the page exposed it anyway (UI).
+  await step("review page shows no Download/Print controls while unpaid (browser)", async () => {
+    const before = await statusOf(ids.current, "status before browser check");
+    expect(before.paid === false && before.downloads === null && before.correctionsRemaining === 0,
+      "API entitlement failure: unpaid resume reports paid, downloads, or corrections before the browser check");
+
+    let ui;
+    try {
+      ui = await inspectUnpaidReviewUi({ origin: ORIGIN, sessionCookie: cookie, bypassToken: BYPASS, resumeId: ids.current });
+    } catch (error) {
+      if (error instanceof BrowserUnavailable) fail(`browser unavailable: ${error.message}`);
+      throw error;
+    }
+    const { traffic, initial } = ui;
+    if (traffic.cloudflareChallenge) {
+      fail("GET /resume-builder/review: Cloudflare challenge (cf-mitigated) — the edge skip rule for smoke traffic is missing or not matching.");
+    }
+    expect(traffic.documentStatus === 200, `review page returned HTTP ${traffic.documentStatus}`);
+    expect(ui.ready === "ready", `UI regression: preview viewer did not render (${ui.ready === "error" ? initial.viewerError : `toolbar ${JSON.stringify(initial.toolbar)}, viewer ${JSON.stringify(initial.viewer)}, alerts ${JSON.stringify(initial.alerts)}`})`);
+    expect(initial.toolbar?.startsWith("Protected watermarked preview"), `UI regression: preview toolbar reads ${JSON.stringify(initial.toolbar)}`);
+    expect(initial.viewer.drawn >= 1 && initial.viewer.inkRatio > 0.005, `UI regression: preview canvas is blank (${JSON.stringify(initial.viewer)})`);
+    expect(ui.hydration.zoomAfter && ui.hydration.zoomAfter !== ui.hydration.zoomBefore, `UI regression: page is not interactive (zoom ${ui.hydration.zoomBefore} → ${ui.hydration.zoomAfter})`);
+
+    for (const [label, scan] of [["on load", initial], ["after checkout click", ui.afterCheckout]]) {
+      if (!scan) continue;
+      expect(scan.downloadSections === 0, `UI regression: Download section rendered for an unpaid resume (${label})`);
+      expect(scan.fileLinks.length === 0, `UI regression: file link exposed to an unpaid resume (${label}): ${JSON.stringify(scan.fileLinks)}`);
+      expect(scan.nativeViewers === 0, `UI regression: native PDF viewer embedded (it has its own Download/Print) (${label})`);
+      const exposed = scan.named.filter((control) => control.actionable && !control.checkoutCta);
+      expect(exposed.length === 0, `UI regression: usable Download/Print control for an unpaid resume (${label}): ${JSON.stringify(exposed)}`);
+      expect(scan.named.every((control) => !/\bprint\b/i.test(control.name)), `UI regression: Print control rendered for an unpaid resume (${label}): ${JSON.stringify(scan.named)}`);
+      expect(scan.printCalls === 0, `UI regression: window.print() called (${label})`);
+    }
+
+    // Unpaid customers see one download-named control, the checkout button. Clicking
+    // it must only request checkout (answered in the browser), never a file.
+    expect(ui.checkout, "UI regression: no checkout button visible for an unpaid resume");
+    expect(traffic.fileRequests.length === 0, `UI regression: page requested clean files (including via the checkout button): ${JSON.stringify(traffic.fileRequests)}`);
+    expect(traffic.downloads === 0, `UI regression: ${traffic.downloads} browser download(s) started for an unpaid resume`);
+    expect(ui.checkout.clicked, `UI regression: checkout button "${ui.checkout.name}" is covered or cannot be clicked`);
+    const checkoutPaths = ui.checkout.requests.map((request) => `${request.method} ${request.path}`);
+    expect(checkoutPaths.length === 1 && checkoutPaths[0] === `POST /api/resume-builder/resumes/${ids.current}/checkout`,
+      `UI regression: checkout button "${ui.checkout.name}" sent ${JSON.stringify(checkoutPaths)}, expected one checkout POST`);
+    expect(ui.checkout.alert, `UI regression: checkout button "${ui.checkout.name}" did not report the intercepted checkout`);
+    expect(ui.checkout.url.startsWith("/resume-builder/review"), `UI regression: checkout click navigated to ${ui.checkout.url}`);
+
+    const radios = initial.radios;
+    expect(radios.length === 3 && radios.every((radio) => radio.actionable), `UI regression: resume system picker not usable: ${JSON.stringify(radios)}`);
+    expect(radios.filter((radio) => radio.checked).map((radio) => radio.name).join() === "Field Pro", `UI regression: picker selection ${JSON.stringify(radios)}, expected Field Pro`);
+    const selects = Object.fromEntries(initial.selects.map((select) => [select.label, select]));
+    for (const [label, key] of [["Font", "font"], ["Text size", "textSize"], ["Spacing", "spacing"], ["Accent color", "accent"]]) {
+      expect(selects[label]?.actionable, `UI regression: ${label} control not usable`);
+      expect(selects[label].value === before.style[key], `UI regression: ${label} shows ${selects[label].value}, API has ${before.style[key]}`);
+    }
+
+    const after = await statusOf(ids.current, "status after browser check");
+    expect(after.paid === false && after.downloads === null && after.correctionsRemaining === 0,
+      "API entitlement failure: browser check changed payment or download state");
+    expect(after.runsUsed === before.runsUsed && after.theme === before.theme && JSON.stringify(after.style) === JSON.stringify(before.style),
+      "browser check changed the resume");
+    console.log(`     ui: preview drawn, ${initial.named.length} download/print-named control(s), all checkout (${initial.named.map((control) => JSON.stringify(control.name)).join(", ")}); ${traffic.thirdPartyBlocked} third-party request(s) blocked; ${traffic.mutations.length} write(s) answered in-browser`);
   });
 
   await step("switch template Field Pro → Modern Trade (free, no AI)", async () => {
