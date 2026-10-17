@@ -3,9 +3,17 @@
 The post-deploy smoke run signs in as a synthetic account without email and walks
 the review flow:
 
-API health → smoke sign-in → open seeded resume → switch template (Field Pro →
-Modern Trade) → inspect heading → change customization → confirm Download/Print
-absent → open legacy resume → sign out.
+API health → smoke sign-in → open seeded resume → confirm Download/Print absent →
+switch template (Field Pro → Modern Trade) → inspect heading → change customization →
+switch template (→ Lead / Supervisor) → inspect heading → Lead / Supervisor rewrite
+requires payment → open legacy resume → sign out.
+
+Section headings follow the writing track, not the template. An unpaid look switch to
+Lead / Supervisor keeps the Field Pro track (PROFESSIONAL SUMMARY, CORE SKILLS), so the
+run asserts that `TECHNICAL & OPERATIONS COMPETENCIES` is absent and that the track
+rewrite returns 402 without using a correction. The Lead track heading itself is
+covered by the renderer tests (`tests/resume-templates-v2.test.ts`); the smoke fixture
+is unpaid by design and cannot reach it.
 
 - Endpoint: `POST /api/resume-builder/internal/smoke/session` (`worker/resume-smoke-session.ts`)
 - Runner: `tools/smoke/resume-builder-smoke.mjs`

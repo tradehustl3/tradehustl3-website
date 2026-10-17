@@ -2,8 +2,10 @@
 /**
  * Authenticated production smoke test for the Resume Builder review flow.
  *
- * API health → smoke sign-in → open seeded resume → switch template → customize →
- * inspect heading → confirm Download/Print absent → open legacy resume → sign out
+ * API health → smoke sign-in → open seeded resume → confirm Download/Print absent →
+ * switch template (Modern Trade) → inspect heading → customize → switch template
+ * (Lead / Supervisor) → inspect heading → Lead rewrite requires payment →
+ * open legacy resume → sign out
  *
  * Env:
  *   SMOKE_ORIGIN               default https://tradehustl3.com
@@ -165,6 +167,41 @@ async function main() {
     expect(body.runConsumed === false, "customization consumed an AI correction");
     const style = (await statusOf(ids.current, "status")).style;
     for (const [key, value] of Object.entries(change)) expect(style?.[key] === value, `${key} is ${style?.[key]}, expected ${value}`);
+  });
+
+  // Same PATCH the review page sends when an unpaid customer picks Lead / Supervisor.
+  // Track headings follow the writing track, which only a paid rewrite changes, so
+  // the look switches while the Field Pro wording and headings stay.
+  await step("switch template → Lead / Supervisor (free, no AI)", async () => {
+    const response = await call(`/api/resume-builder/resumes/${ids.current}`, { method: "PATCH", origin: true, body: { theme: "lead" } });
+    const body = await jsonOf(response, "lead switch");
+    expect(response.status === 200, `HTTP ${response.status}: ${body.message || "no message"}`);
+    expect(body.runConsumed === false, "Lead / Supervisor switch consumed an AI correction");
+    const resume = await statusOf(ids.current, "status after lead switch");
+    expect(resume.theme === "lead", `theme is ${resume.theme}, expected lead`);
+    expect(resume.generationTrack === "plain", `Lead / Supervisor look switch changed the career track to ${resume.generationTrack}`);
+    expect(resume.paid === false && resume.downloads === null, "Lead / Supervisor switch changed entitlement state");
+    expect(resume.previewUrl, "no preview URL after Lead / Supervisor switch");
+  });
+
+  await step("inspect heading after Lead / Supervisor switch", async () => {
+    const resume = await statusOf(ids.current, "status");
+    const preview = await pdfText(await call(resume.previewUrl), "Lead / Supervisor preview");
+    expect(preview.pages >= 1, "Lead / Supervisor preview has no pages");
+    expect(preview.text.includes(CANDIDATE_NAME), "candidate name not found in Lead / Supervisor preview");
+    expect(preview.text.includes("PROFESSIONAL SUMMARY") && preview.text.includes("CORE SKILLS"), "Field Pro track headings lost after Lead / Supervisor look switch");
+    expect(!preview.text.includes("TECHNICAL & OPERATIONS COMPETENCIES"), "unpaid look switch leaked the Lead / Supervisor track heading TECHNICAL & OPERATIONS COMPETENCIES");
+    expect(Buffer.compare(Buffer.from(preview.bytes), Buffer.from(firstPreview.bytes)) !== 0, "preview was not re-rendered");
+  });
+
+  await step("Lead / Supervisor rewrite requires payment (no AI, no correction)", async () => {
+    const response = await call(`/api/resume-builder/resumes/${ids.current}/generate`, { method: "POST", origin: true, body: { generationTrack: "lead" } });
+    const body = await jsonOf(response, "lead rewrite");
+    expect(response.status === 402 && body.code === "PAYMENT_REQUIRED", `unpaid Lead / Supervisor rewrite returned HTTP ${response.status} ${body.code || ""}, expected 402 PAYMENT_REQUIRED`);
+    expect(body.runConsumed === false, "refused Lead / Supervisor rewrite consumed an AI correction");
+    const resume = await statusOf(ids.current, "status after refused rewrite");
+    expect(resume.generationTrack === "plain" && resume.theme === "lead", "refused rewrite changed the resume");
+    expect(resume.paid === false && resume.downloads === null, "refused rewrite changed entitlement state");
   });
 
   await step("open legacy resume", async () => {
