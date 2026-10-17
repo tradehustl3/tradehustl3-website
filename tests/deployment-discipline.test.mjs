@@ -92,7 +92,12 @@ test("production smoke runs the signed-in review flow without gating deploys on 
   assert.match(source, /npm ci --omit=dev --ignore-scripts/);
   const runner = await readFile(new URL("../tools/smoke/resume-builder-smoke.mjs", import.meta.url), "utf8");
   assert.doesNotMatch(runner, /call\("\/api\/health"/, "the queue-coupled health endpoint must not gate deploys");
-  for (const step of ["smoke sign-in", "switch template", "inspect heading", "change customization", "inspect rendered preview after customization", "render fingerprint", "Download/Print absent", "Lead / Supervisor", "TECHNICAL & OPERATIONS COMPETENCIES", "open legacy resume"]) {
+  for (const step of ["smoke sign-in", "switch template", "inspect heading", "change customization", "inspect rendered preview after customization", "render fingerprint", "Download/Print absent", "Lead / Supervisor", "TECHNICAL & OPERATIONS COMPETENCIES", "open legacy resume", "browser: unpaid review page has no Download or Print controls", "checkUnpaidReviewInBrowser"]) {
     assert.ok(runner.includes(step), `runner covers: ${step}`);
   }
+  // The browser step keeps its failure classes apart and never hides the API checks.
+  for (const label of ["UI regression (", "UI broken (", "API entitlement failure:", "browser unavailable (runner problem, not a site result)"]) {
+    assert.ok(runner.includes(label), `runner classifies: ${label}`);
+  }
+  assert.ok(runner.indexOf('"confirm Download/Print absent before payment"') < runner.indexOf('"browser: unpaid review page has no Download or Print controls"'), "API entitlement check still runs, before the browser check");
 });

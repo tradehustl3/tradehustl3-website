@@ -3,7 +3,7 @@
  * Authenticated production smoke test for the Resume Builder review flow.
  *
  * API health → smoke sign-in → open seeded resume → confirm Download/Print absent →
- * switch template (Modern Trade) → inspect heading → customize → inspect rendered
+ * browser: unpaid review page has no Download/Print → switch template (Modern Trade) → inspect heading → customize → inspect rendered
  * customization → switch template (Lead / Supervisor) → inspect heading →
  * Lead rewrite requires payment → open legacy resume → sign out
  *
@@ -11,12 +11,15 @@
  *   SMOKE_ORIGIN               default https://tradehustl3.com
  *   SMOKE_TEST_LOGIN_SECRET    required; bearer for the smoke session endpoint
  *   SMOKE_BYPASS_TOKEN         optional; sent as X-Smoke-Token (edge rule)
+ *   SMOKE_CHROME_PATH          optional; Chrome/Chromium for the browser step
+ *                              (default: google-chrome/chromium on PATH)
  *
  * Output never contains secrets, cookies, or response bodies beyond the
  * server's short `message` field.
  */
 import { createHash } from "node:crypto";
 import { getDocument, OPS } from "pdfjs-dist/legacy/build/pdf.mjs";
+import { BrowserUnavailable, CloudflareChallenge, checkUnpaidReviewInBrowser } from "./review-ui.mjs";
 
 const ORIGIN = (process.env.SMOKE_ORIGIN || "https://tradehustl3.com").replace(/\/+$/, "");
 const LOGIN_SECRET = process.env.SMOKE_TEST_LOGIN_SECRET || "";
@@ -29,6 +32,8 @@ const CUSTOMIZATION = { font: "Traditional", textSize: "Large", accent: "Forest 
 // Accent "Forest Green" (worker/resume-templates.ts ACCENT_HEX), as pdf.js reports fills.
 const CUSTOMIZATION_ACCENT_FILL = "#24543c";
 
+const USER_AGENT = "Mozilla/5.0 (compatible; TRADE-HUSTL3-Production-Smoke/1.0)";
+
 let cookie = "";
 let failures = 0;
 
@@ -37,7 +42,7 @@ const fail = (message) => { throw new SmokeFailure(message); };
 const expect = (condition, message) => { if (!condition) fail(message); };
 
 async function call(path, { method = "GET", body, origin = false, auth } = {}) {
-  const headers = { "User-Agent": "Mozilla/5.0 (compatible; TRADE-HUSTL3-Production-Smoke/1.0)", "Cache-Control": "no-cache" };
+  const headers = { "User-Agent": USER_AGENT, "Cache-Control": "no-cache" };
   if (BYPASS) headers["X-Smoke-Token"] = BYPASS;
   if (cookie) headers.Cookie = cookie;
   if (auth) headers.Authorization = `Bearer ${auth}`;
@@ -206,6 +211,44 @@ async function main() {
     }
     const view = await call(`/api/resume-builder/resumes/${ids.current}/files/pdf?view=1`);
     expect(view.status === 404, `print view returned HTTP ${view.status} without payment`);
+  });
+
+  // Same unpaid resume, through the real customer review page in headless Chrome.
+  // Failure prefixes keep the classes apart: "UI regression" (a Download/Print
+  // path is visible or usable), "UI broken" (viewer or free controls), "API
+  // entitlement failure" (server state), "browser unavailable" (runner).
+  await step("browser: unpaid review page has no Download or Print controls", async () => {
+    const entitlement = (resume) => ({
+      paid: resume.paid, downloads: resume.downloads, runsUsed: resume.runsUsed, correctionsRemaining: resume.correctionsRemaining,
+      theme: resume.theme, generationTrack: resume.generationTrack, style: JSON.stringify(resume.style),
+    });
+    const before = await statusOf(ids.current, "status before browser check");
+    expect(before.paid === false && before.downloads === null, "API entitlement failure: fixture is paid or offers downloads before the browser check");
+
+    let results;
+    try {
+      results = await checkUnpaidReviewInBrowser({ origin: ORIGIN, resumeId: ids.current, sessionCookie: cookie, bypassToken: BYPASS, userAgent: USER_AGENT });
+    } catch (error) {
+      if (error instanceof CloudflareChallenge) fail(error.message);
+      if (error instanceof BrowserUnavailable) fail(`browser unavailable (runner problem, not a site result): ${error.message}`);
+      fail(`browser check error (runner problem, not a site result): ${error?.name || "Error"}: ${error?.message || "no message"}`);
+    }
+    for (const result of results) {
+      expect(result.regressions.length === 0, `UI regression (${result.viewport}): unpaid customer can see or use a Download/Print path — ${result.regressions.join("; ")}`);
+      expect(result.broken.length === 0, `UI broken (${result.viewport}): ${result.broken.join("; ")}`);
+    }
+
+    const after = await statusOf(ids.current, "status after browser check");
+    expect(after.paid === false && after.downloads === null, "API entitlement failure: opening the review page granted downloads or payment");
+    const was = entitlement(before);
+    const now = entitlement(after);
+    for (const key of Object.keys(was)) expect(JSON.stringify(now[key]) === JSON.stringify(was[key]), `API entitlement failure: opening the review page changed ${key} (${was[key]} → ${now[key]})`);
+    for (const format of ["pdf", "docx"]) {
+      const response = await call(`/api/resume-builder/resumes/${ids.current}/files/${format}`);
+      expect(response.status === 404, `API entitlement failure: clean ${format} returned HTTP ${response.status} after the browser check`);
+    }
+    const [first] = results;
+    console.log(`     ${results.map((result) => result.viewport).join(" + ")}: ${first.snapshot.controls.length} controls inspected, preview drawn on canvas, ${first.snapshot.customization.selects.length} style selects + ${first.snapshot.templates.radios.length} templates enabled, ${new Set(results.flatMap((result) => result.blockedHosts)).size} third-party host(s) blocked`);
   });
 
   await step("switch template Field Pro → Modern Trade (free, no AI)", async () => {

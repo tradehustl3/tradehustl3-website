@@ -4,7 +4,7 @@ The post-deploy smoke run signs in as a synthetic account without email and walk
 the review flow:
 
 API health → smoke sign-in → open seeded resume → confirm Download/Print absent →
-switch template (Field Pro → Modern Trade) → inspect heading → change customization →
+browser: unpaid review page has no Download/Print → switch template (Field Pro → Modern Trade) → inspect heading → change customization →
 inspect rendered customization → switch template (→ Lead / Supervisor) → inspect heading → Lead / Supervisor rewrite
 requires payment → open legacy resume → sign out.
 
@@ -28,6 +28,46 @@ resume must stay unpaid, without downloads, and with the same AI usage, template
 track. The preview is rendered from the saved style on every request
 (`serveProtectedPreview`), so this checks the same render customers see.
 
+Download / Print are checked twice. The API step proves the server refuses the clean PDF,
+DOCX and print view (404) and returns `downloads: null`. The browser step then opens the
+same unpaid resume through the real customer page,
+`/resume-builder/review?resume_id=…`, in headless Chrome at desktop (1280×900) and mobile
+(390×844) sizes, and inspects the rendered DOM and every request the page made
+(`tools/smoke/review-ui.mjs`, driven over the DevTools pipe by `tools/smoke/browser.mjs`, no
+npm dependency). Product behavior it asserts, from `app/resume-builder/review/resume-review.tsx`:
+
+- **Download** is removed, not disabled: no `.rb-downloads` / `.rb-download`, no element with
+  a `download` attribute, no link or form to `/files/pdf` or `/files/docx` (resume or cover
+  letter), and no button, link or menu item named Download / PDF / DOCX / Word, enabled or
+  disabled. The checkout buttons "Unlock & download →" and "Unlock full resume + cover letter
+  — $9.99" are allowed only by structure: a `type="button"` `<button>` inside `.rb-unlock-bar`
+  or `.rb-unpaid-card`, with no href and no `download` attribute. They are never clicked.
+- **Print** does not exist on the page: no control named Print (anywhere, enabled or
+  disabled), no link to the print view (`/files/pdf?view=1`), and no `<iframe>`, `<embed>` or
+  `<object>` showing a PDF. A native PDF viewer would bring its own Download and Print
+  buttons; the unpaid preview is drawn into `<canvas>` by pdf.js instead.
+- **Network**: the page loads the watermarked `/files/preview` (and, if built, the watermarked
+  cover-letter `?view=1` preview), never a clean resume file, a cover-letter DOCX, a cover-letter
+  PDF without `view=1`, or `/checkout`.
+- **Still works**: the protected preview draws at least one page with the "Protected watermarked
+  preview" toolbar and no error state; the customization fieldset and its four selects (font,
+  text size, spacing, accent) are visible and enabled; the three templates (Field Pro, Modern
+  Trade, Lead / Supervisor) are visible and enabled with exactly one selected. These are checked
+  as enabled, not clicked: the API steps that follow make the same PATCH calls.
+- **No state change**: before and after the page visit, the resume reports `paid: false`,
+  `downloads: null`, and the same AI usage, corrections, template, track and style, and the
+  clean PDF and DOCX still return 404.
+
+Failure messages name their class: `UI regression (desktop|mobile)` (a Download/Print path is
+visible or usable), `UI broken (…)` (viewer or free controls), `API entitlement failure` (server
+state), `browser unavailable` / `browser check error` (runner problem, not a site result), and
+the existing `Cloudflare challenge (cf-mitigated)` wording when the edge challenges the page.
+The browser sends the session cookie and `X-Smoke-Token` only to the site's own origin and
+blocks every third-party request (GA4, Meta), so smoke traffic never loads analytics.
+
+The browser is the runner's installed Chrome or Chromium (GitHub's ubuntu runners ship Google
+Chrome). Set `SMOKE_CHROME_PATH` to choose a binary.
+
 - Endpoint: `POST /api/resume-builder/internal/smoke/session` (`worker/resume-smoke-session.ts`)
 - Runner: `tools/smoke/resume-builder-smoke.mjs`
 - Workflow step: "Verify signed-in Resume Builder review flow" in `.github/workflows/production-smoke.yml`
@@ -46,7 +86,7 @@ track. The preview is rendered from the saved style on every request
 | Data isolation | Writes are scoped to the synthetic user. A fixture id owned by any other account aborts the reset (409) before anything is rendered or written. |
 | No payment tampering | If the smoke account ever has an active entitlement or paid order, the reset stops (409) instead of deleting payment records. |
 | No AI, no credits | Fixtures are rendered directly by the PDF/DOCX renderers. |
-| Clean analytics | Funnel events from the smoke session are dropped (202) and never reach Agent 1 metrics. The runner is API-only, so GA4/Meta pixels never load. |
+| Clean analytics | Funnel events from the smoke session are dropped (202) and never reach Agent 1 metrics. The browser step blocks every third-party request, so GA4/Meta pixels never load. |
 
 ## Fixtures
 
