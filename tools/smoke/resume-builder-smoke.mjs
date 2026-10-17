@@ -3,9 +3,9 @@
  * Authenticated production smoke test for the Resume Builder review flow.
  *
  * API health → smoke sign-in → open seeded resume → confirm Download/Print absent →
- * switch template (Modern Trade) → inspect heading → customize → switch template
- * (Lead / Supervisor) → inspect heading → Lead rewrite requires payment →
- * open legacy resume → sign out
+ * switch template (Modern Trade) → inspect heading → customize → inspect rendered
+ * customization → switch template (Lead / Supervisor) → inspect heading →
+ * Lead rewrite requires payment → open legacy resume → sign out
  *
  * Env:
  *   SMOKE_ORIGIN               default https://tradehustl3.com
@@ -15,13 +15,19 @@
  * Output never contains secrets, cookies, or response bodies beyond the
  * server's short `message` field.
  */
-import { getDocument } from "pdfjs-dist/legacy/build/pdf.mjs";
+import { createHash } from "node:crypto";
+import { getDocument, OPS } from "pdfjs-dist/legacy/build/pdf.mjs";
 
 const ORIGIN = (process.env.SMOKE_ORIGIN || "https://tradehustl3.com").replace(/\/+$/, "");
 const LOGIN_SECRET = process.env.SMOKE_TEST_LOGIN_SECRET || "";
 const BYPASS = process.env.SMOKE_BYPASS_TOKEN || "";
 const SMOKE_EMAIL = "smoke-test@tradehustl3.invalid";
 const CANDIDATE_NAME = "SMOKE TEST CANDIDATE";
+// Fixture facts that must survive any presentation change (worker/resume-smoke-session.ts).
+const CORE_CONTENT = [CANDIDATE_NAME, "HVAC SERVICE TECHNICIAN", "SMOKE TEST MECHANICAL", "MAINTENANCE TECHNICIAN", "FIXTURE PROPERTY SERVICES", "EPA 608 UNIVERSAL"];
+const CUSTOMIZATION = { font: "Traditional", textSize: "Large", accent: "Forest Green" };
+// Accent "Forest Green" (worker/resume-templates.ts ACCENT_HEX), as pdf.js reports fills.
+const CUSTOMIZATION_ACCENT_FILL = "#24543c";
 
 let cookie = "";
 let failures = 0;
@@ -57,17 +63,78 @@ async function pdfText(response, label) {
   expect((response.headers.get("content-type") || "").includes("application/pdf"), `${label}: not a PDF`);
   const bytes = new Uint8Array(await response.arrayBuffer());
   expect(bytes.byteLength > 1000, `${label}: PDF suspiciously small (${bytes.byteLength} bytes)`);
+  expect(new TextDecoder().decode(bytes.subarray(0, 5)) === "%PDF-", `${label}: response is not a PDF document`);
   // pdfjs transfers (detaches) the buffer it is given; keep `bytes` intact for comparisons.
   const task = getDocument({ data: bytes.slice(), isEvalSupported: false, useSystemFonts: false });
-  const pdf = await task.promise;
-  let text = "";
-  for (let page = 1; page <= pdf.numPages; page += 1) {
-    const content = await (await pdf.getPage(page)).getTextContent();
-    text += ` ${content.items.map((item) => ("str" in item ? item.str : "")).join(" ")}`;
+  try {
+    const pdf = await task.promise.catch(() => fail(`${label}: PDF could not be parsed`));
+    expect(pdf.numPages >= 1, `${label}: PDF has no pages`);
+    let text = "";
+    const pageList = [];
+    for (let page = 1; page <= pdf.numPages; page += 1) pageList.push(await pdf.getPage(page));
+    for (const page of pageList) {
+      const content = await page.getTextContent();
+      text += ` ${content.items.map((item) => ("str" in item ? item.str : "")).join(" ")}`;
+    }
+    text = text.replace(/\s+/g, " ").trim().toUpperCase();
+    expect(text.length > 0, `${label}: PDF has no extractable text`);
+    return { bytes, text, pages: pdf.numPages, render: await renderSignature(pageList) };
+  } finally {
+    await task.destroy();
   }
-  const pages = pdf.numPages;
-  await task.destroy();
-  return { bytes, text: text.replace(/\s+/g, " ").toUpperCase(), pages };
+}
+
+const fillHex = (args) => {
+  const [value] = args;
+  if (typeof value === "string") return value.toLowerCase();
+  if (args.length === 3 && args.every((part) => typeof part === "number")) {
+    return `#${args.map((part) => Math.round(part).toString(16).padStart(2, "0")).join("")}`;
+  }
+  return JSON.stringify(args);
+};
+const dominant = (counts) => [...counts].sort((a, b) => b[1] - a[1] || String(a[0]).localeCompare(String(b[0])))[0]?.[0] ?? null;
+const added = (after, before) => after.filter((value) => !before.includes(value));
+
+/**
+ * What the renderer actually drew, independent of PDF metadata (creation dates,
+ * object numbering) that changes on every save. Body font and size are those of
+ * the most characters on the page; fills are every fill color painted.
+ */
+async function renderSignature(pages) {
+  const fontChars = new Map();
+  const sizeChars = new Map();
+  const fonts = new Set();
+  const fills = new Set();
+  for (const page of pages) {
+    // The operator list loads the page's fonts into commonObjs, so it runs first.
+    const operators = await page.getOperatorList();
+    operators.fnArray.forEach((fn, index) => {
+      if (fn === OPS.setFillRGBColor) fills.add(fillHex(operators.argsArray[index]));
+    });
+    const familyOf = (id) => {
+      const name = page.commonObjs.has(id) ? page.commonObjs.get(id)?.name : null;
+      // "ABCDEF+Gelasio-Regular-1234" → "Gelasio"
+      return typeof name === "string" ? name.replace(/^[A-Z]{6}\+/, "").split("-")[0] : "unknown";
+    };
+    for (const item of (await page.getTextContent()).items) {
+      const characters = "str" in item ? item.str.replace(/\s+/g, "").length : 0;
+      if (!characters) continue;
+      const family = familyOf(item.fontName);
+      const size = Math.round(Math.hypot(item.transform[0], item.transform[1]) * 100) / 100;
+      fonts.add(family);
+      fontChars.set(family, (fontChars.get(family) || 0) + characters);
+      sizeChars.set(size, (sizeChars.get(size) || 0) + characters);
+    }
+  }
+  const facts = {
+    pages: pages.length,
+    bodyFont: dominant(fontChars),
+    bodySize: dominant(sizeChars),
+    fonts: [...fonts].sort(),
+    fills: [...fills].sort(),
+    sizes: [...sizeChars.keys()].sort((a, b) => a - b),
+  };
+  return { ...facts, fingerprint: createHash("sha256").update(JSON.stringify(facts)).digest("hex").slice(0, 16) };
 }
 
 const statusOf = async (id, label) => (await jsonOf(await call(`/api/resume-builder/resumes/${id}`), label)).resume;
@@ -93,6 +160,7 @@ async function main() {
   }
   let ids;
   let firstPreview;
+  let beforeCustomization;
 
   // Deliberately not /api/health: that endpoint reports the lead-delivery email
   // queue (503 on dead letters), which must not gate deploys. This read proves
@@ -160,13 +228,44 @@ async function main() {
   });
 
   await step("change customization (font, size, accent)", async () => {
-    const change = { font: "Traditional", textSize: "Large", accent: "Forest Green" };
-    const response = await call(`/api/resume-builder/resumes/${ids.current}`, { method: "PATCH", origin: true, body: change });
+    const resume = await statusOf(ids.current, "status before customization");
+    for (const [key, value] of Object.entries(CUSTOMIZATION)) {
+      expect(resume.style?.[key] !== value, `precondition: ${key} is already ${value}, so the render comparison would prove nothing`);
+    }
+    // Rendered BEFORE the change, in the same template, so only customization differs.
+    beforeCustomization = { resume, preview: await pdfText(await call(resume.previewUrl), "preview before customization") };
+
+    // Same PATCH the review page's style controls send.
+    const response = await call(`/api/resume-builder/resumes/${ids.current}`, { method: "PATCH", origin: true, body: CUSTOMIZATION });
     const body = await jsonOf(response, "customization");
     expect(response.status === 200, `HTTP ${response.status}: ${body.message || "no message"}`);
     expect(body.runConsumed === false, "customization consumed an AI correction");
+    for (const [key, value] of Object.entries(CUSTOMIZATION)) expect(body.style?.[key] === value, `customization response ${key} is ${body.style?.[key]}, expected ${value}`);
     const style = (await statusOf(ids.current, "status")).style;
-    for (const [key, value] of Object.entries(change)) expect(style?.[key] === value, `${key} is ${style?.[key]}, expected ${value}`);
+    for (const [key, value] of Object.entries(CUSTOMIZATION)) expect(style?.[key] === value, `${key} is ${style?.[key]}, expected ${value}`);
+  });
+
+  await step("inspect rendered preview after customization", async () => {
+    const resume = await statusOf(ids.current, "status after customization");
+    const before = beforeCustomization.resume;
+    expect(resume.paid === false && resume.downloads === null, "customization changed entitlement state");
+    expect(resume.runsUsed === before.runsUsed && resume.correctionsRemaining === 0, `customization changed AI usage (runsUsed ${before.runsUsed} → ${resume.runsUsed}, correctionsRemaining ${resume.correctionsRemaining})`);
+    expect(resume.theme === before.theme && resume.generationTrack === before.generationTrack, "customization changed the template or career track");
+    expect(resume.status === "ready" && resume.previewUrl, `resume not ready after customization (status ${resume.status})`);
+
+    const after = await pdfText(await call(resume.previewUrl), "preview after customization");
+    for (const fact of CORE_CONTENT) expect(after.text.includes(fact), `"${fact}" missing from preview after customization`);
+    for (const fact of CORE_CONTENT) expect(beforeCustomization.preview.text.includes(fact), `"${fact}" missing from preview before customization`);
+
+    const was = beforeCustomization.preview.render;
+    const now = after.render;
+    const changes = `font ${was.bodyFont} → ${now.bodyFont}, body size ${was.bodySize} → ${now.bodySize}pt, fills +[${added(now.fills, was.fills)}] -[${added(was.fills, now.fills)}]`;
+    expect(now.fingerprint !== was.fingerprint, `rendered preview did not change after customization (render fingerprint ${now.fingerprint} unchanged; ${changes})`);
+    expect(now.bodyFont !== was.bodyFont, `font change was saved but not rendered: body font stayed ${was.bodyFont}`);
+    expect(now.bodySize > was.bodySize, `text size change was saved but not rendered: body size ${was.bodySize}pt → ${now.bodySize}pt, expected larger`);
+    expect(now.fills.includes(CUSTOMIZATION_ACCENT_FILL), `accent change was saved but not rendered: ${CUSTOMIZATION_ACCENT_FILL} not painted (${changes})`);
+    expect(added(was.fills, now.fills).length > 0, `accent change was saved but the previous accent is still painted (${changes})`);
+    console.log(`     render ${was.fingerprint} → ${now.fingerprint}: ${changes}`);
   });
 
   // Same PATCH the review page sends when an unpaid customer picks Lead / Supervisor.
