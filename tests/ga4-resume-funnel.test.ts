@@ -25,17 +25,25 @@ test("Resume Builder funnel exposes the core GA4 milestones", () => {
   }
 });
 
-test("checkout and purchase carry the $9.99 ecommerce value in USD", () => {
-  assert.match(analytics, /currency:\s*"USD"/);
-  assert.match(analytics, /value:\s*9\.99/);
-  assert.match(analytics, /item_id:\s*"trade_hustl3_resume_builder"/);
-  assert.match(analytics, /transaction_id:\s*transactionId/);
+test("begin_checkout and purchase carry the $9.99 ecommerce value in USD server-side", () => {
+  const ga4 = fs.readFileSync("worker/ga4-measurement-protocol.ts", "utf8");
+  assert.match(ga4, /currency\s*=\s*"USD"|currency:\s*"USD"/);
+  assert.match(ga4, /price:\s*9\.99/);
+  assert.match(ga4, /item_id:\s*"trade_hustl3_resume_builder"/);
+  assert.match(ga4, /transaction_id:\s*transactionId/);
 });
 
-test("purchase tracking is deduplicated by resume transaction id", () => {
-  assert.match(analytics, /tradehustl3_ga4_purchase:\$\{transactionId\}/);
-  assert.match(analytics, /localStorage\.getItem\(key\)/);
-  assert.match(analytics, /localStorage\.setItem\(key, "1"\)/);
+test("GA4 purchase is sent only from the verified Stripe webhook, never from the browser", () => {
+  assert.doesNotMatch(analytics, /"purchase"/);
+  assert.doesNotMatch(payment, /trackResumePurchase/);
+  const base = fs.readFileSync("worker/resume-builder-base.ts", "utf8");
+  assert.match(base, /ga4PurchaseEvent\(orderId/);
+  assert.match(base, /if \(!order\.paid_at && order\.status !== "refunded"/);
+});
+
+test("browser funnel tracking never calls gtag directly (prevents drops and double counting)", () => {
+  assert.doesNotMatch(analytics, /gtag\(/);
+  assert.match(analytics, /analyticsConsent:\s*optionalTrackingAllowed\(\)/);
 });
 
 test("funnel observers are mounted on the actual Resume Builder stages", () => {
@@ -43,7 +51,6 @@ test("funnel observers are mounted on the actual Resume Builder stages", () => {
   assert.match(intakePage, /<ResumeIntakeAnalytics\s*\/>/);
   assert.match(reviewPage, /<ResumeReviewAnalytics\s*\/>/);
   assert.match(confirm, /trackResumeFunnelEvent\("sign_up"/);
-  assert.match(payment, /trackResumePurchase\(resumeId\.current\)/);
 });
 
 test("first-party funnel tracking deduplicates independently of GA4", () => {
@@ -53,9 +60,8 @@ test("first-party funnel tracking deduplicates independently of GA4", () => {
   assert.match(analytics, /sessionStorage\.setItem\(dedupeKey, "1"\)/);
 });
 
-test("purchase stays GA4-only and is not sent to first-party funnel telemetry", () => {
-  assert.match(
-    analytics,
-    /if\s*\(eventName\s*!==\s*"purchase"\)\s*\{\s*sendFirstPartyFunnelEvent/,
-  );
+test("purchase is never sent to first-party funnel telemetry", () => {
+  const base = fs.readFileSync("worker/resume-builder-base.ts", "utf8");
+  const allowlist = base.slice(base.indexOf("const FUNNEL_EVENT_NAMES"), base.indexOf("const FUNNEL_METADATA_KEYS"));
+  assert.doesNotMatch(allowlist, /"purchase"/);
 });

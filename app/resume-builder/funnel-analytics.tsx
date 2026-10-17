@@ -2,18 +2,23 @@
 
 import { useEffect } from "react";
 import { readCampaignAttribution } from "../campaign-attribution";
+import { optionalTrackingAllowed } from "../marketing-pixels";
 
-type FunnelParams = Record<string, string | number | boolean | Array<Record<string, unknown>> | undefined>;
-type AnalyticsWindow = Window & {
-  gtag?: (command: "event", eventName: string, parameters?: FunnelParams) => void;
-};
+/*
+ * Resume Builder funnel milestones are reported ONLY to the first-party
+ * endpoint. The Worker stores them for Agent #1 and, when the visitor has not
+ * opted out (and sends no Global Privacy Control signal), forwards them to
+ * GA4 through the Measurement Protocol (worker/ga4-measurement-protocol.ts).
+ *
+ * Browser gtag calls are deliberately not used here: gtag.js is never loaded
+ * on the private Resume Builder pages and races hydration on the homepage,
+ * so those calls were silently dropped. Sending from both places would also
+ * double-count. GA4 `purchase` is sent only by the verified Stripe webhook.
+ */
 
-const ITEM = {
-  item_id: "trade_hustl3_resume_builder",
-  item_name: "TRADE HUSTL3 Resume Builder",
-  price: 9.99,
-  quantity: 1,
-};
+type FunnelParams = Record<string, string | number | boolean | undefined>;
+
+const ANONYMOUS_ID_KEY = "tradehustl3_funnel_anonymous_id";
 
 function getOrCreateAnalyticsId(
   storage: Storage,
@@ -41,13 +46,13 @@ function firstPartyDedupeKey(
 function sendFirstPartyFunnelEvent(
   eventName: string,
   parameters: FunnelParams,
-): void {
+): boolean {
   try {
     const attribution = readCampaignAttribution();
 
     const anonymousId = getOrCreateAnalyticsId(
       window.localStorage,
-      "tradehustl3_funnel_anonymous_id",
+      ANONYMOUS_ID_KEY,
     );
 
     const sessionId = getOrCreateAnalyticsId(
@@ -63,7 +68,7 @@ function sendFirstPartyFunnelEvent(
     const dedupeKey = firstPartyDedupeKey(eventName, resumeId);
 
     if (window.sessionStorage.getItem(dedupeKey) === "1") {
-      return;
+      return true;
     }
 
     const metadata = {
@@ -84,6 +89,7 @@ function sendFirstPartyFunnelEvent(
         resumeId,
         path: window.location.pathname,
         metadata,
+        analyticsConsent: optionalTrackingAllowed(),
         occurredAt: new Date().toISOString(),
       }),
     })
@@ -95,60 +101,33 @@ function sendFirstPartyFunnelEvent(
       .catch(() => {
         // First-party telemetry must never interfere with the Resume Builder.
       });
+    return true;
   } catch {
     // First-party telemetry must never interfere with the Resume Builder.
+    return false;
   }
 }
 
+/** Returns true when the event was dispatched (or was already sent this session). */
 export function trackResumeFunnelEvent(eventName: string, parameters: FunnelParams = {}): boolean {
-  let gaTracked = false;
-
-  try {
-    const analyticsWindow = window as AnalyticsWindow;
-
-    if (typeof analyticsWindow.gtag === "function") {
-      analyticsWindow.gtag("event", eventName, {
-        product: "resume_builder",
-        ...readCampaignAttribution(),
-        ...parameters,
-      });
-
-      gaTracked = true;
-    }
-  } catch {
-    gaTracked = false;
-  }
-
-  if (eventName !== "purchase") {
-    sendFirstPartyFunnelEvent(eventName, parameters);
-  }
-
-  return gaTracked;
+  return sendFirstPartyFunnelEvent(eventName, parameters);
 }
 
 export function trackResumeCheckout(): boolean {
-  return trackResumeFunnelEvent("begin_checkout", {
-    currency: "USD",
-    value: 9.99,
-    items: [ITEM],
-  });
+  return trackResumeFunnelEvent("begin_checkout");
 }
 
-export function trackResumePurchase(transactionId: string): boolean {
-  if (!transactionId) return false;
+/**
+ * Sent with the checkout request so the verified Stripe webhook can attribute
+ * the GA4 purchase. The Worker ignores it unless consent is true.
+ */
+export function analyticsCheckoutContext(): { analyticsConsent: boolean; anonymousId?: string } {
   try {
-    const key = `tradehustl3_ga4_purchase:${transactionId}`;
-    if (window.localStorage.getItem(key) === "1") return false;
-    const tracked = trackResumeFunnelEvent("purchase", {
-      transaction_id: transactionId,
-      currency: "USD",
-      value: 9.99,
-      items: [ITEM],
-    });
-    if (tracked) window.localStorage.setItem(key, "1");
-    return tracked;
+    const analyticsConsent = optionalTrackingAllowed();
+    if (!analyticsConsent) return { analyticsConsent };
+    return { analyticsConsent, anonymousId: getOrCreateAnalyticsId(window.localStorage, ANONYMOUS_ID_KEY) };
   } catch {
-    return false;
+    return { analyticsConsent: false };
   }
 }
 

@@ -6,6 +6,7 @@ import { StyleControls } from "./style-controls";
 import { defaultStyle, type ResumeStyle } from "../../../worker/resume-templates";
 import { ProtectedPdfPreview } from "./protected-pdf-preview";
 import { generationFailureIntakeUrl, intakeReturnUrl } from "../return-urls";
+import { analyticsCheckoutContext } from "../funnel-analytics";
 
 type ResumeTheme = "plain" | "navy" | "lead";
 type PreviewTab = "resume" | "cover-letter";
@@ -377,7 +378,7 @@ export function ResumeReview() {
         method: "POST",
         credentials: "same-origin",
         headers: { "Content-Type": "application/json" },
-        body: "{}",
+        body: JSON.stringify(analyticsCheckoutContext()),
       });
       const result = await response.json() as { checkoutUrl?: string; message?: string };
       if (!response.ok || !result.checkoutUrl) throw new Error(result.message || "Secure checkout is temporarily unavailable.");

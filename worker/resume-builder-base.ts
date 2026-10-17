@@ -3,6 +3,17 @@ import { agentReportWindow } from './agent-report-window';
 import { storedStyle, defaultStyle } from './resume-templates';
 import { errorKind } from "./resume-safe-log";
 import { notifyResumeRecovery, type RecoveryContext } from "./resume-recovery";
+import {
+  GA4_FUNNEL_EVENTS,
+  GA4_STRIPE_METADATA,
+  ga4CampaignParams,
+  ga4ConsentGranted,
+  ga4FunnelEvent,
+  ga4IdentityFromRequest,
+  ga4IdentityFromStripeMetadata,
+  ga4PurchaseEvent,
+  sendGa4Event,
+} from "./ga4-measurement-protocol";
 import { groundResumePrefill } from "./resume-extraction-grounding";
 import { serverUploadReview } from "./resume-upload-requirements";
 import { INTAKE_SCHEMA_VERSION, intakeSchemaVersion } from "../app/resume-builder/intake/wizard-data";
@@ -43,6 +54,10 @@ export interface ResumeBuilderEnv {
   /** Bearer secret (32+ chars) the recovery webhook requires. Unset disables the webhook call. */
   N8N_RESUME_RECOVERY_WEBHOOK_SECRET?: string;
   AGENT1_FUNNEL_SECRET?: string;
+  /** GA4 web stream measurement ID for server-side funnel events. Defaults to the site tag. */
+  GA4_MEASUREMENT_ID?: string;
+  /** GA4 Measurement Protocol API secret. Unset disables server-side GA4 delivery (fail closed). */
+  GA4_MEASUREMENT_PROTOCOL_API_SECRET?: string;
   ANTHROPIC_API_KEY?: string;
   CLAUDE_MODEL?: string;
   RESUME_AI_BRIDGE_URL?: string;
@@ -59,7 +74,10 @@ export interface ResumeBuilderEnv {
 }
 
 export interface ResumeBuilderDependencies {
+  /** Worker ExecutionContext: keeps best-effort outbound delivery (n8n recovery, GA4) alive after the response. */
   recoveryContext?: RecoveryContext;
+  /** Test seam for GA4 Measurement Protocol delivery. */
+  ga4Fetch?: typeof fetch;
   /** Internal reconciliation only; never derived from request JSON or headers. */
   importRateLimitAlreadyChecked?: boolean;
   anthropicFetch?: typeof fetch;
@@ -1177,6 +1195,23 @@ async function updateResume(request: Request, env: ResumeBuilderEnv, resumeId: s
   return json({ ok: true, resumeId, status: resume.status, paid: Boolean(entitlement), theme });
 }
 
+/**
+ * Optional checkout body: { analyticsConsent?: boolean, anonymousId?: string }.
+ * Older clients send "{}" (or nothing); checkout must never depend on it.
+ */
+async function checkoutGa4Identity(request: Request, env: ResumeBuilderEnv, email: string) {
+  if (isSmokeTestEmail(email)) return null;
+  let body: Record<string, unknown> = {};
+  try {
+    const parsed: unknown = await request.json();
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) body = parsed as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+  if (!ga4ConsentGranted(request, body.analyticsConsent)) return null;
+  return ga4IdentityFromRequest(request, body.anonymousId, env);
+}
+
 async function createCheckout(request: Request, env: ResumeBuilderEnv, resumeId: string): Promise<Response> {
   if (request.method !== "POST") return methodNotAllowed("POST");
   if (!hasTrustedOrigin(request)) return json({ ok: false, message: "Request origin rejected." }, 403);
@@ -1200,6 +1235,7 @@ async function createCheckout(request: Request, env: ResumeBuilderEnv, resumeId:
     return json({ ok: false, message: "Too many checkout attempts. Try again shortly." }, 429);
   }
 
+  const ga4Identity = await checkoutGa4Identity(request, env, user.email);
   const orderId = crypto.randomUUID();
   await env.DB.prepare(
     `INSERT INTO resume_orders
@@ -1219,6 +1255,12 @@ async function createCheckout(request: Request, env: ResumeBuilderEnv, resumeId:
   form.set("metadata[order_id]", orderId);
   form.set("metadata[resume_id]", resumeId);
   form.set("metadata[user_id]", user.userId);
+  // Consented, non-identifying GA ids ride along so the verified webhook can
+  // attribute the purchase to the visitor's GA session.
+  if (ga4Identity) {
+    form.set(`metadata[${GA4_STRIPE_METADATA.clientId}]`, ga4Identity.clientId);
+    if (ga4Identity.sessionId) form.set(`metadata[${GA4_STRIPE_METADATA.sessionId}]`, ga4Identity.sessionId);
+  }
   form.set("payment_intent_data[metadata][product]", "resume_builder_mvp");
   form.set("payment_intent_data[metadata][order_id]", orderId);
 
@@ -1379,7 +1421,11 @@ async function handleResumeRefund(
   return json({ received: true });
 }
 
-async function handleResumeStripeWebhook(request: Request, env: ResumeBuilderEnv): Promise<Response> {
+async function handleResumeStripeWebhook(
+  request: Request,
+  env: ResumeBuilderEnv,
+  dependencies: ResumeBuilderDependencies = {},
+): Promise<Response> {
   if (request.method !== "POST") return methodNotAllowed("POST");
   const secret = env.STRIPE_RESUME_WEBHOOK_SECRET?.trim();
   if (!secret) return json({ received: false }, 503);
@@ -1432,7 +1478,7 @@ async function handleResumeStripeWebhook(request: Request, env: ResumeBuilderEnv
   }
 
   const order = await env.DB.prepare(
-    `SELECT order_id, user_id, resume_id, email, amount_total, currency, status
+    `SELECT order_id, user_id, resume_id, email, amount_total, currency, status, paid_at
      FROM resume_orders WHERE order_id = ?`,
   ).bind(orderId).first<{
     order_id: string;
@@ -1442,6 +1488,7 @@ async function handleResumeStripeWebhook(request: Request, env: ResumeBuilderEnv
     amount_total: number;
     currency: string;
     status: string;
+    paid_at: string | null;
   }>();
   if (
     !order || order.user_id !== userId || order.resume_id !== resumeId || order.email !== email
@@ -1484,6 +1531,18 @@ async function handleResumeStripeWebhook(request: Request, env: ResumeBuilderEnv
       orderId,
     ),
   ]);
+  // GA4 purchase: first verified confirmation only (Stripe retries deliveries),
+  // never for refunded orders or smoke traffic, and only with consented GA ids.
+  if (!order.paid_at && order.status !== "refunded" && !isSmokeTestEmail(email)) {
+    const ga4Identity = ga4IdentityFromStripeMetadata(metadata);
+    if (ga4Identity) {
+      sendGa4Event(ga4Identity, ga4PurchaseEvent(orderId, RESUME_PRICE_CENTS), {
+        context: dependencies.recoveryContext,
+        config: env,
+        fetchImpl: dependencies.ga4Fetch,
+      });
+    }
+  }
   try {
     await queuePaidReviewRequest(env, orderId);
   } catch (error) {
@@ -3590,6 +3649,7 @@ function funnelMetadata(value: unknown): string | null {
 async function recordFunnelEvent(
   request: Request,
   env: ResumeBuilderEnv,
+  dependencies: ResumeBuilderDependencies = {},
 ): Promise<Response> {
   if (request.method !== "POST") {
     return json({ ok: false, message: "Method not allowed." }, 405);
@@ -3609,7 +3669,9 @@ async function recordFunnelEvent(
 
   const eventName = funnelString(payload.eventName, 64);
 
-  if (!eventName || !FUNNEL_EVENT_NAMES.has(eventName)) {
+  // sign_up is a GA4 milestone only; it is not part of the Agent #1 funnel table.
+  const storeEvent = eventName ? FUNNEL_EVENT_NAMES.has(eventName) : false;
+  if (!eventName || (!storeEvent && !GA4_FUNNEL_EVENTS.has(eventName))) {
     return json({ ok: false, message: "Invalid funnel event." }, 400);
   }
 
@@ -3619,6 +3681,20 @@ async function recordFunnelEvent(
     const user = await requireUser(request, env);
     if (user && isSmokeTestEmail(user.email)) return json({ ok: true, recorded: false }, 202);
   }
+
+  if (ga4ConsentGranted(request, payload.analyticsConsent)) {
+    const identity = ga4IdentityFromRequest(request, payload.anonymousId, env);
+    const event = ga4FunnelEvent(eventName, ga4CampaignParams(payload.metadata));
+    if (identity && event) {
+      sendGa4Event(identity, event, {
+        context: dependencies.recoveryContext,
+        config: env,
+        fetchImpl: dependencies.ga4Fetch,
+      });
+    }
+  }
+
+  if (!storeEvent) return json({ ok: true, recorded: false }, 202);
 
   // occurred_at is the server receive time. This endpoint is public, so a
   // client-supplied payload.occurredAt must never decide which analytics
@@ -3666,7 +3742,7 @@ export async function handleResumeBuilderRoute(
   if (!env.DB) return json({ ok: false, message: "Resume Builder is temporarily unavailable." }, 503);
 
   try {
-    if (pathname === "/api/resume-builder/funnel-events") return recordFunnelEvent(request, env);
+    if (pathname === "/api/resume-builder/funnel-events") return recordFunnelEvent(request, env, dependencies);
     if (pathname === "/api/resume-builder/auth/request") return requestMagicLink(request, env);
     if (pathname === "/api/resume-builder/auth/confirm") return confirmMagicLink(request, env);
     if (pathname === "/api/resume-builder/auth/logout") return logout(request, env);
@@ -3675,7 +3751,7 @@ export async function handleResumeBuilderRoute(
     if (pathname === "/api/resume-builder/resumes") return createResume(request, env, dependencies);
     if (pathname === "/api/resume-builder/internal/agent1/funnel-snapshot") return getAgent1FunnelSnapshot(request, env);
     if (pathname === "/api/resume-builder/internal/n8n/purchase-status") return getN8nResumePurchaseStatus(request, env);
-    if (pathname === "/api/resume-builder/stripe/webhook") return handleResumeStripeWebhook(request, env);
+    if (pathname === "/api/resume-builder/stripe/webhook") return handleResumeStripeWebhook(request, env, dependencies);
     if (pathname === "/api/resume-builder/reviews/public") return getPublicCustomerReviews(request, env);
     if (pathname === "/api/resume-builder/reviews/request") return getReviewRequest(request, env);
     if (pathname === "/api/resume-builder/reviews/submit") return submitCustomerReview(request, env);
