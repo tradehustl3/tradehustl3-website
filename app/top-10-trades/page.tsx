@@ -67,7 +67,7 @@ export default function TopTenTradesPage() {
 
       <header className={styles.header}>
         <Link className={styles.brand} href="/" aria-label="TRADE HUSTL3 home">
-          <Image src="/trade-hustl3-logo.png" alt="TRADE HUSTL3 logo" width={58} height={58} priority />
+          <Image src="/optimized/trade-hustl3-logo.webp" alt="TRADE HUSTL3 logo" width={58} height={58} priority />
           <span>TRADE HUSTL<span>3</span></span>
         </Link>
         <nav className={styles.nav} aria-label="Top 10 Trades page navigation">
