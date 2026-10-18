@@ -59,7 +59,7 @@ export default function BookSamplePage() {
 
       <header className={styles.header}>
         <Link className={styles.brand} href="/" aria-label="TRADE HUSTL3 home">
-          <Image src="/trade-hustl3-logo.png" alt="TRADE HUSTL3 logo" width={56} height={56} priority />
+          <Image src="/optimized/trade-hustl3-logo.webp" alt="TRADE HUSTL3 logo" width={56} height={56} priority />
           <span>TRADE HUSTL<span>3</span></span>
         </Link>
         <nav aria-label="Book sample navigation">

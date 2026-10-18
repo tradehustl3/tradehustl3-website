@@ -138,7 +138,7 @@ export default function BookPage() {
 
       <header className="site-header book-site-header">
         <Link className="brand-link" href="/" aria-label="TRADE HUSTL3 home">
-          <Image className="header-logo" src="/trade-hustl3-logo.png" alt="TRADE HUSTL3 logo" width={68} height={68} priority />
+          <Image className="header-logo" src="/optimized/trade-hustl3-logo.webp" alt="TRADE HUSTL3 logo" width={68} height={68} priority />
           <span className="wordmark">TRADE HUSTL<span>3</span></span>
         </Link>
         <nav aria-label="Book page navigation">

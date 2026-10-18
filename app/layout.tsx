@@ -59,9 +59,13 @@ export const metadata: Metadata = {
   },
 
   icons: {
-    icon: "/trade-hustl3-logo.png",
-    shortcut: "/trade-hustl3-logo.png",
-    apple: "/optimized/trade-hustl3-logo.webp",
+    // Small icons resized from the TRADE HUSTL3 logo; the full-size PNG is 2.6 MB.
+    icon: [
+      { url: "/favicon.ico", sizes: "16x16 32x32 48x48" },
+      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+    ],
+    shortcut: "/favicon.ico",
+    apple: { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
     other: [
       {
         rel: "mask-icon",
@@ -112,9 +116,9 @@ const structuredData = {
 
       logo: {
         "@type": "ImageObject",
-        url: `${SITE_URL}/trade-hustl3-logo.png`,
-        width: 1536,
-        height: 1536,
+        url: `${SITE_URL}/optimized/trade-hustl3-logo-512.webp`,
+        width: 512,
+        height: 512,
       },
 
       founder: {
