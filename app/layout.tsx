@@ -59,7 +59,7 @@ export const metadata: Metadata = {
   },
 
   icons: {
-    // Small icons resized from the TRADE HUSTL3 logo; the full-size PNG is 2.6 MB.
+    // TH3 monogram drawn for small sizes; the full logo is unreadable at 16px.
     icon: [
       { url: "/favicon.ico", sizes: "16x16 32x32 48x48" },
       { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
@@ -74,6 +74,7 @@ export const metadata: Metadata = {
       },
     ],
   },
+  manifest: "/site.webmanifest",
 
   openGraph: {
     title: SITE_TITLE,

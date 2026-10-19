@@ -1,5 +1,7 @@
-<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect x="2" y="2" width="60" height="60" rx="12" fill="#071A2B" stroke="#D6A52A" stroke-width="4"/>
-  <path d="M10 14H54" stroke="#D9361E" stroke-width="6" stroke-linecap="round"/>
-  <text x="32" y="42" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="25" font-weight="900" fill="#F5F0E6">TH<tspan fill="#D6A52A">3</tspan></text>
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 32 32">
+  <title>TRADE HUSTL3</title>
+  <rect width="32" height="32" rx="6" fill="#071A2B"/>
+  <rect x="1" y="1" width="30" height="30" rx="5" fill="none" stroke="#D6A52A" stroke-width="2"/>
+  <path fill="#F5F0E6" d="M3 10h7v3H8v10H5V13H3zM12 10h3v5h2v-5h3v13h-3v-5h-2v5h-3z"/>
+  <path fill="#D6A52A" d="M22 10h7v13h-7v-3h4v-2h-3v-3h3v-2h-4z"/>
 </svg>

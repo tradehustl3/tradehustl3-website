@@ -15,6 +15,9 @@ const ICONS = {
   "favicon.ico": { maxBytes: 16 * 1024, sizes: [16, 32, 48] },
   "favicon-32x32.png": { maxBytes: 8 * 1024, size: 32 },
   "apple-touch-icon.png": { maxBytes: 40 * 1024, size: 180 },
+  "icon-192.png": { maxBytes: 16 * 1024, size: 192 },
+  "icon-512.png": { maxBytes: 32 * 1024, size: 512 },
+  "icon-maskable-512.png": { maxBytes: 32 * 1024, size: 512 },
   "optimized/trade-hustl3-logo-512.webp": { maxBytes: 160 * 1024, size: 512 },
   "optimized/trade-hustl3-logo.webp": { maxBytes: 16 * 1024, size: 96 },
   "favicon.svg": { maxBytes: 4 * 1024 },
@@ -93,6 +96,33 @@ test("rendered head links the small browser and Apple icons", async () => {
   assert.match(html, /<link[^>]+rel="apple-touch-icon"[^>]+sizes="180x180"/);
   assert.match(html, /<link[^>]+rel="mask-icon"[^>]+href="\/favicon\.svg"/);
   for (const href of hrefs) assert.ok(href in ICONS || href.slice(1) in ICONS, `${href} has a size budget`);
+  assert.match(html, /<link[^>]+rel="manifest"[^>]+href="\/site\.webmanifest"/);
+});
+
+test("web manifest lists home-screen icons that exist at their declared sizes", async () => {
+  const manifest = JSON.parse(await readFile(new URL("site.webmanifest", publicDir), "utf8"));
+  assert.equal(manifest.name, "TRADE HUSTL3");
+  assert.deepEqual(manifest.icons.map((icon) => `${icon.sizes} ${icon.purpose}`),
+    ["192x192 any", "512x512 any", "512x512 maskable"]);
+  // A maskable icon is cropped by the launcher, so it must be full-bleed (no transparent corners)
+  // and kept separate from the "any" icons, which keep their rounded corners.
+  const maskable = await readFile(new URL("icon-maskable-512.png", publicDir));
+  assert.equal(maskable[25] & 4, 0, "maskable icon has no alpha channel");
+  assert.equal(maskable.indexOf("tRNS"), -1, "maskable icon has no transparent palette entries");
+  for (const icon of manifest.icons) {
+    const path = icon.src.slice(1);
+    assert.ok(path in ICONS, `${icon.src} has a size budget`);
+    const size = Number(icon.sizes.split("x")[0]);
+    assert.deepEqual(pngSize(await readFile(new URL(path, publicDir))), { width: size, height: size });
+  }
+});
+
+test("favicon assets carry no outdated tagline or misspelled brand text", async () => {
+  // The small icons are a TH3 monogram, not text; only the SVG has a readable title.
+  const svg = await readFile(new URL("favicon.svg", publicDir), "utf8");
+  assert.doesNotMatch(svg, /<text\b/, "favicon.svg draws its letters as paths, independent of installed fonts");
+  assert.match(svg, /<title>TRADE HUSTL3<\/title>/);
+  assert.doesNotMatch(svg, /HUSTLE|TRADES/i);
 });
 
 test("structured-data logo points at the 512px WebP with matching dimensions", async () => {
