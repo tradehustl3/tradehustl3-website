@@ -222,6 +222,8 @@ export const entitlements = sqliteTable(
     creditsTotal: integer("credits_total").notNull().default(0),
     creditsUsed: integer("credits_used").notNull().default(0),
     accessExpiresAt: integer("access_expires_at"),
+    // Correction runs only; downloads keep using accessExpiresAt.
+    correctionsExpireAt: integer("corrections_expire_at"),
     sourceOrderId: text("source_order_id"),
     stripeSubscriptionId: text("stripe_subscription_id"),
     stripeCustomerId: text("stripe_customer_id"),

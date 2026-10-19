@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { CorrectionWindowNote } from "./correction-window";
 
 type CoverLetterState = {
   included: boolean;
@@ -8,6 +9,8 @@ type CoverLetterState = {
   generated: boolean;
   generationTrack?: string;
   correctionsRemaining: number;
+  correctionsExpireAt?: number | null;
+  correctionsExpired?: boolean;
   previewUrl: string | null;
   downloads: { pdf: string; docx: string } | null;
   companyName: string;
@@ -154,7 +157,9 @@ export function CoverLetterPanel({
           <button type="button" disabled={working} onClick={keepCurrentWording}>Keep my current wording</button>
           <small>{!paid
             ? "Unlock the package to rewrite."
-            : coverLetter.correctionsRemaining < 1
+            : coverLetter.correctionsExpired
+              ? "The seven-day correction period has ended."
+              : coverLetter.correctionsRemaining < 1
               ? "All three corrections have been used."
               : "Rewriting updates your resume and this cover letter together and uses one shared correction."}</small>
         </div>
@@ -162,9 +167,10 @@ export function CoverLetterPanel({
       {paid ? (
         <form onSubmit={(event) => void submit(event, true)}>
           <div className="rb-correction-count"><strong>{coverLetter.correctionsRemaining}</strong><span>package corrections remaining</span></div>
+          <CorrectionWindowNote expireAt={coverLetter.correctionsExpireAt} expired={coverLetter.correctionsExpired} />
           <label htmlFor="coverCorrection">Refine the cover letter</label>
           <textarea id="coverCorrection" name="coverCorrection" rows={5} maxLength={2000} required disabled={working || coverLetter.correctionsRemaining < 1} placeholder="Example: Make the opening more direct and emphasize my commercial HVAC troubleshooting experience." />
-          <button className="rb-button rb-button-secondary-dark rb-button-full" type="submit" disabled={working || coverLetter.correctionsRemaining < 1}>{working ? "Applying cover-letter correction…" : coverLetter.correctionsRemaining > 0 ? "Apply one package correction" : "All corrections used"} <span>↻</span></button>
+          <button className="rb-button rb-button-secondary-dark rb-button-full" type="submit" disabled={working || coverLetter.correctionsRemaining < 1}>{working ? "Applying cover-letter correction…" : coverLetter.correctionsRemaining > 0 ? "Apply one package correction" : coverLetter.correctionsExpired ? "Correction period ended" : "All corrections used"} <span>↻</span></button>
           <small>The same three corrections are shared across your resume and cover letter. A failed generation automatically restores the correction.</small>
         </form>
       ) : (

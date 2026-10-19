@@ -142,6 +142,10 @@ const RESUME_PRICE_CENTS = 999;
 const RESUME_PLAN = "resume_mvp_999";
 const RESUME_TOTAL_AI_RUNS = 4;
 const INITIAL_PREVIEW_RUNS = 1;
+// Corrections close seven days after the verified payment (Terms: "seven-day correction period").
+// Downloads, status and checkout are unaffected; they follow access_expires_at.
+const CORRECTION_WINDOW_SECONDS = 7 * 24 * 60 * 60;
+export const CORRECTION_PERIOD_ENDED_MESSAGE = "Your seven-day correction period has ended.";
 const DEFAULT_CLAUDE_MODEL = "claude-sonnet-5";
 const DEFAULT_GEMINI_MODEL = "gemini-3.8-flash";
 // Multi-role uploads need room for every job, bullets, and source references.
@@ -851,6 +855,17 @@ async function findEntitlement(env: ResumeBuilderEnv, resumeId: string, userId: 
   ).bind(resumeId, userId, nowSeconds()).first<EntitlementRecord>();
 }
 
+/** Unix seconds after which corrections are closed, or null when the entitlement has no deadline. */
+export async function correctionsExpireAt(env: ResumeBuilderEnv, entitlementId: string): Promise<number | null> {
+  const row = await env.DB.prepare("SELECT corrections_expire_at FROM entitlements WHERE entitlement_id = ?")
+    .bind(entitlementId).first<{ corrections_expire_at: number | null }>();
+  return row?.corrections_expire_at ?? null;
+}
+
+export function correctionPeriodEnded(expireAt: number | null): boolean {
+  return expireAt !== null && expireAt <= nowSeconds();
+}
+
 async function getAgent1FunnelSnapshot(
   request: Request,
   env: ResumeBuilderEnv,
@@ -1067,6 +1082,8 @@ async function getResumeStatus(request: Request, env: ResumeBuilderEnv, resumeId
   const resume = await findOwnedResume(env, resumeId, user.userId);
   if (!resume) return json({ ok: false, message: "Resume not found." }, 404);
   const entitlement = await findEntitlement(env, resumeId, user.userId);
+  const correctionsDeadline = entitlement ? await correctionsExpireAt(env, entitlement.entitlement_id) : null;
+  const correctionsExpired = correctionPeriodEnded(correctionsDeadline);
   const generated = Boolean(resume.generated_json);
   let intake: unknown = {};
   try {
@@ -1131,9 +1148,11 @@ async function getResumeStatus(request: Request, env: ResumeBuilderEnv, resumeId
       paid: Boolean(entitlement),
       runsUsed: entitlement?.credits_used ?? (generated ? INITIAL_PREVIEW_RUNS : 0),
       runsTotal: entitlement?.credits_total ?? RESUME_TOTAL_AI_RUNS,
-      correctionsRemaining: generated && entitlement
+      correctionsRemaining: generated && entitlement && !correctionsExpired
         ? Math.max(0, entitlement.credits_total - entitlement.credits_used)
         : 0,
+      correctionsExpireAt: correctionsDeadline,
+      correctionsExpired,
       previewUrl: generated ? `/api/resume-builder/resumes/${resumeId}/files/preview` : null,
       downloads: generated && entitlement ? {
         pdf: `/api/resume-builder/resumes/${resumeId}/files/pdf`,
@@ -1502,6 +1521,8 @@ async function handleResumeStripeWebhook(
   // Stripe retries deliveries. paid_at keeps its first value so a replayed
   // event cannot move the purchase into a later reporting window; the
   // entitlement and review request inserts are already idempotent per order.
+  // corrections_expire_at is derived from that first paid_at inside the same
+  // insert, so a replay can neither create a second row nor move the deadline.
   await env.DB.batch([
     stripeEventStatement(env, eventId, eventType),
     env.DB.prepare(
@@ -1513,8 +1534,9 @@ async function handleResumeStripeWebhook(
     env.DB.prepare(
       `INSERT INTO entitlements
        (entitlement_id, user_id, resume_id, kind, plan, status, credits_total, credits_used,
-        source_order_id, stripe_customer_id)
-       SELECT ?, ?, ?, 'one_time', ?, 'active', ?, ?, ?, ?
+        source_order_id, stripe_customer_id, corrections_expire_at)
+       SELECT ?, ?, ?, 'one_time', ?, 'active', ?, ?, ?, ?,
+              (SELECT CAST(strftime('%s', paid_at) AS INTEGER) + ? FROM resume_orders WHERE order_id = ?)
        WHERE EXISTS (
          SELECT 1 FROM resume_orders WHERE order_id = ? AND status = 'paid'
        )
@@ -1528,6 +1550,8 @@ async function handleResumeStripeWebhook(
       INITIAL_PREVIEW_RUNS,
       orderId,
       stripeCustomer,
+      CORRECTION_WINDOW_SECONDS,
+      orderId,
       orderId,
     ),
   ]);
@@ -3314,14 +3338,19 @@ async function generateResume(
   }
 
   if (entitlement) {
+    // One statement reserves the run: a credit must be left and the correction period still open.
     const reserved = await env.DB.prepare(
       `UPDATE entitlements SET credits_used = credits_used + 1, updated_at = CURRENT_TIMESTAMP
-       WHERE entitlement_id = ? AND status = 'active' AND credits_used < credits_total`,
-    ).bind(entitlement.entitlement_id).run() as D1MutationResult;
+       WHERE entitlement_id = ? AND status = 'active' AND credits_used < credits_total
+         AND (corrections_expire_at IS NULL OR corrections_expire_at > ?)`,
+    ).bind(entitlement.entitlement_id, nowSeconds()).run() as D1MutationResult;
     if ((reserved.meta?.changes ?? 0) !== 1) {
       await env.DB.prepare(
         "UPDATE resumes SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE resume_id = ? AND user_id = ? AND status = 'generating'",
       ).bind(resume.status, resumeId, user.userId).run();
+      if (correctionPeriodEnded(await correctionsExpireAt(env, entitlement.entitlement_id))) {
+        return json({ ok: false, code: "CORRECTION_PERIOD_ENDED", message: CORRECTION_PERIOD_ENDED_MESSAGE }, 409);
+      }
       return json({ ok: false, message: "All permitted AI runs have been used." }, 409);
     }
   }

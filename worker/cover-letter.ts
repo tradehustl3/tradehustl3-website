@@ -1,6 +1,9 @@
 import { storedStyle, type ResumeStyle } from './resume-templates';
 import { errorKind } from "./resume-safe-log";
 import {
+  CORRECTION_PERIOD_ENDED_MESSAGE,
+  correctionPeriodEnded,
+  correctionsExpireAt,
   handleResumeBuilderRoute as handleBaseResumeBuilderRoute,
   resumeSystemProfile,
   type ResumeBuilderDependencies,
@@ -426,19 +429,27 @@ export async function releaseCoverLock(env: ResumeBuilderEnv, resumeId: string):
     .bind(`cover-letter-lock:${resumeId}`).run();
 }
 
-async function reserveCorrectionCredit(env: ResumeBuilderEnv, userId: string, resumeId: string): Promise<string | null> {
+type CorrectionReservation = { entitlementId: string } | { refused: "period_ended" | "unavailable" };
+
+async function reserveCorrectionCredit(env: ResumeBuilderEnv, userId: string, resumeId: string): Promise<CorrectionReservation> {
+  const now = Math.floor(Date.now() / 1000);
   const entitlement = await env.DB.prepare(
     `SELECT entitlement_id FROM entitlements
      WHERE resume_id = ? AND user_id = ? AND status = 'active'
        AND (access_expires_at IS NULL OR access_expires_at > ?)
      ORDER BY created_at DESC LIMIT 1`,
-  ).bind(resumeId, userId, Math.floor(Date.now() / 1000)).first<{ entitlement_id: string }>();
-  if (!entitlement) return null;
+  ).bind(resumeId, userId, now).first<{ entitlement_id: string }>();
+  if (!entitlement) return { refused: "unavailable" };
+  // One statement reserves the run: a credit must be left and the correction period still open.
   const result = await env.DB.prepare(
     `UPDATE entitlements SET credits_used = credits_used + 1, updated_at = CURRENT_TIMESTAMP
-     WHERE entitlement_id = ? AND status = 'active' AND credits_used < credits_total`,
-  ).bind(entitlement.entitlement_id).run() as D1MutationResult;
-  return (result.meta?.changes ?? 0) === 1 ? entitlement.entitlement_id : null;
+     WHERE entitlement_id = ? AND status = 'active' AND credits_used < credits_total
+       AND (corrections_expire_at IS NULL OR corrections_expire_at > ?)`,
+  ).bind(entitlement.entitlement_id, now).run() as D1MutationResult;
+  if ((result.meta?.changes ?? 0) === 1) return { entitlementId: entitlement.entitlement_id };
+  return correctionPeriodEnded(await correctionsExpireAt(env, entitlement.entitlement_id))
+    ? { refused: "period_ended" }
+    : { refused: "unavailable" };
 }
 
 async function restoreCorrectionCredit(env: ResumeBuilderEnv, entitlementId: string): Promise<void> {
@@ -532,11 +543,14 @@ async function generateCoverLetter(
 
   let reservedEntitlementId: string | null = null;
   if (existing) {
-    reservedEntitlementId = await reserveCorrectionCredit(env, probe.record.user_id, resumeId);
-    if (!reservedEntitlementId) {
+    const reservation = await reserveCorrectionCredit(env, probe.record.user_id, resumeId);
+    if ("refused" in reservation) {
       await releaseCoverLock(env, resumeId);
-      return json({ ok: false, message: "All three package corrections have been used." }, 409);
+      return reservation.refused === "period_ended"
+        ? json({ ok: false, code: "CORRECTION_PERIOD_ENDED", message: CORRECTION_PERIOD_ENDED_MESSAGE }, 409)
+        : json({ ok: false, message: "All three package corrections have been used." }, 409);
     }
+    reservedEntitlementId = reservation.entitlementId;
   }
 
   const context = { companyName, hiringManager, targetJobTitle, jobPosting };
@@ -824,6 +838,8 @@ export async function augmentResumeWithCoverLetter(
         generated,
         generationTrack: stored?.generationTrack ?? resume.generationTrack,
         correctionsRemaining: Number(resume.correctionsRemaining) || 0,
+        correctionsExpireAt: typeof resume.correctionsExpireAt === "number" ? resume.correctionsExpireAt : null,
+        correctionsExpired: resume.correctionsExpired === true,
         previewUrl: generated ? `/api/resume-builder/resumes/${resumeId}/cover-letter/files/pdf?view=1` : null,
         downloads: paid && generated ? {
           pdf: `/api/resume-builder/resumes/${resumeId}/cover-letter/files/pdf`,
