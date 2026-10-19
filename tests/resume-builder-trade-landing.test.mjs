@@ -370,3 +370,23 @@ test("plumbing apprentice bullet advice extends the existing guide without dupli
   // Corrections are described only as the Terms do; the retired A03 wording never reaches the page.
   assert.doesNotMatch(html, /corrections beyond the initial build/i);
 });
+
+test("plumbing page uses the approved corrections and licensing wording only", async () => {
+  const html = await (await renderPath("/resume-builder/plumbing")).text();
+  const text = html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").replace(/&#x27;|&#39;/g, "'").replace(/&amp;/g, "&");
+  assert.match(text, /You get up to three AI-assisted correction runs within seven days\./);
+  assert.match(text, /PDF \+ DOCX downloads, and up to three AI-assisted correction runs within seven days\./);
+  assert.match(text, /editable DOCX\. Includes up to three AI-assisted correction runs within seven days\. No subscription/);
+  assert.match(text, /Plumbing licensing and apprentice registration requirements vary by state and locality\. Check with your state licensing board or local building department before applying\./);
+  assert.doesNotMatch(text, /up to 3 corrections|Corrections included|state- and city-specific/i);
+  // The structured-data FAQ carries the same corrections answer as the visible FAQ.
+  const graphs = [...html.matchAll(/<script type="application\/ld\+json">([^<]+)<\/script>/g)]
+    .flatMap((match) => JSON.parse(match[1])["@graph"] ?? []);
+  const cost = graphs.find((item) => item["@type"] === "FAQPage").mainEntity.find((item) => item.name === "What do I get, and what does it cost?");
+  assert.match(cost.acceptedAnswer.text, /up to three AI-assisted correction runs within seven days\./);
+
+  // Other trades keep the shared closing line until their own copy is reviewed.
+  const other = await (await renderPath("/resume-builder/electrician")).text();
+  assert.match(other, /PDF \+ DOCX downloads, and up to 3 corrections\./);
+  assert.match(other, /editable DOCX\. Up to 3 corrections\. No subscription/);
+});

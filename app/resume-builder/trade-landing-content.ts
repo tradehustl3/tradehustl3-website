@@ -80,7 +80,8 @@ export type TradeLandingContent = {
   howItWorks: { title: string; body: string }[];
   ats: { heading: string; body: string[] };
   faq: SectionHead & { items: FaqItem[] };
-  closingCta: { kicker: string; heading: string; body: string; ctaLabel: string };
+  // packageNote overrides the shared line under the closing CTA for this trade only.
+  closingCta: { kicker: string; heading: string; body: string; ctaLabel: string; packageNote?: string };
 };
 
 export function tradeLandingPath(content: Pick<TradeLandingContent, "slug">): string {
@@ -155,7 +156,8 @@ export function buildTradeLandingJsonLd(content: TradeLandingContent) {
 
 // The 4 "how it works" steps are the same funnel for every trade; only the
 // trade label, the preselected intake track, and the BOT's focus differ.
-const HOW_IT_WORKS = (tradeLabel: string, intakeTrade: string, botFocus: string) => [
+// `corrections` lets a trade use its reviewed wording; the others keep the shared sentence.
+const HOW_IT_WORKS = (tradeLabel: string, intakeTrade: string, botFocus: string, corrections = "Up to 3 corrections.") => [
   {
     title: "Create a verified account",
     body: "No password — confirm a secure magic link by email. Your intake saves to your account, not just this browser.",
@@ -173,7 +175,7 @@ const HOW_IT_WORKS = (tradeLabel: string, intakeTrade: string, botFocus: string)
   {
     title: "Unlock for $9.99 one-time",
     body:
-      "Remove the watermark and download a clean PDF plus an editable DOCX. Up to 3 corrections. "
+      `Remove the watermark and download a clean PDF plus an editable DOCX. ${corrections} `
       + "No subscription, no auto-renewal.",
   },
 ];
@@ -1254,7 +1256,7 @@ export const PLUMBING_LANDING: TradeLandingContent = {
     proofStats: [
       { value: "$9.99", label: "One-time · no subscription" },
       { value: "Any level", label: "Apprentice to master" },
-      { value: "3", label: "Corrections included" },
+      { value: "Up to 3", label: "AI-assisted correction runs within seven days" },
     ],
   },
 
@@ -1267,7 +1269,7 @@ export const PLUMBING_LANDING: TradeLandingContent = {
       "One completed plumber resume · watermarked preview before payment",
       "Licenses, apprenticeship hours, and certs placed where ATS looks first",
       "ATS-friendly structure across the Plumbing track",
-      "Up to 3 corrections",
+      "Up to three AI-assisted correction runs within seven days.",
       "Clean PDF + editable DOCX after payment",
       "No subscription · no auto-renewal",
     ],
@@ -1299,7 +1301,7 @@ export const PLUMBING_LANDING: TradeLandingContent = {
       {
         label: "$9.99 once",
         items: [
-          "Preview the watermarked resume before you pay. No subscription. Up to 3 corrections, then a clean PDF and editable DOCX.",
+          "Preview the watermarked resume before you pay. No subscription. A clean PDF and editable DOCX, with up to three AI-assisted correction runs within seven days.",
         ],
       },
     ],
@@ -1382,7 +1384,7 @@ export const PLUMBING_LANDING: TradeLandingContent = {
     kicker: "/ LICENSES & CREDENTIALS",
     heading: "LIST ONLY WHAT YOU HOLD",
     intro:
-      "Plumbing postings screen hard on licensing, and it’s state- and city-specific. List exactly what you hold, with the jurisdiction and year. Not every plumber is a journeyman or master — registered apprenticeship hours count on their own. The builder never adds a license you didn’t enter.",
+      "Plumbing licensing and apprentice registration requirements vary by state and locality. Check with your state licensing board or local building department before applying. List exactly what you hold, with the jurisdiction and year. Not every plumber is a journeyman or master — registered apprenticeship hours count on their own. The builder never adds a license you didn’t enter.",
     items: [
       "Registered plumbing apprentice / hours logged",
       "Journeyman plumber license (state or municipal)",
@@ -1545,7 +1547,8 @@ export const PLUMBING_LANDING: TradeLandingContent = {
       "Use action + task or system + scope + verified outcome. Start with job logs, signed hour records, or inspection reports. For a first-visit completion rate, divide eligible service jobs completed without a return visit by all eligible service jobs in the same period, then multiply by 100. State what counts as an eligible job and exclude planned multi-visit work consistently. Without both counts, report the jobs or fixtures you worked on instead of a percentage.",
   },
 
-  howItWorks: HOW_IT_WORKS("plumber", "Plumbing", "systems, fixtures, and code"),
+  howItWorks: HOW_IT_WORKS("plumber", "Plumbing", "systems, fixtures, and code",
+    "Includes up to three AI-assisted correction runs within seven days."),
 
   ats: {
     heading: "BUILT TO CLEAR PLUMBING ATS SCREENS",
@@ -1603,7 +1606,7 @@ export const PLUMBING_LANDING: TradeLandingContent = {
       {
         question: "What do I get, and what does it cost?",
         answer:
-          "A one-time $9.99 payment unlocks a clean PDF and an editable DOCX. The preview is watermarked and free, and you review it before you pay. You get up to 3 corrections. There is no subscription and no auto-renewal.",
+          "A one-time $9.99 payment unlocks a clean PDF and an editable DOCX. The preview is watermarked and free, and you review it before you pay. You get up to three AI-assisted correction runs within seven days. There is no subscription and no auto-renewal.",
       },
     ],
   },
@@ -1613,6 +1616,7 @@ export const PLUMBING_LANDING: TradeLandingContent = {
     heading: "YOUR PLUMBER RESUME, BUILT RIGHT.",
     body: "Guided plumbing intake. License and apprenticeship hours up top. ATS-friendly structure. Clean PDF and editable DOCX. One-time $9.99 — preview before you pay.",
     ctaLabel: "Build my plumber resume",
+    packageNote: "Resume, matching cover letter, PDF + DOCX downloads, and up to three AI-assisted correction runs within seven days.",
   },
 };
 

@@ -321,7 +321,7 @@ export function TradeLandingPage({ content }: { content: TradeLandingContent }) 
           <p><strong>$9.99</strong><span>Unlock once · no subscription</span></p>
           <BuildCta content={content} location={content.ctaLocations.closing} label={content.closingCta.ctaLabel}
             className="rb-button rb-button-primary rb-button-full" />
-          <small>Resume, matching cover letter, PDF + DOCX downloads, and up to 3 corrections.</small>
+          <small>{content.closingCta.packageNote ?? "Resume, matching cover letter, PDF + DOCX downloads, and up to 3 corrections."}</small>
           <small>Secure checkout powered by Stripe · Need help? support@tradehustl3.com</small>
         </div>
       </section>
