@@ -53,7 +53,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       lastModified: page.slug === "facilities-maintenance"
         ? new Date("2026-10-13T00:00:00.000Z")
         : page.slug === "plumbing"
-          ? new Date("2026-10-15T00:00:00.000Z")
+          ? new Date("2026-10-19T00:00:00.000Z")
           : CONTENT_REFRESHED_AT,
       changeFrequency: "daily" as const,
       priority: 0.8,

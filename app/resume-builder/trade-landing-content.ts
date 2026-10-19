@@ -1370,6 +1370,7 @@ export const PLUMBING_LANDING: TradeLandingContent = {
           "Isometric & plumbing-plan reading",
           "Confined space & trench safety awareness",
           "Lockout/tagout & PPE",
+          "Job-site cleanup, tool care & material staging",
           "Service calls, dispatch & work orders",
           "Customer communication & write-ups",
         ],
@@ -1518,6 +1519,11 @@ export const PLUMBING_LANDING: TradeLandingContent = {
         label: "Helper or apprentice",
         body:
           "Keep your actual title. A helper can show material handling, measurements, tool care, and supervised tasks without claiming apprentice registration. If enrolled, name the program and separate verified field hours from classroom or lab hours. Years in the trade alone do not establish a license level.",
+      },
+      {
+        label: "Write apprentice bullets",
+        body:
+          "Start each bullet with a verb that matches your part in the work: assisted, prepped, measured, cut, staged, or installed under supervision. Name the material (copper, PEX, or PVC), the setting (residential new construction, commercial maintenance, or service calls), and the tools you used, such as tubing cutters or a soldering torch.",
       },
       {
         label: "Service and repair plumber",

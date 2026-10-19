@@ -329,7 +329,7 @@ test("complete examples remain opt-in and keep existing sitemap URLs", async () 
   assert.equal((xml.match(/<loc>https:\/\/tradehustl3\.com\/resume-builder\/facilities-maintenance<\/loc>/g) ?? []).length, 1);
   assert.match(xml, /facilities-maintenance<\/loc>[\s\S]*?<lastmod>2026-10-13T00:00:00\.000Z<\/lastmod>/);
   assert.equal((xml.match(/<loc>https:\/\/tradehustl3\.com\/resume-builder\/plumbing<\/loc>/g) ?? []).length, 1);
-  assert.match(xml, /plumbing<\/loc>[\s\S]*?<lastmod>2026-10-15T00:00:00\.000Z<\/lastmod>/);
+  assert.match(xml, /plumbing<\/loc>[\s\S]*?<lastmod>2026-10-19T00:00:00\.000Z<\/lastmod>/);
 });
 
 test("plumbing example preserves supervised scope, visible FAQ/schema agreement, and the builder handoff", async () => {
@@ -355,4 +355,18 @@ test("plumbing example preserves supervised scope, visible FAQ/schema agreement,
   const question = faq.mainEntity.find((item) => item.name === "How can I quantify plumbing work without inventing a success rate?");
   assert.ok(question, "records-based guidance is present in structured data");
   assert.ok(html.includes(question.acceptedAnswer.text), "schema answer matches the visible FAQ");
+});
+
+test("plumbing apprentice bullet advice extends the existing guide without duplicating it", async () => {
+  const html = await (await renderPath("/resume-builder/plumbing")).text();
+  assert.match(html, /Write apprentice bullets/);
+  assert.match(html, /installed under supervision/);
+  assert.match(html, /Job-site cleanup, tool care &amp; material staging/);
+  // One page, one fill-in example, one Top 10 Trades link, and the plumbing-specific builder handoff.
+  assert.equal((html.match(/aria-label="Fill-in resume example"/g) ?? []).length, 1);
+  assert.equal((html.match(/href="\/top-10-trades"/g) ?? []).length, 1);
+  assert.doesNotMatch(html, /href="\/#resume-start"/);
+  assert.match(html, /href="\/\?trade=plumbing#resume-start"/);
+  // Corrections are described only as the Terms do; the retired A03 wording never reaches the page.
+  assert.doesNotMatch(html, /corrections beyond the initial build/i);
 });
