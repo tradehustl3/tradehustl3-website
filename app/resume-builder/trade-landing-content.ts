@@ -80,7 +80,8 @@ export type TradeLandingContent = {
   howItWorks: { title: string; body: string }[];
   ats: { heading: string; body: string[] };
   faq: SectionHead & { items: FaqItem[] };
-  closingCta: { kicker: string; heading: string; body: string; ctaLabel: string };
+  // packageNote overrides the shared line under the closing CTA for this trade only.
+  closingCta: { kicker: string; heading: string; body: string; ctaLabel: string; packageNote?: string };
 };
 
 export function tradeLandingPath(content: Pick<TradeLandingContent, "slug">): string {
@@ -155,7 +156,8 @@ export function buildTradeLandingJsonLd(content: TradeLandingContent) {
 
 // The 4 "how it works" steps are the same funnel for every trade; only the
 // trade label, the preselected intake track, and the BOT's focus differ.
-const HOW_IT_WORKS = (tradeLabel: string, intakeTrade: string, botFocus: string) => [
+// `corrections` lets a trade use its reviewed wording; the others keep the shared sentence.
+const HOW_IT_WORKS = (tradeLabel: string, intakeTrade: string, botFocus: string, corrections = "Up to 3 corrections.") => [
   {
     title: "Create a verified account",
     body: "No password — confirm a secure magic link by email. Your intake saves to your account, not just this browser.",
@@ -173,7 +175,7 @@ const HOW_IT_WORKS = (tradeLabel: string, intakeTrade: string, botFocus: string)
   {
     title: "Unlock for $9.99 one-time",
     body:
-      "Remove the watermark and download a clean PDF plus an editable DOCX. Up to 3 corrections. "
+      `Remove the watermark and download a clean PDF plus an editable DOCX. ${corrections} `
       + "No subscription, no auto-renewal.",
   },
 ];
@@ -1226,11 +1228,14 @@ export const PLUMBING_LANDING: TradeLandingContent = {
     pricing: "plumbing_pricing",
     closing: "plumbing_footer_cta",
   },
-  seoTitle: "Plumbing Resume Builder | Plumber Resume | TRADE HUSTL3",
+  seoTitle: "Plumbing Resume Example & Skills | TRADE HUSTL3",
   seoDescription:
-    "Turn your service calls, rough-in, fixture sets, and drain and water-heater work into an ATS-ready plumber resume. $9.99 one-time, no subscription. TRADE HUSTL3.",
+    "See an apprentice plumber resume example, plumbing skills, and honest ways to show hours and completed jobs. Preview free; unlock for $9.99 once.",
   ogImage: "/optimized/og.webp",
   targetQueries: [
+    "plumbing resume",
+    "apprentice plumber resume",
+    "plumbing skills for resume",
     "plumbing resume builder",
     "plumber resume builder",
     "plumber resume",
@@ -1243,15 +1248,15 @@ export const PLUMBING_LANDING: TradeLandingContent = {
 
   hero: {
     kicker: "/ PLUMBING RESUME BUILDER",
-    heading: "A PLUMBER RESUME BUILT",
-    headingAccent: "FROM THE MAIN TO THE FIXTURE.",
+    heading: "PLUMBING RESUME EXAMPLE",
+    headingAccent: "SKILLS, HOURS & REAL WORK.",
     lead:
       "You run service calls, rough in DWV and water lines, set fixtures, clear drains, and swap water heaters — often to code and under pressure. A generic resume flattens that into “plumbing work.” TRADE HUSTL3 turns your systems, tools, and completed jobs into an ATS-ready plumber resume.",
     ctaLabel: "Build my plumber resume",
     proofStats: [
       { value: "$9.99", label: "One-time · no subscription" },
       { value: "Any level", label: "Apprentice to master" },
-      { value: "3", label: "Corrections included" },
+      { value: "Up to 3", label: "AI-assisted correction runs within seven days" },
     ],
   },
 
@@ -1264,7 +1269,7 @@ export const PLUMBING_LANDING: TradeLandingContent = {
       "One completed plumber resume · watermarked preview before payment",
       "Licenses, apprenticeship hours, and certs placed where ATS looks first",
       "ATS-friendly structure across the Plumbing track",
-      "Up to 3 corrections",
+      "Up to three AI-assisted correction runs within seven days.",
       "Clean PDF + editable DOCX after payment",
       "No subscription · no auto-renewal",
     ],
@@ -1296,7 +1301,7 @@ export const PLUMBING_LANDING: TradeLandingContent = {
       {
         label: "$9.99 once",
         items: [
-          "Preview the watermarked resume before you pay. No subscription. Up to 3 corrections, then a clean PDF and editable DOCX.",
+          "Preview the watermarked resume before you pay. No subscription. A clean PDF and editable DOCX, with up to three AI-assisted correction runs within seven days.",
         ],
       },
     ],
@@ -1367,6 +1372,7 @@ export const PLUMBING_LANDING: TradeLandingContent = {
           "Isometric & plumbing-plan reading",
           "Confined space & trench safety awareness",
           "Lockout/tagout & PPE",
+          "Job-site cleanup, tool care & material staging",
           "Service calls, dispatch & work orders",
           "Customer communication & write-ups",
         ],
@@ -1378,7 +1384,7 @@ export const PLUMBING_LANDING: TradeLandingContent = {
     kicker: "/ LICENSES & CREDENTIALS",
     heading: "LIST ONLY WHAT YOU HOLD",
     intro:
-      "Plumbing postings screen hard on licensing, and it’s state- and city-specific. List exactly what you hold, with the jurisdiction and year. Not every plumber is a journeyman or master — registered apprenticeship hours count on their own. The builder never adds a license you didn’t enter.",
+      "Plumbing licensing and apprentice registration requirements vary by state and locality. Check with your state licensing board or local building department before applying. List exactly what you hold, with the jurisdiction and year. Not every plumber is a journeyman or master — registered apprenticeship hours count on their own. The builder never adds a license you didn’t enter.",
     items: [
       "Registered plumbing apprentice / hours logged",
       "Journeyman plumber license (state or municipal)",
@@ -1387,7 +1393,7 @@ export const PLUMBING_LANDING: TradeLandingContent = {
       "Backflow prevention assembly tester certification",
       "Medical gas installer / brazer (NITC) — where applicable",
       "Gas fitter license (where separate)",
-      "OSHA 10 / OSHA 30",
+      "OSHA 10-Hour / 30-Hour completion card (if held)",
       "Confined space entry",
       "First aid / CPR / AED",
     ],
@@ -1457,7 +1463,92 @@ export const PLUMBING_LANDING: TradeLandingContent = {
       "These are examples of how plumbing work turns into resume language. Your resume is built only from the details you enter — TRADE HUSTL3 matches wording, it does not invent experience, hours, or licenses.",
   },
 
-  howItWorks: HOW_IT_WORKS("plumber", "Plumbing", "systems, fixtures, and code"),
+  resumeExample: {
+    kicker: "/ COMPLETE APPRENTICE PLUMBER RESUME EXAMPLE",
+    heading: "SHOW YOUR WORK AND WHO SUPERVISED IT.",
+    intro:
+      "Use this illustrative apprentice example to see the whole resume together. Replace every bracket with your own verified details and delete tasks you have not performed. The hours, jobs, and credentials are yours to supply; these are not customer results or a claim that you hold a license.",
+    name: "[Your Name]",
+    contact: "[City, State] · [Phone] · [Email]",
+    targetTitle: "Plumbing Apprentice [use your actual role title]",
+    sections: [
+      {
+        label: "Professional summary",
+        body:
+          "Plumbing apprentice with [verified on-the-job hours] supporting [residential service / commercial construction] crews under [supervisor role]. Experience preparing materials, measuring and cutting [pipe materials used], assisting with fixture installation, and recording assigned work. Seeking [target role] while continuing [program or training actually attended].",
+      },
+      {
+        label: "Registration and training",
+        items: [
+          "[Exact current apprentice registration, issuer, and expiration, only if held]",
+          "[Program or training provider] · [verified field hours as of Month Year] · [classroom or lab hours, listed separately]",
+          "[Safety training or completion card actually earned, provider, and date]",
+        ],
+      },
+      {
+        label: "Skills",
+        items: [
+          "[Copper / PEX / PVC actually used] · measuring and cutting · material staging",
+          "Fixture preparation · DWV layout support · assigned pressure-test preparation",
+          "[Pipe cutter / press tool / auger actually operated] · job notes · customer and crew communication",
+        ],
+      },
+      {
+        label: "Experience",
+        body: "Plumbing Apprentice · [Employer, City, State] · [Month Year–Present]",
+        items: [
+          "Prepared and cut [pipe material] for [N] units during [period], checking measurements with the supervising plumber before assembly.",
+          "Assisted with [N] fixture installations during [period]; staged fittings, supported setting and connection work, and completed the assigned leak-check checklist.",
+          "Supported [N] service visits per week by protecting work areas, staging tools, and recording parts and follow-up items in [job log or software].",
+          "Logged [verified hours] of supervised field work through [date], with tasks and hours reviewed by [supervisor or program].",
+        ],
+      },
+      {
+        label: "Earlier experience",
+        body: "[Actual previous role] · [Employer, City, State] · [Month Year–Month Year]",
+        items: [
+          "Tracked [N] material orders or deliveries per [period], checking quantities and reporting shortages before the crew needed the parts.",
+          "Coordinated [actual customer, warehouse, or site task] with [team], documenting completed work and unresolved issues.",
+        ],
+      },
+      {
+        label: "Education",
+        items: ["[Diploma, completed coursework, or current program] · [School] · [Year or expected completion]"],
+      },
+    ],
+    guidance: [
+      {
+        label: "Helper or apprentice",
+        body:
+          "Keep your actual title. A helper can show material handling, measurements, tool care, and supervised tasks without claiming apprentice registration. If enrolled, name the program and separate verified field hours from classroom or lab hours. Years in the trade alone do not establish a license level.",
+      },
+      {
+        label: "Write apprentice bullets",
+        body:
+          "Start each bullet with a verb that matches your part in the work: assisted, prepped, measured, cut, staged, or installed under supervision. Name the material (copper, PEX, or PVC), the setting (residential new construction, commercial maintenance, or service calls), and the tools you used, such as tubing cutters or a soldering torch.",
+      },
+      {
+        label: "Service and repair plumber",
+        body:
+          "Lead with diagnosis, fixture and water-heater work, drains, customer explanations, and service documentation you actually handled. Say whether you completed the repair or assisted another plumber. Use dispatch records for call counts; do not copy a first-visit completion percentage from an example.",
+      },
+      {
+        label: "Construction plumber or crew lead",
+        body:
+          "Name the project type, pipe materials, rough-in or trim scope, and your own contribution. Separate preparing a system for inspection from an inspection result. Leads can add verified crew size, scheduling, and material coordination; list a journeyman, master, or contractor credential only when held.",
+      },
+      {
+        label: "Choose plumbing skills from the posting",
+        body:
+          "Match each requested skill to work you can explain: DWV rough-in, PEX joining, fixture installation, drain cleaning, or pressure-test preparation. Pair it with the material, tool, and level of supervision. Remove skills you have only observed, and name software only if you used it.",
+      },
+    ],
+    bulletTip:
+      "Use action + task or system + scope + verified outcome. Start with job logs, signed hour records, or inspection reports. For a first-visit completion rate, divide eligible service jobs completed without a return visit by all eligible service jobs in the same period, then multiply by 100. State what counts as an eligible job and exclude planned multi-visit work consistently. Without both counts, report the jobs or fixtures you worked on instead of a percentage.",
+  },
+
+  howItWorks: HOW_IT_WORKS("plumber", "Plumbing", "systems, fixtures, and code",
+    "Includes up to three AI-assisted correction runs within seven days."),
 
   ats: {
     heading: "BUILT TO CLEAR PLUMBING ATS SCREENS",
@@ -1475,7 +1566,7 @@ export const PLUMBING_LANDING: TradeLandingContent = {
       {
         question: "What should a plumber resume include?",
         answer:
-          "Contact details and a target title, a short summary, your license or registered apprenticeship hours, certifications (OSHA, backflow) with years, a skills section grouped by type of work, work history that names the systems you piped and the code you worked to, and measurable results such as calls per day, units roughed in, or callback rate. The TRADE HUSTL3 builder walks you through each one.",
+          "Contact details and your actual target role, a short summary, current licenses or registration if held, verified apprenticeship hours, training cards and certifications, plumbing skills grouped by work type, and dated work history. Name the systems, materials, supervision, and completed jobs you can support with records. The TRADE HUSTL3 builder walks you through each section.",
       },
       {
         question: "What skills should I put on a plumbing resume?",
@@ -1490,7 +1581,7 @@ export const PLUMBING_LANDING: TradeLandingContent = {
       {
         question: "How do I write an apprentice plumber resume?",
         answer:
-          "Lead with your registered apprenticeship hours and program, then the work you’ve done under a licensed plumber — rough-in, fixture sets, drain work, service support — plus school lab hours, OSHA 10, and the tools you own. The intake has an entry-level path built for apprentices and helpers.",
+          "Use the complete apprentice example on this page as a structure. Name your actual program and registration only if held; separate verified field hours from classroom or lab hours. Describe supervised tasks, materials, and tools you have used. Helpers can keep their real title and show transferable work without claiming registration or independent plumbing work.",
       },
       {
         question: "What is the difference between a service plumber and a new-construction plumber resume?",
@@ -1505,12 +1596,17 @@ export const PLUMBING_LANDING: TradeLandingContent = {
       {
         question: "Are there plumber resume examples I can follow?",
         answer:
-          "This page lists example accomplishment bullets that show the shape of a strong plumbing line — system, volume, result. Instead of copying a sample, you answer a guided intake and the builder turns your own work into that format, then shows a free preview before payment.",
+          "Yes. This page has a complete fill-in apprentice plumber resume, plumbing skills, accomplishment bullets, and guidance for service, construction, and lead roles. Replace placeholders with your own facts and remove work you have not done. The builder uses your intake details and shows a free watermarked preview before payment.",
+      },
+      {
+        question: "How can I quantify plumbing work without inventing a success rate?",
+        answer:
+          "Use job logs or signed hour records to report a verified job count, fixture count, or supervised hours over a named period. A first-visit completion rate needs both completed eligible jobs and all eligible jobs from that same period, with planned multi-visit work treated consistently. If those records are unavailable, describe the task, material, supervision, and scope without a percentage.",
       },
       {
         question: "What do I get, and what does it cost?",
         answer:
-          "A one-time $9.99 payment unlocks a clean PDF and an editable DOCX. The preview is watermarked and free, and you review it before you pay. You get up to 3 corrections. There is no subscription and no auto-renewal.",
+          "A one-time $9.99 payment unlocks a clean PDF and an editable DOCX. The preview is watermarked and free, and you review it before you pay. You get up to three AI-assisted correction runs within seven days. There is no subscription and no auto-renewal.",
       },
     ],
   },
@@ -1520,6 +1616,7 @@ export const PLUMBING_LANDING: TradeLandingContent = {
     heading: "YOUR PLUMBER RESUME, BUILT RIGHT.",
     body: "Guided plumbing intake. License and apprenticeship hours up top. ATS-friendly structure. Clean PDF and editable DOCX. One-time $9.99 — preview before you pay.",
     ctaLabel: "Build my plumber resume",
+    packageNote: "Resume, matching cover letter, PDF + DOCX downloads, and up to three AI-assisted correction runs within seven days.",
   },
 };
 

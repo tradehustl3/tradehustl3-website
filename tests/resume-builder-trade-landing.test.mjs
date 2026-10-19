@@ -81,8 +81,8 @@ const PAGES = [
   },
   {
     slug: "plumbing",
-    title: "Plumbing Resume Builder | Plumber Resume | TRADE HUSTL3",
-    descPrefix: "Turn your service calls, rough-in, fixture sets, and drain and water-heater work into an ATS-ready plumber resume.",
+    title: "Plumbing Resume Example & Skills | TRADE HUSTL3",
+    descPrefix: "See an apprentice plumber resume example, plumbing skills, and honest ways to show hours and completed jobs.",
     breadcrumb: "Plumbing",
     heroLocation: "plumbing_hero",
     analyticsItem: "resume_builder_plumbing",
@@ -322,10 +322,71 @@ test("facilities example is crawlable, clearly illustrative, and enters the corr
   assert.ok(html.includes(pmQuestion.acceptedAnswer.text), "schema answer matches the visible FAQ");
 });
 
-test("a facilities-only example does not appear on sibling guides or create another sitemap URL", async () => {
-  const html = await (await renderPath("/resume-builder/plumbing")).text();
+test("complete examples remain opt-in and keep existing sitemap URLs", async () => {
+  const html = await (await renderPath("/resume-builder/hvac")).text();
   assert.doesNotMatch(html, /aria-label="Fill-in resume example"/);
   const xml = await (await renderPath("/sitemap.xml")).text();
   assert.equal((xml.match(/<loc>https:\/\/tradehustl3\.com\/resume-builder\/facilities-maintenance<\/loc>/g) ?? []).length, 1);
   assert.match(xml, /facilities-maintenance<\/loc>[\s\S]*?<lastmod>2026-10-13T00:00:00\.000Z<\/lastmod>/);
+  assert.equal((xml.match(/<loc>https:\/\/tradehustl3\.com\/resume-builder\/plumbing<\/loc>/g) ?? []).length, 1);
+  assert.match(xml, /plumbing<\/loc>[\s\S]*?<lastmod>2026-10-19T00:00:00\.000Z<\/lastmod>/);
+});
+
+test("plumbing example preserves supervised scope, visible FAQ/schema agreement, and the builder handoff", async () => {
+  const html = await (await renderPath("/resume-builder/plumbing")).text();
+  assert.match(html, /aria-label="Fill-in resume example"/);
+  assert.match(html, /these are not customer results or a claim that you hold a license/);
+  assert.match(html, /\[verified on-the-job hours\]/);
+  assert.match(html, /classroom or lab hours, listed separately/);
+  assert.match(html, /Helper or apprentice/);
+  assert.match(html, /Service and repair plumber/);
+  assert.match(html, /Construction plumber or crew lead/);
+
+  const cta = html.match(/<a\b[^>]*data-location="plumbing_hero_resume_example"[^>]*>/)?.[0];
+  assert.ok(cta, "example has its own measurable CTA");
+  assert.match(cta, /href="\/\?trade=plumbing#resume-start"/);
+  assert.match(cta, /data-item="resume_builder_plumbing"/);
+  assert.match(html, /href="\/resume-examples\/skilled-trades"/);
+  assert.match(html, /href="\/resume-examples"/);
+
+  const graphs = [...html.matchAll(/<script type="application\/ld\+json">([^<]+)<\/script>/g)]
+    .flatMap((match) => JSON.parse(match[1])["@graph"] ?? []);
+  const faq = graphs.find((item) => item["@type"] === "FAQPage");
+  const question = faq.mainEntity.find((item) => item.name === "How can I quantify plumbing work without inventing a success rate?");
+  assert.ok(question, "records-based guidance is present in structured data");
+  assert.ok(html.includes(question.acceptedAnswer.text), "schema answer matches the visible FAQ");
+});
+
+test("plumbing apprentice bullet advice extends the existing guide without duplicating it", async () => {
+  const html = await (await renderPath("/resume-builder/plumbing")).text();
+  assert.match(html, /Write apprentice bullets/);
+  assert.match(html, /installed under supervision/);
+  assert.match(html, /Job-site cleanup, tool care &amp; material staging/);
+  // One page, one fill-in example, one Top 10 Trades link, and the plumbing-specific builder handoff.
+  assert.equal((html.match(/aria-label="Fill-in resume example"/g) ?? []).length, 1);
+  assert.equal((html.match(/href="\/top-10-trades"/g) ?? []).length, 1);
+  assert.doesNotMatch(html, /href="\/#resume-start"/);
+  assert.match(html, /href="\/\?trade=plumbing#resume-start"/);
+  // Corrections are described only as the Terms do; the retired A03 wording never reaches the page.
+  assert.doesNotMatch(html, /corrections beyond the initial build/i);
+});
+
+test("plumbing page uses the approved corrections and licensing wording only", async () => {
+  const html = await (await renderPath("/resume-builder/plumbing")).text();
+  const text = html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").replace(/&#x27;|&#39;/g, "'").replace(/&amp;/g, "&");
+  assert.match(text, /You get up to three AI-assisted correction runs within seven days\./);
+  assert.match(text, /PDF \+ DOCX downloads, and up to three AI-assisted correction runs within seven days\./);
+  assert.match(text, /editable DOCX\. Includes up to three AI-assisted correction runs within seven days\. No subscription/);
+  assert.match(text, /Plumbing licensing and apprentice registration requirements vary by state and locality\. Check with your state licensing board or local building department before applying\./);
+  assert.doesNotMatch(text, /up to 3 corrections|Corrections included|state- and city-specific/i);
+  // The structured-data FAQ carries the same corrections answer as the visible FAQ.
+  const graphs = [...html.matchAll(/<script type="application\/ld\+json">([^<]+)<\/script>/g)]
+    .flatMap((match) => JSON.parse(match[1])["@graph"] ?? []);
+  const cost = graphs.find((item) => item["@type"] === "FAQPage").mainEntity.find((item) => item.name === "What do I get, and what does it cost?");
+  assert.match(cost.acceptedAnswer.text, /up to three AI-assisted correction runs within seven days\./);
+
+  // Other trades keep the shared closing line until their own copy is reviewed.
+  const other = await (await renderPath("/resume-builder/electrician")).text();
+  assert.match(other, /PDF \+ DOCX downloads, and up to 3 corrections\./);
+  assert.match(other, /editable DOCX\. Up to 3 corrections\. No subscription/);
 });

@@ -52,7 +52,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
       url: `${SITE_URL}${tradeLandingPath(page)}`,
       lastModified: page.slug === "facilities-maintenance"
         ? new Date("2026-10-13T00:00:00.000Z")
-        : CONTENT_REFRESHED_AT,
+        : page.slug === "plumbing"
+          ? new Date("2026-10-19T00:00:00.000Z")
+          : CONTENT_REFRESHED_AT,
       changeFrequency: "daily" as const,
       priority: 0.8,
     })),
