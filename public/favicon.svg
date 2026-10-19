@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 32 32">
   <title>TRADE HUSTL3</title>
-  <rect width="32" height="32" rx="6" fill="#071A2B"/>
-  <rect x="1" y="1" width="30" height="30" rx="5" fill="none" stroke="#D6A52A" stroke-width="2"/>
-  <path fill="#F5F0E6" d="M3 10h7v3H8v10H5V13H3zM12 10h3v5h2v-5h3v13h-3v-5h-2v5h-3z"/>
-  <path fill="#D6A52A" d="M22 10h7v13h-7v-3h4v-2h-3v-3h3v-2h-4z"/>
+  <rect width="32" height="32" rx="6" fill="#02142B"/>
+  <path fill="#D6A52A" d="M5 6h22v1.25H5zM5 24.75h22V26H5z"/>
+  <path fill="#F4ECDD" d="M3 9.5h7v3H8V23H5V12.5H3zM12 9.5h3v5h2v-5h3V23h-3v-5.5h-2V23h-3z"/>
+  <path fill="#E8231A" d="M22 9.5h7V23h-7v-3h4v-1.75h-3v-3h3V12.5h-4z"/>
 </svg>
