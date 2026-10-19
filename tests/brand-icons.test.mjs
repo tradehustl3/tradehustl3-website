@@ -17,6 +17,7 @@ const ICONS = {
   "apple-touch-icon.png": { maxBytes: 40 * 1024, size: 180 },
   "optimized/trade-hustl3-logo-512.webp": { maxBytes: 160 * 1024, size: 512 },
   "optimized/trade-hustl3-logo.webp": { maxBytes: 16 * 1024, size: 96 },
+  "optimized/resume-builder-logo-512.webp": { maxBytes: 64 * 1024, size: 512 },
   "favicon.svg": { maxBytes: 4 * 1024 },
 };
 
@@ -102,7 +103,7 @@ test("structured-data logo points at the 512px WebP with matching dimensions", a
   const org = graph.find((node) => node["@type"] === "Organization");
   assert.deepEqual(org.logo, {
     "@type": "ImageObject",
-    url: "https://tradehustl3.com/optimized/trade-hustl3-logo-512.webp",
+    url: "https://tradehustl3.com/optimized/resume-builder-logo-512.webp",
     width: 512,
     height: 512,
   });

@@ -87,7 +87,7 @@ export const metadata: Metadata = {
         url: "/optimized/og.webp",
         width: 1200,
         height: 630,
-        alt: "TRADE HUSTL3 — Built by Trades. Backed by HUSTL3.",
+        alt: "TRADE HUSTL3 Resume Builder",
       },
     ],
   },
@@ -116,7 +116,7 @@ const structuredData = {
 
       logo: {
         "@type": "ImageObject",
-        url: `${SITE_URL}/optimized/trade-hustl3-logo-512.webp`,
+        url: `${SITE_URL}/optimized/resume-builder-logo-512.webp`,
         width: 512,
         height: 512,
       },
