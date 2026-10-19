@@ -7,6 +7,7 @@ import { defaultStyle, type ResumeStyle } from "../../../worker/resume-templates
 import { ProtectedPdfPreview } from "./protected-pdf-preview";
 import { generationFailureIntakeUrl, intakeReturnUrl } from "../return-urls";
 import { analyticsCheckoutContext } from "../funnel-analytics";
+import { CorrectionWindowNote } from "./correction-window";
 
 type ResumeTheme = "plain" | "navy" | "lead";
 type PreviewTab = "resume" | "cover-letter";
@@ -24,6 +25,8 @@ type Resume = {
   runsUsed: number;
   runsTotal: number;
   correctionsRemaining: number;
+  correctionsExpireAt?: number | null;
+  correctionsExpired?: boolean;
   previewUrl: string | null;
   downloads: { pdf: string; docx: string } | null;
   coverLetter: {
@@ -31,6 +34,8 @@ type Resume = {
     available: boolean;
     generated: boolean;
     correctionsRemaining: number;
+    correctionsExpireAt?: number | null;
+    correctionsExpired?: boolean;
     previewUrl: string | null;
     downloads: { pdf: string; docx: string } | null;
     companyName: string;
@@ -552,9 +557,10 @@ export function ResumeReview() {
 
             {resume.paid ? <form className="rb-correction-form" onSubmit={submitCorrection}>
               <div className="rb-correction-count"><strong>{resume.correctionsRemaining}</strong><span>shared package corrections remaining</span></div>
+              <CorrectionWindowNote expireAt={resume.correctionsExpireAt} expired={resume.correctionsExpired} />
               <label htmlFor="correctionRequest">What needs to change on the resume?</label>
               <textarea id="correctionRequest" name="correctionRequest" rows={6} maxLength={2000} required disabled={working || resume.correctionsRemaining < 1} placeholder="Example: Change the end date at Apex Mechanical to June 2025 and emphasize my rooftop-unit diagnostics." />
-              <button className="rb-button rb-button-secondary-dark rb-button-full" type="submit" disabled={working || resume.correctionsRemaining < 1}>{working ? "Applying correction…" : resume.correctionsRemaining > 0 ? "Apply one package correction" : "All corrections used"} <span>↻</span></button>
+              <button className="rb-button rb-button-secondary-dark rb-button-full" type="submit" disabled={working || resume.correctionsRemaining < 1}>{working ? "Applying correction…" : resume.correctionsRemaining > 0 ? "Apply one package correction" : resume.correctionsExpired ? "Correction period ended" : "All corrections used"} <span>↻</span></button>
               <small>The three corrections are shared across the resume and cover letter. One submitted correction uses one run. Failed generations are restored automatically.</small>
             </form> : (
               <div className="rb-unpaid-card" id="unlock-package" ref={unpaidCardRef}>
