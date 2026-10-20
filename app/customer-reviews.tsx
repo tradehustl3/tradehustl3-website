@@ -53,38 +53,14 @@ export function CustomerReviews() {
     };
   }, []);
 
+  const hasReviews = loaded && verifiedReviews.length > 0;
+
   return (
     <section className={styles.section} aria-labelledby="customer-reviews-title">
-      <div className={styles.heading}>
-        <p>REAL CUSTOMER STORIES</p>
-        <h2 id="customer-reviews-title">Real People. <span>Real Results.</span></h2>
-        <div>
-          Skilled-trades job seekers share how TRADE HUSTL3 helped them present their experience,
-          compete for the right roles, and move their job search forward.
-        </div>
-        <div className={styles.proofBar} aria-label="TRADE HUSTL3 customer proof">
-          <span><b>7</b> skilled-trade paths</span>
-          <span><b>$0</b> to preview · <b>$9.99</b> to unlock</span>
-        </div>
-      </div>
+      <h2 id="customer-reviews-title" className={styles.title}>Reviews from verified buyers</h2>
 
-      <ul className={styles.promiseGrid} aria-label="What the Resume Builder promises">
-        {PROMISES.map((promise) => (
-          <li className={styles.promiseCard} key={promise.id}>
-            <span>{promise.label}</span>
-            <strong>{promise.title}</strong>
-            <p>{promise.body}</p>
-            {"href" in promise ? <a href={promise.href}>Read the refund policy</a> : null}
-          </li>
-        ))}
-      </ul>
-
-      {loaded && verifiedReviews.length > 0 ? (
-        <div className={styles.verifiedWrap}>
-          <div className={styles.verifiedHeading}>
-            <span>NEW VERIFIED FEEDBACK</span>
-            <strong>From paid Resume Builder customers</strong>
-          </div>
+      <div className={styles.box}>
+        {hasReviews ? (
           <div className={styles.verifiedGrid}>
             {verifiedReviews.map((review) => (
               <article className={styles.verifiedCard} key={review.id}>
@@ -112,13 +88,43 @@ export function CustomerReviews() {
               </article>
             ))}
           </div>
-        </div>
-      ) : null}
+        ) : (
+          // Server-rendered default, and what stays when no review is approved yet.
+          <div className={styles.empty} data-reviews-empty>
+            <p>
+              Only customers with a completed purchase can leave a review here. The first ones will appear as
+              soon as they&apos;re approved.
+            </p>
+            <a
+              href="#resume-start"
+              className={styles.emptyCta}
+              data-analytics-event="cta_click"
+              data-location="reviews_empty"
+              data-destination="#resume-start"
+            >
+              Build my free preview
+            </a>
+          </div>
+        )}
+      </div>
 
-      <p className={styles.disclaimer}>
-        Customer stories and job-search outcomes are self-reported and vary by person, trade, market,
-        qualifications, and employer. TRADE HUSTL3 does not guarantee interviews or employment.
-      </p>
+      <ul className={styles.promiseGrid} aria-label="What the Resume Builder promises">
+        {PROMISES.map((promise) => (
+          <li className={styles.promiseCard} key={promise.id}>
+            <span>{promise.label}</span>
+            <strong>{promise.title}</strong>
+            <p>{promise.body}</p>
+            {"href" in promise ? <a href={promise.href}>Read the refund policy</a> : null}
+          </li>
+        ))}
+      </ul>
+
+      {hasReviews ? (
+        <p className={styles.disclaimer}>
+          Reviews and job-search outcomes are self-reported and vary by person, trade, market,
+          qualifications, and employer. TRADE HUSTL3 does not guarantee interviews or employment.
+        </p>
+      ) : null}
     </section>
   );
 }
