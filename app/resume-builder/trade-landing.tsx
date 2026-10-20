@@ -54,6 +54,12 @@ const TRADE_WORKSITE_IMAGES: Partial<Record<
     width: 1536,
     height: 1024,
   },
+  "Roadwork, Paving, Concrete & Heavy Equipment": {
+    src: "/trade-landings/heavy-equipment-crane-hvac-hero.webp",
+    alt: "Mobile construction crane lifting a large rooftop HVAC unit toward the roof of a commercial building, with construction crew guiding the lift",
+    width: 1448,
+    height: 1086,
+  },
   "General Labor / Trade Helper": {
     src: "/trade-landings/general-labor-traffic-control-worksite.webp",
     alt: "Road construction flagger in a high-visibility safety vest holding a stop paddle in an active work zone",
