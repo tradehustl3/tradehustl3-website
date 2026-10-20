@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>TRADE HUSTL3 homepage, proposed</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&amp;family=Barlow:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="background: #02142B; color: #F3ECDF; font-family: 'Barlow', system-ui, sans-serif; min-height: 100%; width: 100%; box-sizing: border-box">
+
+  <!-- Header: one CTA, three links -->
+  <header style="border-bottom: 1px solid rgba(243,236,223,0.12)">
+    <div style="max-width: 1240px; margin: 0 auto; padding: 14px 24px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px">
+      <a href="#top" aria-label="TRADE HUSTL3 Resume Builder home" style="display: flex; align-items: center; gap: 10px; text-decoration: none; color: #F3ECDF">
+        <img src="/_blob/8924a53db0c3ac245c5e3c46f6af0782" alt="TRADE HUSTL3 Resume Builder" style="width: 72px; height: 59px; object-fit: contain">
+      </a>
+      <nav aria-label="Primary navigation" style="display: flex; flex-wrap: wrap; align-items: center; gap: 22px; font-size: 15px; font-weight: 500; color: #d4a63a">
+        <a href="#trades" style="color: #D2D9E0; text-decoration: none">Trade examples</a>
+        <a href="#how" style="color: #D2D9E0; text-decoration: none">How it works</a>
+        <a href="#book" style="color: #D2D9E0; text-decoration: none">The Book</a>
+        <a href="#start" style="background: #D7261C; color: #FFFFFF; text-decoration: none; font-weight: 700; padding: 11px 18px; border-radius: 8px; min-height: 44px; box-sizing: border-box; display: inline-flex; align-items: center">Build my free preview</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Hero -->
+  <section id="top" style="max-width: 1240px; margin: 0 auto; padding: clamp(32px, 6vw, 72px) 24px 40px; display: flex; flex-wrap: wrap; gap: 48px; align-items: center; position: relative">
+    
+
+    <!-- Live preview card -->
+    <div style="flex: 999 1 520px; min-width: 0; display: flex; flex-direction: column; gap: 22px; position: relative">
+      <p style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; letter-spacing: 0.14em; font-size: 15px; color: #D4A63A">RESUME BUILDER FOR THE SKILLED TRADES</p>
+      <h1 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: clamp(40px, 6vw, 76px); line-height: 0.98; text-transform: uppercase; letter-spacing: 0.005em">Build {{article}} <span style="color: #FF4A3D">{{tradeWord}}</span> resume that looks ready for the job.</h1>
+      <p style="margin: 0; font-size: 19px; line-height: 1.5; color: #f3ecdf; max-width: 560px">Upload your resume or answer a few questions. HUSTL3 BOT turns your real experience into a clean, ATS-friendly resume. See the whole thing before you pay.</p>
+
+      <div id="trades" style="display: flex; flex-direction: column; gap: 10px">
+        <p style="margin: 0; font-size: 14px; font-weight: 600; color: #F3ECDF">What's your trade?</p>
+        <div style="display: flex; flex-wrap: wrap; gap: 8px">
+          <sc-for list="{{trades}}" as="t" hint-placeholder-count="6">
+            <button type="button" onClick="{{t.pick}}" aria-pressed="{{t.pressed}}" style="{{t.chipStyle}}">{{t.label}}</button>
+          </sc-for>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 18px">
+        <a href="#start" style="background: #D7261C; color: #FFFFFF; text-decoration: none; font-weight: 700; font-size: 18px; padding: 16px 26px; border-radius: 10px; min-height: 56px; box-sizing: border-box; display: inline-flex; align-items: center; gap: 10px">Build my free {{tradeShort}} preview <span aria-hidden="true">→</span></a>
+        <a href="#how" style="color: #F3ECDF; font-weight: 600; font-size: 16px">See how it works</a>
+      </div>
+
+      <div style="display: flex; flex-wrap: wrap; gap: 8px 22px; font-size: 15px; color: #D2D9E0">
+        <span><b style="color: #F3ECDF">$0</b> to preview</span>
+        <span><b style="color: #F3ECDF">$9.99</b> once to unlock</span>
+        <span>No subscription</span>
+        <span>No credit card to start</span>
+      </div>
+    </div><div style="flex: 1 1 380px; min-width: 0; display: flex; justify-content: center">
+      <div style="position: relative; width: 100%; max-width: 440px">
+        <div style="background: #FFFFFF; color: #1A2230; border-radius: 10px; padding: 26px 26px 22px; box-shadow: 0 24px 60px rgba(0,0,0,0.45); display: flex; flex-direction: column; gap: 12px">
+          <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 12px; border-bottom: 2px solid #1A2230; padding-bottom: 10px">
+            <div>
+              <p style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 26px; letter-spacing: 0.02em">JORDAN TAYLOR</p>
+              <p style="margin: 2px 0 0; font-size: 14px; font-weight: 600; color: #8A1A12">{{preview.title}}</p>
+            </div>
+            <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #5B6573">EXAMPLE</span>
+          </div>
+          <p style="margin: 0; font-size: 12px; font-weight: 700; letter-spacing: 0.1em; color: #5B6573">CERTIFICATIONS</p>
+          <p style="margin: -6px 0 0; font-size: 14px">{{preview.certs}}</p>
+          <p style="margin: 0; font-size: 12px; font-weight: 700; letter-spacing: 0.1em; color: #5B6573">EXPERIENCE</p>
+          <ul style="margin: -6px 0 0; padding-left: 18px; font-size: 14px; line-height: 1.45; display: flex; flex-direction: column; gap: 6px">
+            <sc-for list="{{preview.bullets}}" as="b" hint-placeholder-count="3">
+              <li>{{b}}</li>
+            </sc-for>
+          </ul>
+          <div style="display: flex; gap: 8px; margin-top: 4px">
+            <span style="font-size: 12px; font-weight: 700; border: 1px solid #C9CFD6; border-radius: 6px; padding: 5px 9px">PDF</span>
+            <span style="font-size: 12px; font-weight: 700; border: 1px solid #C9CFD6; border-radius: 6px; padding: 5px 9px">Editable DOCX</span>
+            <span style="font-size: 12px; font-weight: 700; border: 1px solid #C9CFD6; border-radius: 6px; padding: 5px 9px">+ Cover letter</span>
+          </div>
+        </div>
+        <p style="margin: 10px 0 0; font-size: 12px; color: #AEB8C3; text-align: center">Fictional example. Your resume uses only the facts you enter.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Trust strip: product promises, all true today -->
+  <section aria-label="What you can count on" style="border-top: 3px solid #8EC0F0; border-bottom: 3px solid #8EC0F0; background-color: #FFFFFF; background-image: linear-gradient(rgba(58,134,214,0.18) 1px, transparent 1px), linear-gradient(90deg, rgba(58,134,214,0.18) 1px, transparent 1px); background-size: 22px 22px">
+    <div style="max-width: 1240px; margin: 0 auto; padding: 26px 24px; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 22px">
+      <div style="display: flex; flex-direction: column; gap: 4px">
+        <p style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 22px; color: #7A5408">See it first</p>
+        <p style="margin: 0; font-size: 16px; color: #1E2A3A; line-height: 1.45">Your full resume is built before you pay.</p>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 4px">
+        <p style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 22px; color: #7A5408">Your facts only</p>
+        <p style="margin: 0; font-size: 16px; color: #1E2A3A; line-height: 1.45">Never invents a license, cert, employer or number.</p>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 4px">
+        <p style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 22px; color: #7A5408">Cover letter included</p>
+        <p style="margin: 0; font-size: 16px; color: #1E2A3A; line-height: 1.45">Matching letter, PDF and editable Word files.</p>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 4px">
+        <p style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 22px; color: #7A5408">Built by a tradesman</p>
+        <p style="margin: 0; font-size: 16px; color: #1E2A3A; line-height: 1.45">Shaped by 10+ years of HVAC and facilities work.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- How it works -->
+  <section id="how" style="max-width: 1240px; margin: 0 auto; padding: 64px 24px 24px; display: flex; flex-direction: column; gap: 28px">
+    <h2 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: clamp(32px, 4vw, 48px); text-transform: uppercase">Three steps. Preview before you pay.</h2>
+    <ol style="margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px">
+      <li style="background-color: #FFFFFF; background-image: linear-gradient(rgba(58,134,214,0.18) 1px, transparent 1px), linear-gradient(90deg, rgba(58,134,214,0.18) 1px, transparent 1px); background-size: 22px 22px; border: 2px solid #8EC0F0; color: #02142B; border-radius: 12px; padding: 28px; display: flex; flex-direction: column; gap: 8px">
+        <span style="font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 48px; color: #c81e14; line-height: 1">1</span>
+        <p style="margin: 0; font-weight: 700; font-size: 21px; color: #02142B">Bring your experience</p>
+        <p style="margin: 0; color: #7A5408; font-size: 16px; line-height: 1.5; font-weight: 500">Upload a resume or answer guided questions for your trade.</p>
+      </li>
+      <li style="background-color: #FFFFFF; background-image: linear-gradient(rgba(58,134,214,0.18) 1px, transparent 1px), linear-gradient(90deg, rgba(58,134,214,0.18) 1px, transparent 1px); background-size: 22px 22px; border: 2px solid #8EC0F0; color: #02142B; border-radius: 12px; padding: 28px; display: flex; flex-direction: column; gap: 8px">
+        <span style="font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 48px; color: #c81e14; line-height: 1">2</span>
+        <p style="margin: 0; font-weight: 700; font-size: 21px; color: #02142B">Review the free preview</p>
+        <p style="margin: 0; color: #7A5408; font-size: 16px; line-height: 1.5; font-weight: 500">Read every line. Switch templates. Nothing is charged yet.</p>
+      </li>
+      <li style="background-color: #FFFFFF; background-image: linear-gradient(rgba(58,134,214,0.18) 1px, transparent 1px), linear-gradient(90deg, rgba(58,134,214,0.18) 1px, transparent 1px); background-size: 22px 22px; border: 2px solid #8EC0F0; color: #02142B; border-radius: 12px; padding: 28px; display: flex; flex-direction: column; gap: 8px">
+        <span style="font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 48px; color: #c81e14; line-height: 1">3</span>
+        <p style="margin: 0; font-weight: 700; font-size: 21px; color: #02142B">Unlock for $9.99</p>
+        <p style="margin: 0; color: #7A5408; font-size: 16px; line-height: 1.5; font-weight: 500">Download your resume and cover letter as PDF and DOCX.</p>
+      </li>
+    </ol>
+  </section>
+
+  <!-- Reviews: verified buyers only -->
+  <section aria-labelledby="reviews-title" style="max-width: 1240px; margin: 0 auto; padding: 40px 24px 72px; display: flex; flex-direction: column; gap: 18px">
+    <h2 id="reviews-title" style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: clamp(28px, 3.4vw, 40px); text-transform: uppercase">Reviews from verified buyers</h2>
+    <div style="background-color: #FFFFFF; background-image: linear-gradient(rgba(58,134,214,0.18) 1px, transparent 1px), linear-gradient(90deg, rgba(58,134,214,0.18) 1px, transparent 1px); background-size: 22px 22px; border: 2px solid #8EC0F0; border-radius: 12px; padding: 28px; display: flex; flex-wrap: wrap; gap: 18px; align-items: center; justify-content: space-between">
+      <p style="margin: 0; color: #1E2A3A; font-size: 17px; line-height: 1.5; flex: 1 1 360px">Only customers with a completed purchase can leave a review here. The first ones will appear as soon as they're approved.</p>
+      <a id="start" href="#top" style="background: #D7261C; color: #FFFFFF; text-decoration: none; font-weight: 700; padding: 14px 22px; border-radius: 10px; min-height: 48px; box-sizing: border-box; display: inline-flex; align-items: center">Build my free preview</a>
+    </div>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"startTrade":{"editor":"enum","options":["hvac","electrical","plumbing","facilities","welding","construction"],"default":"hvac"},"$preview":{"width":1440,"height":1720}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { picked: null };
+  }
+  renderVals() {
+    const T = [
+      { id: 'hvac', label: 'HVAC', word: 'HVAC tech', short: 'HVAC', article: 'an', title: 'HVAC Technician', certs: 'EPA 608 Type II · OSHA 10',
+        bullets: ['Performed preventive maintenance on rooftop units and split systems.', 'Diagnosed refrigerant and airflow problems with technicians on service calls.', 'Logged work orders and parts used on every job.'] },
+      { id: 'electrical', label: 'Electrical', word: 'electrician', short: 'electrician', article: 'an', title: 'Electrical Apprentice', certs: 'OSHA 10 · Registered apprentice',
+        bullets: ['Pulled wire and installed conduit for residential and light commercial jobs.', 'Mounted panels, devices and fixtures under a journeyman.', 'Followed lockout/tagout on every de-energized circuit.'] },
+      { id: 'plumbing', label: 'Plumbing', word: 'plumber', short: 'plumber', article: 'a', title: 'Plumbing Apprentice', certs: 'OSHA 10 · Apprentice registration',
+        bullets: ['Assisted with residential drain, waste and vent installation.', 'Measured, cut and prepped copper and PEX supply lines.', 'Kept tools organized and job sites clean and safe.'] },
+      { id: 'facilities', label: 'Facilities', word: 'maintenance tech', short: 'maintenance', article: 'a', title: 'Facilities Maintenance Technician', certs: 'EPA 608 Universal · OSHA 30',
+        bullets: ['Completed preventive and corrective work orders across a commercial building.', 'Maintained HVAC, plumbing and electrical systems.', 'Coordinated with vendors on repairs and inspections.'] },
+      { id: 'welding', label: 'Welding', word: 'welder', short: 'welder', article: 'a', title: 'Welder / Fabricator', certs: 'AWS D1.1 · OSHA 10',
+        bullets: ['Welded structural steel using MIG and stick processes.', 'Read blueprints and weld symbols to fit and tack parts.', 'Inspected welds and reworked defects before handoff.'] },
+      { id: 'construction', label: 'Construction', word: 'construction', short: 'construction', article: 'a', title: 'Construction Laborer', certs: 'OSHA 10 · Forklift certified',
+        bullets: ['Set up and broke down job sites for framing and concrete crews.', 'Operated hand and power tools safely.', 'Moved and staged materials with a forklift.'] },
+    ];
+    const pickedId = this.state.picked ?? this.props.startTrade ?? 'hvac';
+    const cur = T.find((t) => t.id === pickedId) ?? T[0];
+    const on = 'background: #D7261C; color: #FFFFFF; border: 2px solid #D7261C; border-radius: 11px; padding: 12px 20px; min-height: 48px; font: 700 16px Barlow, system-ui, sans-serif; cursor: pointer';
+    const off = 'background: #F3ECDF; color: #02142B; border: 2px solid #F3ECDF; border-radius: 11px; padding: 12px 20px; min-height: 48px; font: 700 16px Barlow, system-ui, sans-serif; cursor: pointer';
+    return {
+      trades: T.map((t) => ({ label: t.label, pressed: t.id === cur.id ? 'true' : 'false', chipStyle: t.id === cur.id ? on : off, pick: () => this.setState({ picked: t.id }) })),
+      article: cur.article,
+      tradeWord: cur.word,
+      tradeShort: cur.short,
+      preview: { title: cur.title, certs: cur.certs, bullets: cur.bullets },
+    };
+  }
+}
+</script>
+</body>
+</html>

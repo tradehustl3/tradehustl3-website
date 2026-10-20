@@ -87,7 +87,7 @@ test("server-renders the corrected TRADE HUSTL3 brand and metadata", async () =>
   assert.match(html, /optimized\/trade-hustl3-logo\.webp/i);
   assert.match(html, /favicon\.svg/i);
   assert.match(html, /alt="TRADE HUSTL3 logo"/i);
-  assert.match(html, /BUILT BY TRADES\. BACKED BY HUSTL3\./);
+  assert.match(html, /BUILT BY HUSTL3\. BACKED BY TRADE\./);
   assert.match(html, /Skilled-Trades[\s\S]*Resume Builder/i);
 });
 
@@ -95,10 +95,10 @@ test("server-renders Resume Builder credibility and audience content", async () 
   const html = await (await render()).text();
   assert.match(html, /Built around the way skilled-trades people actually work/i);
   assert.match(html, /optimized\/resume-builder-logo-header\.webp/i);
-  assert.match(html, /Shaped by 10\+ years of hands-on maintenance and HVAC experience/i);
+  assert.match(html, /Shaped by 10\+ years of HVAC and facilities work\./i);
   assert.doesNotMatch(html, /TRADE-CORRECT SETUP/i);
   for (const proofPoint of ["Trade-specific language", "ATS-friendly structure", "Upload or guided intake", "Real preview before payment", "PDF + editable DOCX", "Built for skilled trades"]) assert.match(html, new RegExp(proofPoint.replace("+", "\\+"), "i"));
-  for (const trustPoint of [/No credit card to preview/i, /3 corrections included/i, /\$9\.99 one-time/i, /No subscription/i]) assert.match(html, trustPoint);
+  for (const trustPoint of [/No credit card to preview/i, /\$9\.99 one-time/i, /No subscription/i]) assert.match(html, trustPoint);
 });
 
 test("publishes a canonical XML sitemap and robots discovery hints", async () => {
@@ -313,7 +313,7 @@ test("homepage keeps book content on the dedicated book page", async () => {
 
 test("homepage leads with preview-before-payment proof and the included cover letter before free resources", async () => {
   const html = await (await render()).text();
-  assert.match(html, /\$0 to preview/i);
+  assert.match(html, /\$0<\/b> to preview/i, "hero price line");
   assert.match(html, /Build My Free Preview/i);
   assert.match(html, /INCLUDED WITH YOUR RESUME PURCHASE/i);
   assert.match(html, /A matching cover letter\. Built for the same job\./i);
@@ -323,12 +323,9 @@ test("homepage leads with preview-before-payment proof and the included cover le
   assert.match(html, /PDF \+ editable DOCX/i);
   assert.equal((html.match(/<footer\b/gi) ?? []).length, 1);
   assert.match(html, /<footer[^>]*data-site-footer/i);
-  assert.match(html, /3 corrections included/i);
   assert.doesNotMatch(html, /corrections within 7 days/i);
   assert.match(html, /No credit card to preview/i);
-  assert.match(html, /trade-hustl3-resume-builder-home-hero\.webp/i);
   assert.match(html, /hustl3-bot-official\.webp/i);
-  assert.match(html, /BUILT SPECIFICALLY FOR SKILLED-TRADES JOB SEEKERS/i);
   assert.doesNotMatch(html, /Founder, TRADE HUSTL3/i);
   assert.match(html, /BUILT FOR THE TRADES[\s\S]*READY WHEN YOU ARE/i);
   assert.ok(html.indexOf('id="included-cover-letter"') < html.indexOf('id="guide-title"'));
@@ -1106,7 +1103,7 @@ test("server-renders the focused homepage paths without book promotion", async (
   assert.match(html, /id="resume-start"/i);
   assert.match(html, /Continue with email/i);
   assert.match(html, /href="\/book"/i);
-  for (const location of ["sticky_header", "hero", "process", "guide_signup", "footer_cta"]) assert.match(html, new RegExp(`data-location="${location}"`, "i"));
+  for (const location of ["sticky_header", "hero", "hero_trade_picker", "guide_signup", "footer_cta"]) assert.match(html, new RegExp(`data-location="${location}"`, "i"));
   assert.doesNotMatch(html, /data-location="book_teaser"/i);
   assert.match(html, /data-analytics-event="select_content"/i);
 });

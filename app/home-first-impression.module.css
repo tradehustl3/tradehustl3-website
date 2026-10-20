@@ -1,0 +1,605 @@
+/* Homepage first impression (approved mockup, docs/briefs/homepage-mockup-reference.html).
+   Colors: navy #02142B, cream #F3ECDF, red #D7261C (buttons) / #FF4A3D (headline accent),
+   gold #D4A63A (on navy only), dark gold #7A5408 (on white), light blue #8EC0F0 (lines). */
+
+.top {
+  background: #02142B;
+  color: #F3ECDF;
+  font-family: var(--font-home-body), system-ui, sans-serif;
+}
+
+.top :where(a, button):focus-visible {
+  outline: 3px solid #FFFFFF;
+  outline-offset: 3px;
+}
+
+.blueprint {
+  background-color: #FFFFFF;
+  background-image:
+    linear-gradient(rgba(58, 134, 214, 0.18) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(58, 134, 214, 0.18) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+
+/* Header ---------------------------------------------------------------- */
+
+.header {
+  border-bottom: 1px solid rgba(243, 236, 223, 0.12);
+}
+
+.headerInner {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 14px 24px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: #F3ECDF;
+}
+
+.brandLogo {
+  width: 72px;
+  height: 59px;
+  object-fit: contain;
+}
+
+.nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 22px;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.navLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: #D2D9E0;
+}
+
+.navLink:hover {
+  color: #FFFFFF;
+}
+
+.headerCta {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 11px 18px;
+  border-radius: 8px;
+  background: #D7261C;
+  color: #FFFFFF;
+  font-weight: 700;
+  box-sizing: border-box;
+}
+
+/* Hero ------------------------------------------------------------------ */
+
+.hero {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: clamp(32px, 6vw, 72px) 24px 40px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 48px;
+  align-items: center;
+  box-sizing: border-box;
+}
+
+.heroCopy {
+  flex: 999 1 520px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.eyebrow {
+  margin: 0;
+  font-family: var(--font-home-display), sans-serif;
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.14em;
+  color: #D4A63A;
+}
+
+.headline {
+  margin: 0;
+  max-width: none;
+  font-family: var(--font-home-display), sans-serif;
+  font-weight: 800;
+  font-size: clamp(40px, 6vw, 76px);
+  line-height: 0.98;
+  letter-spacing: 0.005em;
+  text-transform: uppercase;
+  text-shadow: none;
+  color: #F3ECDF;
+}
+
+.headlineTrade {
+  color: #FF4A3D;
+}
+
+.heroLead {
+  margin: 0;
+  max-width: 560px;
+  font-size: 19px;
+  line-height: 1.5;
+  color: #F3ECDF;
+}
+
+.picker {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pickerLabel {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #F3ECDF;
+}
+
+.pickerChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip {
+  min-height: 48px;
+  padding: 12px 20px;
+  border: 2px solid #F3ECDF;
+  border-radius: 11px;
+  background: #F3ECDF;
+  color: #02142B;
+  font: 700 16px var(--font-home-body), system-ui, sans-serif;
+  cursor: pointer;
+}
+
+.chip[aria-pressed="true"] {
+  border-color: #D7261C;
+  background: #D7261C;
+  color: #FFFFFF;
+}
+
+.heroActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 18px;
+}
+
+.primaryCta {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 56px;
+  padding: 16px 26px;
+  border-radius: 10px;
+  background: #D7261C;
+  color: #FFFFFF;
+  font-size: 18px;
+  font-weight: 700;
+  box-sizing: border-box;
+}
+
+.primaryCta:hover,
+.headerCta:hover {
+  background: #C11F16;
+}
+
+.textLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: #F3ECDF;
+  font-size: 16px;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.priceLine {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  font-size: 15px;
+  color: #D2D9E0;
+}
+
+.priceLine b {
+  color: #F3ECDF;
+}
+
+.dot {
+  color: #8EC0F0;
+}
+
+/* Example card ------------------------------------------------------------ */
+
+.exampleWrap {
+  flex: 1 1 380px;
+  min-width: 0;
+  max-width: 440px;
+  margin: 0 auto;
+}
+
+.exampleStack {
+  display: grid;
+}
+
+.exampleCard {
+  grid-area: 1 / 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 26px 26px 22px;
+  border-radius: 10px;
+  background: #FFFFFF;
+  color: #1A2230;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+}
+
+.exampleCard[data-active="false"] {
+  visibility: hidden;
+}
+
+.exampleHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #1A2230;
+}
+
+.exampleName {
+  margin: 0;
+  font-family: var(--font-home-display), sans-serif;
+  font-weight: 800;
+  font-size: 26px;
+  letter-spacing: 0.02em;
+}
+
+.exampleTitle {
+  margin: 2px 0 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #8A1A12;
+}
+
+.exampleTag,
+.exampleLabel {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #5B6573;
+}
+
+.exampleLabel {
+  margin: 0;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+}
+
+.exampleCerts {
+  margin: -6px 0 0;
+  font-size: 14px;
+}
+
+.exampleBullets {
+  margin: -6px 0 0;
+  padding-left: 18px;
+  list-style: disc;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+/* Block list items keep their markers (flex items would drop them). */
+.exampleBullets li + li {
+  margin-top: 6px;
+}
+
+.exampleFiles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.exampleFiles span {
+  padding: 5px 9px;
+  border: 1px solid #C9CFD6;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.exampleCaption {
+  margin: 10px 0 0;
+  font-size: 12px;
+  color: #AEB8C3;
+  text-align: center;
+}
+
+/* Promise band ------------------------------------------------------------ */
+
+.band {
+  border-top: 3px solid #8EC0F0;
+  border-bottom: 3px solid #8EC0F0;
+}
+
+.bandInner {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 26px 24px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 22px;
+  list-style: none;
+  box-sizing: border-box;
+}
+
+.bandItem {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.bandTitle {
+  margin: 0;
+  font-family: var(--font-home-display), sans-serif;
+  font-weight: 700;
+  font-size: 22px;
+  color: #7A5408;
+}
+
+.bandBody {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.45;
+  color: #1E2A3A;
+}
+
+/* How it works ------------------------------------------------------------ */
+
+.how {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 64px 24px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  box-sizing: border-box;
+}
+
+.sectionTitle {
+  margin: 0;
+  font-family: var(--font-home-display), sans-serif;
+  font-weight: 800;
+  font-size: clamp(32px, 4vw, 48px);
+  line-height: 1;
+  letter-spacing: 0.005em;
+  text-transform: uppercase;
+  text-shadow: none;
+  color: #F3ECDF;
+}
+
+.steps {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 18px;
+}
+
+.step {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 28px;
+  border: 2px solid #8EC0F0;
+  border-radius: 12px;
+  color: #02142B;
+}
+
+.stepNumber {
+  font-family: var(--font-home-display), sans-serif;
+  font-weight: 800;
+  font-size: 48px;
+  line-height: 1;
+  color: #C81E14;
+}
+
+.stepTitle {
+  margin: 0;
+  font-size: 21px;
+  font-weight: 700;
+  color: #02142B;
+}
+
+.stepBody {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.5;
+  color: #7A5408;
+}
+
+/* Jobsite truths ---------------------------------------------------------- */
+
+.truths {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 56px 24px 56px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  box-sizing: border-box;
+}
+
+.truthsHeading {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.truthGrid {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 18px;
+}
+
+.truthCard {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 2px solid #8EC0F0;
+  border-radius: 12px;
+}
+
+.truthPhoto {
+  position: relative;
+  height: 190px;
+  background: #DCE9F8;
+}
+
+.truthPhoto img {
+  object-fit: cover;
+}
+
+.truthBody {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 20px 22px 24px;
+}
+
+.truthTrade {
+  margin: 0;
+  font-family: var(--font-home-display), sans-serif;
+  font-weight: 800;
+  font-size: 15px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #C81E14;
+}
+
+.truthFact {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 700;
+  line-height: 1.35;
+  color: #02142B;
+}
+
+.truthLine {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.5;
+  color: #1E2A3A;
+}
+
+.truthsCta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 28px;
+  border: 2px solid #8EC0F0;
+  border-radius: 12px;
+}
+
+.truthsCta p {
+  margin: 0;
+  flex: 1 1 360px;
+  font-family: var(--font-home-display), sans-serif;
+  font-weight: 700;
+  font-size: clamp(22px, 2.4vw, 28px);
+  line-height: 1.2;
+  color: #02142B;
+}
+
+.truthsButton {
+  display: inline-flex;
+  align-items: center;
+  min-height: 48px;
+  padding: 14px 22px;
+  border-radius: 10px;
+  background: #D7261C;
+  color: #FFFFFF;
+  font-weight: 700;
+  box-sizing: border-box;
+}
+
+.truthsButton:hover {
+  background: #C11F16;
+}
+
+.top .truthsButton:focus-visible {
+  outline-color: #02142B;
+}
+
+@media (max-width: 720px) {
+  .truths {
+    padding: 40px 16px;
+  }
+
+  .truthGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .truthsCta {
+    padding: 20px;
+  }
+
+  .truthsButton {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 720px) {
+  .headerInner,
+  .hero,
+  .bandInner,
+  .how {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .nav {
+    gap: 0 16px;
+  }
+
+  .heroLead {
+    font-size: 17px;
+  }
+
+  .primaryCta {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .exampleWrap {
+    flex-basis: 100%;
+  }
+}
