@@ -175,7 +175,7 @@ export function TradeLandingPage({ content }: { content: TradeLandingContent }) 
 
       <div className={styles.tradeBar}>
         <span>{content.breadcrumbName} career tool</span><span>Built from the field</span>
-        <a href={HUB_HREF}>View all 7 trades</a>
+        <a href={HUB_HREF}>View all trade guides</a>
       </div>
 
       <section className={`rb-entry ${styles.hero}`}>
