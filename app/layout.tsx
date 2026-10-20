@@ -85,7 +85,7 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: "/optimized/og.webp",
+        url: "/optimized/og-v2.webp",
         width: 1200,
         height: 630,
         alt: "TRADE HUSTL3 Resume Builder",
@@ -97,7 +97,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: SITE_TITLE,
     description: SITE_DESCRIPTION,
-    images: ["/optimized/og.webp"],
+    images: ["/optimized/og-v2.webp"],
   },
 };
 
