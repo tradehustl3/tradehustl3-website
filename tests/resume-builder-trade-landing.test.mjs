@@ -140,6 +140,27 @@ const PAGES = [
     ],
   },
   {
+    slug: "heavy-equipment-operator",
+    preselectSlug: "roadwork-paving-concrete-heavy-equipment",
+    title: "Heavy Equipment Operator Resume Example & Builder | TRADE HUSTL3",
+    descPrefix: "See heavy equipment operator resume examples, excavator and dozer skills, safety credentials, and jobsite bullet tips.",
+    breadcrumb: "Heavy Equipment Operator",
+    heroLocation: "heavy_equipment_hero",
+    analyticsItem: "resume_builder_heavy_equipment_operator",
+    terms: [
+      "Tracked or wheeled excavator",
+      "Bulldozer / crawler tractor",
+      "Wheel loader",
+      "Motor grader",
+      "Skid steer / compact track loader",
+      "Rough grading and finish grading",
+      "Daily walkaround and pre-use inspections",
+      "NCCER Heavy Equipment Operations credential",
+      "school or apprenticeship training",
+      "GPS/GNSS machine guidance",
+    ],
+  },
+  {
     slug: "general-labor",
     title: "General Labor Resume Builder | Laborer & Maintenance | TRADE HUSTL3",
     descPrefix: "Turn your material handling, basic repairs, and work-order support into an ATS-ready general labor and maintenance resume.",
@@ -228,7 +249,7 @@ for (const page of PAGES) {
 
   test(`${page.slug}: every CTA enters the existing intake with the trade preselected`, async () => {
     const html = await (await renderPath(path)).text();
-    const hrefs = html.match(new RegExp(`href="/\\?trade=${page.slug}#resume-start"`, "g")) ?? [];
+    const hrefs = html.match(new RegExp(`href="/\\?trade=${page.preselectSlug ?? page.slug}#resume-start"`, "g")) ?? [];
     assert.ok(hrefs.length >= 4, `${page.slug} expected >=4 preselect CTAs, found ${hrefs.length}`);
     assert.match(html, /data-analytics-event="cta_click"/);
     assert.ok(html.includes(`data-location="${page.heroLocation}"`), `${page.slug} hero CTA location`);
@@ -243,9 +264,9 @@ for (const page of PAGES) {
   });
 }
 
-test("the homepage carries the seven-trade discovery links after the hub is removed", async () => {
+test("the homepage carries the eight-trade discovery links after the hub is removed", async () => {
   const html = await (await renderPath("/")).text();
-  assert.equal(PAGES.length, 7, "expected the full seven-page trade cluster");
+  assert.equal(PAGES.length, 8, "expected the full eight-page trade cluster");
   for (const page of PAGES) {
     assert.match(html, new RegExp(`href="/resume-builder/${page.slug}"`), `homepage missing link to ${page.slug}`);
   }
@@ -257,12 +278,13 @@ test("the homepage carries the seven-trade discovery links after the hub is remo
     "Welding &amp; Fabrication",
     "Construction &amp; Carpentry",
     "General Labor / Maintenance Tech",
+    "Heavy Equipment Operator",
   ]) {
     assert.ok(html.includes(label), `homepage missing trade label: ${label}`);
   }
 });
 
-test("each trade page cross-links to its six sibling trade guides", async () => {
+test("each trade page cross-links to its seven sibling trade guides", async () => {
   const html = await (await renderPath("/resume-builder/plumbing")).text();
   assert.match(html, /building for a different trade\?/i);
   for (const slug of [
@@ -272,6 +294,7 @@ test("each trade page cross-links to its six sibling trade guides", async () => 
     "welding-fabrication",
     "construction-carpentry",
     "general-labor",
+    "heavy-equipment-operator",
   ]) {
     assert.match(html, new RegExp(`href="/resume-builder/${slug}"`), `plumbing missing sibling link ${slug}`);
   }
