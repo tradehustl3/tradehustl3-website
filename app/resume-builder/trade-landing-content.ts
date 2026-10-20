@@ -199,7 +199,7 @@ export const HVAC_LANDING: TradeLandingContent = {
   seoTitle: "HVAC Resume Builder | HVAC Technician Resume | TRADE HUSTL3",
   seoDescription:
     "TRADE HUSTL3's HVAC Resume Builder turns your EPA 608, tools, and field experience into an ATS-ready HVAC technician resume. $9.99 one-time, no subscription.",
-  ogImage: "/optimized/og.webp",
+  ogImage: "/optimized/og-v2.webp",
   targetQueries: [
     "hvac resume builder",
     "hvac technician resume builder",
@@ -527,7 +527,7 @@ export const FACILITIES_MAINTENANCE_LANDING: TradeLandingContent = {
   seoTitle: "Facility Maintenance Resume Example & Builder | TRADE HUSTL3",
   seoDescription:
     "See a facility maintenance resume example with CMMS, preventive maintenance, and work-order bullets. Build a free preview; unlock for $9.99 once.",
-  ogImage: "/optimized/og.webp",
+  ogImage: "/optimized/og-v2.webp",
   targetQueries: [
     "facilities maintenance resume builder",
     "facilities maintenance resume",
@@ -918,7 +918,7 @@ export const ELECTRICIAN_LANDING: TradeLandingContent = {
   seoTitle: "Electrician Resume Builder | Electrical Technician Resume | TRADE HUSTL3",
   seoDescription:
     "Turn your troubleshooting, wiring, conduit, and panel work into an ATS-ready electrician resume — apprentice to journeyman. $9.99 one-time, no subscription. TRADE HUSTL3.",
-  ogImage: "/optimized/og.webp",
+  ogImage: "/optimized/og-v2.webp",
   targetQueries: [
     "electrician resume builder",
     "electrician resume",
@@ -1231,7 +1231,7 @@ export const PLUMBING_LANDING: TradeLandingContent = {
   seoTitle: "Plumbing Resume Example & Skills | TRADE HUSTL3",
   seoDescription:
     "See an apprentice plumber resume example, plumbing skills, and honest ways to show hours and completed jobs. Preview free; unlock for $9.99 once.",
-  ogImage: "/optimized/og.webp",
+  ogImage: "/optimized/og-v2.webp",
   targetQueries: [
     "plumbing resume",
     "apprentice plumber resume",
@@ -1639,7 +1639,7 @@ export const WELDING_FABRICATION_LANDING: TradeLandingContent = {
   seoTitle: "Welding Resume Builder | Welder & Fabricator Resume | TRADE HUSTL3",
   seoDescription:
     "Turn your processes, positions, materials, and fit-up into an ATS-ready welder and fabricator resume. $9.99 one-time, no subscription. TRADE HUSTL3.",
-  ogImage: "/optimized/og.webp",
+  ogImage: "/optimized/og-v2.webp",
   targetQueries: [
     "welding resume builder",
     "welder resume",
@@ -1950,7 +1950,7 @@ export const CONSTRUCTION_CARPENTRY_LANDING: TradeLandingContent = {
   seoTitle: "Carpenter & Construction Resume Builder | TRADE HUSTL3",
   seoDescription:
     "Turn your framing, finish, layout, and jobsite work into an ATS-ready carpenter and construction resume. $9.99 one-time, no subscription. TRADE HUSTL3.",
-  ogImage: "/optimized/og.webp",
+  ogImage: "/optimized/og-v2.webp",
   targetQueries: [
     "construction resume builder",
     "carpenter resume builder",
@@ -2261,7 +2261,7 @@ export const GENERAL_LABOR_LANDING: TradeLandingContent = {
   seoTitle: "General Labor Resume Builder | Laborer & Maintenance | TRADE HUSTL3",
   seoDescription:
     "Turn your material handling, basic repairs, and work-order support into an ATS-ready general labor and maintenance resume. $9.99 one-time, no subscription. TRADE HUSTL3.",
-  ogImage: "/optimized/og.webp",
+  ogImage: "/optimized/og-v2.webp",
   targetQueries: [
     "general labor resume builder",
     "general labor resume",
