@@ -54,6 +54,7 @@ export const TRADE_SLUGS = {
   "roadwork-paving-concrete-heavy-equipment": "Roadwork, Paving, Concrete & Heavy Equipment",
   paving: "Roadwork, Paving, Concrete & Heavy Equipment",
   "heavy-equipment": "Roadwork, Paving, Concrete & Heavy Equipment",
+  "heavy-equipment-operator": "Roadwork, Paving, Concrete & Heavy Equipment",
   "roofing-exterior-trades": "Roofing & Exterior Trades",
   roofing: "Roofing & Exterior Trades",
   "automotive-diesel-fleet-maintenance": "Automotive, Diesel & Fleet Maintenance",
