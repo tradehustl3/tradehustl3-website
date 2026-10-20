@@ -293,6 +293,7 @@ export const TRADE_CAREER_FAMILIES: readonly TradeCareerFamily[] = [
     description: "Road, site, utility, grading, asphalt, concrete, traffic-control, and earthmoving work.",
     resumeFocus: "Machine type, tonnage or yardage, grade and tolerance, lane or site scope, inspections, production pace, and safe operation.",
     builderTrack: "Roadwork, Paving, Concrete & Heavy Equipment",
+    guideHref: "/resume-builder/heavy-equipment-operator",
     roles: [
       "Asphalt Paver Operator",
       "Asphalt Roller Operator",
