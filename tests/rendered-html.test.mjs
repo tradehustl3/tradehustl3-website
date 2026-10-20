@@ -78,7 +78,7 @@ test("server-renders the corrected TRADE HUSTL3 brand and metadata", async () =>
   assert.match(html, /name="twitter:title" content="Skilled Trades Resume Builder \| TRADE HUSTL3"/i);
   assert.match(html, /<link rel="canonical" href="https:\/\/tradehustl3\.com\/?"/i);
   assert.match(html, /property="og:url" content="https:\/\/tradehustl3\.com\/?"/i);
-  assert.match(html, /property="og:image" content="https:\/\/tradehustl3\.com\/optimized\/og\.webp"/i);
+  assert.match(html, /property="og:image" content="https:\/\/tradehustl3\.com\/optimized\/og-v2\.webp"/i);
   assert.equal(html.includes("localhost:3000"), false);
   for (const schemaType of ["Organization", "Person", "WebSite", "WebPage"]) assert.match(html, new RegExp(`"@type":"${schemaType}"`, "i"));
   assert.doesNotMatch(html, /"@type":"Book"/i);
