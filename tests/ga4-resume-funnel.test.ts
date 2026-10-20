@@ -65,3 +65,8 @@ test("purchase is never sent to first-party funnel telemetry", () => {
   const allowlist = base.slice(base.indexOf("const FUNNEL_EVENT_NAMES"), base.indexOf("const FUNNEL_METADATA_KEYS"));
   assert.doesNotMatch(allowlist, /"purchase"/);
 });
+
+test("begin_checkout carries the resume ID so paid orders can be joined to campaign attribution", () => {
+  assert.match(analytics, /trackResumeFunnelEvent\("begin_checkout", resumeId \? \{ resume_id: resumeId \} : \{\}\)/);
+  assert.match(analytics, /trackResumeCheckout\(resumeId === "unknown" \? undefined : resumeId\)/);
+});
