@@ -1,7 +1,6 @@
 "use client";
 
-import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import styles from "./customer-reviews.module.css";
 
 type PublicReview = {
@@ -13,66 +12,6 @@ type PublicReview = {
   result: string | null;
   verifiedCustomer: boolean;
 };
-
-type CustomerStory = {
-  id: string;
-  name: string;
-  trade: string;
-  rating: number;
-  review: string;
-  image: string;
-};
-
-const customerStories: CustomerStory[] = [
-  {
-    id: "jessica-m",
-    name: "Jessica M.",
-    trade: "Facilities Maintenance Technician",
-    rating: 5,
-    image: "/testimonials/jessica-m.webp",
-    review: "I was struggling to find a trade job until I used TRADE HUSTL3. It helped me present my experience the right way, and I started getting calls for maintenance positions.",
-  },
-  {
-    id: "david-r",
-    name: "David R.",
-    trade: "HVAC Technician",
-    rating: 5,
-    image: "/testimonials/david-r.webp",
-    review: "This tool made it so easy to highlight my hands-on experience with HVAC systems. I got more interviews in one month than I had in the last six months, and now I’m working for a great company.",
-  },
-  {
-    id: "taylor-s",
-    name: "Taylor S.",
-    trade: "Construction Laborer",
-    rating: 5,
-    image: "/testimonials/taylor-s.webp",
-    review: "I love how simple and user-friendly this resume builder is. It helped me highlight my hands-on skills and experience, and I got hired at a top construction company within a few weeks!",
-  },
-  {
-    id: "michael-t",
-    name: "Michael T.",
-    trade: "Skilled Trades Laborer",
-    rating: 5,
-    image: "/testimonials/michael-t.webp",
-    review: "The resume templates are made for the trades. I was able to list my tools, certifications, and hands-on experience in minutes, and it really made a difference. I’m now working at a great company in the construction industry.",
-  },
-  {
-    id: "marcus-k",
-    name: "Marcus K.",
-    trade: "Electrical Apprentice",
-    rating: 5,
-    image: "/testimonials/marcus-k.webp",
-    review: "This resume builder helped me land my first electrical apprenticeship. I was getting overlooked before, but after using it, I started getting interviews right away and ended up with an offer from a local union contractor. Highly recommend!",
-  },
-  {
-    id: "chris-l",
-    name: "Chris L.",
-    trade: "Plumbing Apprentice",
-    rating: 5,
-    image: "/testimonials/chris-l.webp",
-    review: "I was struggling to find a plumbing job until I used TRADE HUSTL3. It helped me showcase my hands-on experience and certifications, and I started getting calls right away. I’m now working with a great plumbing company!",
-  },
-];
 
 // Each promise must stay true of the shipped product. Change the copy here
 // when the product changes, never the other way around.
@@ -86,8 +25,6 @@ const PROMISES = [
 export function CustomerReviews() {
   const [verifiedReviews, setVerifiedReviews] = useState<PublicReview[]>([]);
   const [loaded, setLoaded] = useState(false);
-  const storyScrollerRef = useRef<HTMLDivElement | null>(null);
-  const [activeStory, setActiveStory] = useState(0);
 
   useEffect(() => {
     let active = true;
@@ -116,34 +53,6 @@ export function CustomerReviews() {
     };
   }, []);
 
-  function updateActiveStory() {
-    const scroller = storyScrollerRef.current;
-    if (!scroller) return;
-
-    const cards = Array.from(
-      scroller.querySelectorAll<HTMLElement>("[data-story-card]"),
-    );
-
-    if (!cards.length) return;
-
-    const scrollerCenter = scroller.scrollLeft + scroller.clientWidth / 2;
-
-    let closestIndex = 0;
-    let closestDistance = Number.POSITIVE_INFINITY;
-
-    cards.forEach((card, index) => {
-      const cardCenter = card.offsetLeft + card.offsetWidth / 2;
-      const distance = Math.abs(cardCenter - scrollerCenter);
-
-      if (distance < closestDistance) {
-        closestDistance = distance;
-        closestIndex = index;
-      }
-    });
-
-    setActiveStory(closestIndex);
-  }
-
   return (
     <section className={styles.section} aria-labelledby="customer-reviews-title">
       <div className={styles.heading}>
@@ -154,78 +63,9 @@ export function CustomerReviews() {
           compete for the right roles, and move their job search forward.
         </div>
         <div className={styles.proofBar} aria-label="TRADE HUSTL3 customer proof">
-          <span><b>6</b> customer stories</span>
           <span><b>7</b> skilled-trade paths</span>
           <span><b>$0</b> to preview · <b>$9.99</b> to unlock</span>
         </div>
-      </div>
-
-      <div
-        ref={storyScrollerRef}
-        className={styles.storyGrid}
-        aria-label="Customer stories"
-        onScroll={updateActiveStory}
-      >
-        {customerStories.map((story) => (
-          <article className={styles.storyCard} key={story.id} data-story-card>
-            <div className={styles.storyTop}>
-              <Image
-                className={styles.photo}
-                src={story.image}
-                alt={`${story.name}, ${story.trade}`}
-                width={110}
-                height={150}
-                sizes="(max-width: 760px) 84px, 110px"
-              />
-              <div className={styles.storyIdentity}>
-                <strong>{story.name}</strong>
-                <span>{story.trade}</span>
-                <div className={styles.stars} aria-label={`${story.rating} out of 5 stars`}>
-                  {"★".repeat(story.rating)}
-                </div>
-                <em>CUSTOMER STORY</em>
-              </div>
-            </div>
-            <blockquote>“{story.review}”</blockquote>
-          </article>
-        ))}
-      </div>
-
-      <div className={styles.mobileCarouselNav}>
-        <div
-          className={styles.carouselDots}
-          aria-label={`Customer story ${activeStory + 1} of ${customerStories.length}`}
-        >
-          {customerStories.map((story, index) => (
-            <button
-              key={story.id}
-              type="button"
-              className={
-                index === activeStory
-                  ? `${styles.carouselDot} ${styles.carouselDotActive}`
-                  : styles.carouselDot
-              }
-              aria-label={`Show ${story.name} customer story`}
-              aria-current={index === activeStory ? "true" : undefined}
-              onClick={() => {
-                const scroller = storyScrollerRef.current;
-                const cards = scroller?.querySelectorAll<HTMLElement>("[data-story-card]");
-
-                cards?.[index]?.scrollIntoView({
-                  behavior: "smooth",
-                  block: "nearest",
-                  inline: "center",
-                });
-              }}
-            />
-          ))}
-        </div>
-
-        <p className={styles.swipeHint}>
-          <span aria-hidden="true">←</span>
-          Swipe to see more stories
-          <span aria-hidden="true">→</span>
-        </p>
       </div>
 
       <ul className={styles.promiseGrid} aria-label="What the Resume Builder promises">

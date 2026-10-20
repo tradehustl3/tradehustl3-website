@@ -19,22 +19,18 @@ function publicReviewsHandler(worker) {
   return worker.slice(start, worker.indexOf("\n}\n", start));
 }
 
-test("homepage includes the approved customer stories and their portraits", () => {
-  const reviews = read("app/customer-reviews.tsx");
-  assert.match(reviews, /const customerStories: CustomerStory\[\]/);
-  assert.match(reviews, /next\/image/);
+test("no hard-coded testimonials or their portraits remain", () => {
+  const sources = ["app/page.tsx", "app/customer-reviews.tsx", "app/home-traffic-director.module.css", "app/customer-reviews.module.css"].map(read).join("\n");
   for (const name of TESTIMONIAL_NAMES) {
-    assert.match(reviews, new RegExp(name.replace(".", "\\.")));
+    assert.equal(sources.includes(name), false, `${name} is still hard-coded`);
   }
+  assert.doesNotMatch(sources, /customerStories|CustomerStory|\/testimonials\//);
   for (const photo of ["jessica-m", "david-r", "taylor-s", "michael-t", "marcus-k", "chris-l"]) {
-    assert.match(reviews, new RegExp(`/testimonials/${photo}\\.webp`));
-    assert.equal(existsSync(new URL(`../public/testimonials/${photo}.webp`, import.meta.url)), true);
+    assert.equal(existsSync(new URL(`../public/testimonials/${photo}.webp`, import.meta.url)), false, `${photo}.webp still ships`);
   }
-  assert.match(reviews, /Real People\. <span>Real Results\.<\/span>/);
-  assert.match(reviews, /CUSTOMER STORY/);
 });
 
-test("homepage combines customer stories with the verified paid-customer review API", () => {
+test("homepage reviews come only from the verified paid-customer review API", () => {
   const page = read("app/page.tsx");
   const reviews = read("app/customer-reviews.tsx");
   assert.equal(page.match(/<CustomerReviews \/>/g)?.length, 1);
@@ -53,12 +49,9 @@ test("homepage customer proof avoids unsupported aggregate claims", () => {
     assert.doesNotMatch(source, /500\+/);
     assert.doesNotMatch(source, /tradespeople helped/i);
   }
-  const reviews = read("app/customer-reviews.tsx");
-  assert.match(reviews, /Real People\. <span>Real Results\.<\/span>/);
-  assert.equal((reviews.match(/id: "(jessica-m|david-r|taylor-s|michael-t|marcus-k|chris-l)"/g) ?? []).length, 6);
 });
 
-test("homepage pairs the customer stories with promises the product keeps", () => {
+test("homepage reviews section keeps the promises the product keeps", () => {
   const reviews = read("app/customer-reviews.tsx");
   assert.match(reviews, /const PROMISES = \[/);
   assert.match(reviews, /Your facts only\./);
