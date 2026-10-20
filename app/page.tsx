@@ -22,6 +22,7 @@ const tradeChips = [
   ['Facilities Maintenance', '/resume-builder/facilities-maintenance'],
   ['Welding & Fabrication', '/resume-builder/welding-fabrication'],
   ['General Labor / Maintenance Tech', '/resume-builder/general-labor'],
+  ['Heavy Equipment Operator', '/resume-builder/heavy-equipment-operator'],
 ] as const;
 
 const proofPoints = [
