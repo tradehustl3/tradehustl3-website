@@ -21,6 +21,7 @@ test("resolveTradeParam accepts trade slugs from the landing pages", () => {
   assert.equal(resolveTradeParam("school-bus-driver"), "Commercial Driving & Transportation");
   assert.equal(resolveTradeParam("industrial-maintenance"), "Industrial & Warehouse Maintenance");
   assert.equal(resolveTradeParam("roofing"), "Roofing & Exterior Trades");
+  assert.equal(resolveTradeParam("heavy-equipment-operator"), "Roadwork, Paving, Concrete & Heavy Equipment");
 });
 
 test("resolveTradeParam also accepts the exact trade-track name", () => {
@@ -61,19 +62,21 @@ test("every published trade landing page preselects a real, resolvable trade", (
     "welding-fabrication",
     "construction-carpentry",
     "general-labor",
+    "heavy-equipment-operator",
   ]);
-  // The first seven detailed SEO guides remain complete while the guided
-  // builder supports the broader fourteen-family catalog.
-  assert.equal(TRADE_LANDING_PAGES.length, 7);
+  // Eight detailed SEO guides reuse fourteen existing guided builder tracks.
+  // Heavy Equipment Operator has a focused SEO slug but shares the canonical roadwork intake track.
+  assert.equal(TRADE_LANDING_PAGES.length, 8);
   assert.equal(TRADE_TRACKS.length, 14);
   assert.equal(new Set(slugs).size, slugs.length);
 
   for (const page of TRADE_LANDING_PAGES) {
-    // slug <-> track are consistent
-    assert.equal(slugForTradeTrack(page.trade), page.slug, `${page.slug} slug/track mismatch`);
+    // An SEO landing slug may be an alias of a broader canonical intake trade.
+    // Both the visible page path and the canonical intake slug must resolve to the same track.
     assert.equal(resolveTradeParam(page.slug), page.trade, `${page.slug} does not resolve`);
-    // the CTA target every page renders round-trips back to the same trade
-    assert.equal(intakeEntryHref(page.trade), `/?trade=${page.slug}#resume-start`);
+    assert.equal(tradeTrackFromSlug(slugForTradeTrack(page.trade)), page.trade, `${page.slug} canonical track mismatch`);
+    // The CTA must use the supported canonical trade slug (not an unsupported new track).
+    assert.equal(intakeEntryHref(page.trade), `/?trade=${slugForTradeTrack(page.trade)}#resume-start`);
     assert.equal(resolveTradeParam(new URL(`https://x${intakeEntryHref(page.trade)}`).searchParams.get("trade")), page.trade);
     // metadata sanity
     assert.ok(page.seoTitle.includes("TRADE HUSTL3"), `${page.slug} title missing brand`);

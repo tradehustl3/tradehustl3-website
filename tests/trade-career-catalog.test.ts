@@ -17,7 +17,7 @@ test("catalog publishes fourteen unique career families and 207 unique job title
 test("every catalog family is a live, round-trippable guided builder track", () => {
   assert.equal(TRADE_TRACKS.length, 14);
   assert.equal(CATALOG_METRICS.guidedTracks, 14);
-  assert.equal(CATALOG_METRICS.detailedGuides, 7);
+  assert.equal(CATALOG_METRICS.detailedGuides, 8);
 
   for (const family of TRADE_CAREER_FAMILIES) {
     assert.ok(TRADE_TRACKS.includes(family.builderTrack), `${family.name} is not a builder track`);
@@ -76,7 +76,7 @@ test("public catalog counters are derived from committed content", () => {
   assert.equal(CATALOG_METRICS.mappedRoles, MAPPED_ROLE_COUNT);
   assert.equal(CATALOG_METRICS.guidedTracks, TRADE_TRACKS.length);
   assert.ok(CATALOG_METRICS.fieldPrompts >= 400);
-  assert.equal(CATALOG_METRICS.accomplishmentExamples, 50);
+  assert.equal(CATALOG_METRICS.accomplishmentExamples, 57);
 });
 
 test("worker allowlist and generation prompt cover every public builder track", async () => {

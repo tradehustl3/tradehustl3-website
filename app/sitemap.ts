@@ -50,7 +50,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
     ...TRADE_LANDING_PAGES.map((page) => ({
       url: `${SITE_URL}${tradeLandingPath(page)}`,
-      lastModified: page.slug === "facilities-maintenance"
+      lastModified: page.slug === "heavy-equipment-operator"
+        ? new Date("2026-10-20T00:00:00.000Z")
+        : page.slug === "facilities-maintenance"
         ? new Date("2026-10-13T00:00:00.000Z")
         : page.slug === "plumbing"
           ? new Date("2026-10-19T00:00:00.000Z")
