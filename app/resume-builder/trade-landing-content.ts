@@ -16,6 +16,7 @@ import type { Metadata } from "next";
 import { SITE_NAME, SITE_URL } from "../site";
 import type { TradeTrack } from "./trade-content";
 import { slugForTradeTrack } from "./trade-preselect";
+import { HEAVY_EQUIPMENT_OPERATOR_LANDING } from "./heavy-equipment-content";
 
 export type LabeledGroup = { label: string; items: string[] };
 export type FaqItem = { question: string; answer: string };
@@ -2564,6 +2565,7 @@ export const TRADE_LANDING_PAGES: TradeLandingContent[] = [
   WELDING_FABRICATION_LANDING,
   CONSTRUCTION_CARPENTRY_LANDING,
   GENERAL_LABOR_LANDING,
+  HEAVY_EQUIPMENT_OPERATOR_LANDING,
 ];
 
 /** Landing page for a given intake trade, if one exists (used by the hub). */
