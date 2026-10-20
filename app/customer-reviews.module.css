@@ -1,13 +1,19 @@
-/* Reviews from verified buyers — sits on the homepage's navy first-impression block. */
-.section{
+/* Verified reviews (only when approved reviews exist) and the product promises,
+   on the homepage's navy first-impression block. */
+.wrap{
   max-width:1240px;
   margin:0 auto;
-  padding:40px 24px 72px;
+  padding:0 24px 72px;
+  display:flex;
+  flex-direction:column;
+  gap:28px;
+  box-sizing:border-box;
+  color:#F3ECDF;
+}
+.section{
   display:flex;
   flex-direction:column;
   gap:18px;
-  box-sizing:border-box;
-  color:#F3ECDF;
 }
 .title{
   margin:0;
@@ -29,21 +35,6 @@
   background-size:22px 22px;
   color:#1E2A3A;
 }
-.empty{display:flex;flex-wrap:wrap;gap:18px;align-items:center;justify-content:space-between}
-.empty p{margin:0;flex:1 1 360px;font-size:17px;line-height:1.5;color:#1E2A3A}
-.emptyCta{
-  display:inline-flex;
-  align-items:center;
-  min-height:48px;
-  padding:14px 22px;
-  border-radius:10px;
-  background:#D7261C;
-  color:#FFFFFF;
-  font-weight:700;
-  box-sizing:border-box;
-}
-.emptyCta:hover{background:#C11F16}
-.emptyCta:focus-visible{outline:3px solid #02142B;outline-offset:3px}
 .stars{color:#0B7A55;letter-spacing:1.5px;font-size:1rem;line-height:1}
 .stars i{font-style:normal;color:#9AA6B2}
 .verifiedCard blockquote{margin:12px 0 0;color:#1E2A3A;font-size:.97rem;line-height:1.6}
@@ -58,7 +49,7 @@
 .result{margin:14px 0 0;padding:12px 13px;background:#F3F7FA;border-radius:10px;color:#1E2A3A;line-height:1.5}
 .result strong{display:block;color:#7A5408;font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}
 .promiseGrid{
-  margin:6px 0 0;
+  margin:0;
   padding:0;
   list-style:none;
   display:grid;
@@ -81,8 +72,7 @@
 .disclaimer{margin:0;color:#AEB8C3;font-size:.8rem;line-height:1.55}
 
 @media (max-width:720px){
-  .section{padding:32px 16px 56px}
+  .wrap{padding:0 16px 56px}
   .box{padding:20px}
-  .emptyCta{width:100%;justify-content:center}
   .verifiedGrid{grid-template-columns:1fr}
 }

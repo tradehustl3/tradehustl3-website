@@ -29,9 +29,29 @@ DRAFT PR only. No merge, no deploy.
    Headings #7A5408, body #1E2A3A.
 4. **How it works**: "Three steps. Preview before you pay." Three white blueprint-grid cards with 2px #8EC0F0 border,
    red numbers (#C81E14), navy titles, body text #7A5408.
-5. **Reviews from verified buyers**: replaces "Real People. Real Results." (see below). White blueprint box.
-   Render approved verified reviews from the existing `/api/resume-builder/reviews/public` endpoint;
-   when there are none, show: "Only customers with a completed purchase can leave a review here. The first ones will appear as soon as they're approved." plus a "Build my free preview" button.
+5. **Jobsite truths** (update, Oct 2026: replaces the reviews empty-state box).
+   Eyebrow "BUILT FOR PEOPLE WHO KNOW THE WORK", heading "Jobsite truths. If you know, you know."
+   Six white blueprint-grid cards (2px #8EC0F0 border, 12px radius): photo on top (190px, object-fit cover,
+   descriptive alt), trade name in red caps (#C81E14), fact in bold navy, one supporting line in #1E2A3A.
+   Exact copy (trade | image | fact | supporting line):
+   - HVAC | `public/optimized/hvac-manifold-worksite.webp` | "Fixed orifice? Charge by superheat. TXV? Charge by subcooling." | "Get that backwards and the gauges will lie to you all afternoon."
+   - Electrical | `public/trade-landings/electrician-worksite.webp` | "The white wire is the grounded conductor. It is not the ground." | "Neutral and ground bond once, at the service. Bond them in a subpanel and you have built a problem."
+   - Plumbing | `public/trade-landings/plumbing-worksite.webp` | "Small horizontal drains want a quarter inch of fall per foot." | "Too flat and it clogs. The first rule still applies: water runs downhill."
+   - Welding | `public/trade-landings/welding-fabrication-worksite.webp` | "Once the can is open, 7018 lives in the rod oven." | "Low-hydrogen rods soak up moisture, and wet rods mean porosity and cracking."
+   - Facilities | `public/trade-landings/facilities-maintenance-worksite.webp` | "One lock, one key, one person." | "If your lock is not on the hasp, you are not locked out. Verify zero energy before you touch it."
+   - Construction | `public/trade-landings/construction-carpentry-worksite.webp` | "Crown up. Every joist, every time." | "Set the bow up and the load flattens it. Set it down and the floor sags for good."
+
+   Below the cards: a white blueprint box "You know the work. Let's put it on paper the right way." plus a
+   "Build my free preview" button.
+6. **Reviews from verified buyers**: replaces "Real People. Real Results." (see below). Keep the fetch from the
+   existing `/api/resume-builder/reviews/public` endpoint, but render the section (white blueprint box) ONLY when at
+   least one approved review exists. With none, render nothing: no heading and no empty-state box.
+
+## Decisions (owner, Oct 2026)
+- Remove the purchase-protection strip; it duplicates the hero price line.
+- Remove the "See it first" and "Your facts only" product promises; they duplicate the promise band. Keep
+  "Delivered or refunded" with its refund-policy link.
+- Don't change any corrections wording in this PR.
 
 ## Remove the unverified testimonials (separate commit)
 Delete the six hard-coded `customerStories` in `app/customer-reviews.tsx` (Jessica M., David R., Taylor S.,
@@ -40,7 +60,7 @@ and the product promises. Make this its own commit so it can be reviewed separat
 assert those names.
 
 ## Keep / don't touch
-- Everything below the reviews section stays for now (catalog, cover-letter showcase, guide signup, closing CTA, footer).
+- Everything below the jobsite truths and reviews stays for now (catalog, cover-letter showcase, guide signup, closing CTA, footer).
   Remove only sections that duplicate the new hero/steps, and list each removal in the PR.
 - No corrections wording anywhere in this change (pending the correction-window decision).
 - Don't touch resume generation, checkout, Stripe, entitlements, the intake logic beyond reading `?trade=`.

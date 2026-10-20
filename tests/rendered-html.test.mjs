@@ -98,7 +98,7 @@ test("server-renders Resume Builder credibility and audience content", async () 
   assert.match(html, /Shaped by 10\+ years of HVAC and facilities work\./i);
   assert.doesNotMatch(html, /TRADE-CORRECT SETUP/i);
   for (const proofPoint of ["Trade-specific language", "ATS-friendly structure", "Upload or guided intake", "Real preview before payment", "PDF + editable DOCX", "Built for skilled trades"]) assert.match(html, new RegExp(proofPoint.replace("+", "\\+"), "i"));
-  for (const trustPoint of [/No credit card to preview/i, /3 corrections included/i, /\$9\.99 one-time/i, /No subscription/i]) assert.match(html, trustPoint);
+  for (const trustPoint of [/No credit card to preview/i, /\$9\.99 one-time/i, /No subscription/i]) assert.match(html, trustPoint);
 });
 
 test("publishes a canonical XML sitemap and robots discovery hints", async () => {
@@ -313,7 +313,7 @@ test("homepage keeps book content on the dedicated book page", async () => {
 
 test("homepage leads with preview-before-payment proof and the included cover letter before free resources", async () => {
   const html = await (await render()).text();
-  assert.match(html, /\$0 to preview/i);
+  assert.match(html, /\$0<\/b> to preview/i, "hero price line");
   assert.match(html, /Build My Free Preview/i);
   assert.match(html, /INCLUDED WITH YOUR RESUME PURCHASE/i);
   assert.match(html, /A matching cover letter\. Built for the same job\./i);
@@ -323,7 +323,6 @@ test("homepage leads with preview-before-payment proof and the included cover le
   assert.match(html, /PDF \+ editable DOCX/i);
   assert.equal((html.match(/<footer\b/gi) ?? []).length, 1);
   assert.match(html, /<footer[^>]*data-site-footer/i);
-  assert.match(html, /3 corrections included/i);
   assert.doesNotMatch(html, /corrections within 7 days/i);
   assert.match(html, /No credit card to preview/i);
   assert.match(html, /hustl3-bot-official\.webp/i);

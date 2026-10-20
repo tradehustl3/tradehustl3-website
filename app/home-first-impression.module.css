@@ -440,6 +440,143 @@
   color: #7A5408;
 }
 
+/* Jobsite truths ---------------------------------------------------------- */
+
+.truths {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 56px 24px 56px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  box-sizing: border-box;
+}
+
+.truthsHeading {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.truthGrid {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 18px;
+}
+
+.truthCard {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 2px solid #8EC0F0;
+  border-radius: 12px;
+}
+
+.truthPhoto {
+  position: relative;
+  height: 190px;
+  background: #DCE9F8;
+}
+
+.truthPhoto img {
+  object-fit: cover;
+}
+
+.truthBody {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 20px 22px 24px;
+}
+
+.truthTrade {
+  margin: 0;
+  font-family: var(--font-home-display), sans-serif;
+  font-weight: 800;
+  font-size: 15px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #C81E14;
+}
+
+.truthFact {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 700;
+  line-height: 1.35;
+  color: #02142B;
+}
+
+.truthLine {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.5;
+  color: #1E2A3A;
+}
+
+.truthsCta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 28px;
+  border: 2px solid #8EC0F0;
+  border-radius: 12px;
+}
+
+.truthsCta p {
+  margin: 0;
+  flex: 1 1 360px;
+  font-family: var(--font-home-display), sans-serif;
+  font-weight: 700;
+  font-size: clamp(22px, 2.4vw, 28px);
+  line-height: 1.2;
+  color: #02142B;
+}
+
+.truthsButton {
+  display: inline-flex;
+  align-items: center;
+  min-height: 48px;
+  padding: 14px 22px;
+  border-radius: 10px;
+  background: #D7261C;
+  color: #FFFFFF;
+  font-weight: 700;
+  box-sizing: border-box;
+}
+
+.truthsButton:hover {
+  background: #C11F16;
+}
+
+.top .truthsButton:focus-visible {
+  outline-color: #02142B;
+}
+
+@media (max-width: 720px) {
+  .truths {
+    padding: 40px 16px;
+  }
+
+  .truthGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .truthsCta {
+    padding: 20px;
+  }
+
+  .truthsButton {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
 @media (max-width: 720px) {
   .headerInner,
   .hero,

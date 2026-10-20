@@ -4,6 +4,7 @@ import { CtaAnalytics } from './cta-analytics';
 import { CustomerReviews } from './customer-reviews';
 import { homeBodyFont, homeDisplayFont } from './home-fonts';
 import { HomeHero } from './home-hero';
+import { JobsiteTruths } from './jobsite-truths';
 import { heroTradeFromParam } from './home-hero-trades';
 import { AccountStart } from './resume-builder/account-start';
 import { ResumeBuilderStartAnalytics } from './resume-builder/funnel-analytics';
@@ -44,14 +45,6 @@ const steps = [
   ['Review the free preview', 'Read every line. Switch templates. Nothing is charged yet.'],
   ['Unlock for $9.99', 'Download your resume and cover letter as PDF and DOCX.'],
 ] as const;
-
-const purchaseTrust = [
-  'No credit card to preview',
-  '$9.99 one-time',
-  'Matching cover letter included',
-  'No subscription',
-  '3 corrections included',
-];
 
 function AnalyticsLink({ href, location, children, className, event = 'cta_click', item }: {
   href: string;
@@ -128,6 +121,8 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
           </ol>
         </section>
 
+        <JobsiteTruths />
+
         <CustomerReviews />
       </div>
 
@@ -156,11 +151,6 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
           <div><dt>{CATALOG_METRICS.fieldPrompts}</dt><dd>Distinct tool, system, skill, duty, and credential prompts</dd></div>
           <div><dt>{CATALOG_METRICS.accomplishmentExamples}</dt><dd>Field accomplishment examples across the detailed guides</dd></div>
         </dl>
-      </section>
-
-      <section className={styles.trustStrip} aria-label="Resume Builder purchase protections">
-        <p><strong>SEE IT BEFORE YOU BUY IT.</strong> Build your protected preview first. Unlock only when you are happy with the direction.</p>
-        <ul>{purchaseTrust.map((item) => <li key={item}>{item}</li>)}</ul>
       </section>
 
       <section className={styles.startSection} id="resume-start" aria-labelledby="resume-start-title">

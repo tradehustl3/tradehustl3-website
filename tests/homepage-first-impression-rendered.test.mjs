@@ -69,14 +69,15 @@ test("homepage header carries three links and one CTA", async () => {
   assert.match(header, /data-location="sticky_header"/);
 });
 
-test("promise band, steps and reviews follow the hero in order", async () => {
+test("promise band, steps and jobsite truths follow the hero in order", async () => {
   const html = await renderHome();
   const order = [
     'id="top"',
     "See it first",
     "Built by a tradesman",
     "Three steps. Preview before you pay.",
-    "Reviews from verified buyers",
+    "Jobsite truths. If you know, you know.",
+    'aria-label="What the Resume Builder promises"',
     'id="trade-guides"',
     'id="resume-start"',
   ].map((marker) => html.indexOf(marker));
@@ -85,12 +86,53 @@ test("promise band, steps and reviews follow the hero in order", async () => {
   assert.doesNotMatch(html, /Three steps\. One stronger resume\./, "the duplicate process section is gone");
 });
 
-test("reviews empty state shows the verified-only notice and a start button", async () => {
+const JOBSITE_TRUTHS = [
+  ["HVAC", "/optimized/hvac-manifold-worksite.webp", "Digital refrigerant manifold gauge with blue, yellow and red hoses connected to a rooftop unit on a commercial job site", "Fixed orifice? Charge by superheat. TXV? Charge by subcooling.", "Get that backwards and the gauges will lie to you all afternoon."],
+  ["Electrical", "/trade-landings/electrician-worksite.webp", "Open electrical panel with breakers and color-coded wiring, a multimeter and hand tools on a construction site", "The white wire is the grounded conductor. It is not the ground.", "Neutral and ground bond once, at the service. Bond them in a subpanel and you have built a problem."],
+  ["Plumbing", "/trade-landings/plumbing-worksite.webp", "Mechanical room with copper piping and water heaters, and a press tool, copper fittings, tubing cutter and pipe wrench on a workbench", "Small horizontal drains want a quarter inch of fall per foot.", "Too flat and it clogs. The first rule still applies: water runs downhill."],
+  ["Welding", "/trade-landings/welding-fabrication-worksite.webp", "Welding helmet, MIG gun and a welded steel plate on a fabrication shop table", "Once the can is open, 7018 lives in the rod oven.", "Low-hydrogen rods soak up moisture, and wet rods mean porosity and cracking."],
+  ["Facilities", "/trade-landings/facilities-maintenance-worksite.webp", "Air handling unit and circulation pumps in a building mechanical room, with a multimeter, drill and hand tools on a workbench", "One lock, one key, one person.", "If your lock is not on the hasp, you are not locked out. Verify zero energy before you touch it."],
+  ["Construction", "/trade-landings/construction-carpentry-worksite.webp", "Wood-framed house under construction with a circular saw, framing nailer, speed square and tape measure on a work table", "Crown up. Every joist, every time.", "Set the bow up and the load flattens it. Set it down and the floor sags for good."],
+];
+
+const escapeHtml = (text) => text.replace(/&/g, "&amp;").replace(/'/g, "&#x27;").replace(/"/g, "&quot;");
+
+test("jobsite truths render six cards with the exact copy, photos and alt text", async () => {
   const html = await renderHome();
-  const reviews = between(html, "Reviews from verified buyers", "</section>");
-  assert.match(reviews, /Only customers with a completed purchase can leave a review here\. The first ones will appear as soon as they&#x27;re approved\./);
-  assert.match(reviews, /<a[^>]*href="#resume-start"[^>]*data-location="reviews_empty"[^>]*>Build my free preview<\/a>/);
+  const section = between(html, 'aria-labelledby="jobsite-truths-title"', "</section>");
+  assert.match(section, /BUILT FOR PEOPLE WHO KNOW THE WORK/);
+  assert.match(section, /Jobsite truths\. If you know, you know\./);
+  const cards = section.split("<li").slice(1);
+  assert.equal(cards.length, 6, "six cards");
+  JOBSITE_TRUTHS.forEach(([trade, image, alt, fact, line], index) => {
+    const card = cards[index];
+    const img = card.match(/<img\b[^>]*>/)?.[0] ?? "";
+    assert.ok(img.includes(`alt="${escapeHtml(alt)}"`), `${trade} alt text`);
+    assert.ok(img.includes(image), `${trade} photo ${image}`);
+    assert.ok(card.includes(`>${trade}</p>`), `${trade} label`);
+    assert.ok(card.includes(`>${escapeHtml(fact)}</p>`), `${trade} fact`);
+    assert.ok(card.includes(`>${escapeHtml(line)}</p>`), `${trade} supporting line`);
+  });
+  assert.match(section, /You know the work\. Let&#x27;s put it on paper the right way\./);
+  assert.match(section, /<a[^>]*href="#resume-start"[^>]*data-location="jobsite_truths"[^>]*>Build my free preview<\/a>/);
+});
+
+test("with no approved reviews the reviews section is absent, not an empty box", async () => {
+  const html = await renderHome();
+  assert.doesNotMatch(html, /Reviews from verified buyers/);
+  assert.doesNotMatch(html, /customer-reviews-title/);
+  assert.doesNotMatch(html, /Only customers with a completed purchase can leave a review here/);
+  assert.doesNotMatch(html, /data-reviews-empty/);
   assert.doesNotMatch(html, /Real People\. Real Results\./);
+});
+
+test("duplicate promises and the purchase strip are gone; the refund promise stays", async () => {
+  const html = await renderHome();
+  const promises = between(html, 'aria-label="What the Resume Builder promises"', "</ul>");
+  assert.doesNotMatch(promises, /See it first|Nothing made up|Your facts only/);
+  assert.match(promises, /Delivered or refunded/);
+  assert.match(promises, /href="\/resume-builder\/refund-policy"/);
+  assert.doesNotMatch(html, /Resume Builder purchase protections|SEE IT BEFORE YOU BUY IT\./);
 });
 
 test("no hard-coded testimonial names or portraits reach the homepage", async () => {
