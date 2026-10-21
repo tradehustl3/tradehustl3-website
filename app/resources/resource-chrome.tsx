@@ -1,6 +1,6 @@
-import Image from "next/image";
 import Link from "next/link";
 import styles from "./resources.module.css";
+import { BrandLockup } from "../brand-lockup";
 
 type Current = "resources" | "certifications";
 
@@ -10,7 +10,7 @@ export function ResourceHeader({ current }: { current: Current }) {
     <header className={styles.header}>
       <div className={styles.headerInner}>
         <Link className={styles.brand} href="/" aria-label="TRADE HUSTL3 home">
-          <Image className={styles.brandMark} src="/optimized/th3-logo-header.webp" alt="TRADE HUSTL3 logo" width={248} height={160} priority />
+          <BrandLockup />
         </Link>
         <nav className={styles.nav} aria-label="Resource Center navigation">
           <Link className={styles.navLink} href="/resources" aria-current={current === "resources" ? "page" : undefined}>Resource Center</Link>

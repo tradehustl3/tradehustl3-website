@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
+import { BrandLockup } from './brand-lockup';
 import { CtaAnalytics } from './cta-analytics';
 import { CustomerReviews } from './customer-reviews';
 import { homeBodyFont, homeDisplayFont } from './home-fonts';
@@ -107,14 +108,7 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
         <header className={fi.header}>
           <div className={fi.headerInner}>
             <Link className={fi.brand} href="#top" aria-label="TRADE HUSTL3 home">
-              <Image
-                className={fi.brandMark}
-                src="/optimized/th3-logo-header.webp"
-                alt="TRADE HUSTL3 logo"
-                width={248}
-                height={160}
-                priority
-              />
+              <BrandLockup />
             </Link>
             <nav className={fi.nav} aria-label="Primary navigation">
               <Link className={fi.navLink} href="/resume-examples">Explore Trades</Link>

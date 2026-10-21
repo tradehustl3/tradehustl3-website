@@ -7,6 +7,7 @@ import { CATALOG_METRICS } from "./catalog-metrics";
 import { CatalogBrowser } from "./catalog-browser";
 import { TRADE_CAREER_FAMILIES } from "./trade-career-catalog";
 import styles from "./resume-examples.module.css";
+import { BrandLockup } from "../brand-lockup";
 
 const PAGE_PATH = "/resume-examples";
 const PAGE_URL = `${SITE_URL}${PAGE_PATH}`;
@@ -88,7 +89,7 @@ export default function ResumeExamplesCatalogPage() {
 
       <header className={styles.header}>
         <Link className={styles.brand} href="/" aria-label="TRADE HUSTL3 home">
-          <Image src="/optimized/resume-builder-logo-header.webp" alt="TRADE HUSTL3 Resume Builder" width={500} height={410} priority />
+          <BrandLockup />
         </Link>
         <nav aria-label="Catalog navigation">
           <a href="#career-catalog">Browse careers</a>
