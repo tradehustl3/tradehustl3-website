@@ -3,6 +3,7 @@ import { CREDENTIAL_LIBRARY } from "./resources/credential-library";
 import { LABOR_MARKET_FACTS, LABOR_MARKET_PERIOD, formatCount, formatPay } from "./resources/labor-market";
 import { CATALOG_METRICS } from "./resume-examples/catalog-metrics";
 import styles from "./home-hub.module.css";
+import { ToolHeroArt } from "./tool-silhouettes";
 
 /**
  * Hub homepage sections (approved design, Oct 21 2026): TRADE HUSTL3 as a
@@ -20,6 +21,7 @@ const POPULAR = [
 export function HubHero() {
   return (
     <section className={styles.hero} id="top" aria-labelledby="hub-title">
+      <ToolHeroArt />
       <div className={styles.heroInner}>
         <p className={styles.kicker}>SKILLED-TRADES CAREER &amp; RESOURCE HUB</p>
         <h1 id="hub-title" className={styles.h1}>Built for the people who build, maintain, repair, and move America.</h1>
