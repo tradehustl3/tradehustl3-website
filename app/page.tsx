@@ -13,6 +13,7 @@ import { JobsiteTruths } from './jobsite-truths';
 import { KnowYourTrade } from './home-know-your-trade';
 import { knowYourTradeMyths, knowYourTradeTrades } from './home-know-your-trade-data';
 import { heroTradeFromParam } from './home-hero-trades';
+import { resolveTradeParam } from './resume-builder/trade-preselect';
 import { AccountStart } from './resume-builder/account-start';
 import { ResumeBuilderStartAnalytics } from './resume-builder/funnel-analytics';
 import { rbFont } from './resume-builder/rb-font';
@@ -20,11 +21,8 @@ import { CATALOG_METRICS } from './resume-examples/catalog-metrics';
 import './resume-builder/rb-foundation.css';
 import styles from './home-traffic-director.module.css';
 import fi from './home-first-impression.module.css';
-import { SITE_NAME } from './site';
+import { HOME_DESCRIPTION, HOME_TITLE, HUB_OG_IMAGE, SITE_NAME } from './site';
 
-const HOME_TITLE = 'Skilled-Trades Career Hub and Resume Builder | TRADE HUSTL3';
-const HOME_DESCRIPTION =
-  'Free skilled-trades resources: 14 trade families, sourced certification and license guides, and job-outlook data. Plus a trade resume builder with a free preview and a $9.99 one-time unlock.';
 
 export const metadata: Metadata = {
   title: { absolute: HOME_TITLE },
@@ -37,9 +35,9 @@ export const metadata: Metadata = {
     siteName: SITE_NAME,
     locale: 'en_US',
     type: 'website',
-    images: [{ url: '/optimized/og-v2.webp', width: 1200, height: 630, alt: HOME_TITLE }],
+    images: [{ url: HUB_OG_IMAGE, width: 1200, height: 630, alt: 'TRADE HUSTL3 — skilled-trades career and resource hub' }],
   },
-  twitter: { card: 'summary_large_image', title: HOME_TITLE, description: HOME_DESCRIPTION, images: ['/optimized/og-v2.webp'] },
+  twitter: { card: 'summary_large_image', title: HOME_TITLE, description: HOME_DESCRIPTION, images: [HUB_OG_IMAGE] },
 };
 
 const tradeChips = [
@@ -96,15 +94,18 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
   // Render a ?trade= from a trade landing page or campaign on the server, so the
   // hero never swaps its headline after hydration (and works without JavaScript).
   const { trade } = await searchParams;
-  const initialTrade = heroTradeFromParam(typeof trade === 'string' ? trade : null);
-  // Campaign and trade-landing visits (?trade=) keep the resume-first layout;
-  // everyone else gets the hub homepage with the Resume Builder below it.
-  const isCampaignVisit = initialTrade !== null;
+  const tradeParam = typeof trade === 'string' ? trade : null;
+  const initialTrade = heroTradeFromParam(tradeParam);
+  // Campaign and trade-landing visits (?trade= for any of the 14 builder tracks)
+  // keep the resume-first layout; everyone else gets the hub homepage.
+  const campaignTrack = resolveTradeParam(tradeParam);
+  const isCampaignVisit = campaignTrack !== null;
 
   return (
     <main className={styles.page}>
       <CtaAnalytics />
-      <ResumeBuilderStartAnalytics />
+      {/* Campaign visits land on the builder itself; hub visits count only once the start section is on screen. */}
+      <ResumeBuilderStartAnalytics trigger={isCampaignVisit ? 'mount' : 'visible'} />
       <div className={`${fi.top} ${homeDisplayFont.variable} ${homeBodyFont.variable}`}>
         <header className={fi.header}>
           <div className={fi.headerInner}>
@@ -122,7 +123,7 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
         </header>
 
         {isCampaignVisit ? (
-          <HomeHero initialTradeId={initialTrade.id} />
+          <HomeHero initialTradeId={initialTrade?.id ?? null} campaignTrack={initialTrade ? null : campaignTrack} />
         ) : (
           <>
             <HubHero />

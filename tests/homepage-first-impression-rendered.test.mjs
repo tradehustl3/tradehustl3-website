@@ -179,3 +179,14 @@ test("homepage fonts are self-hosted, with no runtime Google Fonts request", asy
   assert.match(html, /_vinext_fonts\/barlow-/);
   assert.doesNotMatch(html, /fonts\.googleapis\.com|fonts\.gstatic\.com/);
 });
+
+test("campaign visits for trades without a quick-pick card keep the resume-first layout and the trade", async () => {
+  for (const [slug, word] of [["commercial-driving-transportation", "commercial driver"], ["heavy-equipment-operator", "heavy equipment"], ["general-labor", "general labor"]]) {
+    const html = await renderHome(`/?trade=${slug}`);
+    assert.doesNotMatch(html, /id="hub-title"/, `${slug}: hub hidden on campaign visit`);
+    assert.match(html, new RegExp(`<h1 id="hero-title"[^>]*>Build a <span[^>]*>${word}</span> resume`), `${slug}: headline names the trade`);
+    const cta = html.match(/<a\b[^>]*data-hero-cta[^>]*>/)?.[0] ?? "";
+    assert.match(cta, /href="\/\?trade=[a-z0-9-]+#resume-start"/, `${slug}: CTA keeps the trade`);
+    assert.doesNotMatch(html, /<button[^>]*aria-pressed="true"[^>]*data-location="hero_trade_picker"/, `${slug}: no unrelated chip preselected`);
+  }
+});

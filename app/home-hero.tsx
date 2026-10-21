@@ -8,7 +8,10 @@ import {
   heroCtaHref,
   heroCtaLabel,
   heroTradeById,
+  CAMPAIGN_HEADLINES,
 } from "./home-hero-trades";
+import type { TradeTrack } from "./resume-builder/trade-content";
+import { intakeEntryHref } from "./resume-builder/trade-preselect";
 import styles from "./home-first-impression.module.css";
 
 /**
@@ -21,10 +24,13 @@ import styles from "./home-first-impression.module.css";
  */
 export function HomeHero({
   initialTradeId = null,
+  campaignTrack = null,
   asSection = false,
   logo = null,
 }: {
   initialTradeId?: string | null;
+  /** A `?trade=` track with no quick-pick card: headline and CTA name that trade until a chip is picked. */
+  campaignTrack?: TradeTrack | null;
   asSection?: boolean;
   /** Rendered above the eyebrow; the page passes the Resume Builder logo. Kept
       as a prop so this component stays free of next/* imports (unit-tested in Node). */
@@ -32,8 +38,11 @@ export function HomeHero({
 }) {
   const [chosen, setChosen] = useState<HeroTrade | null>(() => heroTradeById(initialTradeId));
 
+  const campaign = !chosen && campaignTrack ? { track: campaignTrack, ...CAMPAIGN_HEADLINES[campaignTrack] } : null;
   const shown = chosen ?? DEFAULT_HERO_TRADE;
-  const ctaHref = heroCtaHref(chosen);
+  const headline = campaign ?? shown;
+  const ctaHref = campaign ? intakeEntryHref(campaign.track) : heroCtaHref(chosen);
+  const ctaLabel = campaign ? `Build my free ${campaign.short} preview` : heroCtaLabel(shown);
   // On the hub homepage this hero sits below the brand hero, so it becomes an
   // h2 section; campaign (?trade=) visits still get it as the page's h1.
   const Heading = asSection ? "h2" : "h1";
@@ -44,7 +53,7 @@ export function HomeHero({
         {logo}
         <p className={styles.eyebrow}>RESUME BUILDER FOR THE SKILLED TRADES</p>
         <Heading id="hero-title" className={styles.headline}>
-          Build {shown.article} <span className={styles.headlineTrade} data-hero-trade-word>{shown.word}</span> resume that looks ready for the job.
+          Build {headline.article} <span className={styles.headlineTrade} data-hero-trade-word>{headline.word}</span> resume that looks ready for the job.
         </Heading>
         <p className={styles.heroLead}>
           Upload your resume or answer a few questions. HUSTL3 BOT turns your real experience into a clean,
@@ -59,7 +68,7 @@ export function HomeHero({
                 key={trade.id}
                 type="button"
                 className={styles.chip}
-                aria-pressed={trade.id === shown.id}
+                aria-pressed={!campaign && trade.id === shown.id}
                 onClick={() => setChosen(trade)}
                 data-analytics-event="select_content"
                 data-location="hero_trade_picker"
@@ -84,7 +93,7 @@ export function HomeHero({
             data-item={chosen?.id}
             data-hero-cta
           >
-            {heroCtaLabel(shown)} <span aria-hidden="true">→</span>
+            {ctaLabel} <span aria-hidden="true">→</span>
           </a>
           <a href="#how" className={styles.textLink}>See how it works</a>
         </div>
@@ -100,6 +109,7 @@ export function HomeHero({
         </p>
       </div>
 
+      {campaign ? null : (
       <div className={styles.exampleWrap}>
         {/* Every trade's card is stacked in one grid cell so the slot is sized
             to the tallest card up front: switching trades never shifts layout. */}
@@ -123,7 +133,7 @@ export function HomeHero({
                   </div>
                   <span className={styles.exampleTag}>EXAMPLE</span>
                 </header>
-                <p className={styles.exampleLabel}>CERTIFICATIONS</p>
+                <p className={styles.exampleLabel}>CREDENTIALS &amp; SAFETY TRAINING</p>
                 <p className={styles.exampleCerts}>{trade.certs}</p>
                 <p className={styles.exampleLabel}>EXPERIENCE</p>
                 <ul className={styles.exampleBullets}>
@@ -140,6 +150,7 @@ export function HomeHero({
         </div>
         <p className={styles.exampleCaption}>Fictional example. Your resume uses only the facts you enter.</p>
       </div>
+      )}
     </section>
   );
 }

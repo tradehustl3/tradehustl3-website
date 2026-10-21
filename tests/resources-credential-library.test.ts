@@ -94,7 +94,7 @@ test("homepage Know Your Trade data: seven picks, at most four credentials, gene
     const generalIndex = trade.credentials.findIndex((credential) => credential.slug === "osha-outreach-10-30");
     const specific = trade.credentials.filter((credential) => !["osha-outreach-10-30", "state-trade-license"].includes(credential.slug));
     if (generalIndex >= 0 && specific.length > 0) assert.ok(generalIndex >= specific.length, `${trade.slug}: OSHA listed before trade-specific credentials`);
-    assert.ok(trade.builderHref.startsWith("/"), trade.slug);
+    assert.match(trade.builderHref, /^\/\?trade=[a-z0-9-]+#resume-start$/, `${trade.slug} keeps its trade into the builder`);
   }
   assert.equal(trades[0].credentials[0].slug, "epa-608");
   for (const myth of knowYourTradeMyths()) assert.match(myth.href, /^\/resources\/certifications#[a-z0-9-]+$/);
@@ -118,5 +118,39 @@ test("every trade family has exactly one key credential that the library maps to
     assert.ok(record.tradeSlugs.includes(trade), `${trade}: ${key.credentialSlug} is not mapped to this trade`);
     assert.ok(key.badgeLabel.length > 0 && key.badgeLabel.length <= 26, `${trade}: badge label length`);
     if (record.kind !== "certification") assert.doesNotMatch(key.badgeLabel, /certif/i, `${trade}: non-certification badge says certified`);
+  }
+});
+
+test("audit fixes (Oct 21): CAMT is for life, NATE lists both pathways, NCCER training is not certification, AWS continuity is stated", () => {
+  const camt = credentialBySlug("camt");
+  assert.ok(camt);
+  assert.match(camt.renewal, /good for life/i);
+  assert.match(camt.renewal, /Provisional CAMT expires two years/i);
+  assert.ok(camt.sources.some((source) => source.url === "https://naahq.org/naaei/credentials/renew"));
+
+  const nate = credentialBySlug("nate");
+  assert.ok(nate);
+  assert.ok(nate.howToEarn.some((step) => /CHP-5/.test(step)));
+  assert.match(nate.cost?.text ?? "", /\$25 for one specialty/);
+
+  const nccer = credentialBySlug("nccer");
+  assert.ok(nccer);
+  assert.doesNotMatch(nccer.resumeTip.write, /certified/i);
+  assert.match(nccer.summary, /written assessment and a performance verification/);
+
+  const aws = credentialBySlug("aws-certified-welder");
+  assert.ok(aws);
+  assert.match(aws.renewal, /every six months/);
+});
+
+test("every one of the 14 builder tracks has a campaign headline, and every family resolves to a builder entry", async () => {
+  const { CAMPAIGN_HEADLINES } = await import("../app/home-hero-trades");
+  const { TRADE_TRACKS } = await import("../app/resume-builder/trade-content");
+  const { intakeEntryHref, resolveTradeParam } = await import("../app/resume-builder/trade-preselect");
+  assert.deepEqual(Object.keys(CAMPAIGN_HEADLINES).sort(), [...TRADE_TRACKS].sort());
+  for (const family of TRADE_CAREER_FAMILIES) {
+    const href = intakeEntryHref(family.builderTrack);
+    const slug = new URL(href, "https://tradehustl3.com").searchParams.get("trade");
+    assert.equal(resolveTradeParam(slug), family.builderTrack, `${family.slug} round-trips through ?trade=`);
   }
 });

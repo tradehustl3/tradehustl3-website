@@ -55,7 +55,7 @@
 .textLink:hover { color: var(--red); }
 
 /* Trade grid */
-.tradeGrid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
+.tradeGrid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr)); gap: 14px; }
 .tradeCard { height: 100%; box-sizing: border-box; display: flex; flex-direction: column; gap: 10px; padding: 20px; background: #fff; border: 1px solid var(--line); border-radius: 10px; color: var(--navy); text-decoration: none; }
 .tradeCard:hover { border-color: var(--navy); }
 .tradeName { font-family: var(--font-home-display), Impact, sans-serif; font-weight: 800; font-size: 22px; line-height: 1.05; text-transform: uppercase; }
@@ -84,11 +84,11 @@
 .badge-qualification { background: #fff; color: var(--navy); box-shadow: inset 0 0 0 2px var(--navy); }
 .badgeReq { background: var(--cream); color: var(--navy); }
 
-.kindList { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.kindList { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr)); gap: 12px; }
 .kindList li { display: flex; gap: 12px; align-items: flex-start; padding: 16px; background: #fff; border: 1px solid var(--line); border-radius: 10px; font-size: 14px; line-height: 1.45; color: var(--ink-soft); }
 .kindList .badge { flex: none; }
 
-.credGrid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
+.credGrid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr)); gap: 14px; }
 .credCard { height: 100%; box-sizing: border-box; display: flex; flex-direction: column; gap: 10px; padding: 22px; background: #fff; border: 1px solid var(--line); border-radius: 10px; }
 .credCard h3 { margin: 0; font-family: var(--font-home-display), Impact, sans-serif; font-weight: 800; font-size: 26px; line-height: 1.02; text-transform: uppercase; }
 .credCard p { margin: 0; font-size: 15px; line-height: 1.5; color: var(--ink-soft); }
@@ -96,7 +96,7 @@
 .badgeRow { display: flex; flex-wrap: wrap; gap: 6px; }
 
 /* Labor market */
-.factGrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+.factGrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr)); gap: 14px; }
 .fact { margin: 0; padding: 24px; border-radius: 12px; background: var(--navy); color: var(--cream); display: flex; flex-direction: column; gap: 8px; }
 .fact strong { font-family: var(--font-home-display), Impact, sans-serif; font-weight: 800; font-size: 52px; line-height: 1; color: var(--gold); }
 .fact figcaption { font-size: 16px; line-height: 1.45; }
@@ -104,7 +104,7 @@
 .sourceNote a { color: var(--muted); }
 
 /* Coming next */
-.comingList { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.comingList { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr)); gap: 12px; }
 .comingList li { padding: 18px; border: 1px dashed #b9ad96; border-radius: 10px; display: flex; flex-direction: column; gap: 6px; font-size: 15px; color: var(--ink-soft); }
 .comingList strong { color: var(--navy); font-size: 17px; }
 
@@ -116,7 +116,7 @@
 .primaryCta:hover { background: #b3151b; color: #fff; }
 
 /* Standards */
-.standards { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 18px; font-size: 15px; line-height: 1.5; color: var(--ink-soft); }
+.standards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(230px, 100%), 1fr)); gap: 18px; font-size: 15px; line-height: 1.5; color: var(--ink-soft); }
 .standards div { display: flex; flex-direction: column; gap: 4px; }
 .standards strong { color: var(--navy); }
 
@@ -134,7 +134,7 @@
 .guide p, .guide li { font-size: 16px; line-height: 1.55; color: var(--ink-soft); }
 .guide p { margin: 0; }
 .guideSummary { font-size: 18px !important; color: var(--navy) !important; }
-.facts { margin: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
+.facts { margin: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)); gap: 10px; }
 .facts div { background: var(--cream); border-radius: 8px; padding: 12px 14px; }
 .facts dt { font-size: 13px; font-weight: 700; color: var(--muted); }
 .facts dd { margin: 2px 0 0; font-size: 15px; line-height: 1.45; color: var(--navy); font-weight: 600; }

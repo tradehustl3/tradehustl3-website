@@ -36,7 +36,7 @@ export const HERO_TRADES: readonly HeroTrade[] = [
     short: "HVAC",
     track: "HVAC & Refrigeration",
     title: "HVAC Technician",
-    certs: "EPA 608 Type II · OSHA 10",
+    certs: "EPA 608 Type II · OSHA 10-Hour training",
     bullets: [
       "Performed preventive maintenance on rooftop units and split systems.",
       "Diagnosed refrigerant and airflow problems with technicians on service calls.",
@@ -51,7 +51,7 @@ export const HERO_TRADES: readonly HeroTrade[] = [
     short: "electrician",
     track: "Electrical",
     title: "Electrical Apprentice",
-    certs: "OSHA 10 · Registered apprentice",
+    certs: "OSHA 10-Hour training · Registered apprentice",
     bullets: [
       "Pulled wire and installed conduit for residential and light commercial jobs.",
       "Mounted panels, devices and fixtures under a journeyman.",
@@ -66,7 +66,7 @@ export const HERO_TRADES: readonly HeroTrade[] = [
     short: "plumber",
     track: "Plumbing",
     title: "Plumbing Apprentice",
-    certs: "OSHA 10 · Apprentice registration",
+    certs: "OSHA 10-Hour training · Registered apprentice",
     bullets: [
       "Assisted with residential drain, waste and vent installation.",
       "Measured, cut and prepped copper and PEX supply lines.",
@@ -81,7 +81,7 @@ export const HERO_TRADES: readonly HeroTrade[] = [
     short: "maintenance",
     track: "Facilities Maintenance",
     title: "Facilities Maintenance Technician",
-    certs: "EPA 608 Universal · OSHA 30",
+    certs: "EPA 608 Universal · OSHA 30-Hour training",
     bullets: [
       "Completed preventive and corrective work orders across a commercial building.",
       "Maintained HVAC, plumbing and electrical systems.",
@@ -96,7 +96,7 @@ export const HERO_TRADES: readonly HeroTrade[] = [
     short: "welder",
     track: "Welding & Fabrication",
     title: "Welder / Fabricator",
-    certs: "AWS D1.1 · OSHA 10",
+    certs: "AWS Certified Welder — GMAW 3G (D1.1) · OSHA 10-Hour training",
     bullets: [
       "Welded structural steel using MIG and stick processes.",
       "Read blueprints and weld symbols to fit and tack parts.",
@@ -111,7 +111,7 @@ export const HERO_TRADES: readonly HeroTrade[] = [
     short: "construction",
     track: "Construction & Carpentry",
     title: "Construction Laborer",
-    certs: "OSHA 10 · Forklift certified",
+    certs: "OSHA 10-Hour training · Forklift operator (employer-evaluated)",
     bullets: [
       "Set up and broke down job sites for framing and concrete crews.",
       "Operated hand and power tools safely.",
@@ -145,3 +145,25 @@ export function heroCtaHref(chosen: HeroTrade | null): string {
 export function heroCtaLabel(shown: HeroTrade): string {
   return `Build my free ${shown.short} preview`;
 }
+
+/**
+ * Headline words for campaign visits (`?trade=`) whose trade has no quick-pick
+ * card above. Every builder track resolves to a headline, so a campaign never
+ * lands on a hero that names a different trade.
+ */
+export const CAMPAIGN_HEADLINES: Record<TradeTrack, Pick<HeroTrade, "word" | "article" | "short">> = {
+  "HVAC & Refrigeration": { word: "HVAC tech", article: "an", short: "HVAC" },
+  Electrical: { word: "electrician", article: "an", short: "electrician" },
+  Plumbing: { word: "plumber", article: "a", short: "plumber" },
+  "Construction & Carpentry": { word: "construction", article: "a", short: "construction" },
+  "Facilities Maintenance": { word: "maintenance tech", article: "a", short: "maintenance" },
+  "Welding & Fabrication": { word: "welder", article: "a", short: "welder" },
+  "General Labor / Trade Helper": { word: "general labor", article: "a", short: "general labor" },
+  "Commercial Driving & Transportation": { word: "commercial driver", article: "a", short: "driver" },
+  "Warehouse, Logistics & Material Handling": { word: "warehouse", article: "a", short: "warehouse" },
+  "Industrial & Warehouse Maintenance": { word: "industrial maintenance", article: "an", short: "maintenance" },
+  "Landscaping & Grounds Maintenance": { word: "landscaping", article: "a", short: "landscaping" },
+  "Roadwork, Paving, Concrete & Heavy Equipment": { word: "heavy equipment", article: "a", short: "heavy equipment" },
+  "Roofing & Exterior Trades": { word: "roofing", article: "a", short: "roofing" },
+  "Automotive, Diesel & Fleet Maintenance": { word: "diesel & auto tech", article: "a", short: "automotive" },
+};

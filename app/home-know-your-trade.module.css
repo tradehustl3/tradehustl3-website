@@ -36,7 +36,7 @@
 .panelHead { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 10px; }
 .panelHead h3 { margin: 0; font-family: var(--font-home-display), Impact, sans-serif; font-weight: 800; font-size: 30px; text-transform: uppercase; line-height: 1.05; }
 .panelHead span { font-size: 14px; color: #53687a; }
-.creds { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; }
+.creds { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(230px, 100%), 1fr)); gap: 12px; }
 .cred { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 18px; display: flex; flex-direction: column; gap: 8px; }
 .cred strong { font-family: var(--font-home-display), Impact, sans-serif; font-size: 22px; line-height: 1.05; text-transform: uppercase; }
 .cred a { margin-top: auto; padding-top: 4px; font-weight: 700; font-size: 15px; color: #0b2c49; }

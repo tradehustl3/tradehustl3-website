@@ -8,7 +8,7 @@ test("public marketing pages opt out of stale Cloudflare HTML caching", async ()
   assert.match(config, /Cache-Control[\s\S]*no-store, max-age=0/i);
   assert.match(config, /Cloudflare-CDN-Cache-Control[\s\S]*no-store/i);
   assert.match(config, /CDN-Cache-Control[\s\S]*no-store/i);
-  assert.match(config, /2026-09-28-trade-catalog/i);
+  assert.match(config, /2026-10-21-skilled-trades-hub/i);
 
   for (const route of [
     "/",

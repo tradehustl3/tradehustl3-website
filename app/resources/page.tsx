@@ -4,7 +4,7 @@ import { CtaAnalytics } from "../cta-analytics";
 import { homeBodyFont, homeDisplayFont } from "../home-fonts";
 import { CATALOG_METRICS } from "../resume-examples/catalog-metrics";
 import { TRADE_CAREER_FAMILIES } from "../resume-examples/trade-career-catalog";
-import { SITE_NAME, SITE_URL } from "../site";
+import { HUB_OG_IMAGE, SITE_NAME, SITE_URL } from "../site";
 import {
   CREDENTIAL_KIND_DESCRIPTIONS,
   CREDENTIAL_KIND_LABELS,
@@ -36,9 +36,9 @@ export const metadata: Metadata = {
     siteName: SITE_NAME,
     locale: "en_US",
     type: "website",
-    images: [{ url: "/optimized/og-v2.webp", width: 1200, height: 630, alt: PAGE_TITLE }],
+    images: [{ url: HUB_OG_IMAGE, width: 1200, height: 630, alt: PAGE_TITLE }],
   },
-  twitter: { card: "summary_large_image", title: PAGE_TITLE, description: PAGE_DESCRIPTION, images: ["/optimized/og-v2.webp"] },
+  twitter: { card: "summary_large_image", title: PAGE_TITLE, description: PAGE_DESCRIPTION, images: [HUB_OG_IMAGE] },
 };
 
 const jsonLd = {

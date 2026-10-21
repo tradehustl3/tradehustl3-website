@@ -7,6 +7,7 @@ import {
   type CredentialKind,
 } from "./resources/credential-library";
 import { TRADE_CAREER_FAMILIES, type TradeCareerFamily } from "./resume-examples/trade-career-catalog";
+import { intakeEntryHref } from "./resume-builder/trade-preselect";
 
 /** Trades offered as quick picks on the homepage, in display order. */
 export const KNOW_YOUR_TRADE_PICKS = [
@@ -62,7 +63,9 @@ export function knowYourTradeTrades(): KnowYourTradeTrade[] {
         requirementLabel: CREDENTIAL_REQUIREMENT_LABELS[record.requirement],
         summary: record.summary,
       }));
-    return { slug, label, name: family.name, builderHref: family.guideHref ?? "/#resume-start", credentials };
+    // Always the canonical intake entry for this family's builder track, so the
+    // selected trade survives into AccountStart and the intake (audit, Oct 21).
+    return { slug, label, name: family.name, builderHref: intakeEntryHref(family.builderTrack), credentials };
   });
 }
 

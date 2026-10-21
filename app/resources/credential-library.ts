@@ -357,13 +357,16 @@ export const CREDENTIAL_LIBRARY: readonly CredentialRecord[] = [
     kind: "certification",
     requirement: "employer-preferred",
     issuer: "North American Technician Excellence (NATE)",
-    summary: "A voluntary HVACR certification many employers use to gauge a technician's knowledge. Earned through a Core exam plus specialty exams.",
+    summary: "A voluntary HVACR certification many employers use to gauge a technician's knowledge. NATE offers two pathways: Core plus a Specialty exam, or the five-exam CHP-5 pathway.",
     whoNeedsIt: "HVACR technicians who want to show knowledge beyond the federal minimum. Not legally required.",
-    howToEarn: ["Pass the NATE Core exam.", "Pass at least one specialty exam."],
+    howToEarn: [
+      "Traditional pathway: pass the NATE Core exam and a Specialty exam.",
+      "CHP-5 pathway: pass five exams — HVAC Fundamentals, Electrical and Controls, Comfort and Airflow, Installation, and Service.",
+    ],
     renewal:
       "Renew every two years: complete 16 continuing education hours and pay the renewal fee, or retake the specialty exam. If you miss the grace period, you must retake both Core and specialty.",
     cost: {
-      text: "Renewal: $25 per specialty, plus $5 for each additional specialty.",
+      text: "Specialty renewal: $25 for one specialty; when renewing several, $5 for each additional specialty.",
       source: { label: "NATE — Recertification FAQs", url: "https://natex.org/technician/recertification-faqs" },
     },
     resumeTip: {
@@ -373,9 +376,15 @@ export const CREDENTIAL_LIBRARY: readonly CredentialRecord[] = [
     },
     tradeSlugs: ["hvac-refrigeration", "facilities-property-apartment-maintenance"],
     officialUrl: "https://natex.org/",
-    sources: [{ label: "NATE — Recertification FAQs", url: "https://natex.org/technician/recertification-faqs" }],
+    sources: [
+      { label: "NATE — Getting Started (certification pathways)", url: "https://natex.org/technician/become-nate-certified/getting-started-2" },
+      { label: "NATE — Recertification FAQs", url: "https://natex.org/technician/recertification-faqs" },
+    ],
     lastVerified: VERIFIED_2026_10_21,
-    openQuestions: ["Initial exam fees: confirm on NATE's Policies and Fees page before publishing."],
+    openQuestions: [
+      "Initial exam fees: confirm on NATE's Policies and Fees page before publishing.",
+      "NATE's recertification FAQ describes specialty renewal; confirm how CHP-5 holders recertify before stating it.",
+    ],
   },
   {
     slug: "ase",
@@ -417,7 +426,7 @@ export const CREDENTIAL_LIBRARY: readonly CredentialRecord[] = [
     summary: "A performance-based welding certification that travels with you from employer to employer.",
     whoNeedsIt: "Welders who want portable proof of their skills. No prerequisite courses or certifications.",
     howToEarn: ["Test at an AWS Accredited Test Facility.", "Pass the performance (weld) test for the process and position you're certifying in."],
-    renewal: "Stays active only with regular maintenance submissions to AWS. Confirm the current schedule with AWS or your test facility.",
+    renewal: "Stays valid as long as continuity is maintained: AWS's FAQ says to submit maintenance documentation every six months confirming you still use the certified process. If continuity lapses, the certification can become inactive and you'd requalify by testing. AWS also lists an annual WeldCert Pro subscription as a program requirement.",
     resumeTip: {
       write: "AWS Certified Welder — GMAW, 3G/4G plate (AWS D1.1)",
       avoid: "Certified welder, all positions",
@@ -427,7 +436,7 @@ export const CREDENTIAL_LIBRARY: readonly CredentialRecord[] = [
     officialUrl: "https://www.aws.org/certification-and-education/professional-certification/certified-welder-program/",
     sources: [{ label: "AWS — Certified Welder Program", url: "https://www.aws.org/certification-and-education/professional-certification/certified-welder-program/" }],
     lastVerified: VERIFIED_2026_10_21,
-    openQuestions: ["AWS's page lists both six-month maintenance documentation and an annual subscription; confirm which applies before stating an interval."],
+    openQuestions: ["WeldCert Pro subscription price: AWS points to a separate price list; confirm before publishing an amount."],
   },
   {
     slug: "aws-cwi",
@@ -482,13 +491,16 @@ export const CREDENTIAL_LIBRARY: readonly CredentialRecord[] = [
       "Complete all CAMT classroom and online coursework.",
       "Pass the exam.",
     ],
-    renewal: "NAA lists annual renewal with proof of continuing education credit.",
+    renewal: "The full CAMT does not require renewal — NAA says it is good for life. A Provisional CAMT expires two years after it is earned unless you meet the experience requirement and upgrade; otherwise you retake the course and exam. NAA's former AIME program, which had annual renewal, was discontinued January 31, 2026.",
     resumeTip: { write: "Certificate for Apartment Maintenance Technicians (CAMT), NAAEI", avoid: "CAMT/EPA certified", why: "CAMT and EPA 608 are different credentials. List each one you hold on its own line." },
     tradeSlugs: ["facilities-property-apartment-maintenance"],
     officialUrl: "https://naahq.org/naaei/credentials/camt-accreditation",
-    sources: [{ label: "NAA — Certificate for Apartment Maintenance Technicians", url: "https://naahq.org/naaei/credentials/camt-accreditation" }],
+    sources: [
+      { label: "NAA — Renew Your Credential", url: "https://naahq.org/naaei/credentials/renew" },
+      { label: "NAA — Certificate for Apartment Maintenance Technicians", url: "https://naahq.org/naaei/credentials/camt-accreditation" },
+    ],
     lastVerified: VERIFIED_2026_10_21,
-    openQuestions: ["Course and renewal fees: confirm with NAA or the local affiliate before publishing."],
+    openQuestions: ["Course fees are set by local NAA affiliates; confirm before publishing an amount."],
   },
   {
     slug: "isa-certified-arborist",
@@ -521,11 +533,18 @@ export const CREDENTIAL_LIBRARY: readonly CredentialRecord[] = [
     kind: "certification",
     requirement: "employer-preferred",
     issuer: "NCCER",
-    summary: "Portable craft credentials for construction and industrial trades, verifiable online through NCCER's digital wallet.",
+    summary: "Two different things share the NCCER name: training credentials from completing NCCER craft training, and NCCER certification, which requires passing both a written assessment and a performance verification. Both can be verified through NCCER's digital wallet.",
     whoNeedsIt: "Craft workers in construction, maintenance, and industrial trades — often earned through training programs and schools.",
-    howToEarn: ["Train with NCCER-certified instructors.", "Pass both a written assessment and a performance verification for the craft."],
+    howToEarn: [
+      "Training credentials: complete NCCER craft training taught by NCCER-certified instructors (knowledge plus hands-on, performance-based testing).",
+      "Certification: pass both a written assessment and a performance verification for the craft.",
+    ],
     renewal: "NCCER's page does not state an expiration. Confirm with NCCER.",
-    resumeTip: { write: "NCCER Certified — Carpentry Level 2", avoid: "NCCER certified", why: "Name the craft and level. Employers can verify it with your digital credential link." },
+    resumeTip: {
+      write: "NCCER Carpentry Level 2 — training completed",
+      avoid: "NCCER Certified (for training you completed)",
+      why: "Completing a training level is not the same as NCCER certification. Write \"NCCER Certified — [craft]\" only if you passed the written assessment and performance verification.",
+    },
     tradeSlugs: [
       "construction-carpentry",
       "electrical-low-voltage",
