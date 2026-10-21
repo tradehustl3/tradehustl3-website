@@ -36,6 +36,8 @@ const nextConfig: NextConfig = {
       { source: "/book/sample", headers: crawlerFreshnessHeaders },
       { source: "/top-10-trades", headers: crawlerFreshnessHeaders },
       { source: "/resume-examples", headers: crawlerFreshnessHeaders },
+      { source: "/resources", headers: crawlerFreshnessHeaders },
+      { source: "/resources/certifications", headers: crawlerFreshnessHeaders },
       { source: "/resume-builder", headers: crawlerFreshnessHeaders },
       { source: "/resume-builder/intake", headers: crawlerFreshnessHeaders },
       { source: "/resume-builder/review", headers: crawlerFreshnessHeaders },

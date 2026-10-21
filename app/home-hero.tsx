@@ -1,7 +1,6 @@
 "use client";
 
-import Image from "next/image";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import {
   DEFAULT_HERO_TRADE,
   HERO_TRADES,
@@ -20,7 +19,17 @@ import styles from "./home-first-impression.module.css";
  * (`initialTradeId`), so nothing swaps after hydration. Picking a trade is
  * progressive enhancement.
  */
-export function HomeHero({ initialTradeId = null, asSection = false }: { initialTradeId?: string | null; asSection?: boolean }) {
+export function HomeHero({
+  initialTradeId = null,
+  asSection = false,
+  logo = null,
+}: {
+  initialTradeId?: string | null;
+  asSection?: boolean;
+  /** Rendered above the eyebrow; the page passes the Resume Builder logo. Kept
+      as a prop so this component stays free of next/* imports (unit-tested in Node). */
+  logo?: ReactNode;
+}) {
   const [chosen, setChosen] = useState<HeroTrade | null>(() => heroTradeById(initialTradeId));
 
   const shown = chosen ?? DEFAULT_HERO_TRADE;
@@ -32,15 +41,7 @@ export function HomeHero({ initialTradeId = null, asSection = false }: { initial
   return (
     <section className={styles.hero} id={asSection ? "resume-hero" : "top"} aria-labelledby="hero-title">
       <div className={styles.heroCopy}>
-        {asSection ? (
-          <Image
-            className={styles.sectionLogo}
-            src="/optimized/resume-builder-logo-header.webp"
-            alt="TRADE HUSTL3 Resume Builder logo"
-            width={500}
-            height={410}
-          />
-        ) : null}
+        {logo}
         <p className={styles.eyebrow}>RESUME BUILDER FOR THE SKILLED TRADES</p>
         <Heading id="hero-title" className={styles.headline}>
           Build {shown.article} <span className={styles.headlineTrade} data-hero-trade-word>{shown.word}</span> resume that looks ready for the job.

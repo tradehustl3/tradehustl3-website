@@ -133,7 +133,18 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
             <HubHero />
             <HubStages />
             <HubDivisions />
-            <HomeHero asSection />
+            <HomeHero
+              asSection
+              logo={
+                <Image
+                  className={fi.sectionLogo}
+                  src="/optimized/resume-builder-logo-header.webp"
+                  alt="TRADE HUSTL3 Resume Builder logo"
+                  width={500}
+                  height={410}
+                />
+              }
+            />
           </>
         )}
 
