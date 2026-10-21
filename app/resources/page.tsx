@@ -16,6 +16,7 @@ import {
 } from "./credential-library";
 import { LABOR_MARKET_FACTS, LABOR_MARKET_PERIOD, formatCount, formatPay } from "./labor-market";
 import { ResourceFooter, ResourceHeader } from "./resource-chrome";
+import { TradeCredentialBadge } from "./trade-credential-badge";
 import styles from "./resources.module.css";
 
 const PAGE_PATH = "/resources";
@@ -118,6 +119,7 @@ export default function ResourceCenterPage() {
                 data-destination={`/resume-examples#${family.slug}`}
                 data-item={family.slug}
               >
+                <TradeCredentialBadge tradeSlug={family.slug} />
                 <span className={styles.tradeName}>{family.name}</span>
                 <span className={styles.tradeDesc}>{family.description}</span>
                 <span className={styles.pills}>

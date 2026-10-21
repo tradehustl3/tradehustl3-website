@@ -64,6 +64,18 @@
 .pill { font-size: 13px; font-weight: 700; background: var(--cream); color: var(--navy); padding: 5px 10px; border-radius: 999px; }
 .pillDark { background: var(--navy); color: var(--gold); }
 
+/* Key-credential badge on trade cards: original artwork, not issuer logos. */
+.credBadge { display: flex; align-items: center; gap: 12px; min-height: 104px; box-sizing: border-box; padding: 12px 14px; border-radius: 10px; background: var(--navy); color: var(--cream); box-shadow: inset 0 0 0 2px var(--gold); position: relative; overflow: hidden; }
+.credBadge::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 6px; background: var(--gold); }
+.credBadge[data-kind="license"]::before { background: var(--red); }
+.credBadge[data-kind="training-card"]::before { background: var(--sky); }
+.credBadge[data-kind="qualification"]::before { background: #fff; }
+.credBadgeIcon { flex: none; display: grid; place-items: center; width: 48px; height: 48px; margin-left: 4px; border-radius: 50%; background: var(--navy-deep); color: var(--gold); box-shadow: inset 0 0 0 2px var(--navy-line); }
+.credBadgeText { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.credBadgeEyebrow { font-size: 11px; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; color: var(--gold); }
+.credBadgeName { font-family: var(--font-home-display), Impact, sans-serif; font-weight: 800; font-size: 19px; line-height: 1.05; text-transform: uppercase; overflow-wrap: break-word; }
+.credBadgeReq { font-size: 12px; font-weight: 600; color: var(--sky); }
+
 /* Credential badges */
 .badge { display: inline-block; font-size: 12px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; padding: 5px 9px; border-radius: 4px; }
 .badge-certification { background: var(--navy); color: var(--cream); }
