@@ -46,6 +46,8 @@ test("/resources renders the hub with trades, credentials, and sourced BLS data"
   assert.match(html, /<link rel="canonical" href="https:\/\/tradehustl3\.com\/resources"/);
   assert.match(html, /href="\/resume-examples#hvac-refrigeration"/);
   assert.match(html, /href="\/resume-examples#automotive-diesel-fleet-maintenance"/);
+  assert.equal((html.match(/role="img" aria-label="Key credential: /g) ?? []).length, 14, "one key-credential badge per trade");
+  assert.match(html, /aria-label="Key credential: EPA Section 608 Technician Certification \(Certification, Federal rule\)"/);
   assert.match(html, /587,000/);
   assert.match(html, /https:\/\/www\.bls\.gov\/ooh\/construction-and-extraction\//);
   assert.match(html, /should not be added together/);

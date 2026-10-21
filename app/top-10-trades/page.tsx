@@ -5,6 +5,7 @@ import { CtaAnalytics } from '../cta-analytics';
 import { ResourceForm } from '../resource-form';
 import { SITE_NAME, SITE_URL } from '../site';
 import styles from './page.module.css';
+import { BrandLockup } from '../brand-lockup';
 
 const PAGE_TITLE = 'Free Top 10 Trades Guide for 2026–2027 | TRADE HUSTL3';
 const PAGE_DESCRIPTION =
@@ -67,8 +68,7 @@ export default function TopTenTradesPage() {
 
       <header className={styles.header}>
         <Link className={styles.brand} href="/" aria-label="TRADE HUSTL3 home">
-          <Image src="/optimized/trade-hustl3-logo.webp" alt="TRADE HUSTL3 logo" width={58} height={58} priority />
-          <span>TRADE HUSTL<span>3</span></span>
+          <BrandLockup />
         </Link>
         <nav className={styles.nav} aria-label="Top 10 Trades page navigation">
           <Link href="/">Home</Link>

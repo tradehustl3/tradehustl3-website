@@ -667,6 +667,30 @@ export const CREDENTIAL_MYTHS: readonly CredentialMyth[] = [
   },
 ];
 
+/**
+ * The one credential each trade card features as its "key credential" image.
+ * It must be a library record mapped to that trade. "Key" is TRADE HUSTL3's
+ * editorial pick of the most common entry credential — the badge shows the
+ * record's own requirement label, so nothing is presented as required unless
+ * the record says a federal rule requires it.
+ */
+export const TRADE_KEY_CREDENTIALS: Record<TradeFamilySlug, { credentialSlug: string; badgeLabel: string }> = {
+  "hvac-refrigeration": { credentialSlug: "epa-608", badgeLabel: "EPA 608" },
+  "electrical-low-voltage": { credentialSlug: "state-trade-license", badgeLabel: "State electrical license" },
+  "plumbing-pipefitting": { credentialSlug: "state-trade-license", badgeLabel: "State plumbing license" },
+  "construction-carpentry": { credentialSlug: "osha-outreach-10-30", badgeLabel: "OSHA 10 / 30" },
+  "facilities-property-apartment-maintenance": { credentialSlug: "epa-608", badgeLabel: "EPA 608" },
+  "welding-fabrication-machining": { credentialSlug: "aws-certified-welder", badgeLabel: "AWS Certified Welder" },
+  "general-labor-trade-helpers": { credentialSlug: "osha-outreach-10-30", badgeLabel: "OSHA 10" },
+  "commercial-driving-transportation": { credentialSlug: "cdl", badgeLabel: "CDL Class A / B" },
+  "warehouse-logistics-material-handling": { credentialSlug: "forklift-operator", badgeLabel: "Forklift operator" },
+  "industrial-warehouse-maintenance": { credentialSlug: "lockout-tagout", badgeLabel: "Lockout / Tagout" },
+  "landscaping-grounds-maintenance": { credentialSlug: "isa-certified-arborist", badgeLabel: "ISA Certified Arborist" },
+  "roadwork-paving-concrete-heavy-equipment": { credentialSlug: "cdl", badgeLabel: "CDL Class A / B" },
+  "roofing-exterior-trades": { credentialSlug: "osha-outreach-10-30", badgeLabel: "OSHA 10 / 30" },
+  "automotive-diesel-fleet-maintenance": { credentialSlug: "ase", badgeLabel: "ASE Certified" },
+};
+
 export function credentialsForTrade(slug: TradeFamilySlug): readonly CredentialRecord[] {
   return CREDENTIAL_LIBRARY.filter((credential) => credential.tradeSlugs.includes(slug));
 }

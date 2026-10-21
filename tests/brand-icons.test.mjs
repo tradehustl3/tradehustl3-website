@@ -140,10 +140,12 @@ test("structured-data logo points at the 512px WebP with matching dimensions", a
   });
 });
 
-test("header logos on book and campaign pages use the optimized WebP", async () => {
-  for (const pathname of ["/book", "/book/sample", "/top-10-trades"]) {
+test("every branded page header carries the TH3 logo and ENTER • EARN • ELEVATE", async () => {
+  for (const pathname of ["/", "/book", "/book/sample", "/top-10-trades", "/resume-examples", "/resources", "/resources/certifications", "/privacy", "/terms"]) {
     const html = await renderPath(pathname);
-    assert.match(html, /optimized\/trade-hustl3-logo\.webp/, `${pathname} optimized logo`);
+    const header = html.slice(html.indexOf("<header"), html.indexOf("</header>"));
+    assert.match(header, /optimized\/th3-logo-header\.webp/, `${pathname} TH3 logo`);
+    assert.match(header, /ENTER • EARN • ELEVATE/, `${pathname} brand message`);
     assert.doesNotMatch(html, /trade-hustl3-logo\.png/, `${pathname} full-size logo PNG`);
   }
 });

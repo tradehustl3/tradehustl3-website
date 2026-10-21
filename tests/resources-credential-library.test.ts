@@ -108,3 +108,15 @@ test("BLS facts cite bls.gov Occupational Outlook Handbook pages", async () => {
     assert.ok(fact.annualOpenings > 0);
   }
 });
+
+test("every trade family has exactly one key credential that the library maps to that trade", async () => {
+  const { TRADE_KEY_CREDENTIALS } = await import("../app/resources/credential-library");
+  assert.deepEqual(Object.keys(TRADE_KEY_CREDENTIALS).sort(), [...FAMILY_SLUGS].sort());
+  for (const [trade, key] of Object.entries(TRADE_KEY_CREDENTIALS)) {
+    const record = credentialBySlug(key.credentialSlug);
+    assert.ok(record, `${trade}: unknown credential ${key.credentialSlug}`);
+    assert.ok(record.tradeSlugs.includes(trade), `${trade}: ${key.credentialSlug} is not mapped to this trade`);
+    assert.ok(key.badgeLabel.length > 0 && key.badgeLabel.length <= 26, `${trade}: badge label length`);
+    if (record.kind !== "certification") assert.doesNotMatch(key.badgeLabel, /certif/i, `${trade}: non-certification badge says certified`);
+  }
+});
