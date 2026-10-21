@@ -58,12 +58,13 @@ test("a ?trade= landing server-renders that trade, so nothing swaps after hydrat
   assert.match(other.match(/<a\b[^>]*data-hero-cta[^>]*>/)?.[0] ?? "", /href="#resume-start"/);
 });
 
-test("homepage header carries three links and one CTA", async () => {
+test("homepage header carries four links and one CTA", async () => {
   const html = await renderHome();
   const header = between(html, "<header", "</header>");
   assert.match(header, /optimized\/resume-builder-logo-header\.webp/);
   assert.match(header, /href="#trades"[^>]*>Trade examples</);
   assert.match(header, /href="#how"[^>]*>How it works</);
+  assert.match(header, /href="\/resources"[^>]*>Resources</);
   assert.match(header, /href="\/book"[^>]*>The Book</);
   assert.equal((header.match(/Build my free preview/g) ?? []).length, 1);
   assert.match(header, /data-location="sticky_header"/);

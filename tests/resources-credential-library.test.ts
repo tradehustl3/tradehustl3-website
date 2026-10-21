@@ -77,3 +77,34 @@ test("pending credentials are not also published in the library", () => {
   const published = new Set(CREDENTIAL_LIBRARY.map((credential) => credential.name.toLowerCase()));
   for (const pending of PENDING_CREDENTIALS) assert.ok(!published.has(pending.name.toLowerCase()), pending.name);
 });
+
+test("the reviewer and every myth are backed by library records", async () => {
+  const { CREDENTIAL_MYTHS, CREDENTIAL_REVIEW } = await import("../app/resources/credential-library");
+  assert.equal(CREDENTIAL_REVIEW.reviewer, "Zachary Ellis");
+  assert.ok(CREDENTIAL_MYTHS.length >= 3);
+  for (const myth of CREDENTIAL_MYTHS) assert.ok(credentialBySlug(myth.credentialSlug), `${myth.id} -> ${myth.credentialSlug}`);
+});
+
+test("homepage Know Your Trade data: seven picks, at most four credentials, general credentials last", async () => {
+  const { knowYourTradeTrades, knowYourTradeMyths } = await import("../app/home-know-your-trade-data");
+  const trades = knowYourTradeTrades();
+  assert.deepEqual(trades.map((trade) => trade.label), ["HVAC", "Electrical", "Plumbing", "Facilities", "Welding", "Driving", "Construction"]);
+  for (const trade of trades) {
+    assert.ok(trade.credentials.length >= 2 && trade.credentials.length <= 4, trade.slug);
+    const generalIndex = trade.credentials.findIndex((credential) => credential.slug === "osha-outreach-10-30");
+    const specific = trade.credentials.filter((credential) => !["osha-outreach-10-30", "state-trade-license"].includes(credential.slug));
+    if (generalIndex >= 0 && specific.length > 0) assert.ok(generalIndex >= specific.length, `${trade.slug}: OSHA listed before trade-specific credentials`);
+    assert.ok(trade.builderHref.startsWith("/"), trade.slug);
+  }
+  assert.equal(trades[0].credentials[0].slug, "epa-608");
+  for (const myth of knowYourTradeMyths()) assert.match(myth.href, /^\/resources\/certifications#[a-z0-9-]+$/);
+});
+
+test("BLS facts cite bls.gov Occupational Outlook Handbook pages", async () => {
+  const { LABOR_MARKET_FACTS } = await import("../app/resources/labor-market");
+  assert.equal(LABOR_MARKET_FACTS.length, 4);
+  for (const fact of LABOR_MARKET_FACTS) {
+    assert.match(fact.sourceUrl, /^https:\/\/www\.bls\.gov\/ooh\//);
+    assert.ok(fact.annualOpenings > 0);
+  }
+});

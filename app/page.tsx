@@ -5,6 +5,8 @@ import { CustomerReviews } from './customer-reviews';
 import { homeBodyFont, homeDisplayFont } from './home-fonts';
 import { HomeHero } from './home-hero';
 import { JobsiteTruths } from './jobsite-truths';
+import { KnowYourTrade } from './home-know-your-trade';
+import { knowYourTradeMyths, knowYourTradeTrades } from './home-know-your-trade-data';
 import { heroTradeFromParam } from './home-hero-trades';
 import { AccountStart } from './resume-builder/account-start';
 import { ResumeBuilderStartAnalytics } from './resume-builder/funnel-analytics';
@@ -90,6 +92,7 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
             <nav className={fi.nav} aria-label="Primary navigation">
               <a className={fi.navLink} href="#trades">Trade examples</a>
               <a className={fi.navLink} href="#how">How it works</a>
+              <Link className={fi.navLink} href="/resources">Resources</Link>
               <Link className={fi.navLink} href="/book">The Book</Link>
               <AnalyticsLink href="#resume-start" location="sticky_header" className={fi.headerCta}>Build my free preview</AnalyticsLink>
             </nav>
@@ -217,7 +220,7 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
             <p><strong>Hiring Manager</strong><br />ABC Property Management<br />Atlanta, GA</p>
             <p>Dear Hiring Manager,</p>
             <p>I am applying for the HVAC Maintenance Technician position with ABC Property Management. I bring more than 10 years of hands-on experience supporting commercial and multifamily properties through preventive maintenance, HVAC troubleshooting, electrical diagnostics, work-order execution, and emergency response.</p>
-            <p>My background includes diagnosing and repairing split systems, working with 24V controls, motors, contactors, capacitors, and control boards, and documenting completed work clearly. I hold EPA 608 Universal and OSHA 10 certifications and understand the importance of safety, communication, and keeping occupied properties operating reliably.</p>
+            <p>My background includes diagnosing and repairing split systems, working with 24V controls, motors, contactors, capacitors, and control boards, and documenting completed work clearly. I hold EPA 608 Universal certification, have completed OSHA 10-Hour training, and understand the importance of safety, communication, and keeping occupied properties operating reliably.</p>
             <p>I would welcome the opportunity to bring that field experience and dependable approach to your maintenance team. Thank you for your time and consideration.</p>
             <p>Sincerely,<br /><strong>Jordan Taylor</strong></p>
           </div>
@@ -234,6 +237,10 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
         </div>
         <div className={styles.proofGrid}>{proofPoints.map(([title, copy], index) => <article key={title}><span>0{index + 1}</span><h3>{title}</h3><p>{copy}</p></article>)}</div>
       </section>
+
+      <div className={`${homeDisplayFont.variable} ${homeBodyFont.variable}`}>
+        <KnowYourTrade trades={knowYourTradeTrades()} myths={knowYourTradeMyths()} />
+      </div>
 
       <section className={styles.guideSignup} aria-labelledby="guide-title">
         <div>
@@ -256,6 +263,7 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
         <p>BUILT BY HUSTL3. BACKED BY TRADE.<br />TRADE HUSTL3 LLC · Atlanta, Georgia · <a href="mailto:support@tradehustl3.com">support@tradehustl3.com</a></p>
         <nav aria-label="Footer links">
           <Link href="#resume-start">Resume Builder</Link>
+          <Link href="/resources">Resource Center</Link>
           <Link href="/resume-examples">Trade Career Catalog</Link>
           <Link href="/top-10-trades">Top 10 Trades</Link>
           <Link href="/book">The Book</Link>

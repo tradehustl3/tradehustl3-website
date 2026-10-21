@@ -593,6 +593,80 @@ export const PENDING_CREDENTIALS: readonly { name: string; reason: string }[] = 
   { name: "Manufacturer and NRCA roofing training", reason: "Program-specific; not yet checked." },
 ];
 
+/**
+ * Who checked the library as a tradesperson, in addition to the source check.
+ * Approved by Zachary Ellis on 2026-10-21 to appear on credential guides.
+ */
+export const CREDENTIAL_REVIEW = {
+  reviewer: "Zachary Ellis",
+  role: "Founder of TRADE HUSTL3 · HVAC and facilities maintenance professional",
+  reviewedOn: "2026-10-21",
+} as const;
+
+export const CREDENTIAL_KIND_LABELS: Record<CredentialKind, string> = {
+  certification: "Certification",
+  license: "License",
+  "training-card": "Training card",
+  qualification: "Qualification",
+};
+
+export const CREDENTIAL_KIND_DESCRIPTIONS: Record<CredentialKind, string> = {
+  certification: "Earned by passing an exam from the issuer or an approved body.",
+  license: "Issued by a state or agency. Rules vary by location.",
+  "training-card": "Proof you completed a course. Not a certification.",
+  qualification: "Employer, medical, or security authorization.",
+};
+
+export const CREDENTIAL_REQUIREMENT_LABELS: Record<CredentialRequirement, string> = {
+  federal: "Federal rule",
+  "state-or-local": "State / local",
+  "employer-preferred": "Employer-preferred",
+};
+
+export type CredentialMyth = {
+  id: string;
+  claim: string;
+  isTrue: boolean;
+  fact: string;
+  /** Library record whose sources back this fact. */
+  credentialSlug: string;
+};
+
+/**
+ * True/false checks for the homepage "Jobsite Myth Check". Every fact must be
+ * stated in the linked credential record (tests enforce the link exists).
+ */
+export const CREDENTIAL_MYTHS: readonly CredentialMyth[] = [
+  {
+    id: "osha-10-certification",
+    claim: "OSHA 10 is a certification.",
+    isTrue: false,
+    fact: "It's a course-completion card from OSHA's Outreach program. OSHA says the card is not a certification or license — on a resume, write “OSHA 10-Hour Outreach Training.”",
+    credentialSlug: "osha-outreach-10-30",
+  },
+  {
+    id: "epa-608-expires",
+    claim: "EPA 608 certification expires.",
+    isTrue: false,
+    fact: "Section 608 certification does not expire. Lost your card? Contact the organization named on it.",
+    credentialSlug: "epa-608",
+  },
+  {
+    id: "forklift-license",
+    claim: "You can get a government forklift license.",
+    isTrue: false,
+    fact: "OSHA puts it on your employer: they train you, evaluate you on the job, and certify it — and re-evaluate you at least every three years.",
+    credentialSlug: "forklift-operator",
+  },
+  {
+    id: "dot-medical-24-months",
+    claim: "A DOT medical card can be good for up to 24 months.",
+    isTrue: true,
+    fact: "Up to 24 months — and the examiner can issue it for less, for example to monitor a condition.",
+    credentialSlug: "dot-medical-card",
+  },
+];
+
 export function credentialsForTrade(slug: TradeFamilySlug): readonly CredentialRecord[] {
   return CREDENTIAL_LIBRARY.filter((credential) => credential.tradeSlugs.includes(slug));
 }
