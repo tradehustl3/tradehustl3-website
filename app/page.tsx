@@ -1,9 +1,12 @@
+import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
 import { CtaAnalytics } from './cta-analytics';
 import { CustomerReviews } from './customer-reviews';
 import { homeBodyFont, homeDisplayFont } from './home-fonts';
 import { HomeHero } from './home-hero';
+import { HubDivisions, HubHero, HubOutlook } from './home-hub';
+import { HubStages } from './home-hub-stages';
 import { JobsiteTruths } from './jobsite-truths';
 import { KnowYourTrade } from './home-know-your-trade';
 import { knowYourTradeMyths, knowYourTradeTrades } from './home-know-your-trade-data';
@@ -15,6 +18,27 @@ import { CATALOG_METRICS } from './resume-examples/catalog-metrics';
 import './resume-builder/rb-foundation.css';
 import styles from './home-traffic-director.module.css';
 import fi from './home-first-impression.module.css';
+import { SITE_NAME } from './site';
+
+const HOME_TITLE = 'Skilled-Trades Career Hub and Resume Builder | TRADE HUSTL3';
+const HOME_DESCRIPTION =
+  'Free skilled-trades resources: 14 trade families, sourced certification and license guides, and job-outlook data. Plus a trade resume builder with a free preview and a $9.99 one-time unlock.';
+
+export const metadata: Metadata = {
+  title: { absolute: HOME_TITLE },
+  description: HOME_DESCRIPTION,
+  alternates: { canonical: '/' },
+  openGraph: {
+    title: HOME_TITLE,
+    description: HOME_DESCRIPTION,
+    url: '/',
+    siteName: SITE_NAME,
+    locale: 'en_US',
+    type: 'website',
+    images: [{ url: '/optimized/og-v2.webp', width: 1200, height: 630, alt: HOME_TITLE }],
+  },
+  twitter: { card: 'summary_large_image', title: HOME_TITLE, description: HOME_DESCRIPTION, images: ['/optimized/og-v2.webp'] },
+};
 
 const tradeChips = [
   ['HVAC & Refrigeration', '/resume-builder/hvac'],
@@ -71,6 +95,9 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
   // hero never swaps its headline after hydration (and works without JavaScript).
   const { trade } = await searchParams;
   const initialTrade = heroTradeFromParam(typeof trade === 'string' ? trade : null);
+  // Campaign and trade-landing visits (?trade=) keep the resume-first layout;
+  // everyone else gets the hub homepage with the Resume Builder below it.
+  const isCampaignVisit = initialTrade !== null;
 
   return (
     <main className={styles.page}>
@@ -79,19 +106,20 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
       <div className={`${fi.top} ${homeDisplayFont.variable} ${homeBodyFont.variable}`}>
         <header className={fi.header}>
           <div className={fi.headerInner}>
-            <Link className={fi.brand} href="#top" aria-label="TRADE HUSTL3 Resume Builder home">
+            <Link className={fi.brand} href="#top" aria-label="TRADE HUSTL3 home">
               <Image
-                className={fi.brandLogo}
-                src="/optimized/resume-builder-logo-header.webp"
-                alt="TRADE HUSTL3 Resume Builder logo"
-                width={500}
-                height={410}
+                className={fi.brandMark}
+                src="/optimized/trade-hustl3-logo.webp"
+                alt="TRADE HUSTL3 logo"
+                width={96}
+                height={96}
                 priority
               />
+              <span className={fi.brandWord}>TRADE HUSTL3</span>
             </Link>
             <nav className={fi.nav} aria-label="Primary navigation">
-              <a className={fi.navLink} href="#trades">Trade examples</a>
-              <a className={fi.navLink} href="#how">How it works</a>
+              <Link className={fi.navLink} href="/resume-examples">Explore Trades</Link>
+              <Link className={fi.navLink} href="/resources/certifications">Certifications</Link>
               <Link className={fi.navLink} href="/resources">Resources</Link>
               <Link className={fi.navLink} href="/book">The Book</Link>
               <AnalyticsLink href="#resume-start" location="sticky_header" className={fi.headerCta}>Build my free preview</AnalyticsLink>
@@ -99,7 +127,16 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
           </div>
         </header>
 
-        <HomeHero initialTradeId={initialTrade?.id ?? null} />
+        {isCampaignVisit ? (
+          <HomeHero initialTradeId={initialTrade.id} />
+        ) : (
+          <>
+            <HubHero />
+            <HubStages />
+            <HubDivisions />
+            <HomeHero asSection />
+          </>
+        )}
 
         <section className={`${fi.band} ${fi.blueprint}`} aria-label="What you can count on">
           <ul className={fi.bandInner}>
@@ -240,6 +277,7 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
 
       <div className={`${homeDisplayFont.variable} ${homeBodyFont.variable}`}>
         <KnowYourTrade trades={knowYourTradeTrades()} myths={knowYourTradeMyths()} />
+        <HubOutlook />
       </div>
 
       <section className={styles.guideSignup} aria-labelledby="guide-title">
