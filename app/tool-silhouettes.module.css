@@ -1,0 +1,54 @@
+/* Tool-silhouette accents (original TRADE HUSTL3 art). */
+.rail {
+  position: relative;
+  overflow: hidden;
+  background: #02142b;
+  border-block: 3px solid #f1c357;
+  color: #f1c357;
+}
+.rail[data-tone="red"] {
+  background: #d71920;
+  border-color: #02142b;
+  color: #02142b;
+}
+.railTrack {
+  display: flex;
+  align-items: center;
+  gap: 36px;
+  width: max-content;
+  padding: 14px 24px;
+}
+.railTool { flex: none; }
+.railTool:nth-child(even) { transform: rotate(-12deg); opacity: 0.85; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .railTrack { animation: rail-scroll 60s linear infinite; }
+}
+@keyframes rail-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+.heroArt {
+  position: absolute;
+  right: max(24px, calc((100% - 1200px) / 2));
+  top: 50%;
+  width: 380px;
+  height: 380px;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+.heroGlow {
+  position: absolute;
+  inset: 40px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(241, 195, 87, 0.22), rgba(241, 195, 87, 0) 68%);
+}
+.heroWrench, .heroHammer, .heroGauge { position: absolute; }
+.heroWrench { left: 40px; top: 40px; color: #f1c357; transform: rotate(-4deg); filter: drop-shadow(0 18px 30px rgba(0, 0, 0, 0.45)); }
+.heroHammer { left: 40px; top: 40px; color: #f3ecdf; transform: rotate(4deg); filter: drop-shadow(0 18px 30px rgba(0, 0, 0, 0.45)); }
+.heroGauge { right: 6px; bottom: 18px; color: #d71920; filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.4)); }
+
+@media (max-width: 1080px) {
+  .heroArt { display: none; }
+}

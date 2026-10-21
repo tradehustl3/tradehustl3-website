@@ -17,6 +17,7 @@ import {
 import { LABOR_MARKET_FACTS, LABOR_MARKET_PERIOD, formatCount, formatPay } from "./labor-market";
 import { ResourceFooter, ResourceHeader } from "./resource-chrome";
 import { TradeCredentialBadge } from "./trade-credential-badge";
+import { ToolRail } from "../tool-silhouettes";
 import styles from "./resources.module.css";
 
 const PAGE_PATH = "/resources";
@@ -98,6 +99,7 @@ export default function ResourceCenterPage() {
           </dl>
         </div>
       </section>
+      <ToolRail />
 
       <section className={styles.section} aria-labelledby="trades-title">
         <div className={styles.sectionHead}>

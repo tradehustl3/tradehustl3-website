@@ -9,7 +9,8 @@
   --sky: #d8e6f1;
   --ink-soft: #3d4f60;
   --line: #d8d0bf;
-  background: var(--navy);
+  background-color: var(--navy);
+  background-image: url(/brand/tool-pattern-gold.svg); background-size: 360px 360px; background-repeat: repeat;
   color: var(--cream);
   font-family: var(--font-home-body), Arial, sans-serif;
 }

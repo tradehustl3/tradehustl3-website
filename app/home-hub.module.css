@@ -13,8 +13,9 @@
 }
 .hero :where(a, button):focus-visible, .section :where(a, button):focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
 
-.hero { background: var(--navy); color: var(--cream); }
-.heroInner { max-width: 1200px; margin: 0 auto; padding: 72px 24px 56px; display: flex; flex-direction: column; gap: 22px; }
+.hero { position: relative; overflow: hidden; background-color: var(--navy); background-image: url(/brand/tool-pattern-gold.svg); background-size: 360px 360px; background-repeat: repeat; color: var(--cream); }
+.heroInner { position: relative; z-index: 1; max-width: 1200px; margin: 0 auto; padding: 72px 24px 56px; display: flex; flex-direction: column; gap: 22px; }
+@media (min-width: 1081px) { .heroInner .h1 { max-width: 760px; } .heroInner .lead { max-width: 680px; } }
 .kicker { margin: 0; font-family: var(--font-home-display), Impact, sans-serif; font-weight: 700; font-size: 16px; letter-spacing: 3px; color: var(--gold); }
 .section .kicker { color: var(--red); }
 .h1 { margin: 0; letter-spacing: 0; overflow-wrap: break-word; font-family: var(--font-home-display), Impact, sans-serif; font-weight: 800; font-size: clamp(40px, 7.5vw, 80px); line-height: 0.93; text-transform: uppercase; max-width: 1000px; }

@@ -31,7 +31,7 @@
 .navCta:hover { background: #b3151b; }
 
 /* Hero */
-.hero { background: var(--navy); color: var(--cream); }
+.hero { background-color: var(--navy); background-image: url(/brand/tool-pattern-gold.svg); background-size: 360px 360px; background-repeat: repeat; color: var(--cream); }
 .heroInner { max-width: 1200px; margin: 0 auto; padding: 56px 24px 48px; display: flex; flex-direction: column; gap: 18px; }
 .breadcrumb { font-size: 15px; color: var(--sky); }
 .breadcrumb a { color: var(--sky); }
