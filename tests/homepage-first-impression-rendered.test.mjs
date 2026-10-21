@@ -62,7 +62,7 @@ test("homepage header leads with the TRADE HUSTL3 brand, four hub links, and one
   const html = await renderHome();
   const header = between(html, "<header", "</header>");
   assert.match(header, /aria-label="TRADE HUSTL3 home"/);
-  assert.match(header, /optimized\/trade-hustl3-logo\.webp/);
+  assert.match(header, /optimized\/th3-logo-header\.webp/);
   assert.match(header, /href="\/resume-examples"[^>]*>Explore Trades</);
   assert.match(header, /href="\/resources\/certifications"[^>]*>Certifications</);
   assert.match(header, /href="\/resources"[^>]*>Resources</);

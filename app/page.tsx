@@ -109,13 +109,12 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
             <Link className={fi.brand} href="#top" aria-label="TRADE HUSTL3 home">
               <Image
                 className={fi.brandMark}
-                src="/optimized/trade-hustl3-logo.webp"
+                src="/optimized/th3-logo-header.webp"
                 alt="TRADE HUSTL3 logo"
-                width={96}
-                height={96}
+                width={248}
+                height={160}
                 priority
               />
-              <span className={fi.brandWord}>TRADE HUSTL3</span>
             </Link>
             <nav className={fi.nav} aria-label="Primary navigation">
               <Link className={fi.navLink} href="/resume-examples">Explore Trades</Link>
@@ -297,7 +296,7 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
       </section>
 
       <footer className={styles.footer} data-site-footer>
-        <div className={styles.footerBrand}><Image src="/optimized/trade-hustl3-logo.webp" alt="TRADE HUSTL3 logo" width={44} height={44} /><strong>TRADE HUSTL3 LLC</strong></div>
+        <div className={styles.footerBrand}><Image className={styles.footerMark} src="/optimized/th3-logo-header.webp" alt="TRADE HUSTL3 logo" width={248} height={160} /><strong>TRADE HUSTL3 LLC</strong></div>
         <p>BUILT BY HUSTL3. BACKED BY TRADE.<br />TRADE HUSTL3 LLC · Atlanta, Georgia · <a href="mailto:support@tradehustl3.com">support@tradehustl3.com</a></p>
         <nav aria-label="Footer links">
           <Link href="#resume-start">Resume Builder</Link>

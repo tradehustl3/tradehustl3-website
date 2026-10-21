@@ -401,3 +401,9 @@
   .tradeCatalogLink{width:100%;justify-content:center}
   .catalogProof{padding:58px 18px}.catalogProofGrid{grid-template-columns:1fr}.catalogProofGrid>div{min-height:155px}
 }
+
+.footerMark {
+  width: auto;
+  height: 52px;
+  border-radius: 0 !important;
+}

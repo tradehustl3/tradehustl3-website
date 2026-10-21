@@ -22,7 +22,7 @@
 .header { background: var(--navy-deep); border-bottom: 3px solid var(--red); }
 .headerInner { max-width: 1200px; margin: 0 auto; padding: 10px 24px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
 .brand { display: flex; align-items: center; gap: 10px; color: var(--cream); text-decoration: none; font-family: var(--font-home-display), Impact, sans-serif; font-weight: 800; font-size: 24px; letter-spacing: 1px; }
-.brand img { width: 40px; height: 40px; }
+.brandMark { width: auto; height: 60px; }
 .nav { display: flex; flex-wrap: wrap; align-items: center; gap: 2px; }
 .navLink { color: var(--sky); text-decoration: none; font-weight: 600; padding: 12px 10px; }
 .navLink:hover { color: var(--gold); }

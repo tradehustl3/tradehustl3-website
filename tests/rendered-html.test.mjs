@@ -84,7 +84,7 @@ test("server-renders the corrected TRADE HUSTL3 brand and metadata", async () =>
   assert.doesNotMatch(html, /"@type":"Book"/i);
   assert.match(html, /aria-label="TRADE HUSTL3 home"/i);
   assert.equal(html.toUpperCase().includes("TRA" + "D3"), false);
-  assert.match(html, /optimized\/trade-hustl3-logo\.webp/i);
+  assert.match(html, /optimized\/th3-logo-header\.webp/i);
   assert.match(html, /favicon\.svg/i);
   assert.match(html, /alt="TRADE HUSTL3 logo"/i);
   assert.match(html, /BUILT BY HUSTL3\. BACKED BY TRADE\./);

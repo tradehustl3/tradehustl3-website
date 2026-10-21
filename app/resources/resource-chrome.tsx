@@ -10,8 +10,7 @@ export function ResourceHeader({ current }: { current: Current }) {
     <header className={styles.header}>
       <div className={styles.headerInner}>
         <Link className={styles.brand} href="/" aria-label="TRADE HUSTL3 home">
-          <Image src="/optimized/trade-hustl3-logo.webp" alt="" width={40} height={40} />
-          TRADE HUSTL3
+          <Image className={styles.brandMark} src="/optimized/th3-logo-header.webp" alt="TRADE HUSTL3 logo" width={248} height={160} priority />
         </Link>
         <nav className={styles.nav} aria-label="Resource Center navigation">
           <Link className={styles.navLink} href="/resources" aria-current={current === "resources" ? "page" : undefined}>Resource Center</Link>

@@ -21,6 +21,7 @@ const ICONS = {
   "optimized/trade-hustl3-logo-512.webp": { maxBytes: 160 * 1024, size: 512 },
   "optimized/trade-hustl3-logo.webp": { maxBytes: 16 * 1024, size: 96 },
   "optimized/resume-builder-logo-512.webp": { maxBytes: 64 * 1024, size: 512 },
+  "optimized/th3-logo-header.webp": { maxBytes: 40 * 1024 },
   "favicon.svg": { maxBytes: 4 * 1024 },
 };
 
