@@ -199,8 +199,11 @@ for (const page of PAGES) {
       assert.match(html, new RegExp(`class="[^"]*\\b${cls}\\b`), `${page.slug} missing ${cls}`);
     }
 
-    // Approved TRADE HUSTL3 Resume Builder logo only — never the standalone mark.
-    assert.match(html, /\/optimized\/resume-builder-logo-header\.webp/, `${page.slug} logo asset`);
+    // TH3 brand lockup with the Resume Builder product label (approved Oct 21 2026).
+    const header = html.slice(html.indexOf('<header class="rb-header'), html.indexOf("</header>"));
+    assert.match(header, /\/optimized\/th3-logo-header\.webp/, `${page.slug} TH3 logo`);
+    assert.match(header, /ENTER • EARN • ELEVATE/, `${page.slug} brand message`);
+    assert.match(header, /class="rb-product-label">Resume Builder</, `${page.slug} product label`);
     assert.doesNotMatch(html, /src="[^"]*\/trade-hustl3-logo\.png/, `${page.slug} standalone logo leaked`);
 
     // No unsupported guarantees; example bullets clearly labelled.
@@ -308,7 +311,8 @@ test("regression: trade SEO pages keep the shared Resume Builder header", async 
   const res = await renderPath(p);
   assert.equal(res.status, 200, `${p} status`);
   const html = await res.text();
-  assert.match(html, /\/optimized\/resume-builder-logo-header\.webp/, `${p} approved logo`);
+  assert.match(html, /\/optimized\/th3-logo-header\.webp/, `${p} TH3 logo`);
+  assert.match(html, /class="rb-product-label">Resume Builder</, `${p} product label`);
   assert.doesNotMatch(html, /src="[^"]*\/trade-hustl3-logo\.png/, `${p} standalone logo leaked`);
 });
 
