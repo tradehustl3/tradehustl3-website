@@ -591,7 +591,6 @@ export const PENDING_CREDENTIALS: readonly { name: string; reason: string }[] = 
   { name: "Scaffold, aerial lift, fall protection, silica, trenching competent person, crane signalperson", reason: "OSHA training and designation rules; each standard needs checking." },
   { name: "Flagger / traffic control", reason: "Set by state DOTs." },
   { name: "Manufacturer and NRCA roofing training", reason: "Program-specific; not yet checked." },
-  { name: "DPA", reason: "Unidentified. Likely means EPA (as in EPA 608), which is covered." },
 ];
 
 export function credentialsForTrade(slug: TradeFamilySlug): readonly CredentialRecord[] {
