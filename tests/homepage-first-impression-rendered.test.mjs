@@ -52,10 +52,12 @@ test("a ?trade= landing server-renders that trade, so nothing swaps after hydrat
   assert.match(html, /<button[^>]*aria-pressed="true"[^>]*data-item="plumbing"/);
   assert.match(html, /data-example-trade="plumbing" data-active="true"/);
 
-  // A trade without a hero chip keeps the default hero; the intake still reads the URL.
+  // A trade without a hero chip names that trade and keeps it in the CTA
+  // (Oct 21 audit): it no longer falls back to the HVAC headline and a bare #resume-start.
   const other = await renderHome("/?trade=general-labor");
-  assert.match(other, /Build an <span[^>]*>HVAC tech<\/span> resume/);
-  assert.match(other.match(/<a\b[^>]*data-hero-cta[^>]*>/)?.[0] ?? "", /href="#resume-start"/);
+  assert.doesNotMatch(other, /Build an <span[^>]*>HVAC tech<\/span> resume/);
+  assert.match(other, /Build a <span[^>]*>general labor<\/span> resume/);
+  assert.match(other.match(/<a\b[^>]*data-hero-cta[^>]*>/)?.[0] ?? "", /href="\/\?trade=general-labor#resume-start"/);
 });
 
 test("homepage header leads with the TRADE HUSTL3 brand, four hub links, and one CTA", async () => {
