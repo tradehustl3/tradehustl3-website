@@ -3,6 +3,7 @@ import { TRADE_LANDING_PAGES, tradeLandingPath } from "./resume-builder/trade-la
 import { SITE_URL } from "./site";
 
 const CONTENT_REFRESHED_AT = new Date("2026-09-28T00:00:00.000Z");
+const RESOURCE_CENTER_REFRESHED_AT = new Date("2026-10-21T00:00:00.000Z");
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const publicPages: MetadataRoute.Sitemap = [
@@ -34,6 +35,18 @@ export default function sitemap(): MetadataRoute.Sitemap {
       url: `${SITE_URL}/resume-examples`,
       lastModified: CONTENT_REFRESHED_AT,
       changeFrequency: "daily",
+      priority: 0.9,
+    },
+    {
+      url: `${SITE_URL}/resources`,
+      lastModified: RESOURCE_CENTER_REFRESHED_AT,
+      changeFrequency: "weekly",
+      priority: 0.9,
+    },
+    {
+      url: `${SITE_URL}/resources/certifications`,
+      lastModified: RESOURCE_CENTER_REFRESHED_AT,
+      changeFrequency: "weekly",
       priority: 0.9,
     },
     {

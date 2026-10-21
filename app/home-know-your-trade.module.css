@@ -1,0 +1,78 @@
+/* Homepage "Know Your Trade" section (approved Resource Center design, Oct 2026). */
+.section {
+  --navy: #0b1f33;
+  --navy-deep: #02142b;
+  --navy-line: #174f7e;
+  --cream: #f3ecdf;
+  --red: #d71920;
+  --gold: #f1c357;
+  --sky: #d8e6f1;
+  --ink-soft: #3d4f60;
+  --line: #d8d0bf;
+  background: var(--navy);
+  color: var(--cream);
+  font-family: var(--font-home-body), Arial, sans-serif;
+}
+.section :where(a, button):focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+.inner { max-width: 1200px; margin: 0 auto; padding: 72px 24px; display: flex; flex-direction: column; gap: 28px; }
+.head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 18px; }
+.head > div { display: flex; flex-direction: column; gap: 10px; max-width: 700px; }
+.kicker { margin: 0; font-family: var(--font-home-display), Impact, sans-serif; font-weight: 700; font-size: 16px; letter-spacing: 3px; color: var(--gold); }
+.title { margin: 0; font-family: var(--font-home-display), Impact, sans-serif; font-weight: 800; font-size: clamp(38px, 6vw, 60px); line-height: 0.95; text-transform: uppercase; }
+.title span { color: var(--gold); }
+.lead { margin: 0; font-size: clamp(16px, 2vw, 19px); line-height: 1.5; color: var(--sky); }
+.headLink { color: var(--cream); font-weight: 700; padding: 12px 0; }
+.headLink:hover { color: var(--gold); }
+
+.picker { display: flex; flex-wrap: wrap; gap: 10px; }
+.chip { min-height: 48px; padding: 0 20px; font: inherit; font-size: 16px; font-weight: 700; border-radius: 999px; cursor: pointer; background: transparent; color: var(--cream); border: 2px solid #53687a; }
+.chip:hover { border-color: var(--gold); }
+.chip[aria-pressed="true"] { background: var(--gold); color: var(--navy-deep); border-color: var(--gold); }
+.chipLink { display: inline-flex; align-items: center; min-height: 48px; padding: 0 18px; border-radius: 999px; border: 2px dashed #8ec0f0; color: var(--sky); text-decoration: none; font-weight: 600; }
+
+.grid { display: flex; flex-wrap: wrap; gap: 24px; align-items: stretch; }
+.panel { flex: 999 1 560px; min-width: 0; background: var(--cream); color: var(--navy); border-radius: 14px; padding: 28px; display: flex; flex-direction: column; gap: 18px; }
+.panelHead { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 10px; }
+.panelHead h3 { margin: 0; font-family: var(--font-home-display), Impact, sans-serif; font-weight: 800; font-size: 30px; text-transform: uppercase; line-height: 1.05; }
+.panelHead span { font-size: 14px; color: #53687a; }
+.creds { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; }
+.cred { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 18px; display: flex; flex-direction: column; gap: 8px; }
+.cred strong { font-family: var(--font-home-display), Impact, sans-serif; font-size: 22px; line-height: 1.05; text-transform: uppercase; }
+.cred a { margin-top: auto; padding-top: 4px; font-weight: 700; font-size: 15px; color: #0b2c49; }
+.cred a:hover { color: var(--red); }
+.credSummary { font-size: 15px; line-height: 1.45; color: var(--ink-soft); }
+.badges { display: flex; flex-wrap: wrap; gap: 6px; }
+.badge { font-size: 11px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; padding: 4px 8px; border-radius: 4px; }
+.badge[data-kind="certification"] { background: var(--navy); color: var(--cream); }
+.badge[data-kind="license"] { background: var(--red); color: #fff; }
+.badge[data-kind="training-card"] { background: var(--gold); color: var(--navy); }
+.badge[data-kind="qualification"] { background: #fff; color: var(--navy); box-shadow: inset 0 0 0 2px var(--navy); }
+.badgeReq { background: var(--cream); color: var(--navy); }
+.panelFoot { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; border-top: 1px solid var(--line); padding-top: 16px; font-size: 16px; color: var(--ink-soft); }
+.cta { background: var(--red); color: #fff; text-decoration: none; font-weight: 700; padding: 14px 20px; border-radius: 8px; }
+.cta:hover { background: #b3151b; color: #fff; }
+
+.myth { flex: 1 1 320px; align-self: flex-start; background: var(--navy-deep); border: 1px solid var(--navy-line); border-radius: 14px; padding: 28px; display: flex; flex-direction: column; gap: 16px; }
+.mythHead { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.mythHead h3 { margin: 0; font-family: var(--font-home-display), Impact, sans-serif; font-weight: 800; font-size: 26px; letter-spacing: 1px; text-transform: uppercase; color: var(--gold); }
+.mythHead span { flex: none; white-space: nowrap; font-size: 14px; color: var(--sky); }
+.claim { margin: 0; font-family: var(--font-home-display), Impact, sans-serif; font-weight: 700; font-size: 30px; line-height: 1.1; }
+.answers { display: flex; gap: 10px; }
+.answer { flex: 1; min-height: 52px; font: inherit; font-size: 18px; font-weight: 700; border-radius: 8px; cursor: pointer; background: var(--cream); color: var(--navy-deep); border: 2px solid var(--cream); }
+.answer:disabled { cursor: default; }
+.answer[data-state="right"] { background: var(--gold); border-color: var(--gold); color: var(--navy-deep); }
+.answer[data-state="wrong"] { background: transparent; border-color: #ff8a80; color: var(--cream); }
+.answer[data-state="other"] { background: transparent; border-color: var(--navy-line); color: #8ec0f0; }
+.result { display: flex; flex-direction: column; gap: 8px; background: var(--navy); border-radius: 10px; padding: 16px; }
+.result strong { font-size: 18px; color: #ff8a80; }
+.result strong[data-correct="true"] { color: var(--gold); }
+.result p { margin: 0; font-size: 16px; line-height: 1.5; color: var(--sky); }
+.source { font-size: 13px !important; color: #8ec0f0 !important; }
+.source a { color: #8ec0f0; }
+.next { align-self: flex-start; min-height: 48px; padding: 0 18px; font: inherit; font-weight: 700; background: transparent; color: var(--cream); border: 1px solid #8ec0f0; border-radius: 8px; cursor: pointer; }
+
+@media (max-width: 640px) {
+  .inner { padding: 56px 16px; }
+  .panel, .myth { padding: 20px; }
+  .claim { font-size: 26px; }
+}

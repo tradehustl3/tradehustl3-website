@@ -16,6 +16,8 @@ test("public marketing pages opt out of stale Cloudflare HTML caching", async ()
     "/book/sample",
     "/top-10-trades",
     "/resume-examples",
+    "/resources",
+    "/resources/certifications",
     "/resume-builder",
     "/resume-builder/hvac",
     "/resume-builder/facilities-maintenance",

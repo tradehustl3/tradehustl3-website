@@ -58,15 +58,38 @@ test("a ?trade= landing server-renders that trade, so nothing swaps after hydrat
   assert.match(other.match(/<a\b[^>]*data-hero-cta[^>]*>/)?.[0] ?? "", /href="#resume-start"/);
 });
 
-test("homepage header carries three links and one CTA", async () => {
+test("homepage header leads with the TRADE HUSTL3 brand, four hub links, and one CTA", async () => {
   const html = await renderHome();
   const header = between(html, "<header", "</header>");
-  assert.match(header, /optimized\/resume-builder-logo-header\.webp/);
-  assert.match(header, /href="#trades"[^>]*>Trade examples</);
-  assert.match(header, /href="#how"[^>]*>How it works</);
+  assert.match(header, /aria-label="TRADE HUSTL3 home"/);
+  assert.match(header, /optimized\/th3-logo-header\.webp/);
+  assert.match(header, /href="\/resume-examples"[^>]*>Explore Trades</);
+  assert.match(header, /href="\/resources\/certifications"[^>]*>Certifications</);
+  assert.match(header, /href="\/resources"[^>]*>Resources</);
   assert.match(header, /href="\/book"[^>]*>The Book</);
   assert.equal((header.match(/Build my free preview/g) ?? []).length, 1);
   assert.match(header, /data-location="sticky_header"/);
+});
+
+test("default homepage is the hub: one h1, stage picker, divisions, then the Resume Builder hero as a section", async () => {
+  const html = await renderHome();
+  assert.equal((html.match(/<h1\b/g) ?? []).length, 1);
+  assert.match(html, /<h1 id="hub-title"[^>]*>Built for the people who build, maintain, repair, and move America\.<\/h1>/);
+  const order = ['id="hub-title"', 'id="start-here"', 'id="divisions-title"', 'id="resume-hero"', 'id="resume-start"', 'id="know-your-trade"', 'id="outlook-title"']
+    .map((marker) => html.indexOf(marker));
+  order.forEach((index, i) => assert.ok(index > (order[i - 1] ?? -1), `hub section ${i} out of order`));
+  assert.match(html, /<button[^>]*aria-pressed="true"[^>]*data-item="exploring"/);
+  assert.match(html, /Coming soon/);
+  assert.match(html, /<h2 id="hero-title"/);
+});
+
+test("campaign visits (?trade=) keep the resume-first layout without the hub sections", async () => {
+  const html = await renderHome("/?trade=plumbing");
+  assert.equal((html.match(/<h1\b/g) ?? []).length, 1);
+  assert.match(html, /<h1 id="hero-title"/);
+  assert.doesNotMatch(html, /id="hub-title"/);
+  assert.doesNotMatch(html, /id="start-here"/);
+  assert.match(html, /id="resume-start"/);
 });
 
 test("promise band, steps and jobsite truths follow the hero in order", async () => {

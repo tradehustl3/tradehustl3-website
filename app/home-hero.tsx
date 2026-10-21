@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import {
   DEFAULT_HERO_TRADE,
   HERO_TRADES,
@@ -19,19 +19,33 @@ import styles from "./home-first-impression.module.css";
  * (`initialTradeId`), so nothing swaps after hydration. Picking a trade is
  * progressive enhancement.
  */
-export function HomeHero({ initialTradeId = null }: { initialTradeId?: string | null }) {
+export function HomeHero({
+  initialTradeId = null,
+  asSection = false,
+  logo = null,
+}: {
+  initialTradeId?: string | null;
+  asSection?: boolean;
+  /** Rendered above the eyebrow; the page passes the Resume Builder logo. Kept
+      as a prop so this component stays free of next/* imports (unit-tested in Node). */
+  logo?: ReactNode;
+}) {
   const [chosen, setChosen] = useState<HeroTrade | null>(() => heroTradeById(initialTradeId));
 
   const shown = chosen ?? DEFAULT_HERO_TRADE;
   const ctaHref = heroCtaHref(chosen);
+  // On the hub homepage this hero sits below the brand hero, so it becomes an
+  // h2 section; campaign (?trade=) visits still get it as the page's h1.
+  const Heading = asSection ? "h2" : "h1";
 
   return (
-    <section className={styles.hero} id="top" aria-labelledby="hero-title">
+    <section className={styles.hero} id={asSection ? "resume-hero" : "top"} aria-labelledby="hero-title">
       <div className={styles.heroCopy}>
+        {logo}
         <p className={styles.eyebrow}>RESUME BUILDER FOR THE SKILLED TRADES</p>
-        <h1 id="hero-title" className={styles.headline}>
+        <Heading id="hero-title" className={styles.headline}>
           Build {shown.article} <span className={styles.headlineTrade} data-hero-trade-word>{shown.word}</span> resume that looks ready for the job.
-        </h1>
+        </Heading>
         <p className={styles.heroLead}>
           Upload your resume or answer a few questions. HUSTL3 BOT turns your real experience into a clean,
           ATS-friendly resume. See the whole thing before you pay.
