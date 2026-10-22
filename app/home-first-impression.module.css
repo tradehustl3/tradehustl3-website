@@ -24,7 +24,8 @@
 /* Header ---------------------------------------------------------------- */
 
 .header {
-  border-bottom: 1px solid rgba(243, 236, 223, 0.12);
+  background: #02142B;
+  border-bottom: 2px solid #D7261C;
 }
 
 .headerInner {
@@ -72,18 +73,55 @@
   align-items: center;
   gap: 4px 22px;
   font-size: 15px;
-  font-weight: 500;
+  font-weight: 600;
+}
+
+.navLinks {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 24px;
 }
 
 .navLink {
+  position: relative;
   display: inline-flex;
   align-items: center;
   min-height: 44px;
-  color: #D2D9E0;
+  color: #F1C357;
+  transition: color 160ms ease;
 }
 
-.navLink:hover {
+.navLink:hover,
+.navLink:focus-visible {
   color: #FFFFFF;
+}
+
+.navLink::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 1px;
+  height: 3px;
+  background: #EF383C;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 180ms ease;
+}
+
+.navLink:hover::after,
+.navLink:focus-visible::after { transform: scaleX(1); }
+.navLinks[data-tracking="true"] .navLink::after { transform: scaleX(0); }
+
+.navIndicator {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 3px;
+  border-radius: 2px;
+  background: #EF383C;
+  pointer-events: none;
+  transition: transform 220ms ease, width 220ms ease, opacity 120ms ease;
 }
 
 .headerCta {
@@ -96,6 +134,9 @@
   color: #FFFFFF;
   font-weight: 700;
   box-sizing: border-box;
+  border: 1px solid #FA6053;
+  box-shadow: 0 5px 18px #D7261C26;
+  transition: background 160ms ease, border-color 160ms ease;
 }
 
 /* Hero ------------------------------------------------------------------ */
@@ -605,6 +646,12 @@
     gap: 0 16px;
   }
 
+  .headerInner { justify-content: center; gap: 6px; }
+  .nav { width: 100%; justify-content: center; gap: 10px; }
+  .navLinks { width: 100%; justify-content: space-between; gap: 0 10px; }
+  .navLink { font-size: 14px; }
+  .headerCta { justify-content: center; min-height: 44px; }
+
   .heroLead {
     font-size: 17px;
   }
@@ -620,3 +667,7 @@
 }
 
 .truthGuide { display: inline-block; margin-top: 16px; color: inherit; font-weight: 700; text-underline-offset: 4px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .navIndicator, .navLink, .navLink::after, .headerCta { transition: none; }
+}
