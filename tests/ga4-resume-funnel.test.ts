@@ -74,3 +74,8 @@ test("hub homepage views are not counted as Resume Builder starts (Oct 21 2026 c
   assert.match(homePage, /isCampaignVisit \? 'mount' : 'visible'/);
   assert.ok(fs.existsSync("docs/analytics-changes.md"), "the definition change is documented for reporting");
 });
+
+test("begin_checkout carries the resume ID so paid orders can be joined to campaign attribution", () => {
+  assert.match(analytics, /trackResumeFunnelEvent\("begin_checkout", resumeId \? \{ resume_id: resumeId \} : \{\}\)/);
+  assert.match(analytics, /trackResumeCheckout\(resumeId === "unknown" \? undefined : resumeId\)/);
+});

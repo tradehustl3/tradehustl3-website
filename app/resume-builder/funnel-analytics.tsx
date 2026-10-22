@@ -113,8 +113,13 @@ export function trackResumeFunnelEvent(eventName: string, parameters: FunnelPara
   return sendFirstPartyFunnelEvent(eventName, parameters);
 }
 
-export function trackResumeCheckout(): boolean {
-  return trackResumeFunnelEvent("begin_checkout");
+/**
+ * Carries the resume ID so a paid resume_orders row can be joined back to the
+ * campaign stored on this event. It also dedupes per resume instead of once per
+ * browser session.
+ */
+export function trackResumeCheckout(resumeId?: string): boolean {
+  return trackResumeFunnelEvent("begin_checkout", resumeId ? { resume_id: resumeId } : {});
 }
 
 /**
@@ -229,7 +234,7 @@ export function ResumeReviewAnalytics() {
           }
         }
         if (response.ok && method === "POST" && /\/checkout$/.test(url)) {
-          trackResumeCheckout();
+          trackResumeCheckout(resumeId === "unknown" ? undefined : resumeId);
         }
       } catch {
         // Analytics observation must never interfere with generation or checkout.
