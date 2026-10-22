@@ -18,7 +18,7 @@ import styles from "../resources.module.css";
 const PAGE_PATH = "/resources/certifications";
 const PAGE_URL = `${SITE_URL}${PAGE_PATH}`;
 const PAGE_TITLE = "Skilled-Trades Certifications, Licenses & Training Cards | TRADE HUSTL3";
-const PAGE_DESCRIPTION = `EPA 608, OSHA 10/30, CDL, NATE, AWS, and more: ${CREDENTIAL_LIBRARY.length} skilled-trades credentials explained — what each is, who requires it, how to earn it, and the official source.`;
+const PAGE_DESCRIPTION = `EPA 608, OSHA 10/30, CDL, NATE, AWS, and more: ${CREDENTIAL_LIBRARY.length} skilled-trades credentials, who requires them, how to earn them, and the official source.`;
 
 export const metadata: Metadata = {
   title: { absolute: PAGE_TITLE },

@@ -3,7 +3,7 @@ import { PolicyPage, PolicySection, SUPPORT_EMAIL } from "../../policy-page";
 
 const PAGE_DESCRIPTION = "A straightforward policy for the $9.99 one-time TRADE HUSTL3 Resume Builder purchase.";
 
-export const metadata: Metadata = { title: "Resume Builder Refund Policy", description: PAGE_DESCRIPTION, alternates: { canonical: "/resume-builder/refund-policy" } };
+export const metadata: Metadata = { title: "Refund Policy", description: PAGE_DESCRIPTION, alternates: { canonical: "/resume-builder/refund-policy" } };
 
 export default function ResumeRefundPolicyPage() {
   return (

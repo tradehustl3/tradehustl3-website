@@ -22,7 +22,9 @@ const body = Space_Grotesk({
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
-  title: SITE_TITLE,
+  // Pages that set a plain string title get the brand appended; pages that
+  // already carry the brand use `title: { absolute }`.
+  title: { default: SITE_TITLE, template: `%s | ${SITE_NAME}` },
   description: SITE_DESCRIPTION,
   applicationName: SITE_NAME,
 
@@ -42,9 +44,8 @@ export const metadata: Metadata = {
   creator: "Da Maintenance Mane",
   publisher: SITE_NAME,
 
-  alternates: {
-    canonical: "/",
-  },
+  // No site-wide canonical: every indexable page declares its own, and an
+  // inherited "/" would point noindex and error pages at the homepage.
 
   robots: {
     index: true,

@@ -1,6 +1,6 @@
 # TRADE HUSTL3
 
-Official website for TRADE HUSTL3 — Built by Hustle, Backed by Trades.
+Official website for TRADE HUSTL3 — BUILT BY HUSTL3. BACKED BY TRADE.
 
 ## Local development
 

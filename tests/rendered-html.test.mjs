@@ -125,6 +125,62 @@ test("publishes a canonical XML sitemap and robots discovery hints", async () =>
   assert.match(robots, /User-Agent:\s*\*/i);
   assert.match(robots, /Allow:\s*\//i);
   assert.match(robots, /Sitemap:\s*https:\/\/tradehustl3\.com\/sitemap\.xml/i);
+  assert.doesNotMatch(robots, /^Host:/im, "robots.txt Host directive is non-standard (Oct 22 audit)");
+});
+
+test("unknown URLs return a branded 404 with a single noindex robots tag and no canonical", async () => {
+  const response = await renderPath("/this-page-does-not-exist-oct22");
+  assert.equal(response.status, 404);
+  const html = await response.text();
+  const robotsTags = html.match(/<meta\b[^>]*\bname="robots"[^>]*>/gi) ?? [];
+  assert.equal(robotsTags.length, 1, `expected one robots tag, found: ${robotsTags.join(" ")}`);
+  assert.match(robotsTags[0], /content="noindex"/i);
+  assert.doesNotMatch(html, /name="googlebot"/i);
+  assert.doesNotMatch(html, /rel="canonical"/i);
+  assert.match(html, /<title>Page Not Found \| TRADE HUSTL3<\/title>/);
+  assert.match(html, /PAGE NOT FOUND/);
+  assert.match(html, /href="\/resources"/);
+  assert.match(html, /href="\/#resume-start"/);
+  assert.doesNotMatch(html, /Last updated/i);
+});
+
+test("plain page titles carry the TRADE HUSTL3 brand exactly once", async () => {
+  const expected = {
+    "/contact": "Contact Support | TRADE HUSTL3",
+    "/terms": "Terms of Service | TRADE HUSTL3",
+    "/privacy": "Privacy Policy | TRADE HUSTL3",
+    "/data-deletion": "Account and Data Requests | TRADE HUSTL3",
+    "/book/refund-policy": "eBook Delivery and Refund Policy | TRADE HUSTL3",
+    "/resume-builder/refund-policy": "Refund Policy | TRADE HUSTL3 Resume Builder",
+    "/resume-builder/ai-disclosure": "AI Disclosure | TRADE HUSTL3 Resume Builder",
+    "/top-10-trades": "Free Top 10 Trades Guide for 2026–2027 | TRADE HUSTL3",
+    "/book/sample": "Free 7-Page TRADE HUSTL3 Book Sample",
+  };
+  for (const [pathname, title] of Object.entries(expected)) {
+    const response = await renderPath(pathname);
+    assert.equal(response.status, 200, pathname);
+    const html = await response.text();
+    const rendered = html.match(/<title>([^<]*)<\/title>/)?.[1] ?? "";
+    assert.equal(rendered, title, pathname);
+    assert.equal((rendered.match(/TRADE HUSTL3/g) ?? []).length, 1, `${pathname} repeats the brand`);
+  }
+});
+
+test("indexable pages never inherit the homepage canonical", async () => {
+  for (const pathname of ["/contact", "/terms", "/privacy", "/book", "/top-10-trades", "/resources", "/resources/certifications"]) {
+    const html = await (await renderPath(pathname)).text();
+    const canonicals = html.match(/<link rel="canonical" href="([^"]*)"/gi) ?? [];
+    assert.equal(canonicals.length, 1, `${pathname} canonical count`);
+    assert.match(canonicals[0], new RegExp(`href="https://tradehustl3\\.com${pathname.replaceAll("/", "\\/")}"`), pathname);
+  }
+});
+
+test("homepage and Resource Center meta descriptions fit search snippets", async () => {
+  for (const pathname of ["/", "/resources", "/resources/certifications", "/book"]) {
+    const html = await (await renderPath(pathname)).text();
+    const [description] = metaDescriptions(html);
+    assert.ok(description && description.length >= 50 && description.length <= 160, `${pathname} description is ${description?.length} characters`);
+  }
 });
 
 test("serves the crawler discovery files with no-store caching headers", async () => {
@@ -235,8 +291,13 @@ test("server-renders the official book page, cover, portrait, and current editio
 
   assert.match(html, /<title>TRADE HUSTL3 Book \| Da Maintenance Mane<\/title>/i);
   assert.match(html, /<link rel="canonical" href="https:\/\/tradehustl3\.com\/book"/i);
+  // Share/structured-data images keep the original JPEG; on-page images use the
+  // compressed WebP variants (Oct 22 audit: 1.1 MB cover, 395 KB portrait).
   assert.match(html, /trade-hustl3-book-cover\.jpg/i);
-  assert.match(html, /zachary-ellis-author\.jpg/i);
+  assert.match(html, /src="\/optimized\/trade-hustl3-book-cover\.webp"/i);
+  assert.match(html, /src="\/optimized\/zachary-ellis-author\.webp"/i);
+  assert.doesNotMatch(html, /src="\/zachary-ellis-author\.jpg"/i);
+  assert.doesNotMatch(html, /src="\/trade-hustl3-book-cover\.jpg"/i);
   assert.match(html, /DA[\s\S]*MAINTENANCE[\s\S]*MANE\./i);
   assert.equal(html.includes("Zachary Cameron Ellis"), false);
   assert.match(html, /Available now/i);
@@ -257,7 +318,10 @@ test("server-renders the official book page, cover, portrait, and current editio
   assert.match(html, /Final Word: Build Something That Belongs to You/i);
   assert.doesNotMatch(html, /Launch countdown/i);
   assert.match(html, /Earn your own/i);
-  assert.match(html, /BUILT BY TRADES[\s\S]*BACKED BY HUSTL3/i);
+  // One approved site tagline (Oct 22 audit). The book's own subtitle,
+  // "Built by Hustle, Backed by Trades", is the product title and stays.
+  assert.match(html, /<span>BUILT BY HUSTL3\. BACKED BY TRADE\.<\/span>/);
+  assert.doesNotMatch(html, /BUILT BY TRADES/i);
   assert.equal(html.includes("fell through an attic"), false);
 });
 
@@ -325,7 +389,7 @@ test("homepage leads with preview-before-payment proof and the included cover le
   assert.match(html, /<footer[^>]*data-site-footer/i);
   assert.doesNotMatch(html, /corrections within 7 days/i);
   assert.match(html, /No credit card to preview/i);
-  assert.match(html, /hustl3-bot-official\.webp/i);
+  assert.match(html, /hustl3-bot-official-720\.webp/i);
   assert.doesNotMatch(html, /Founder, TRADE HUSTL3/i);
   assert.match(html, /BUILT FOR THE TRADES[\s\S]*READY WHEN YOU ARE/i);
   assert.ok(html.indexOf('id="included-cover-letter"') < html.indexOf('id="guide-title"'));

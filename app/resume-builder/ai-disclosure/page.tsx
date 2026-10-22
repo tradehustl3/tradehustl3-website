@@ -3,7 +3,7 @@ import { PolicyPage, PolicySection, SUPPORT_EMAIL } from "../../policy-page";
 
 const PAGE_DESCRIPTION = "How artificial intelligence assists the TRADE HUSTL3 Resume Builder and what every customer must review.";
 
-export const metadata: Metadata = { title: "Resume Builder AI Disclosure", description: PAGE_DESCRIPTION, alternates: { canonical: "/resume-builder/ai-disclosure" } };
+export const metadata: Metadata = { title: "AI Disclosure", description: PAGE_DESCRIPTION, alternates: { canonical: "/resume-builder/ai-disclosure" } };
 
 export default function AiDisclosurePage() {
   return (

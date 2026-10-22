@@ -10,11 +10,14 @@ export function PolicyPage({
   eyebrow,
   title,
   summary,
+  updated = LEGAL_UPDATED,
   children,
 }: {
   eyebrow: string;
   title: string;
   summary: string;
+  /** Revision date shown under the summary; `null` hides it (e.g. the 404 page). */
+  updated?: string | null;
   children: ReactNode;
 }) {
   return (
@@ -32,7 +35,7 @@ export function PolicyPage({
         <p className="section-label">/ {eyebrow}</p>
         <h1>{title}</h1>
         <p>{summary}</p>
-        <small>Last updated {LEGAL_UPDATED}</small>
+        {updated ? <small>Last updated {updated}</small> : null}
       </section>
 
       <article className="policy-content">{children}</article>

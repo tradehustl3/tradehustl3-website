@@ -12,7 +12,7 @@ const PAGE_DESCRIPTION =
   'Get the free 7-page sample of TRADE HUSTL3: Built by Hustle, Backed by Trades. Enter your email and download the 7-page sample PDF.';
 
 export const metadata: Metadata = {
-  title: PAGE_TITLE,
+  title: { absolute: PAGE_TITLE },
   description: PAGE_DESCRIPTION,
   alternates: { canonical: '/book/sample' },
   openGraph: {
@@ -74,10 +74,10 @@ export default function BookSamplePage() {
           <div className={styles.coverGlow} aria-hidden="true" />
           <Image
             className={styles.cover}
-            src="/trade-hustl3-book-cover.jpg"
+            src="/optimized/trade-hustl3-book-cover.webp"
             alt="TRADE HUSTL3: Built by Hustle, Backed by Trades book cover"
-            width={1024}
-            height={1536}
+            width={720}
+            height={1080}
             priority
           />
         </div>

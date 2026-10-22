@@ -9,10 +9,10 @@ import { BrandLockup } from "../brand-lockup";
 
 const BOOK_TITLE = "TRADE HUSTL3: Built by Hustle, Backed by Trades";
 const BOOK_DESCRIPTION =
-  "A practical skilled-trades career guide by Da Maintenance Mane covering more than 200 trades, entry paths, certifications, earning power, ownership, and a 90-Day Action Plan.";
+  "A practical skilled-trades career guide by Da Maintenance Mane: 200+ trades, entry paths, certifications, earning power, ownership, and a 90-Day Action Plan.";
 
 export const metadata: Metadata = {
-  title: "TRADE HUSTL3 Book | Da Maintenance Mane",
+  title: { absolute: "TRADE HUSTL3 Book | Da Maintenance Mane" },
   description: BOOK_DESCRIPTION,
   alternates: { canonical: "/book" },
   openGraph: {
@@ -155,10 +155,10 @@ export default function BookPage() {
           <div className="book-cover-glow" aria-hidden="true" />
           <Image
             className="book-cover-image"
-            src="/trade-hustl3-book-cover.jpg"
+            src="/optimized/trade-hustl3-book-cover.webp"
             alt="Official front cover of TRADE HUSTL3"
-            width={1024}
-            height={1536}
+            width={720}
+            height={1080}
             priority
           />
         </div>
@@ -202,7 +202,7 @@ export default function BookPage() {
         </div>
         <figure className="sample-quote">
           <blockquote>
-            “You don’t have to wait for somebody to hand you a future. Learn a skill. Build your value. Earn your own. Create something nobody can take from you. <span>BUILT BY TRADES. BACKED BY HUSTL3.</span>”
+            “You don’t have to wait for somebody to hand you a future. Learn a skill. Build your value. Earn your own. Create something nobody can take from you. <span>BUILT BY HUSTL3. BACKED BY TRADE.</span>”
           </blockquote>
           <figcaption>The TRADE HUSTL3 mindset</figcaption>
         </figure>
@@ -285,10 +285,10 @@ export default function BookPage() {
         <div className="author-portrait-frame">
           <Image
             className="author-portrait"
-            src="/zachary-ellis-author.jpg"
+            src="/optimized/zachary-ellis-author.webp"
             alt="Da Maintenance Mane, author of TRADE HUSTL3"
-            width={1086}
-            height={1449}
+            width={1020}
+            height={1275}
           />
           <p>Official back-cover portrait</p>
         </div>

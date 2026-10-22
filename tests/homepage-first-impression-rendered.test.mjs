@@ -40,7 +40,9 @@ test("default homepage render without a trade shows HVAC and the plain intake CT
   assert.match(html, /<button[^>]*aria-pressed="true"[^>]*data-item="hvac"/);
   assert.match(html, /\$0<\/b> to preview/);
   assert.match(html, /\$9\.99<\/b> once to unlock/);
-  assert.match(html, /No credit card to start/);
+  // Oct 22 audit: the first builder stage asks for an email, so the hero says so.
+  assert.match(html, /Just your email, no card/);
+  assert.doesNotMatch(html, /No credit card to start/);
   assert.match(html, /Fictional example\. Your resume uses only the facts you enter\./);
 });
 

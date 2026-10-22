@@ -12,7 +12,7 @@ const PAGE_DESCRIPTION =
   'Get the free TRADE HUSTL3 7-page guide to 10 high-opportunity skilled trades for 2026–2027, then turn your target trade into a stronger job-ready resume.';
 
 export const metadata: Metadata = {
-  title: PAGE_TITLE,
+  title: { absolute: PAGE_TITLE },
   description: PAGE_DESCRIPTION,
   alternates: { canonical: '/top-10-trades' },
   openGraph: {
@@ -116,9 +116,9 @@ export default function TopTenTradesPage() {
           <div className={styles.visualGlow} aria-hidden="true" />
           <Image
             className={styles.guideImage}
-            src="/top-trades-2026-2027-card.png"
+            src="/optimized/top-trades-2026-2027-card.webp"
             alt="TRADE HUSTL3 Top 10 Trades for 2026–2027 guide artwork"
-            width={1200}
+            width={960}
             height={1200}
             priority
           />

@@ -14,7 +14,7 @@ export const BRAND_DESCRIPTION =
 export const HOME_TITLE = "Skilled-Trades Career Hub and Resume Builder | TRADE HUSTL3";
 
 export const HOME_DESCRIPTION =
-  "Free skilled-trades resources: 14 trade families, sourced certification and license guides, and job-outlook data. Plus a trade resume builder with a free preview and a $9.99 one-time unlock.";
+  "Free guides for 14 skilled-trade families, sourced certification info, and job-outlook data. Plus a trade resume builder: free preview, $9.99 to unlock.";
 
 /** Share image for hub-level pages (homepage, Resource Center). Product pages keep og-v2. */
 export const HUB_OG_IMAGE = "/optimized/og-hub-v1.webp";
