@@ -38,7 +38,9 @@ test("GA4 purchase is sent only from the verified Stripe webhook, never from the
   assert.doesNotMatch(payment, /trackResumePurchase/);
   const base = fs.readFileSync("worker/resume-builder-base.ts", "utf8");
   assert.match(base, /ga4PurchaseEvent\(orderId/);
-  assert.match(base, /if \(!order\.paid_at && order\.status !== "refunded"/);
+  // First verified confirmation only, and only when the order is still paid after
+  // any earlier refund events were reconciled in the same checkout batch.
+  assert.match(base, /if \(!order\.paid_at && settled\?\.status === "paid"/);
 });
 
 test("browser funnel tracking never calls gtag directly (prevents drops and double counting)", () => {

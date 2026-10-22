@@ -144,7 +144,10 @@ export const resumeOrders = sqliteTable(
     status: text("status").notNull().default("pending"),
     stripeSessionId: text("stripe_session_id"),
     stripePaymentIntentId: text("stripe_payment_intent_id"),
+    stripeChargeId: text("stripe_charge_id"),
     paidAt: text("paid_at"),
+    amountRefunded: integer("amount_refunded").notNull().default(0),
+    refundedAt: text("refunded_at"),
     createdAt: text("created_at").notNull().default(sql`(CURRENT_TIMESTAMP)`),
   },
   (table) => [
@@ -153,6 +156,19 @@ export const resumeOrders = sqliteTable(
     index("resume_orders_resume_idx").on(table.resumeId),
     index("resume_orders_email_idx").on(table.email),
   ],
+);
+
+export const resumeRefundEvents = sqliteTable(
+  "resume_refund_events",
+  {
+    eventId: text("event_id").primaryKey(),
+    paymentIntentId: text("payment_intent_id").notNull(),
+    chargeId: text("charge_id"),
+    amountRefunded: integer("amount_refunded").notNull(),
+    currency: text("currency").notNull(),
+    createdAt: text("created_at").notNull().default(sql`(CURRENT_TIMESTAMP)`),
+  },
+  (table) => [index("resume_refund_events_payment_intent_idx").on(table.paymentIntentId)],
 );
 
 export const reviewRequests = sqliteTable(

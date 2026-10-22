@@ -114,6 +114,16 @@ The Resume Builder review pipeline is limited to verified paid orders. A review 
 - Review wording and customer-reported job-search results are stored as submitted; moderation must not rewrite them into stronger claims.
 - Review moderation is available at `/admin/reviews` to authenticated `founder@tradehustl3.com`, `support@tradehustl3.com`, or addresses listed in `REVIEW_ADMIN_EMAILS`.
 
+## Resume Builder refund ledger
+
+Every Resume Builder refund is recorded, partial and full, so the order source can report a complete refund ledger to Agent A08.
+
+- `drizzle/0011_resume_refund_ledger.sql` adds `resume_orders.amount_refunded`, `refunded_at` and `stripe_charge_id`, plus a `resume_refund_events` table (one row per Stripe `charge.refunded` event). It backfills existing full refunds at the full amount; their refund time and charge ID were never stored and stay empty.
+- **Apply 0011 before deploying the Worker that ships it.** The refund webhook and the Agent funnel snapshot read the new columns. Export a D1 restore point first. `0011_resume_refund_ledger_down.sql` is the reviewed rollback (it discards refund amounts recorded after 0011; order status and access are unaffected).
+- Stripe's `charge.refunded` amount is cumulative, so the webhook stores the highest total seen. Replayed and out-of-order events cannot lower it. Refunds that arrive before the checkout event are kept and applied when checkout completes.
+- Access rules are unchanged: a partial refund keeps the order paid and downloads active; access is revoked only when the full $9.99 has been refunded.
+- The funnel snapshot adds `orderLedger` (orders paid in the window including later refunds, refunded orders and cents, payment intent IDs and refunded charge IDs). `complete` is true only when every identifier is present. Existing `counts` and `revenue` fields are unchanged.
+
 ## Resume generation with Gemini
 
 The Resume Builder uses Gemini through Google Cloud's Agent Platform API. Because production runs on Cloudflare and the Google Cloud organization disables long-lived Google API and service-account keys, the Worker calls the authenticated Cloud Run bridge in `services/resume-ai-bridge`. Cloud Run uses its attached service account through Application Default Credentials; no Google private key is stored in Cloudflare.

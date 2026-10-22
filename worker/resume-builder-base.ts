@@ -969,6 +969,29 @@ async function getAgent1FunnelSnapshot(
       verified_revenue_cents: number | null;
     }>();
 
+  // Order and refund ledger for Agent A08: every order whose verified payment
+  // falls in the window, including ones refunded since. Refund amounts are the
+  // cumulative totals recorded by the Stripe webhook as of generatedAt.
+  const ledgerRows = await env.DB.prepare(
+    `SELECT stripe_payment_intent_id, stripe_charge_id, amount_total, amount_refunded, currency
+     FROM resume_orders
+     WHERE status IN ('paid', 'refunded')
+       AND paid_at IS NOT NULL
+       AND julianday(paid_at) >= julianday(?)
+       AND julianday(paid_at) ${endOperator} julianday(?)
+     ORDER BY paid_at
+     LIMIT ?`
+  )
+    .bind(windowStartIso, windowEndIso, ORDER_LEDGER_MAX_ROWS + 1)
+    .all<{
+      stripe_payment_intent_id: string | null;
+      stripe_charge_id: string | null;
+      amount_total: number;
+      amount_refunded: number;
+      currency: string;
+    }>();
+  const orderLedger = buildOrderLedger(ledgerRows.results ?? []);
+
   const starts = Number(behavioral?.starts ?? 0);
   const intakeStarted = Number(behavioral?.intake_started ?? 0);
   const intakeCompleted = Number(behavioral?.intake_completed ?? 0);
@@ -1020,11 +1043,65 @@ async function getAgent1FunnelSnapshot(
       currency: "USD",
     },
 
+    orderLedger,
+
     authority: {
       behavioralEvents: "funnel_events",
       purchases: "resume_orders.status=paid AND paid_at IS NOT NULL",
+      orderLedger: "resume_orders.status IN (paid, refunded) AND paid_at in window; refunds cumulative from Stripe charge.refunded",
     },
   });
+}
+
+const ORDER_LEDGER_MAX_ROWS = 10_000;
+
+type OrderLedgerRow = {
+  stripe_payment_intent_id: string | null;
+  stripe_charge_id: string | null;
+  amount_total: number;
+  amount_refunded: number;
+  currency: string;
+};
+
+/**
+ * Builds the order/refund ledger reported to Agent A08. `complete` is true only
+ * when every identifier A08 reconciles against Stripe is present: one payment
+ * intent per paid order and one charge per refunded order. Orders refunded
+ * before migration 0011 have no stored charge ID, so their windows report an
+ * incomplete ledger instead of a guessed one.
+ */
+export function buildOrderLedger(rows: OrderLedgerRow[]) {
+  const truncated = rows.length > ORDER_LEDGER_MAX_ROWS;
+  const kept = truncated ? rows.slice(0, ORDER_LEDGER_MAX_ROWS) : rows;
+  const paymentIntentIds: string[] = [];
+  const refundedChargeIds: string[] = [];
+  let grossCents = 0;
+  let refundedCents = 0;
+  let refundedOrders = 0;
+  let identifiersComplete = true;
+  for (const row of kept) {
+    grossCents += Number(row.amount_total) || 0;
+    if (row.currency !== "usd") identifiersComplete = false;
+    if (row.stripe_payment_intent_id) paymentIntentIds.push(row.stripe_payment_intent_id);
+    else identifiersComplete = false;
+    const refunded = Number(row.amount_refunded) || 0;
+    if (refunded > 0) {
+      refundedOrders += 1;
+      refundedCents += refunded;
+      if (row.stripe_charge_id) refundedChargeIds.push(row.stripe_charge_id);
+      else identifiersComplete = false;
+    }
+  }
+  return {
+    paidOrders: kept.length,
+    grossCents,
+    refundedOrders,
+    refundedCents,
+    currency: "USD",
+    paymentIntentIds: identifiersComplete ? paymentIntentIds.sort() : null,
+    refundedChargeIds: identifiersComplete ? refundedChargeIds.sort() : null,
+    complete: identifiersComplete && !truncated,
+  };
 }
 
 async function getN8nResumePurchaseStatus(request: Request, env: ResumeBuilderEnv): Promise<Response> {
@@ -1370,6 +1447,70 @@ function stripeEventStatement(env: ResumeBuilderEnv, eventId: string, eventType:
     .bind(eventId, eventType);
 }
 
+type RefundOrderMatch = { orderId: string } | { paymentIntent: string };
+
+/**
+ * Applies a Stripe cumulative refund total to one Resume Builder order.
+ * charge.amount_refunded is cumulative, so MAX() keeps the ledger correct when
+ * Stripe replays or reorders events. Access is revoked only once the entire
+ * original charge has been refunded; partial refunds leave the order paid.
+ * Statements run in order inside one D1 batch.
+ */
+function refundLedgerStatements(
+  env: ResumeBuilderEnv,
+  match: RefundOrderMatch,
+  amountRefunded: number,
+  chargeId: string | null,
+  paymentIntent: string,
+) {
+  const [where, key] = "orderId" in match
+    ? ["order_id = ?", match.orderId]
+    : ["stripe_payment_intent_id = ?", match.paymentIntent];
+  return [
+    env.DB.prepare(
+      `UPDATE resume_orders SET
+         amount_refunded = MAX(amount_refunded, ?),
+         stripe_payment_intent_id = ?,
+         stripe_charge_id = COALESCE(?, stripe_charge_id),
+         status = CASE WHEN MAX(amount_refunded, ?) >= amount_total THEN 'refunded' ELSE status END,
+         refunded_at = CASE WHEN MAX(amount_refunded, ?) >= amount_total
+           THEN COALESCE(refunded_at, CURRENT_TIMESTAMP) ELSE refunded_at END
+       WHERE ${where}`,
+    ).bind(amountRefunded, paymentIntent, chargeId, amountRefunded, amountRefunded, key),
+    env.DB.prepare(
+      `UPDATE entitlements SET status = 'revoked', updated_at = CURRENT_TIMESTAMP
+       WHERE status = 'active' AND source_order_id IN (
+         SELECT order_id FROM resume_orders
+         WHERE ${where} AND amount_refunded >= amount_total
+       )`,
+    ).bind(key),
+  ];
+}
+
+/**
+ * Checkout-side reconciliation: applies refund events that arrived before this
+ * order learned its payment intent (Stripe does not guarantee event order).
+ */
+function recordedRefundStatements(env: ResumeBuilderEnv, orderId: string, paymentIntent: string | null) {
+  return [
+    env.DB.prepare(
+      `UPDATE resume_orders SET
+         amount_refunded = MAX(amount_refunded, COALESCE(
+           (SELECT MAX(amount_refunded) FROM resume_refund_events
+            WHERE payment_intent_id = ? AND currency = 'usd'), 0)),
+         stripe_charge_id = COALESCE(stripe_charge_id,
+           (SELECT charge_id FROM resume_refund_events
+            WHERE payment_intent_id = ? AND charge_id IS NOT NULL
+            ORDER BY amount_refunded DESC LIMIT 1))
+       WHERE order_id = ?`,
+    ).bind(paymentIntent, paymentIntent, orderId),
+    env.DB.prepare(
+      `UPDATE resume_orders SET status = 'refunded', refunded_at = COALESCE(refunded_at, CURRENT_TIMESTAMP)
+       WHERE order_id = ? AND amount_refunded >= amount_total AND status <> 'refunded'`,
+    ).bind(orderId),
+  ];
+}
+
 async function handleResumeRefund(
   env: ResumeBuilderEnv,
   eventId: string,
@@ -1380,21 +1521,33 @@ async function handleResumeRefund(
     ? object
     : {}) as ResumeRefundedCharge;
   const amount = typeof charge.amount === "number" ? charge.amount : -1;
-  const amountRefunded = typeof charge.amount_refunded === "number" ? charge.amount_refunded : -1;
+  const amountRefunded = typeof charge.amount_refunded === "number" && Number.isSafeInteger(charge.amount_refunded)
+    ? charge.amount_refunded
+    : -1;
   const currency = typeof charge.currency === "string" ? charge.currency.toLowerCase() : "";
   const paymentIntent = typeof charge.payment_intent === "string" ? charge.payment_intent : "";
+  const chargeId = typeof charge.id === "string" && charge.id ? charge.id : null;
   const metadata = charge.metadata ?? {};
   const metadataOrderId = typeof metadata.order_id === "string" ? metadata.order_id : "";
   const metadataProduct = typeof metadata.product === "string" ? metadata.product : "";
 
   if (
-    !paymentIntent || amount !== RESUME_PRICE_CENTS || amountRefunded < 0 || currency !== "usd"
+    !paymentIntent || amount !== RESUME_PRICE_CENTS || amountRefunded < 0 || amountRefunded > amount
+    || currency !== "usd"
     || (metadataProduct && metadataProduct !== "resume_builder_mvp")
   ) {
     await stripeEventStatement(env, eventId, eventType).run();
     console.error("Resume Builder refund event did not match the MVP product.");
     return json({ received: true });
   }
+
+  // Every product-matching refund is recorded, even before an order matches,
+  // so a checkout delivered later can reconcile it (recordedRefundStatements).
+  const refundEvent = env.DB.prepare(
+    `INSERT OR IGNORE INTO resume_refund_events
+     (event_id, payment_intent_id, charge_id, amount_refunded, currency)
+     VALUES (?, ?, ?, ?, 'usd')`,
+  ).bind(eventId, paymentIntent, chargeId, amountRefunded);
 
   const order = await env.DB.prepare(
     `SELECT order_id, amount_total, currency, status, stripe_payment_intent_id
@@ -1414,28 +1567,25 @@ async function handleResumeRefund(
     || (order.stripe_payment_intent_id && order.stripe_payment_intent_id !== paymentIntent)
     || (metadataOrderId && metadataOrderId !== order.order_id)
   ) {
-    await stripeEventStatement(env, eventId, eventType).run();
+    // Keep a refund explicitly tagged as a Resume Builder payment. If a checkout
+    // for this payment intent is being recorded concurrently, apply the refund to
+    // it now as well; otherwise the checkout handler reconciles the stored event.
+    // Untagged refunds with no matching order (for example, $9.99 eBook charges
+    // delivered to this endpoint) are not stored in the Resume Builder ledger.
+    const tagged = metadataProduct === "resume_builder_mvp";
+    await env.DB.batch([
+      stripeEventStatement(env, eventId, eventType),
+      ...(tagged ? [refundEvent] : []),
+      ...(tagged && !order ? refundLedgerStatements(env, { paymentIntent }, amountRefunded, chargeId, paymentIntent) : []),
+    ]);
     console.error("Resume Builder refund event did not match a server-created order.");
-    return json({ received: true });
-  }
-
-  // charge.amount_refunded is cumulative across sequential partial refunds.
-  // Keep access active until the entire original charge has been refunded.
-  if (amountRefunded < amount) {
-    await stripeEventStatement(env, eventId, eventType).run();
     return json({ received: true });
   }
 
   await env.DB.batch([
     stripeEventStatement(env, eventId, eventType),
-    env.DB.prepare(
-      `UPDATE resume_orders SET status = 'refunded', stripe_payment_intent_id = ?
-       WHERE order_id = ?`,
-    ).bind(paymentIntent, order.order_id),
-    env.DB.prepare(
-      `UPDATE entitlements SET status = 'revoked', updated_at = CURRENT_TIMESTAMP
-       WHERE source_order_id = ? AND status = 'active'`,
-    ).bind(order.order_id),
+    refundEvent,
+    ...refundLedgerStatements(env, { orderId: order.order_id }, amountRefunded, chargeId, paymentIntent),
   ]);
   return json({ received: true });
 }
@@ -1523,6 +1673,8 @@ async function handleResumeStripeWebhook(
   // entitlement and review request inserts are already idempotent per order.
   // corrections_expire_at is derived from that first paid_at inside the same
   // insert, so a replay can neither create a second row nor move the deadline.
+  // Refund events that arrived before this checkout are applied before the
+  // entitlement insert, so a fully refunded order never gains access.
   await env.DB.batch([
     stripeEventStatement(env, eventId, eventType),
     env.DB.prepare(
@@ -1531,6 +1683,7 @@ async function handleResumeStripeWebhook(
          stripe_session_id = ?, stripe_payment_intent_id = ?, paid_at = COALESCE(paid_at, CURRENT_TIMESTAMP)
        WHERE order_id = ?`,
     ).bind(sessionId, paymentIntent, orderId),
+    ...recordedRefundStatements(env, orderId, paymentIntent),
     env.DB.prepare(
       `INSERT INTO entitlements
        (entitlement_id, user_id, resume_id, kind, plan, status, credits_total, credits_used,
@@ -1557,7 +1710,10 @@ async function handleResumeStripeWebhook(
   ]);
   // GA4 purchase: first verified confirmation only (Stripe retries deliveries),
   // never for refunded orders or smoke traffic, and only with consented GA ids.
-  if (!order.paid_at && order.status !== "refunded" && !isSmokeTestEmail(email)) {
+  // Re-read status: an earlier refund event may have been reconciled above.
+  const settled = await env.DB.prepare("SELECT status FROM resume_orders WHERE order_id = ?")
+    .bind(orderId).first<{ status: string }>();
+  if (!order.paid_at && settled?.status === "paid" && !isSmokeTestEmail(email)) {
     const ga4Identity = ga4IdentityFromStripeMetadata(metadata);
     if (ga4Identity) {
       sendGa4Event(ga4Identity, ga4PurchaseEvent(orderId, RESUME_PRICE_CENTS), {
