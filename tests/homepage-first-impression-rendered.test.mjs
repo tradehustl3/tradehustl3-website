@@ -81,7 +81,9 @@ test("default homepage is the hub: one h1, stage picker, divisions, then the Res
     .map((marker) => html.indexOf(marker));
   order.forEach((index, i) => assert.ok(index > (order[i - 1] ?? -1), `hub section ${i} out of order`));
   assert.match(html, /<button[^>]*aria-pressed="true"[^>]*data-item="exploring"/);
-  assert.match(html, /Coming soon/);
+  assert.doesNotMatch(html, /Coming soon/);
+  assert.match(html, /Coming next:/);
+  assert.match(html, /Just your email/);
   assert.match(html, /<h2 id="hero-title"/);
 });
 

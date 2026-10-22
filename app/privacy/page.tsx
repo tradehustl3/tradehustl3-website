@@ -4,7 +4,7 @@ import { TrackingPreferenceControls } from "../tracking-preference-controls";
 
 const PAGE_DESCRIPTION = "How TRADE HUSTL3 LLC collects, uses, protects, and deletes information across the website, book experience, and Resume Builder.";
 
-export const metadata: Metadata = { title: "Privacy Policy", description: PAGE_DESCRIPTION, alternates: { canonical: "/privacy" } };
+export const metadata: Metadata = { title: { absolute: "Privacy Policy | TRADE HUSTL3" }, description: PAGE_DESCRIPTION, alternates: { canonical: "/privacy" } };
 
 export default function PrivacyPage() {
   return (

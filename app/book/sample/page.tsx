@@ -22,7 +22,7 @@ export const metadata: Metadata = {
     siteName: SITE_NAME,
     type: 'book',
     images: [{
-      url: '/trade-hustl3-book-cover.jpg',
+      url: '/optimized/book-cover-v2.webp',
       width: 1024,
       height: 1536,
       alt: 'TRADE HUSTL3: Built by Hustle, Backed by Trades book cover',
@@ -32,7 +32,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: PAGE_TITLE,
     description: PAGE_DESCRIPTION,
-    images: ['/trade-hustl3-book-cover.jpg'],
+    images: ['/optimized/book-cover-v2.webp'],
   },
 };
 
@@ -74,7 +74,7 @@ export default function BookSamplePage() {
           <div className={styles.coverGlow} aria-hidden="true" />
           <Image
             className={styles.cover}
-            src="/trade-hustl3-book-cover.jpg"
+            src="/optimized/book-cover-v2.webp"
             alt="TRADE HUSTL3: Built by Hustle, Backed by Trades book cover"
             width={1024}
             height={1536}
@@ -124,7 +124,7 @@ export default function BookSamplePage() {
 
       <footer className={styles.footer}>
         <Link href="/">TRADE HUSTL<span>3</span> LLC</Link>
-        <p>BUILT BY HUSTL3. BACKED BY TRADE.</p>
+        <p>BUILT BY HUSTLE. BACKED BY TRADES.</p>
         <nav aria-label="Footer links">
           <Link href="/privacy">Privacy</Link>
           <Link href="/terms">Terms</Link>

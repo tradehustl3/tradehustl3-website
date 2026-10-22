@@ -3,7 +3,7 @@ import { PolicyPage, PolicySection, SUPPORT_EMAIL } from "../policy-page";
 
 const PAGE_DESCRIPTION = "How to request access, correction, or deletion of information connected to your TRADE HUSTL3 account.";
 
-export const metadata: Metadata = { title: "Account and Data Requests", description: PAGE_DESCRIPTION, alternates: { canonical: "/data-deletion" } };
+export const metadata: Metadata = { title: { absolute: "Account and Data Requests | TRADE HUSTL3" }, description: PAGE_DESCRIPTION, alternates: { canonical: "/data-deletion" } };
 
 export default function DataDeletionPage() {
   return (

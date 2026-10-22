@@ -197,7 +197,7 @@ export const HVAC_LANDING: TradeLandingContent = {
     pricing: "hvac_pricing_card",
     closing: "hvac_footer_cta",
   },
-  seoTitle: "HVAC Resume Builder | HVAC Technician Resume | TRADE HUSTL3",
+  seoTitle: "HVAC Technician Resume Builder | TRADE HUSTL3",
   seoDescription:
     "TRADE HUSTL3's HVAC Resume Builder turns your EPA 608, tools, and field experience into an ATS-ready HVAC technician resume. $9.99 one-time, no subscription.",
   ogImage: "/optimized/og-v2.webp",
@@ -918,7 +918,7 @@ export const ELECTRICIAN_LANDING: TradeLandingContent = {
   },
   seoTitle: "Electrician Resume Builder | Electrical Technician Resume | TRADE HUSTL3",
   seoDescription:
-    "Turn your troubleshooting, wiring, conduit, and panel work into an ATS-ready electrician resume — apprentice to journeyman. $9.99 one-time, no subscription. TRADE HUSTL3.",
+    "Turn your troubleshooting, wiring, conduit, and panel work into an ATS-ready electrician resume — apprentice to journeyman. $9.99 one-time, no subscription.",
   ogImage: "/optimized/og-v2.webp",
   targetQueries: [
     "electrician resume builder",
@@ -2261,7 +2261,7 @@ export const GENERAL_LABOR_LANDING: TradeLandingContent = {
   },
   seoTitle: "General Labor Resume Builder | Laborer & Maintenance | TRADE HUSTL3",
   seoDescription:
-    "Turn your material handling, basic repairs, and work-order support into an ATS-ready general labor and maintenance resume. $9.99 one-time, no subscription. TRADE HUSTL3.",
+    "Turn your material handling, basic repairs, and work-order support into an ATS-ready general labor and maintenance resume. $9.99 one-time, no subscription.",
   ogImage: "/optimized/og-v2.webp",
   targetQueries: [
     "general labor resume builder",

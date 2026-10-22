@@ -21,7 +21,7 @@ async function renderPath(pathname) {
 const PAGES = [
   {
     slug: "hvac",
-    title: "HVAC Resume Builder | HVAC Technician Resume | TRADE HUSTL3",
+    title: "HVAC Technician Resume Builder | TRADE HUSTL3",
     descPrefix: "TRADE HUSTL3's HVAC Resume Builder turns your EPA 608, tools, and field experience into an ATS-ready HVAC technician resume.",
     breadcrumb: "HVAC",
     heroLocation: "hvac_hero",

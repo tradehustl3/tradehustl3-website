@@ -409,7 +409,7 @@ export const CREDENTIAL_LIBRARY: readonly CredentialRecord[] = [
     officialUrl: "https://www.ase.com/",
     sources: [
       { label: "ASE — Certification Pathway", url: "https://ase.com/about/certification-pathway/" },
-      { label: "ASE — Frequently Asked Questions (effective 8/1/2025)", url: "https://www.ase.com/dist/docs/FAQs.pdf" },
+      { label: "ASE — Frequently Asked Questions", url: "https://ase.com/faqs/" },
     ],
     lastVerified: VERIFIED_2026_10_21,
     openQuestions: [

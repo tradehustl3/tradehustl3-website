@@ -3,7 +3,7 @@ import { PolicyPage, PolicySection, SUPPORT_EMAIL } from "../policy-page";
 
 const PAGE_DESCRIPTION = "One clear contact for Resume Builder, book delivery, payments, refunds, and privacy requests.";
 
-export const metadata: Metadata = { title: "Contact Support", description: PAGE_DESCRIPTION, alternates: { canonical: "/contact" } };
+export const metadata: Metadata = { title: { absolute: "Contact Support | TRADE HUSTL3" }, description: PAGE_DESCRIPTION, alternates: { canonical: "/contact" } };
 
 export default function ContactPage() {
   return (

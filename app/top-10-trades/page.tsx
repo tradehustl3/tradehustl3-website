@@ -23,7 +23,7 @@ export const metadata: Metadata = {
     type: 'website',
     images: [
       {
-        url: '/top-trades-2026-2027-card.png',
+        url: '/optimized/top-trades-guide-v1.webp',
         alt: 'TRADE HUSTL3 Top 10 Trades for 2026–2027 free guide',
       },
     ],
@@ -32,7 +32,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: PAGE_TITLE,
     description: PAGE_DESCRIPTION,
-    images: ['/top-trades-2026-2027-card.png'],
+    images: ['/optimized/top-trades-guide-v1.webp'],
   },
 };
 
@@ -116,7 +116,7 @@ export default function TopTenTradesPage() {
           <div className={styles.visualGlow} aria-hidden="true" />
           <Image
             className={styles.guideImage}
-            src="/top-trades-2026-2027-card.png"
+            src="/optimized/top-trades-guide-v1.webp"
             alt="TRADE HUSTL3 Top 10 Trades for 2026–2027 guide artwork"
             width={1200}
             height={1200}
@@ -166,7 +166,7 @@ export default function TopTenTradesPage() {
 
       <footer className={styles.footer}>
         <Link className={styles.footerBrand} href="/">TRADE HUSTL<span>3</span> LLC</Link>
-        <p>BUILT BY HUSTL3. BACKED BY TRADE.</p>
+        <p>BUILT BY HUSTLE. BACKED BY TRADES.</p>
         <nav aria-label="Footer links">
           <Link href="/privacy">Privacy</Link>
           <Link href="/terms">Terms</Link>

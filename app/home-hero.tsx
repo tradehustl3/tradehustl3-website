@@ -101,6 +101,8 @@ export function HomeHero({
         <p className={styles.priceLine}>
           <span><b>$0</b> to preview</span>
           <span aria-hidden="true" className={styles.dot}>·</span>
+          <span>Just your email</span>
+          <span aria-hidden="true" className={styles.dot}>·</span>
           <span><b>$9.99</b> once to unlock</span>
           <span aria-hidden="true" className={styles.dot}>·</span>
           <span>No subscription</span>

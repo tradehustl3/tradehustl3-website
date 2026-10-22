@@ -39,7 +39,7 @@ export function ResourceFooter() {
     <footer className={styles.footer}>
       <div className={styles.footerInner}>
         <p>
-          <span className={styles.footerTag}>BUILT BY HUSTL3. BACKED BY TRADE.</span>
+          <span className={styles.footerTag}>BUILT BY HUSTLE. BACKED BY TRADES.</span>
           <br />
           Guides cite official sources and show when they were last checked. Partners and sponsors never edit guide content.
           <br />

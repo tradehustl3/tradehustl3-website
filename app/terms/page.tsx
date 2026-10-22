@@ -3,7 +3,7 @@ import { PolicyPage, PolicySection, SUPPORT_EMAIL } from "../policy-page";
 
 const PAGE_DESCRIPTION = "The terms governing use of TRADE HUSTL3 LLC websites, digital products, and the Resume Builder.";
 
-export const metadata: Metadata = { title: "Terms of Service", description: PAGE_DESCRIPTION, alternates: { canonical: "/terms" } };
+export const metadata: Metadata = { title: { absolute: "Terms of Service | TRADE HUSTL3" }, description: PAGE_DESCRIPTION, alternates: { canonical: "/terms" } };
 
 export default function TermsPage() {
   return (

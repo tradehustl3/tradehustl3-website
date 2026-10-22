@@ -333,7 +333,7 @@ export default function MaintenanceResumeTipsPage() {
       </section>
 
       <footer className="rb-footer">
-        <strong>TRADE HUSTL<span>3</span></strong><p>BUILT BY HUSTL3. BACKED BY TRADE.</p>
+        <strong>TRADE HUSTL<span>3</span></strong><p>BUILT BY HUSTLE. BACKED BY TRADES.</p>
         <div className="rb-footer-links"><Link href="/#resume-start">Resume Builder</Link><Link href="/resume-examples">Resume Examples</Link><a href="/top-10-trades">Top 10 Trades</a>
           <a href="/privacy">Privacy</a><a href="/terms">Terms</a><a href="/contact">Support</a></div>
       </footer>

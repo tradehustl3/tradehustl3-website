@@ -4,7 +4,7 @@ const crawlerFreshnessHeaders = [
   { key: "Cache-Control", value: "no-store, max-age=0" },
   { key: "Cloudflare-CDN-Cache-Control", value: "no-store" },
   { key: "CDN-Cache-Control", value: "no-store" },
-  { key: "X-TRADE-HUSTL3-Content-Revision", value: "2026-10-21-skilled-trades-hub" },
+  { key: "X-TRADE-HUSTL3-Content-Revision", value: "2026-10-22-audit-cleanup" },
 ];
 
 const policyNoStoreHeaders = [

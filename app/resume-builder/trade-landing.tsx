@@ -251,7 +251,7 @@ export function TradeLandingPage({ content }: { content: TradeLandingContent }) 
       <section className={`${styles.section} ${styles.proofSection}`} aria-labelledby="examples-title">
         <div className={styles.botPanel}>
           <div className={styles.botImage}>
-            <Image src="/hustl3-bot-official.webp" alt="HUSTL3 BOT Resume Builder guide"
+            <Image src="/optimized/hustl3-bot-v1.webp" alt="HUSTL3 BOT Resume Builder guide"
               width={1122} height={1402} />
           </div>
           <div><p className="rb-kicker">HUSTL3 BOT FIELD GUIDANCE</p>
@@ -334,7 +334,7 @@ export function TradeLandingPage({ content }: { content: TradeLandingContent }) 
 
       <SiblingGuides content={content} />
       <footer className="rb-footer">
-        <strong>TRADE HUSTL<span>3</span></strong><p>BUILT BY HUSTL3. BACKED BY TRADE.</p>
+        <strong>TRADE HUSTL<span>3</span></strong><p>BUILT BY HUSTLE. BACKED BY TRADES.</p>
         <div className="rb-footer-links"><a href={HUB_HREF}>Resume Builder</a><a href="/top-10-trades">Top 10 Trades</a>
           <a href="/privacy">Privacy</a><a href="/terms">Terms</a>
           <a href="/resume-builder/refund-policy">Refunds</a><a href="/contact">Support</a></div>
