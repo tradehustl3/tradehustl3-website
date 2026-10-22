@@ -3,7 +3,7 @@ import { CREDENTIAL_LIBRARY } from "./resources/credential-library";
 import { LABOR_MARKET_FACTS, LABOR_MARKET_PERIOD, formatCount, formatPay } from "./resources/labor-market";
 import { CATALOG_METRICS } from "./resume-examples/catalog-metrics";
 import styles from "./home-hub.module.css";
-import { ToolHeroArt } from "./tool-silhouettes";
+import { FieldInstrumentArt, PowerLineBackdrop } from "./home-field-art";
 
 /**
  * Hub homepage sections (approved design, Oct 21 2026): TRADE HUSTL3 as a
@@ -21,51 +21,56 @@ const POPULAR = [
 export function HubHero() {
   return (
     <section className={styles.hero} id="top" aria-labelledby="hub-title">
-      <ToolHeroArt />
+      <PowerLineBackdrop />
       <div className={styles.heroInner}>
-        <p className={styles.kicker}>SKILLED-TRADES CAREER &amp; RESOURCE HUB</p>
-        <h1 id="hub-title" className={styles.h1}>Built for the people who build, maintain, repair, and move America.</h1>
-        <p className={styles.lead}>
-          Explore your trade. Develop your skills. Advance your career. Free trade guides, sourced credential guides,
-          and career tools — built by a tradesman.
-        </p>
-        <div className={styles.heroActions}>
-          <Link
-            className={styles.lightCta}
-            href="/resources"
-            data-analytics-event="cta_click"
-            data-location="hub_hero"
-            data-destination="/resources"
-            data-item="resource_center"
-          >
-            Explore the Resource Center
-          </Link>
-          <a
-            className={styles.outlineCta}
-            href="#resume-start"
-            data-analytics-event="cta_click"
-            data-location="hub_hero"
-            data-destination="#resume-start"
-            data-item="resume_builder"
-          >
-            Build a resume — free preview
-          </a>
-        </div>
-        <div className={styles.popular}>
-          <span>Popular:</span>
-          {POPULAR.map(([label, href]) => (
+        <div className={styles.heroCopy}>
+          <p className={styles.kicker}>SKILLED-TRADES CAREER &amp; RESOURCE HUB</p>
+          <h1 id="hub-title" className={styles.h1}>Built for the people who build, maintain, repair, and move America.</h1>
+          <p className={styles.lead}>
+            <span className={styles.leadStatement}>Explore your trade. Develop your skills. Advance your career.</span>
+            Free trade guides, sourced credential guides, and career tools — built by a tradesman.
+          </p>
+          <div className={styles.heroActions}>
             <Link
-              key={href}
-              href={href}
-              data-analytics-event="select_content"
-              data-location="hub_hero_popular"
-              data-destination={href}
-              data-item={label}
+              className={styles.lightCta}
+              href="/resources"
+              data-analytics-event="cta_click"
+              data-location="hub_hero"
+              data-destination="/resources"
+              data-item="resource_center"
             >
-              {label}
+              Explore the Resource Center
+              <span className={styles.ctaArrow} aria-hidden="true">↗</span>
             </Link>
-          ))}
+            <a
+              className={styles.outlineCta}
+              href="#resume-start"
+              data-analytics-event="cta_click"
+              data-location="hub_hero"
+              data-destination="#resume-start"
+              data-item="resume_builder"
+            >
+              Build a resume — free preview
+              <span className={styles.ctaArrow} aria-hidden="true">→</span>
+            </a>
+          </div>
+          <div className={styles.popular}>
+            <span>Popular:</span>
+            {POPULAR.map(([label, href]) => (
+              <Link
+                key={href}
+                href={href}
+                data-analytics-event="select_content"
+                data-location="hub_hero_popular"
+                data-destination={href}
+                data-item={label}
+              >
+                {label}
+              </Link>
+            ))}
+          </div>
         </div>
+        <FieldInstrumentArt />
         <dl className={styles.stats}>
           <div><dt>trade families</dt><dd>{CATALOG_METRICS.careerFamilies}</dd></div>
           <div><dt>mapped job titles</dt><dd>{CATALOG_METRICS.mappedRoles}</dd></div>

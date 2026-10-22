@@ -6,6 +6,7 @@ import { CtaAnalytics } from './cta-analytics';
 import { CustomerReviews } from './customer-reviews';
 import { homeBodyFont, homeDisplayFont } from './home-fonts';
 import { HomeHero } from './home-hero';
+import { HomeNavigation } from './home-navigation';
 import { HubDivisions, HubHero, HubOutlook } from './home-hub';
 import { HubStages } from './home-hub-stages';
 import { ToolRail } from './tool-silhouettes';
@@ -112,13 +113,7 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
             <Link className={fi.brand} href="#top" aria-label="TRADE HUSTL3 home">
               <BrandLockup />
             </Link>
-            <nav className={fi.nav} aria-label="Primary navigation">
-              <Link className={fi.navLink} href="/resume-examples">Explore Trades</Link>
-              <Link className={fi.navLink} href="/resources/certifications">Certifications</Link>
-              <Link className={fi.navLink} href="/resources">Resources</Link>
-              <Link className={fi.navLink} href="/book">The Book</Link>
-              <AnalyticsLink href="#resume-start" location="sticky_header" className={fi.headerCta}>Build my free preview</AnalyticsLink>
-            </nav>
+            <HomeNavigation />
           </div>
         </header>
 
