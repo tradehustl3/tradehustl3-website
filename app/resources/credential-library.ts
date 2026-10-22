@@ -409,7 +409,10 @@ export const CREDENTIAL_LIBRARY: readonly CredentialRecord[] = [
     officialUrl: "https://www.ase.com/",
     sources: [
       { label: "ASE — Certification Pathway", url: "https://ase.com/about/certification-pathway/" },
-      { label: "ASE — Frequently Asked Questions (effective 8/1/2025)", url: "https://www.ase.com/dist/docs/FAQs.pdf" },
+      { label: "ASE — Certification and Testing FAQs", url: "https://ase.com/faqs/" },
+      // The former https://www.ase.com/dist/docs/FAQs.pdf now returns 404 (Oct 22, 2026 audit).
+      // Entry-Level terms are published by the ASE Education Foundation.
+      { label: "ASE Education Foundation — Entry-Level Certification FAQs (effective 8/1/2026)", url: "https://www.aseeducationfoundation.org/wp-content/uploads/FAQs.pdf" },
     ],
     lastVerified: VERIFIED_2026_10_21,
     openQuestions: [

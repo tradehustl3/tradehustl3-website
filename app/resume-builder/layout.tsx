@@ -5,7 +5,8 @@ import { rbFont } from "./rb-font";
 
 export const metadata: Metadata = {
   title: {
-    default: "Skilled Trades Resume Builder | TRADE HUSTL3",
+    // Wrapped by the root template, so this renders "Skilled Trades Resume Builder | TRADE HUSTL3".
+    default: "Skilled Trades Resume Builder",
     template: "%s | TRADE HUSTL3 Resume Builder",
   },
   description:

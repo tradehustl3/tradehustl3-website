@@ -7,7 +7,8 @@ export default function robots(): MetadataRoute.Robots {
       userAgent: "*",
       allow: "/",
     },
+    // No `host`: the Host directive is non-standard and ignored by Google;
+    // the canonical origin is enforced by the www/HTTP 301 redirects.
     sitemap: `${SITE_URL}/sitemap.xml`,
-    host: SITE_URL,
   };
 }

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { OrderConfirmationCopy } from "./order-confirmation-copy";
 
 export const metadata: Metadata = {
-  title: "Order Confirmed | TRADE HUSTL3",
+  title: "Order Confirmed",
   description: "Your TRADE HUSTL3 eBook order has been confirmed.",
   robots: { index: false, follow: false },
 };

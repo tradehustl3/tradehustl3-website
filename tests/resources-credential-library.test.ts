@@ -154,3 +154,15 @@ test("every one of the 14 builder tracks has a campaign headline, and every fami
     assert.equal(resolveTradeParam(slug), family.builderTrack, `${family.slug} round-trips through ?trade=`);
   }
 });
+
+test("audit fix (Oct 22): ASE cites live FAQ sources, not the retired ase.com FAQ PDF", () => {
+  const retired = "https://www.ase.com/dist/docs/FAQs.pdf";
+  for (const credential of CREDENTIAL_LIBRARY) {
+    for (const source of credential.sources) assert.notEqual(source.url, retired, `${credential.slug} cites the retired ASE PDF`);
+  }
+  const ase = credentialBySlug("ase");
+  assert.ok(ase);
+  const urls = ase.sources.map((source) => source.url);
+  assert.ok(urls.includes("https://ase.com/faqs/"));
+  assert.ok(urls.includes("https://www.aseeducationfoundation.org/wp-content/uploads/FAQs.pdf"));
+});

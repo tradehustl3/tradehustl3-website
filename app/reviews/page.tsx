@@ -5,7 +5,7 @@ import styles from "./reviews.module.css";
 import { BrandLockup } from "../brand-lockup";
 
 export const metadata: Metadata = {
-  title: "Customer Review | TRADE HUSTL3",
+  title: "Customer Review",
   description: "Share honest feedback about the TRADE HUSTL3 Resume Builder.",
   robots: { index: false, follow: false, noarchive: true },
 };

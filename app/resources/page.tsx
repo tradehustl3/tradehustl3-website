@@ -23,7 +23,7 @@ import styles from "./resources.module.css";
 const PAGE_PATH = "/resources";
 const PAGE_URL = `${SITE_URL}${PAGE_PATH}`;
 const PAGE_TITLE = "Skilled-Trades Resource Center: Trades, Certifications & Careers | TRADE HUSTL3";
-const PAGE_DESCRIPTION = `Free skilled-trades resources: ${TRADE_CAREER_FAMILIES.length} trade families, ${CREDENTIAL_LIBRARY.length} certifications, licenses, and training cards checked against official sources, and real job-outlook data.`;
+const PAGE_DESCRIPTION = `Free skilled-trades resources: ${TRADE_CAREER_FAMILIES.length} trade families, ${CREDENTIAL_LIBRARY.length} certifications, licenses, and training cards checked against official sources, and job-outlook data.`;
 
 export const metadata: Metadata = {
   title: { absolute: PAGE_TITLE },

@@ -4,7 +4,7 @@ import { ReviewAdmin } from "./review-admin";
 import styles from "./review-admin.module.css";
 
 export const metadata: Metadata = {
-  title: "Review Moderation | TRADE HUSTL3",
+  title: "Review Moderation",
   robots: { index: false, follow: false, noarchive: true },
 };
 
