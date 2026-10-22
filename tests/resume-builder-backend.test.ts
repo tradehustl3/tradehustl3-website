@@ -648,27 +648,52 @@ function refundHarness(options: RefundHarnessOptions = {}) {
     orderStatus: options.orderStatus ?? "paid",
     paymentIntent: options.paymentIntent === undefined ? "pi_resume_builder_paid" : options.paymentIntent,
     entitlementStatus: options.entitlementStatus === undefined ? "active" : options.entitlementStatus,
+    amountRefunded: 0,
     events: new Set<string>(),
+    refundEvents: [] as Array<{ paymentIntent: string; amountRefunded: number }>,
   };
   const batches: Array<Array<{ sql: string; values: unknown[] }>> = [];
   const runs: Array<{ sql: string; values: unknown[] }> = [];
 
+  // Mirrors the refund-ledger SQL in worker/resume-builder-base.ts closely enough
+  // to exercise access rules; ledger arithmetic is covered by the sqlite tests.
+  function matchesOrder(sql: string, key: unknown) {
+    return /WHERE order_id = \?/i.test(sql) ? key === "order-1" : key === state.paymentIntent;
+  }
+
   function apply(statement: { sql: string; values: unknown[] }) {
-    if (/INSERT OR IGNORE INTO stripe_events/i.test(statement.sql)) {
-      state.events.add(String(statement.values[0]));
+    const { sql, values } = statement;
+    if (/INSERT OR IGNORE INTO stripe_events/i.test(sql)) {
+      state.events.add(String(values[0]));
     }
-    if (/UPDATE resume_orders SET status = 'refunded'/i.test(statement.sql)) {
+    if (/INSERT OR IGNORE INTO resume_refund_events/i.test(sql)) {
+      state.refundEvents.push({ paymentIntent: String(values[1]), amountRefunded: Number(values[3]) });
+    }
+    if (/amount_refunded = MAX\(amount_refunded, \?\)/i.test(sql) && matchesOrder(sql, values[5])) {
+      state.amountRefunded = Math.max(state.amountRefunded, Number(values[0]));
+      state.paymentIntent = String(values[1]);
+      if (state.amountRefunded >= 999) state.orderStatus = "refunded";
+    }
+    if (/MAX\(amount_refunded, COALESCE\(/i.test(sql)) {
+      const recorded = state.refundEvents
+        .filter((event) => event.paymentIntent === values[0])
+        .map((event) => event.amountRefunded);
+      state.amountRefunded = Math.max(state.amountRefunded, 0, ...recorded);
+    }
+    if (/UPDATE resume_orders SET status = 'refunded'/i.test(sql) && state.amountRefunded >= 999) {
       state.orderStatus = "refunded";
-      state.paymentIntent = String(statement.values[0]);
     }
-    if (/status = CASE WHEN status = 'refunded'/i.test(statement.sql)) {
+    if (/status = CASE WHEN status = 'refunded'/i.test(sql)) {
       if (state.orderStatus !== "refunded") state.orderStatus = "paid";
-      state.paymentIntent = String(statement.values[1]);
+      state.paymentIntent = String(values[1]);
     }
-    if (/INSERT INTO entitlements/i.test(statement.sql) && state.orderStatus === "paid") {
+    if (/INSERT INTO entitlements/i.test(sql) && state.orderStatus === "paid") {
       state.entitlementStatus = "active";
     }
-    if (/UPDATE entitlements SET status = 'revoked'/i.test(statement.sql) && state.entitlementStatus === "active") {
+    if (
+      /UPDATE entitlements SET status = 'revoked'/i.test(sql) && state.entitlementStatus === "active"
+      && state.amountRefunded >= 999 && matchesOrder(sql, values[0])
+    ) {
       state.entitlementStatus = "revoked";
     }
   }
@@ -791,9 +816,9 @@ test("a partial refund keeps generation and download entitlement active", async 
   });
   assert.equal(response?.status, 200);
   assert.equal(harness.state.orderStatus, "paid");
-  assert.equal(harness.state.entitlementStatus, "active");
+  assert.equal(harness.state.entitlementStatus, "active", "partial refunds must not revoke access");
+  assert.equal(harness.state.amountRefunded, 500, "partial refunds are recorded in the ledger");
   assert.deepEqual([...harness.state.events], ["evt_refund_partial"]);
-  assert.equal(harness.batches.length, 0, "partial refunds must not revoke access");
 });
 
 test("sequential partial refunds revoke only when the cumulative charge total reaches $9.99", async () => {
@@ -815,9 +840,10 @@ test("sequential partial refunds revoke only when the cumulative charge total re
   assert.equal(harness.state.orderStatus, "refunded");
   assert.equal(harness.state.entitlementStatus, "revoked");
   assert.equal(harness.state.events.size, 2);
-  assert.equal(harness.batches.length, 1);
-  assert.ok(harness.batches[0].some((statement) => /UPDATE resume_orders SET status = 'refunded'/i.test(statement.sql)));
-  assert.ok(harness.batches[0].some((statement) => /UPDATE entitlements SET status = 'revoked'/i.test(statement.sql)));
+  assert.equal(harness.state.amountRefunded, 999);
+  assert.equal(harness.batches.length, 2, "each refund event is recorded");
+  assert.ok(harness.batches[1].some((statement) => /amount_refunded = MAX\(amount_refunded, \?\)/i.test(statement.sql)));
+  assert.ok(harness.batches[1].some((statement) => /UPDATE entitlements SET status = 'revoked'/i.test(statement.sql)));
 });
 
 test("a fully refunded order cannot generate or download resume files", async () => {
