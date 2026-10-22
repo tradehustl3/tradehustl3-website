@@ -37,7 +37,16 @@ async function deliver(DB: D1Database, event: Record<string, unknown>) {
   );
 }
 
-function refundEvent(eventId: string, amountRefunded: number, options: { orderMetadata?: boolean } = {}) {
+function refundEvent(
+  eventId: string,
+  amountRefunded: number,
+  options: { orderMetadata?: boolean; untagged?: boolean; paymentIntent?: string } = {},
+) {
+  const metadata = options.untagged
+    ? {}
+    : options.orderMetadata === false
+      ? { product: "resume_builder_mvp" }
+      : { product: "resume_builder_mvp", order_id: "order-1" };
   return {
     id: eventId,
     type: "charge.refunded",
@@ -47,10 +56,8 @@ function refundEvent(eventId: string, amountRefunded: number, options: { orderMe
         amount: 999,
         amount_refunded: amountRefunded,
         currency: "usd",
-        payment_intent: "pi_ledger_1",
-        metadata: options.orderMetadata === false
-          ? { product: "resume_builder_mvp" }
-          : { product: "resume_builder_mvp", order_id: "order-1" },
+        payment_intent: options.paymentIntent ?? "pi_ledger_1",
+        metadata,
       },
     },
   };
@@ -151,6 +158,16 @@ test("a partial refund delivered before checkout is reconciled and access is gra
   assert.equal(order().status, "paid");
   assert.equal(order().amount_refunded, 300);
   assert.equal(entitlementStatus(), "active");
+});
+
+test("an untagged $9.99 refund with no matching order (e.g. an eBook charge) is not stored", async () => {
+  const { DB, order, refundRows } = setup();
+  await deliver(DB, checkoutEvent("evt_checkout"));
+  const response = await deliver(DB, refundEvent("evt_ebook_refund", 999, { untagged: true, paymentIntent: "pi_ebook_1" }));
+  assert.equal(response?.status, 200);
+  assert.equal(refundRows(), 0);
+  assert.equal(order().amount_refunded, 0);
+  assert.equal(order().status, "paid");
 });
 
 test("a refund larger than the charge is rejected and not recorded", async () => {

@@ -1567,13 +1567,16 @@ async function handleResumeRefund(
     || (order.stripe_payment_intent_id && order.stripe_payment_intent_id !== paymentIntent)
     || (metadataOrderId && metadataOrderId !== order.order_id)
   ) {
-    // Keep the refund event. If a checkout for this payment intent is being
-    // recorded concurrently, apply the refund to it now as well; otherwise the
-    // checkout handler reconciles the stored event when it arrives.
+    // Keep a refund explicitly tagged as a Resume Builder payment. If a checkout
+    // for this payment intent is being recorded concurrently, apply the refund to
+    // it now as well; otherwise the checkout handler reconciles the stored event.
+    // Untagged refunds with no matching order (for example, $9.99 eBook charges
+    // delivered to this endpoint) are not stored in the Resume Builder ledger.
+    const tagged = metadataProduct === "resume_builder_mvp";
     await env.DB.batch([
       stripeEventStatement(env, eventId, eventType),
-      refundEvent,
-      ...(order ? [] : refundLedgerStatements(env, { paymentIntent }, amountRefunded, chargeId, paymentIntent)),
+      ...(tagged ? [refundEvent] : []),
+      ...(tagged && !order ? refundLedgerStatements(env, { paymentIntent }, amountRefunded, chargeId, paymentIntent) : []),
     ]);
     console.error("Resume Builder refund event did not match a server-created order.");
     return json({ received: true });
