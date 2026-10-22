@@ -83,17 +83,14 @@ const DIVISIONS: readonly Division[] = [
   { title: "Trade Explorer", tag: "Free", copy: `${CATALOG_METRICS.careerFamilies} trade families and ${CATALOG_METRICS.mappedRoles} job titles, with what each trade looks for.`, href: "/resume-examples", cta: "Explore trades" },
   { title: "Credential Center", tag: "Free", copy: `${CREDENTIAL_LIBRARY.length} certifications, licenses, and training cards — labeled by type and linked to the issuer.`, href: "/resources/certifications", cta: "Browse credentials" },
   { title: "Career Tools", tag: "Free preview · $9.99", copy: "The TRADE HUSTL3 Resume Builder with a matching cover letter, PDF and editable Word.", href: "#resume-start", cta: "Build my resume", paid: true },
-  { title: "Training & Jobs", tag: "Coming soon", copy: "How to find apprenticeships and training through official finders." },
-  { title: "Career Center", tag: "Coming soon", copy: "Trade interview questions, application tips, and moving up." },
-  { title: "Field Report", tag: "Coming soon", copy: "A weekly, sourced story on credentials, training, and the trades job market." },
 ];
 
 export function HubDivisions() {
   return (
     <section className={styles.section} aria-labelledby="divisions-title">
       <div className={styles.sectionHead}>
-        <p className={styles.kicker}>ONE BRAND · SIX WAYS IN</p>
-        <h2 id="divisions-title" className={styles.h2}>Everything a trade career needs</h2>
+        <p className={styles.kicker}>EXPLORE WHAT’S AVAILABLE</p>
+        <h2 id="divisions-title" className={styles.h2}>Tools for your next career move</h2>
       </div>
       <ul className={styles.divisions}>
         {DIVISIONS.map((division) => {
@@ -126,6 +123,7 @@ export function HubDivisions() {
           );
         })}
       </ul>
+      <p className={styles.sectionLead}>Coming next: training and job resources, career advice, and the Field Report.</p>
     </section>
   );
 }

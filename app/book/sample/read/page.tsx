@@ -114,7 +114,7 @@ export default function BookSampleReaderPage() {
           <div className={styles.coverGlow} aria-hidden="true" />
           <Image
             className={styles.cover}
-            src="/trade-hustl3-book-cover.jpg"
+            src="/optimized/book-cover-v2.webp"
             alt="TRADE HUSTL3: Built by Hustle, Backed by Trades book cover"
             width={1024}
             height={1536}
@@ -140,7 +140,7 @@ export default function BookSampleReaderPage() {
       <section className={styles.reader} aria-label="Seven-page TRADE HUSTL3 book sample">
         <article className={`${styles.bookPage} ${styles.coverPage}`} aria-label="Sample page 1 of 7 — cover">
           <span className={styles.pageNumber}>01 / 07</span>
-          <Image src="/trade-hustl3-book-cover.jpg" alt="TRADE HUSTL3 book cover" width={1024} height={1536} />
+          <Image src="/optimized/book-cover-v2.webp" alt="TRADE HUSTL3 book cover" width={1024} height={1536} />
         </article>
 
         <article className={`${styles.bookPage} ${styles.titlePage}`} aria-label="Sample page 2 of 7 — title page">
@@ -210,7 +210,7 @@ export default function BookSampleReaderPage() {
 
       <footer className={styles.footer}>
         <Link href="/">TRADE HUSTL<span>3</span> LLC</Link>
-        <p>BUILT BY HUSTL3. BACKED BY TRADE.</p>
+        <p>BUILT BY HUSTLE. BACKED BY TRADES.</p>
         <nav aria-label="Footer links">
           <Link href="/privacy">Privacy</Link>
           <Link href="/terms">Terms</Link>

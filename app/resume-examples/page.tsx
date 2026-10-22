@@ -192,7 +192,7 @@ export default function ResumeExamplesCatalogPage() {
 
       <footer className={styles.footer}>
         <div><Image src="/optimized/trade-hustl3-logo.webp" alt="TRADE HUSTL3" width={48} height={48} /><strong>TRADE HUSTL3 LLC</strong></div>
-        <p>BUILT BY HUSTL3. BACKED BY TRADE.<br />Atlanta, Georgia · <a href="mailto:support@tradehustl3.com">support@tradehustl3.com</a></p>
+        <p>BUILT BY HUSTLE. BACKED BY TRADES.<br />Atlanta, Georgia · <a href="mailto:support@tradehustl3.com">support@tradehustl3.com</a></p>
         <nav aria-label="Footer links">
           <Link href="/">Home</Link>
           <Link href="/#resume-start">Resume Builder</Link>

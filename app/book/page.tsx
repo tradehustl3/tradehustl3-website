@@ -9,7 +9,7 @@ import { BrandLockup } from "../brand-lockup";
 
 const BOOK_TITLE = "TRADE HUSTL3: Built by Hustle, Backed by Trades";
 const BOOK_DESCRIPTION =
-  "A practical skilled-trades career guide by Da Maintenance Mane covering more than 200 trades, entry paths, certifications, earning power, ownership, and a 90-Day Action Plan.";
+  "Explore 200+ skilled trades, training, certifications, and career paths with Da Maintenance Mane. Includes a practical 90-Day Action Plan.";
 
 export const metadata: Metadata = {
   title: "TRADE HUSTL3 Book | Da Maintenance Mane",
@@ -23,9 +23,9 @@ export const metadata: Metadata = {
     type: "book",
     images: [
       {
-        url: "/trade-hustl3-book-cover.jpg",
-        width: 1024,
-        height: 1536,
+        url: "/optimized/book-cover-v2.webp",
+        width: 800,
+        height: 1200,
         alt: "Official TRADE HUSTL3 book cover",
       },
     ],
@@ -34,7 +34,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "TRADE HUSTL3 Book | Da Maintenance Mane",
     description: BOOK_DESCRIPTION,
-    images: ["/trade-hustl3-book-cover.jpg"],
+    images: ["/optimized/book-cover-v2.webp"],
   },
 };
 
@@ -48,7 +48,7 @@ const bookStructuredData = {
   datePublished: "2026-09-15",
   inLanguage: "en-US",
   url: `${SITE_URL}/book`,
-  image: `${SITE_URL}/trade-hustl3-book-cover.jpg`,
+  image: `${SITE_URL}/optimized/book-cover-v2.webp`,
   author: {
     "@id": `${SITE_URL}/#zachary-ellis`,
   },
@@ -155,7 +155,7 @@ export default function BookPage() {
           <div className="book-cover-glow" aria-hidden="true" />
           <Image
             className="book-cover-image"
-            src="/trade-hustl3-book-cover.jpg"
+            src="/optimized/book-cover-v2.webp"
             alt="Official front cover of TRADE HUSTL3"
             width={1024}
             height={1536}
@@ -202,7 +202,7 @@ export default function BookPage() {
         </div>
         <figure className="sample-quote">
           <blockquote>
-            “You don’t have to wait for somebody to hand you a future. Learn a skill. Build your value. Earn your own. Create something nobody can take from you. <span>BUILT BY TRADES. BACKED BY HUSTL3.</span>”
+            “You don’t have to wait for somebody to hand you a future. Learn a skill. Build your value. Earn your own. Create something nobody can take from you. <span>BUILT BY HUSTLE. BACKED BY TRADES.</span>”
           </blockquote>
           <figcaption>The TRADE HUSTL3 mindset</figcaption>
         </figure>
@@ -285,7 +285,7 @@ export default function BookPage() {
         <div className="author-portrait-frame">
           <Image
             className="author-portrait"
-            src="/zachary-ellis-author.jpg"
+            src="/optimized/author-portrait-v1.webp"
             alt="Da Maintenance Mane, author of TRADE HUSTL3"
             width={1086}
             height={1449}
@@ -321,7 +321,7 @@ export default function BookPage() {
       </section>
 
       <footer>
-        <div className="footer-brand"><div className="wordmark">TRADE HUSTL<span>3</span></div><p>BUILT BY HUSTL3. BACKED BY TRADE.</p><SocialLinks /></div>
+        <div className="footer-brand"><div className="wordmark">TRADE HUSTL<span>3</span></div><p>BUILT BY HUSTLE. BACKED BY TRADES.</p><SocialLinks /></div>
         <div className="footer-links"><Link href="/">Home</Link><a href="#sample">Free guide</a><a href="#chapters">Chapters</a><a href="#author">Author</a><a href="mailto:partners@tradehustl3.com">Partnerships</a></div>
         <div className="footer-legal"><Link href="/privacy">Privacy</Link><Link href="/terms">Terms</Link><Link href="/book/refund-policy">eBook policy</Link><Link href="/data-deletion">Data requests</Link><Link href="/contact">Support</Link></div>
         <p className="copyright">© 2026 TRADE HUSTL3. ALL GRIT RESERVED.</p>

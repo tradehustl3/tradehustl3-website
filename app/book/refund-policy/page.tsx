@@ -3,7 +3,7 @@ import { PolicyPage, PolicySection, SUPPORT_EMAIL } from "../../policy-page";
 
 const PAGE_DESCRIPTION = "Delivery, permitted use, and refund terms for the direct TRADE HUSTL3 eBook.";
 
-export const metadata: Metadata = { title: "eBook Delivery and Refund Policy", description: PAGE_DESCRIPTION, alternates: { canonical: "/book/refund-policy" } };
+export const metadata: Metadata = { title: { absolute: "eBook Delivery and Refund Policy | TRADE HUSTL3" }, description: PAGE_DESCRIPTION, alternates: { canonical: "/book/refund-policy" } };
 
 export default function EbookPolicyPage() {
   return (

@@ -87,7 +87,7 @@ test("server-renders the corrected TRADE HUSTL3 brand and metadata", async () =>
   assert.match(html, /optimized\/th3-logo-header\.webp/i);
   assert.match(html, /favicon\.svg/i);
   assert.match(html, /alt="TRADE HUSTL3 logo"/i);
-  assert.match(html, /BUILT BY HUSTL3\. BACKED BY TRADE\./);
+  assert.match(html, /BUILT BY HUSTLE\. BACKED BY TRADES\./);
   assert.match(html, /Skilled-Trades[\s\S]*Resume Builder/i);
 });
 
@@ -235,8 +235,8 @@ test("server-renders the official book page, cover, portrait, and current editio
 
   assert.match(html, /<title>TRADE HUSTL3 Book \| Da Maintenance Mane<\/title>/i);
   assert.match(html, /<link rel="canonical" href="https:\/\/tradehustl3\.com\/book"/i);
-  assert.match(html, /trade-hustl3-book-cover\.jpg/i);
-  assert.match(html, /zachary-ellis-author\.jpg/i);
+  assert.match(html, /optimized\/book-cover-v2\.webp/i);
+  assert.match(html, /optimized\/author-portrait-v1\.webp/i);
   assert.match(html, /DA[\s\S]*MAINTENANCE[\s\S]*MANE\./i);
   assert.equal(html.includes("Zachary Cameron Ellis"), false);
   assert.match(html, /Available now/i);
@@ -257,7 +257,7 @@ test("server-renders the official book page, cover, portrait, and current editio
   assert.match(html, /Final Word: Build Something That Belongs to You/i);
   assert.doesNotMatch(html, /Launch countdown/i);
   assert.match(html, /Earn your own/i);
-  assert.match(html, /BUILT BY TRADES[\s\S]*BACKED BY HUSTL3/i);
+  assert.match(html, /BUILT BY HUSTLE[\s\S]*BACKED BY TRADES/i);
   assert.equal(html.includes("fell through an attic"), false);
 });
 
@@ -325,7 +325,7 @@ test("homepage leads with preview-before-payment proof and the included cover le
   assert.match(html, /<footer[^>]*data-site-footer/i);
   assert.doesNotMatch(html, /corrections within 7 days/i);
   assert.match(html, /No credit card to preview/i);
-  assert.match(html, /hustl3-bot-official\.webp/i);
+  assert.match(html, /optimized\/hustl3-bot-v1\.webp/i);
   assert.doesNotMatch(html, /Founder, TRADE HUSTL3/i);
   assert.match(html, /BUILT FOR THE TRADES[\s\S]*READY WHEN YOU ARE/i);
   assert.ok(html.indexOf('id="included-cover-letter"') < html.indexOf('id="guide-title"'));

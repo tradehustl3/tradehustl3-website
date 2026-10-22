@@ -42,21 +42,8 @@ export const metadata: Metadata = {
   creator: "Da Maintenance Mane",
   publisher: SITE_NAME,
 
-  alternates: {
-    canonical: "/",
-  },
-
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: {
-      index: true,
-      follow: true,
-      "max-image-preview": "large",
-      "max-snippet": -1,
-      "max-video-preview": -1,
-    },
-  },
+  // Public pages declare their own canonical. Index/follow is the default;
+  // keeping both out of the root also prevents contradictory tags on 404s.
 
   icons: {
     // TH3 monogram drawn for small sizes; the full logo is unreadable at 16px.

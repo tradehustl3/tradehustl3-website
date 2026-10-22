@@ -618,3 +618,5 @@
     flex-basis: 100%;
   }
 }
+
+.truthGuide { display: inline-block; margin-top: 16px; color: inherit; font-weight: 700; text-underline-offset: 4px; }

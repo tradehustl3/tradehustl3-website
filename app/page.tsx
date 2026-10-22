@@ -277,7 +277,7 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
           <p className={styles.eyebrow}>BUILT FOR THE TRADES</p>
           <h2 id="difference-title">Your work is not generic. Your resume should not be either.</h2>
           <p>TRADE HUSTL3 is built around the way skilled-trades people actually work: equipment, tools, troubleshooting, PMs, installs, safety, certifications, emergency response, production, and measurable results.</p>
-          <Image src="/hustl3-bot-official.webp" alt="Full-body HUSTL3 BOT in branded skilled-trades safety gear" width={1122} height={1402} sizes="(max-width: 760px) 85vw, 360px" />
+          <Image src="/optimized/hustl3-bot-v1.webp" alt="Full-body HUSTL3 BOT in branded skilled-trades safety gear" width={1122} height={1402} sizes="(max-width: 760px) 85vw, 360px" />
         </div>
         <div className={styles.proofGrid}>{proofPoints.map(([title, copy], index) => <article key={title}><span>0{index + 1}</span><h3>{title}</h3><p>{copy}</p></article>)}</div>
       </section>
@@ -305,7 +305,7 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
 
       <footer className={styles.footer} data-site-footer>
         <div className={styles.footerBrand}><Image className={styles.footerMark} src="/optimized/th3-logo-header.webp" alt="TRADE HUSTL3 logo" width={248} height={160} /><strong>TRADE HUSTL3 LLC</strong></div>
-        <p>BUILT BY HUSTL3. BACKED BY TRADE.<br />TRADE HUSTL3 LLC · Atlanta, Georgia · <a href="mailto:support@tradehustl3.com">support@tradehustl3.com</a></p>
+        <p>BUILT BY HUSTLE. BACKED BY TRADES.<br />TRADE HUSTL3 LLC · Atlanta, Georgia · <a href="mailto:support@tradehustl3.com">support@tradehustl3.com</a></p>
         <nav aria-label="Footer links">
           <Link href="#resume-start">Resume Builder</Link>
           <Link href="/resources">Resource Center</Link>

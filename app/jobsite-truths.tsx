@@ -6,6 +6,7 @@ import fi from './home-first-impression.module.css';
 export const JOBSITE_TRUTHS = [
   {
     trade: 'HVAC',
+    href: '/resume-builder/hvac',
     image: '/optimized/hvac-manifold-worksite.webp',
     alt: 'Digital refrigerant manifold gauge with blue, yellow and red hoses connected to a rooftop unit on a commercial job site',
     fact: 'Fixed orifice? Charge by superheat. TXV? Charge by subcooling.',
@@ -13,6 +14,7 @@ export const JOBSITE_TRUTHS = [
   },
   {
     trade: 'Electrical',
+    href: '/resume-builder/electrician',
     image: '/trade-landings/electrician-worksite.webp',
     alt: 'Open electrical panel with breakers and color-coded wiring, a multimeter and hand tools on a construction site',
     fact: 'The white wire is the grounded conductor. It is not the ground.',
@@ -20,6 +22,7 @@ export const JOBSITE_TRUTHS = [
   },
   {
     trade: 'Plumbing',
+    href: '/resume-builder/plumbing',
     image: '/trade-landings/plumbing-worksite.webp',
     alt: 'Mechanical room with copper piping and water heaters, and a press tool, copper fittings, tubing cutter and pipe wrench on a workbench',
     fact: 'Small horizontal drains want a quarter inch of fall per foot.',
@@ -27,6 +30,7 @@ export const JOBSITE_TRUTHS = [
   },
   {
     trade: 'Welding',
+    href: '/resume-builder/welding-fabrication',
     image: '/trade-landings/welding-fabrication-worksite.webp',
     alt: 'Welding helmet, MIG gun and a welded steel plate on a fabrication shop table',
     fact: 'Once the can is open, 7018 lives in the rod oven.',
@@ -34,6 +38,7 @@ export const JOBSITE_TRUTHS = [
   },
   {
     trade: 'Facilities',
+    href: '/resume-builder/facilities-maintenance',
     image: '/trade-landings/facilities-maintenance-worksite.webp',
     alt: 'Air handling unit and circulation pumps in a building mechanical room, with a multimeter, drill and hand tools on a workbench',
     fact: 'One lock, one key, one person.',
@@ -41,6 +46,7 @@ export const JOBSITE_TRUTHS = [
   },
   {
     trade: 'Construction',
+    href: '/resume-builder/construction-carpentry',
     image: '/trade-landings/construction-carpentry-worksite.webp',
     alt: 'Wood-framed house under construction with a circular saw, framing nailer, speed square and tape measure on a work table',
     fact: 'Crown up. Every joist, every time.',
@@ -57,7 +63,7 @@ export function JobsiteTruths() {
       </div>
 
       <ul className={fi.truthGrid}>
-        {JOBSITE_TRUTHS.map(({ trade, image, alt, fact, line }) => (
+        {JOBSITE_TRUTHS.map(({ trade, href, image, alt, fact, line }) => (
           <li key={trade} className={`${fi.truthCard} ${fi.blueprint}`}>
             <div className={fi.truthPhoto}>
               <Image src={image} alt={alt} fill sizes="(max-width: 720px) 92vw, (max-width: 1100px) 46vw, 390px" />
@@ -66,6 +72,7 @@ export function JobsiteTruths() {
               <p className={fi.truthTrade}>{trade}</p>
               <p className={fi.truthFact}>{fact}</p>
               <p className={fi.truthLine}>{line}</p>
+              <Link href={href} className={fi.truthGuide}>Explore {trade} resumes →</Link>
             </div>
           </li>
         ))}

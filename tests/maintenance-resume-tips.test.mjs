@@ -69,7 +69,7 @@ test("guide sends readers into the facilities-preselected $9.99 builder", async 
   assert.match(html, /One \$9\.99 payment/);
   assert.match(html, /up to three corrections/);
   assert.match(html, /No subscription/);
-  assert.match(html, /BUILT BY HUSTL3\. BACKED BY TRADE\./);
+  assert.match(html, /BUILT BY HUSTLE\. BACKED BY TRADES\./);
 });
 
 test("guide publishes Article, BreadcrumbList and FAQPage data that match the page", async () => {
