@@ -49,14 +49,14 @@
 .stageCopy { flex: 1 1 300px; display: flex; flex-direction: column; gap: 10px; }
 .stageCopy h3 { margin: 0; font-family: var(--font-home-display), Impact, sans-serif; font-weight: 800; font-size: 32px; line-height: 1.02; text-transform: uppercase; }
 .stageCopy p { margin: 0; font-size: 17px; line-height: 1.55; color: var(--ink-soft); }
-.stageSteps { flex: 2 1 460px; list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; }
+.stageSteps { flex: 2 1 460px; list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(190px, 100%), 1fr)); gap: 12px; }
 .stageSteps a { height: 100%; box-sizing: border-box; display: flex; flex-direction: column; gap: 6px; padding: 18px; background: var(--cream); border-radius: 10px; text-decoration: none; color: var(--navy); border: 2px solid transparent; }
 .stageSteps a:hover { border-color: var(--navy); }
 .stageSteps span { font-family: var(--font-home-display), Impact, sans-serif; font-weight: 800; font-size: 20px; color: var(--red); }
 .stageSteps strong { font-size: 17px; }
 .stageSteps small { font-size: 14px; line-height: 1.45; color: var(--ink-soft); }
 
-.divisions { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+.divisions { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr)); gap: 16px; }
 .division { height: 100%; box-sizing: border-box; min-height: 190px; display: flex; flex-direction: column; gap: 10px; padding: 24px; background: #fff; border: 1px solid var(--line); border-top: 5px solid var(--navy); border-radius: 10px; color: var(--navy); text-decoration: none; }
 .division[data-live="true"]:hover { border-color: var(--navy); }
 .division[data-live="false"] { background: transparent; border-style: dashed; border-top-style: solid; border-top-color: #b9ad96; }
@@ -67,7 +67,7 @@
 .divisionCopy { font-size: 16px; line-height: 1.5; color: var(--ink-soft); }
 .divisionCta { margin-top: auto; font-weight: 700; color: var(--red); }
 
-.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr)); gap: 14px; }
 .fact { margin: 0; padding: 24px; border-radius: 12px; display: flex; flex-direction: column; gap: 8px; }
 .fact[data-tone="dark"] { background: var(--navy); color: var(--cream); }
 .fact[data-tone="light"] { background: #fff; border: 1px solid var(--line); color: var(--ink-soft); }

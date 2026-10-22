@@ -7,7 +7,7 @@ import { GoogleAnalytics } from "./google-analytics";
 import { MarketingPixels } from "./marketing-pixels";
 import { MetaCampaignViewTracker } from "./meta-view-content";
 import { FooterEnhancements } from "./footer-enhancements";
-import { SITE_DESCRIPTION, SITE_NAME, SITE_TITLE, SITE_URL } from "./site";
+import { BRAND_DESCRIPTION, BRAND_LOGO_512, HOME_DESCRIPTION, HOME_TITLE, SITE_DESCRIPTION, SITE_NAME, SITE_TITLE, SITE_URL } from "./site";
 
 const display = Anton({
   weight: "400",
@@ -111,13 +111,13 @@ const structuredData = {
       name: SITE_NAME,
       legalName: "TRADE HUSTL3 LLC",
       url: SITE_URL,
-      description: SITE_DESCRIPTION,
+      description: BRAND_DESCRIPTION,
       email: "support@tradehustl3.com",
       areaServed: "US",
 
       logo: {
         "@type": "ImageObject",
-        url: `${SITE_URL}/optimized/resume-builder-logo-512.webp`,
+        url: `${SITE_URL}${BRAND_LOGO_512}`,
         width: 512,
         height: 512,
       },
@@ -172,7 +172,7 @@ const structuredData = {
       "@id": `${SITE_URL}/#website`,
       url: SITE_URL,
       name: SITE_NAME,
-      description: SITE_DESCRIPTION,
+      description: BRAND_DESCRIPTION,
 
       publisher: {
         "@id": `${SITE_URL}/#organization`,
@@ -185,8 +185,8 @@ const structuredData = {
       "@type": "WebPage",
       "@id": `${SITE_URL}/#webpage`,
       url: SITE_URL,
-      name: SITE_TITLE,
-      description: SITE_DESCRIPTION,
+      name: HOME_TITLE,
+      description: HOME_DESCRIPTION,
       isPartOf: { "@id": `${SITE_URL}/#website` },
       about: { "@id": `${SITE_URL}/#organization` },
       inLanguage: "en-US",

@@ -131,16 +131,47 @@ export function analyticsCheckoutContext(): { analyticsConsent: boolean; anonymo
   }
 }
 
-export function ResumeBuilderStartAnalytics() {
+/**
+ * `resume_builder_start` = the visitor reached the Resume Builder entry.
+ *
+ * - `trigger="mount"`: the page itself is a builder landing (campaign or
+ *   trade-landing visit with `?trade=`), so arriving counts.
+ * - `trigger="visible"`: the page is the hub homepage, where many visitors only
+ *   read free resources. The start fires once the account-start section
+ *   (`#resume-start`) is at least 40% on screen. Changed Oct 21 2026 — before
+ *   that, every homepage view counted (see docs/analytics-changes.md).
+ */
+export function ResumeBuilderStartAnalytics({ trigger = "mount", targetId = "resume-start" }: { trigger?: "mount" | "visible"; targetId?: string } = {}) {
   useEffect(() => {
     const key = "tradehustl3_ga4_resume_builder_start";
-    try {
-      if (window.sessionStorage.getItem(key) === "1") return;
-      if (trackResumeFunnelEvent("resume_builder_start")) window.sessionStorage.setItem(key, "1");
-    } catch {
-      trackResumeFunnelEvent("resume_builder_start");
+    const fire = () => {
+      try {
+        if (window.sessionStorage.getItem(key) === "1") return;
+        if (trackResumeFunnelEvent("resume_builder_start")) window.sessionStorage.setItem(key, "1");
+      } catch {
+        trackResumeFunnelEvent("resume_builder_start");
+      }
+    };
+
+    if (trigger === "mount") {
+      fire();
+      return;
     }
-  }, []);
+
+    const target = document.getElementById(targetId);
+    if (!target || typeof IntersectionObserver === "undefined") return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          fire();
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.4 },
+    );
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [trigger, targetId]);
   return null;
 }
 

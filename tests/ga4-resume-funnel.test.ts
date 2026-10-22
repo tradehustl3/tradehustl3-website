@@ -47,7 +47,7 @@ test("browser funnel tracking never calls gtag directly (prevents drops and doub
 });
 
 test("funnel observers are mounted on the actual Resume Builder stages", () => {
-  assert.match(homePage, /<ResumeBuilderStartAnalytics\s*\/>/);
+  assert.match(homePage, /<ResumeBuilderStartAnalytics trigger=\{isCampaignVisit \? 'mount' : 'visible'\} \/>/);
   assert.match(intakePage, /<ResumeIntakeAnalytics\s*\/>/);
   assert.match(reviewPage, /<ResumeReviewAnalytics\s*\/>/);
   assert.match(confirm, /trackResumeFunnelEvent\("sign_up"/);
@@ -64,4 +64,13 @@ test("purchase is never sent to first-party funnel telemetry", () => {
   const base = fs.readFileSync("worker/resume-builder-base.ts", "utf8");
   const allowlist = base.slice(base.indexOf("const FUNNEL_EVENT_NAMES"), base.indexOf("const FUNNEL_METADATA_KEYS"));
   assert.doesNotMatch(allowlist, /"purchase"/);
+});
+
+test("hub homepage views are not counted as Resume Builder starts (Oct 21 2026 change)", () => {
+  const analytics = fs.readFileSync("app/resume-builder/funnel-analytics.tsx", "utf8");
+  assert.match(analytics, /trigger === "mount"/);
+  assert.match(analytics, /new IntersectionObserver/);
+  assert.match(analytics, /document\.getElementById\(targetId\)/);
+  assert.match(homePage, /isCampaignVisit \? 'mount' : 'visible'/);
+  assert.ok(fs.existsSync("docs/analytics-changes.md"), "the definition change is documented for reporting");
 });

@@ -23,6 +23,8 @@ const ICONS = {
   "optimized/resume-builder-logo-512.webp": { maxBytes: 64 * 1024, size: 512 },
   "optimized/th3-logo-header.webp": { maxBytes: 40 * 1024 },
   "brand/tool-pattern-gold.svg": { maxBytes: 8 * 1024 },
+  "optimized/th3-logo-512.webp": { maxBytes: 64 * 1024, size: 512 },
+  "optimized/og-hub-v1.webp": { maxBytes: 120 * 1024 },
   "brand/tool-pattern-navy.svg": { maxBytes: 8 * 1024 },
   "favicon.svg": { maxBytes: 4 * 1024 },
 };
@@ -129,14 +131,14 @@ test("favicon assets carry no outdated tagline or misspelled brand text", async 
   assert.doesNotMatch(svg, /HUSTLE|TRADES/i);
 });
 
-test("structured-data logo points at the 512px WebP with matching dimensions", async () => {
+test("structured-data logo is the TH3 parent-brand mark at 512px with matching dimensions", async () => {
   const html = await renderPath("/");
   const json = html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)[1];
   const graph = JSON.parse(json)["@graph"];
   const org = graph.find((node) => node["@type"] === "Organization");
   assert.deepEqual(org.logo, {
     "@type": "ImageObject",
-    url: "https://tradehustl3.com/optimized/resume-builder-logo-512.webp",
+    url: "https://tradehustl3.com/optimized/th3-logo-512.webp",
     width: 512,
     height: 512,
   });

@@ -87,7 +87,9 @@ export function KnowYourTrade({ trades, myths }: { trades: KnowYourTradeTrade[];
             </ul>
             <div className={styles.panelFoot}>
               <span>Already hold some of these? Put them on a resume built for your trade.</span>
-              <Link
+              {/* A plain anchor, not next/link: changing ?trade= must load the page so
+                  AccountStart and the intake read the selected trade on mount. */}
+              <a
                 className={styles.cta}
                 href={trade.builderHref}
                 data-analytics-event="cta_click"
@@ -96,7 +98,7 @@ export function KnowYourTrade({ trades, myths }: { trades: KnowYourTradeTrade[];
                 data-item={trade.slug}
               >
                 Build my resume — free preview
-              </Link>
+              </a>
             </div>
           </div>
 
