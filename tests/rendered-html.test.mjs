@@ -235,7 +235,9 @@ test("server-renders the official book page, cover, portrait, and current editio
 
   assert.match(html, /<title>TRADE HUSTL3 Book \| Da Maintenance Mane<\/title>/i);
   assert.match(html, /<link rel="canonical" href="https:\/\/tradehustl3\.com\/book"/i);
-  assert.match(html, /optimized\/book-cover-v2\.webp/i);
+  assert.match(html, /optimized\/book-cover-v3\.webp/i);
+  assert.match(html, /<source[^>]+type="image\/avif"[^>]+srcSet="[^"]+400\.avif 400w, [^"]+600\.avif 600w, [^"]+800\.avif 800w"/i);
+  assert.match(html, /<img[^>]+alt="Official front cover of TRADE HUSTL3"[^>]+width="600"[^>]+height="900"[^>]+loading="eager"[^>]+fetchPriority="high"/i);
   assert.match(html, /optimized\/author-portrait-v1\.webp/i);
   assert.match(html, /DA[\s\S]*MAINTENANCE[\s\S]*MANE\./i);
   assert.equal(html.includes("Zachary Cameron Ellis"), false);

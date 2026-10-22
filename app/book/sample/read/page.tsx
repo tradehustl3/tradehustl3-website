@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
-import Image from 'next/image';
 import Link from 'next/link';
 import { CtaAnalytics } from '../../../cta-analytics';
 import styles from '../page.module.css';
 import { BrandLockup } from '../../../brand-lockup';
+import { BookCover } from '../../book-cover';
 
 export const metadata: Metadata = {
   title: 'Your 7-Page TRADE HUSTL3 Book Sample',
@@ -112,12 +112,10 @@ export default function BookSampleReaderPage() {
       <section className={styles.hero}>
         <div className={styles.coverWrap}>
           <div className={styles.coverGlow} aria-hidden="true" />
-          <Image
+          <BookCover
             className={styles.cover}
-            src="/optimized/book-cover-v2.webp"
             alt="TRADE HUSTL3: Built by Hustle, Backed by Trades book cover"
-            width={1024}
-            height={1536}
+            sizes="(max-width: 600px) 84vw, (max-width: 1000px) 430px, 480px"
             priority
           />
         </div>
@@ -140,7 +138,7 @@ export default function BookSampleReaderPage() {
       <section className={styles.reader} aria-label="Seven-page TRADE HUSTL3 book sample">
         <article className={`${styles.bookPage} ${styles.coverPage}`} aria-label="Sample page 1 of 7 — cover">
           <span className={styles.pageNumber}>01 / 07</span>
-          <Image src="/optimized/book-cover-v2.webp" alt="TRADE HUSTL3 book cover" width={1024} height={1536} />
+          <BookCover alt="TRADE HUSTL3 book cover" sizes="(max-width: 760px) 92vw, 680px" />
         </article>
 
         <article className={`${styles.bookPage} ${styles.titlePage}`} aria-label="Sample page 2 of 7 — title page">
