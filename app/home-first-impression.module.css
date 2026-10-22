@@ -51,6 +51,21 @@
   object-fit: contain;
 }
 
+.brandMark {
+  width: auto;
+  height: 64px;
+}
+
+@media (max-width: 640px) {
+  .brandMark { height: 52px; }
+}
+
+.sectionLogo {
+  width: 96px;
+  height: 79px;
+  object-fit: contain;
+}
+
 .nav {
   display: flex;
   flex-wrap: wrap;

@@ -5,6 +5,7 @@ import { CtaAnalytics } from '../../cta-analytics';
 import { ResourceForm } from '../../resource-form';
 import { SITE_NAME, SITE_URL } from '../../site';
 import styles from './page.module.css';
+import { BrandLockup } from '../../brand-lockup';
 
 const PAGE_TITLE = 'Free 7-Page TRADE HUSTL3 Book Sample';
 const PAGE_DESCRIPTION =
@@ -59,8 +60,7 @@ export default function BookSamplePage() {
 
       <header className={styles.header}>
         <Link className={styles.brand} href="/" aria-label="TRADE HUSTL3 home">
-          <Image src="/optimized/trade-hustl3-logo.webp" alt="TRADE HUSTL3 logo" width={56} height={56} priority />
-          <span>TRADE HUSTL<span>3</span></span>
+          <BrandLockup />
         </Link>
         <nav aria-label="Book sample navigation">
           <Link href="/book">The full book</Link>

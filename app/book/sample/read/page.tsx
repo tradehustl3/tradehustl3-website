@@ -3,6 +3,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { CtaAnalytics } from '../../../cta-analytics';
 import styles from '../page.module.css';
+import { BrandLockup } from '../../../brand-lockup';
 
 export const metadata: Metadata = {
   title: 'Your 7-Page TRADE HUSTL3 Book Sample',
@@ -99,8 +100,7 @@ export default function BookSampleReaderPage() {
 
       <header className={styles.header}>
         <Link className={styles.brand} href="/" aria-label="TRADE HUSTL3 home">
-          <Image src="/optimized/trade-hustl3-logo.webp" alt="TRADE HUSTL3 logo" width={56} height={56} priority />
-          <span>TRADE HUSTL<span>3</span></span>
+          <BrandLockup />
         </Link>
         <nav aria-label="Book sample reader navigation">
           <Link href="/book">The full book</Link>

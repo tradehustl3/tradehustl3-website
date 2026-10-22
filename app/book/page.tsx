@@ -5,6 +5,7 @@ import { SocialLinks } from "../social-links";
 import { SITE_NAME, SITE_URL } from "../site";
 import { SignupForm } from "../signup-form";
 import LaunchPurchaseButton from "./launch-purchase-button";
+import { BrandLockup } from "../brand-lockup";
 
 const BOOK_TITLE = "TRADE HUSTL3: Built by Hustle, Backed by Trades";
 const BOOK_DESCRIPTION =
@@ -138,8 +139,7 @@ export default function BookPage() {
 
       <header className="site-header book-site-header">
         <Link className="brand-link" href="/" aria-label="TRADE HUSTL3 home">
-          <Image className="header-logo" src="/optimized/trade-hustl3-logo.webp" alt="TRADE HUSTL3 logo" width={68} height={68} priority />
-          <span className="wordmark">TRADE HUSTL<span>3</span></span>
+          <BrandLockup />
         </Link>
         <nav aria-label="Book page navigation">
           <Link href="/">Home</Link>

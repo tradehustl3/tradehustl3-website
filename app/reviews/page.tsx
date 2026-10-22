@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ReviewForm } from "./review-form";
 import styles from "./reviews.module.css";
+import { BrandLockup } from "../brand-lockup";
 
 export const metadata: Metadata = {
   title: "Customer Review | TRADE HUSTL3",
@@ -13,7 +14,7 @@ export default function ReviewsPage() {
   return (
     <main className={styles.page}>
       <header className={styles.header}>
-        <Link href="/" className={styles.brand}>TRADE HUSTL<span>3</span></Link>
+        <Link href="/" className={styles.brand} aria-label="TRADE HUSTL3 home"><BrandLockup size="sm" /></Link>
         <Link href="/contact" className={styles.support}>Support</Link>
       </header>
 

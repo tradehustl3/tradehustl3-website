@@ -21,6 +21,11 @@ const ICONS = {
   "optimized/trade-hustl3-logo-512.webp": { maxBytes: 160 * 1024, size: 512 },
   "optimized/trade-hustl3-logo.webp": { maxBytes: 16 * 1024, size: 96 },
   "optimized/resume-builder-logo-512.webp": { maxBytes: 64 * 1024, size: 512 },
+  "optimized/th3-logo-header.webp": { maxBytes: 40 * 1024 },
+  "brand/tool-pattern-gold.svg": { maxBytes: 8 * 1024 },
+  "optimized/th3-logo-512.webp": { maxBytes: 64 * 1024, size: 512 },
+  "optimized/og-hub-v1.webp": { maxBytes: 120 * 1024 },
+  "brand/tool-pattern-navy.svg": { maxBytes: 8 * 1024 },
   "favicon.svg": { maxBytes: 4 * 1024 },
 };
 
@@ -126,23 +131,25 @@ test("favicon assets carry no outdated tagline or misspelled brand text", async 
   assert.doesNotMatch(svg, /HUSTLE|TRADES/i);
 });
 
-test("structured-data logo points at the 512px WebP with matching dimensions", async () => {
+test("structured-data logo is the TH3 parent-brand mark at 512px with matching dimensions", async () => {
   const html = await renderPath("/");
   const json = html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)[1];
   const graph = JSON.parse(json)["@graph"];
   const org = graph.find((node) => node["@type"] === "Organization");
   assert.deepEqual(org.logo, {
     "@type": "ImageObject",
-    url: "https://tradehustl3.com/optimized/resume-builder-logo-512.webp",
+    url: "https://tradehustl3.com/optimized/th3-logo-512.webp",
     width: 512,
     height: 512,
   });
 });
 
-test("header logos on book and campaign pages use the optimized WebP", async () => {
-  for (const pathname of ["/book", "/book/sample", "/top-10-trades"]) {
+test("every branded page header carries the TH3 logo and ENTER • EARN • ELEVATE", async () => {
+  for (const pathname of ["/", "/book", "/book/sample", "/top-10-trades", "/resume-examples", "/resources", "/resources/certifications", "/privacy", "/terms"]) {
     const html = await renderPath(pathname);
-    assert.match(html, /optimized\/trade-hustl3-logo\.webp/, `${pathname} optimized logo`);
+    const header = html.slice(html.indexOf("<header"), html.indexOf("</header>"));
+    assert.match(header, /optimized\/th3-logo-header\.webp/, `${pathname} TH3 logo`);
+    assert.match(header, /ENTER • EARN • ELEVATE/, `${pathname} brand message`);
     assert.doesNotMatch(html, /trade-hustl3-logo\.png/, `${pathname} full-size logo PNG`);
   }
 });

@@ -1,11 +1,19 @@
+import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
+import { BrandLockup } from './brand-lockup';
 import { CtaAnalytics } from './cta-analytics';
 import { CustomerReviews } from './customer-reviews';
 import { homeBodyFont, homeDisplayFont } from './home-fonts';
 import { HomeHero } from './home-hero';
+import { HubDivisions, HubHero, HubOutlook } from './home-hub';
+import { HubStages } from './home-hub-stages';
+import { ToolRail } from './tool-silhouettes';
 import { JobsiteTruths } from './jobsite-truths';
+import { KnowYourTrade } from './home-know-your-trade';
+import { knowYourTradeMyths, knowYourTradeTrades } from './home-know-your-trade-data';
 import { heroTradeFromParam } from './home-hero-trades';
+import { resolveTradeParam } from './resume-builder/trade-preselect';
 import { AccountStart } from './resume-builder/account-start';
 import { ResumeBuilderStartAnalytics } from './resume-builder/funnel-analytics';
 import { rbFont } from './resume-builder/rb-font';
@@ -13,6 +21,24 @@ import { CATALOG_METRICS } from './resume-examples/catalog-metrics';
 import './resume-builder/rb-foundation.css';
 import styles from './home-traffic-director.module.css';
 import fi from './home-first-impression.module.css';
+import { HOME_DESCRIPTION, HOME_TITLE, HUB_OG_IMAGE, SITE_NAME } from './site';
+
+
+export const metadata: Metadata = {
+  title: { absolute: HOME_TITLE },
+  description: HOME_DESCRIPTION,
+  alternates: { canonical: '/' },
+  openGraph: {
+    title: HOME_TITLE,
+    description: HOME_DESCRIPTION,
+    url: '/',
+    siteName: SITE_NAME,
+    locale: 'en_US',
+    type: 'website',
+    images: [{ url: HUB_OG_IMAGE, width: 1200, height: 630, alt: 'TRADE HUSTL3 — skilled-trades career and resource hub' }],
+  },
+  twitter: { card: 'summary_large_image', title: HOME_TITLE, description: HOME_DESCRIPTION, images: [HUB_OG_IMAGE] },
+};
 
 const tradeChips = [
   ['HVAC & Refrigeration', '/resume-builder/hvac'],
@@ -68,35 +94,56 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
   // Render a ?trade= from a trade landing page or campaign on the server, so the
   // hero never swaps its headline after hydration (and works without JavaScript).
   const { trade } = await searchParams;
-  const initialTrade = heroTradeFromParam(typeof trade === 'string' ? trade : null);
+  const tradeParam = typeof trade === 'string' ? trade : null;
+  const initialTrade = heroTradeFromParam(tradeParam);
+  // Campaign and trade-landing visits (?trade= for any of the 14 builder tracks)
+  // keep the resume-first layout; everyone else gets the hub homepage.
+  const campaignTrack = resolveTradeParam(tradeParam);
+  const isCampaignVisit = campaignTrack !== null;
 
   return (
     <main className={styles.page}>
       <CtaAnalytics />
-      <ResumeBuilderStartAnalytics />
+      {/* Campaign visits land on the builder itself; hub visits count only once the start section is on screen. */}
+      <ResumeBuilderStartAnalytics trigger={isCampaignVisit ? 'mount' : 'visible'} />
       <div className={`${fi.top} ${homeDisplayFont.variable} ${homeBodyFont.variable}`}>
         <header className={fi.header}>
           <div className={fi.headerInner}>
-            <Link className={fi.brand} href="#top" aria-label="TRADE HUSTL3 Resume Builder home">
-              <Image
-                className={fi.brandLogo}
-                src="/optimized/resume-builder-logo-header.webp"
-                alt="TRADE HUSTL3 Resume Builder logo"
-                width={500}
-                height={410}
-                priority
-              />
+            <Link className={fi.brand} href="#top" aria-label="TRADE HUSTL3 home">
+              <BrandLockup />
             </Link>
             <nav className={fi.nav} aria-label="Primary navigation">
-              <a className={fi.navLink} href="#trades">Trade examples</a>
-              <a className={fi.navLink} href="#how">How it works</a>
+              <Link className={fi.navLink} href="/resume-examples">Explore Trades</Link>
+              <Link className={fi.navLink} href="/resources/certifications">Certifications</Link>
+              <Link className={fi.navLink} href="/resources">Resources</Link>
               <Link className={fi.navLink} href="/book">The Book</Link>
               <AnalyticsLink href="#resume-start" location="sticky_header" className={fi.headerCta}>Build my free preview</AnalyticsLink>
             </nav>
           </div>
         </header>
 
-        <HomeHero initialTradeId={initialTrade?.id ?? null} />
+        {isCampaignVisit ? (
+          <HomeHero initialTradeId={initialTrade?.id ?? null} campaignTrack={initialTrade ? null : campaignTrack} />
+        ) : (
+          <>
+            <HubHero />
+            <ToolRail />
+            <HubStages />
+            <HubDivisions />
+            <HomeHero
+              asSection
+              logo={
+                <Image
+                  className={fi.sectionLogo}
+                  src="/optimized/resume-builder-logo-header.webp"
+                  alt="TRADE HUSTL3 Resume Builder logo"
+                  width={500}
+                  height={410}
+                />
+              }
+            />
+          </>
+        )}
 
         <section className={`${fi.band} ${fi.blueprint}`} aria-label="What you can count on">
           <ul className={fi.bandInner}>
@@ -217,7 +264,7 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
             <p><strong>Hiring Manager</strong><br />ABC Property Management<br />Atlanta, GA</p>
             <p>Dear Hiring Manager,</p>
             <p>I am applying for the HVAC Maintenance Technician position with ABC Property Management. I bring more than 10 years of hands-on experience supporting commercial and multifamily properties through preventive maintenance, HVAC troubleshooting, electrical diagnostics, work-order execution, and emergency response.</p>
-            <p>My background includes diagnosing and repairing split systems, working with 24V controls, motors, contactors, capacitors, and control boards, and documenting completed work clearly. I hold EPA 608 Universal and OSHA 10 certifications and understand the importance of safety, communication, and keeping occupied properties operating reliably.</p>
+            <p>My background includes diagnosing and repairing split systems, working with 24V controls, motors, contactors, capacitors, and control boards, and documenting completed work clearly. I hold EPA 608 Universal certification, have completed OSHA 10-Hour training, and understand the importance of safety, communication, and keeping occupied properties operating reliably.</p>
             <p>I would welcome the opportunity to bring that field experience and dependable approach to your maintenance team. Thank you for your time and consideration.</p>
             <p>Sincerely,<br /><strong>Jordan Taylor</strong></p>
           </div>
@@ -234,6 +281,11 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
         </div>
         <div className={styles.proofGrid}>{proofPoints.map(([title, copy], index) => <article key={title}><span>0{index + 1}</span><h3>{title}</h3><p>{copy}</p></article>)}</div>
       </section>
+
+      <div className={`${homeDisplayFont.variable} ${homeBodyFont.variable}`}>
+        <KnowYourTrade trades={knowYourTradeTrades()} myths={knowYourTradeMyths()} />
+        <HubOutlook />
+      </div>
 
       <section className={styles.guideSignup} aria-labelledby="guide-title">
         <div>
@@ -252,10 +304,11 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
       </section>
 
       <footer className={styles.footer} data-site-footer>
-        <div className={styles.footerBrand}><Image src="/optimized/trade-hustl3-logo.webp" alt="TRADE HUSTL3 logo" width={44} height={44} /><strong>TRADE HUSTL3 LLC</strong></div>
+        <div className={styles.footerBrand}><Image className={styles.footerMark} src="/optimized/th3-logo-header.webp" alt="TRADE HUSTL3 logo" width={248} height={160} /><strong>TRADE HUSTL3 LLC</strong></div>
         <p>BUILT BY HUSTL3. BACKED BY TRADE.<br />TRADE HUSTL3 LLC · Atlanta, Georgia · <a href="mailto:support@tradehustl3.com">support@tradehustl3.com</a></p>
         <nav aria-label="Footer links">
           <Link href="#resume-start">Resume Builder</Link>
+          <Link href="/resources">Resource Center</Link>
           <Link href="/resume-examples">Trade Career Catalog</Link>
           <Link href="/top-10-trades">Top 10 Trades</Link>
           <Link href="/book">The Book</Link>

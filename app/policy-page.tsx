@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import "./page-shell.css";
+import { BrandLockup } from "./brand-lockup";
 
 export const LEGAL_UPDATED = "September 24, 2026";
 export const SUPPORT_EMAIL = "support@tradehustl3.com";
@@ -19,7 +20,7 @@ export function PolicyPage({
   return (
     <main className="policy-page">
       <header className="policy-header">
-        <Link className="policy-brand" href="/">TRADE HUSTL<span>3</span></Link>
+        <Link className="policy-brand" href="/" aria-label="TRADE HUSTL3 home"><BrandLockup size="sm" /></Link>
         <nav aria-label="Policy navigation">
           <Link href="/book">The Book</Link>
           <Link href="/#resume-start">Resume Builder</Link>
