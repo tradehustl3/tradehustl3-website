@@ -123,6 +123,7 @@ Every Resume Builder refund is recorded, partial and full, so the order source c
 - Stripe's `charge.refunded` amount is cumulative, so the webhook stores the highest total seen. Replayed and out-of-order events cannot lower it. Refunds that arrive before the checkout event are kept and applied when checkout completes.
 - Access rules are unchanged: a partial refund keeps the order paid and downloads active; access is revoked only when the full $9.99 has been refunded.
 - The funnel snapshot adds `orderLedger` (orders paid in the window including later refunds, refunded orders and cents, payment intent IDs and refunded charge IDs). `complete` is true only when every identifier is present. Existing `counts` and `revenue` fields are unchanged.
+- The snapshot also accepts `window=month` with explicit `start`/`end` covering exactly one completed calendar month in America/New_York (midnight on the 1st to midnight on the next 1st, up to about 13 months back). Agent A08's monthly cost report uses it; `24h` and `7d` behave as before.
 
 ## Resume generation with Gemini
 

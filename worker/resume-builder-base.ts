@@ -896,18 +896,13 @@ async function getAgent1FunnelSnapshot(
   const url = new URL(request.url);
   const requestedWindow = url.searchParams.get("window") ?? "7d";
 
-  const windowHours =
-    requestedWindow === "24h"
-      ? 24
-      : requestedWindow === "7d"
-        ? 24 * 7
-        : null;
-
-  if (windowHours === null) {
+  // "month" is one completed calendar month (America/New_York) and requires
+  // explicit start/end bounds; it feeds the A08 monthly cost report.
+  if (requestedWindow !== "24h" && requestedWindow !== "7d" && requestedWindow !== "month") {
     return json(
       {
         ok: false,
-        message: 'window must be "24h" or "7d".',
+        message: 'window must be "24h", "7d" or "month".',
       },
       400,
     );
