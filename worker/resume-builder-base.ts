@@ -3865,7 +3865,13 @@ async function recordFunnelEvent(
   if (ga4ConsentGranted(request, payload.analyticsConsent)) {
     const identity = ga4IdentityFromRequest(request, payload.anonymousId, env);
     const event = ga4FunnelEvent(eventName, ga4CampaignParams(payload.metadata));
-    if (identity && event) {
+    // Forward only when the event can join the visitor's existing GA session.
+    // Without a session_id, GA4 opens a new session that has no page_view, which
+    // surfaces as a "(not set)" landing page and source/medium in reports.
+    // The event is still stored first-party below, which is the funnel's
+    // source of truth. (The verified Stripe purchase path is intentionally not
+    // gated: revenue must always reach GA4.)
+    if (identity?.sessionId && event) {
       sendGa4Event(identity, event, {
         context: dependencies.recoveryContext,
         config: env,
