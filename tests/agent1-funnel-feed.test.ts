@@ -704,7 +704,11 @@ test("monthly reporting window covers one completed calendar month for the A08 c
   assert.equal(payload.counts.verifiedPurchases, 2);
 
   // A month window always needs explicit bounds, and they must be a whole calendar month.
-  for (const query of [{ window: "month" }, { window: "month", start, end: "2026-09-30T04:00:00.000Z" }]) {
+  const refusedQueries: Record<string, string>[] = [
+    { window: "month" },
+    { window: "month", start, end: "2026-09-30T04:00:00.000Z" },
+  ];
+  for (const query of refusedQueries) {
     const refused = await handleResumeBuilderRoute(request(query), env);
     assert.equal(refused?.status, 400);
   }
