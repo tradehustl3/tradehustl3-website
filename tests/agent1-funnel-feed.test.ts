@@ -678,3 +678,38 @@ test("client occurredAt cannot backdate or future-date a funnel event", async (t
     .all() as Array<{ occurred_at: string }>;
   assert.deepEqual(rows.map((row) => row.occurred_at), [NOW, NOW, NOW]);
 });
+
+test("monthly reporting window covers one completed calendar month for the A08 cost report", async (t) => {
+  t.mock.timers.enable({ apis: ["Date"], now: Date.parse("2026-10-03T12:00:00.000Z") });
+  const { DB, sqlite } = sqliteD1();
+  // September 2026 in America/New_York (EDT): [2026-09-01T04:00Z, 2026-10-01T04:00Z).
+  const start = "2026-09-01T04:00:00.000Z", end = "2026-10-01T04:00:00.000Z";
+  insertPaidOrder(sqlite, "month-first", "2026-09-01 04:00:00");
+  insertPaidOrder(sqlite, "month-inside", "2026-09-17 15:00:00");
+  insertPaidOrder(sqlite, "month-before", "2026-09-01 03:59:59");
+  insertPaidOrder(sqlite, "month-end", "2026-10-01 04:00:00");
+  const env = { DB, AGENT1_FUNNEL_SECRET: AGENT1_SECRET };
+  const request = (query: Record<string, string>) => new Request(
+    `https://tradehustl3.com/api/resume-builder/internal/agent1/funnel-snapshot?${new URLSearchParams(query)}`,
+    { headers: { Authorization: `Bearer ${AGENT1_SECRET}` } });
+
+  const response = await handleResumeBuilderRoute(request({ window: "month", start, end }), env);
+  assert.ok(response);
+  assert.equal(response.status, 200);
+  const payload = await response.json() as SnapshotPayload & { window: string; windowEndExclusive: boolean };
+  assert.equal(payload.window, "month");
+  assert.equal(payload.windowStart, start);
+  assert.equal(payload.windowEnd, end);
+  assert.equal(payload.windowEndExclusive, true);
+  assert.equal(payload.counts.verifiedPurchases, 2);
+
+  // A month window always needs explicit bounds, and they must be a whole calendar month.
+  const refusedQueries: Record<string, string>[] = [
+    { window: "month" },
+    { window: "month", start, end: "2026-09-30T04:00:00.000Z" },
+  ];
+  for (const query of refusedQueries) {
+    const refused = await handleResumeBuilderRoute(request(query), env);
+    assert.equal(refused?.status, 400);
+  }
+});
