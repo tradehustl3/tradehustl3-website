@@ -6,6 +6,7 @@ import { SITE_NAME, SITE_URL } from "../site";
 import { SignupForm } from "../signup-form";
 import LaunchPurchaseButton from "./launch-purchase-button";
 import { BrandLockup } from "../brand-lockup";
+import { BookCover, BOOK_COVER_IMAGE } from "./book-cover";
 
 const BOOK_TITLE = "TRADE HUSTL3: Built by Hustle, Backed by Trades";
 const BOOK_DESCRIPTION =
@@ -23,9 +24,9 @@ export const metadata: Metadata = {
     type: "book",
     images: [
       {
-        url: "/optimized/book-cover-v2.webp",
-        width: 800,
-        height: 1200,
+        url: BOOK_COVER_IMAGE,
+        width: 600,
+        height: 900,
         alt: "Official TRADE HUSTL3 book cover",
       },
     ],
@@ -34,7 +35,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "TRADE HUSTL3 Book | Da Maintenance Mane",
     description: BOOK_DESCRIPTION,
-    images: ["/optimized/book-cover-v2.webp"],
+    images: [BOOK_COVER_IMAGE],
   },
 };
 
@@ -48,7 +49,7 @@ const bookStructuredData = {
   datePublished: "2026-09-15",
   inLanguage: "en-US",
   url: `${SITE_URL}/book`,
-  image: `${SITE_URL}/optimized/book-cover-v2.webp`,
+  image: `${SITE_URL}${BOOK_COVER_IMAGE}`,
   author: {
     "@id": `${SITE_URL}/#zachary-ellis`,
   },
@@ -153,12 +154,10 @@ export default function BookPage() {
       <section className="book-hero">
         <div className="book-cover-stage">
           <div className="book-cover-glow" aria-hidden="true" />
-          <Image
+          <BookCover
             className="book-cover-image"
-            src="/optimized/book-cover-v2.webp"
             alt="Official front cover of TRADE HUSTL3"
-            width={1024}
-            height={1536}
+            sizes="(max-width: 440px) 75vw, (max-width: 760px) 330px, 470px"
             priority
           />
         </div>

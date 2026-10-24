@@ -1,11 +1,11 @@
 import type { Metadata } from 'next';
-import Image from 'next/image';
 import Link from 'next/link';
 import { CtaAnalytics } from '../../cta-analytics';
 import { ResourceForm } from '../../resource-form';
 import { SITE_NAME, SITE_URL } from '../../site';
 import styles from './page.module.css';
 import { BrandLockup } from '../../brand-lockup';
+import { BookCover, BOOK_COVER_IMAGE } from '../book-cover';
 
 const PAGE_TITLE = 'Free 7-Page TRADE HUSTL3 Book Sample';
 const PAGE_DESCRIPTION =
@@ -22,9 +22,9 @@ export const metadata: Metadata = {
     siteName: SITE_NAME,
     type: 'book',
     images: [{
-      url: '/optimized/book-cover-v2.webp',
-      width: 1024,
-      height: 1536,
+      url: BOOK_COVER_IMAGE,
+      width: 600,
+      height: 900,
       alt: 'TRADE HUSTL3: Built by Hustle, Backed by Trades book cover',
     }],
   },
@@ -32,7 +32,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: PAGE_TITLE,
     description: PAGE_DESCRIPTION,
-    images: ['/optimized/book-cover-v2.webp'],
+    images: [BOOK_COVER_IMAGE],
   },
 };
 
@@ -72,12 +72,10 @@ export default function BookSamplePage() {
       <section className={styles.hero}>
         <div className={styles.coverWrap}>
           <div className={styles.coverGlow} aria-hidden="true" />
-          <Image
+          <BookCover
             className={styles.cover}
-            src="/optimized/book-cover-v2.webp"
             alt="TRADE HUSTL3: Built by Hustle, Backed by Trades book cover"
-            width={1024}
-            height={1536}
+            sizes="(max-width: 600px) 84vw, (max-width: 1000px) 430px, 480px"
             priority
           />
         </div>

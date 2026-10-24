@@ -357,7 +357,8 @@
   background: #071a2b;
 }
 
-.coverPage > img {
+.coverPage > picture,
+.coverPage > picture > img {
   display: block;
   width: 100%;
   height: auto;
