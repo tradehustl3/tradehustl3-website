@@ -8,6 +8,7 @@ import { handleEbookStripeRoute, runEbookLaunchDelivery, EbookStripeEnv, EBOOK_R
 import { getOperationsHealth, operationalEvent } from "./operations-monitoring";
 import { allowsSameOriginFraming, frameHeaders, withFrameAncestors } from "./frame-policy";
 import { CONTENT_SECURITY_POLICY } from "./content-security-policy";
+import { malformedUrlTarget } from "./malformed-url";
 
 interface Env extends ResumeBuilderEnv, EbookStripeEnv {
   ASSETS: Fetcher;
@@ -742,6 +743,11 @@ const worker = {
     if (url.hostname === "www.tradehustl3.com") {
       url.hostname = "tradehustl3.com";
       return withSecurityHeaders(Response.redirect(url.toString(), 308), url.pathname);
+    }
+
+    const repaired = malformedUrlTarget(request.url);
+    if (repaired) {
+      return withSecurityHeaders(Response.redirect(repaired.toString(), 308), url.pathname);
     }
 
     if (url.pathname === "/resume") {

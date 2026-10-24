@@ -127,6 +127,27 @@ test("opted-out, GPC, and missing-consent funnel events are stored but never sen
   }
 });
 
+test("consented funnel events without a GA session are stored but not forwarded (prevents (not set) sessions)", async () => {
+  for (const cookie of [
+    "", // no GA cookies at all: fallback anonymous client id, no session
+    "_ga=GA1.1.1234567890.1700000000", // client id only, stream session cookie missing
+    "_ga=GA1.1.1234567890.1700000000; _ga_PHLN0C7BWF=GS2.1.xbroken", // unparseable session cookie
+  ]) {
+    const { DB, sqlite } = sqliteD1();
+    const { calls, fetchImpl } = captureFetch();
+    const { ctx, settle } = context();
+    const response = await handleResumeBuilderRoute(
+      funnelPost({ eventName: "resume_builder_start", anonymousId: "anon-1", analyticsConsent: true }, { Cookie: cookie }),
+      { DB, GA4_MEASUREMENT_PROTOCOL_API_SECRET: API_SECRET },
+      { recoveryContext: ctx, ga4Fetch: fetchImpl },
+    );
+    await settle();
+    assert.equal(response?.status, 201, `cookie=${JSON.stringify(cookie)}`);
+    assert.equal((sqlite.prepare("SELECT COUNT(*) AS n FROM funnel_events").get() as { n: number }).n, 1, "first-party record is kept");
+    assert.equal(calls.length, 0, `sessionless event must not reach GA4 (cookie=${JSON.stringify(cookie)})`);
+  }
+});
+
 test("sign_up is forwarded to GA4 but never written to the Agent #1 funnel table", async () => {
   const { DB, sqlite } = sqliteD1();
   const { calls, fetchImpl } = captureFetch();
@@ -279,6 +300,21 @@ test("verified Stripe payment sends one GA4 purchase, and replays do not double-
   assert.equal(event.params.currency, "USD");
   assert.equal(event.params.session_id, "1760650000");
   assert.doesNotMatch(JSON.stringify(calls[0].body), /account@example\.com|resume-1|user-1/);
+});
+
+test("verified payment with a consented client id but no GA session still reports the purchase", async () => {
+  // The funnel endpoint skips sessionless events; revenue deliberately does not.
+  const { DB } = seedPendingOrder();
+  const { calls, fetchImpl } = captureFetch();
+  const { ctx, settle } = context();
+  const env = { DB, STRIPE_RESUME_WEBHOOK_SECRET: WEBHOOK_SECRET, GA4_MEASUREMENT_PROTOCOL_API_SECRET: API_SECRET };
+  const metadata = { ga_client_id: "1234567890.1700000000" };
+  assert.equal((await deliverWebhook(env, paidEvent("evt_3", metadata), { recoveryContext: ctx, ga4Fetch: fetchImpl }))?.status, 200);
+  await settle();
+  assert.equal(calls.length, 1);
+  const [event] = calls[0].body.events;
+  assert.equal(event.name, "purchase");
+  assert.equal(event.params.session_id, undefined);
 });
 
 test("verified payment without consented GA ids still fulfills but sends nothing to GA4", async () => {

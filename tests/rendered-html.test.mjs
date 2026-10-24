@@ -285,6 +285,18 @@ test("redirects the production HTTP origin to canonical HTTPS and sends HSTS", a
   assert.equal(response.headers.get("strict-transport-security"), "max-age=31536000");
 });
 
+test("repairs a path with a pasted full site URL instead of returning 404", async () => {
+  const worker = await loadWorker();
+  const response = await worker.fetch(
+    new Request("https://tradehustl3.com/resume-builderhttps://tradehustl3.com/resume-builderhttps://tradehustl3.com/resume-builder?utm_source=facebook"),
+    {},
+    { waitUntil() {}, passThroughOnException() {} },
+  );
+  assert.equal(response.status, 308);
+  assert.equal(response.headers.get("location"), "https://tradehustl3.com/resume-builder?utm_source=facebook");
+  assert.equal(response.headers.get("strict-transport-security"), "max-age=31536000");
+});
+
 test("homepage is the Resume Builder sales page and verified account entry", async () => {
   const html = await (await render()).text();
   assert.match(html, /id="resume-start"/i);
