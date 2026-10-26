@@ -325,3 +325,25 @@ test("verified payment without consented GA ids still fulfills but sends nothing
   assert.equal((sqlite.prepare("SELECT COUNT(*) AS n FROM entitlements WHERE source_order_id = 'order-1'").get() as { n: number }).n, 1);
   assert.equal(calls.length, 0);
 });
+
+test("a missing Measurement Protocol secret is logged instead of dropping events silently", () => {
+  const { calls, fetchImpl } = captureFetch();
+  const warnings: unknown[][] = [];
+  const original = console.warn;
+  console.warn = (...args: unknown[]) => { warnings.push(args); };
+  try {
+    const event = ga4FunnelEvent("begin_checkout");
+    assert.ok(event);
+    const sent = sendGa4Event({ clientId: "1234567890.1700000000", sessionId: "1760650000" }, event, {
+      config: { GA4_MEASUREMENT_PROTOCOL_API_SECRET: "" },
+      fetchImpl,
+    });
+    assert.equal(sent, false);
+  } finally {
+    console.warn = original;
+  }
+  assert.equal(calls.length, 0);
+  assert.equal(warnings.length, 1);
+  assert.match(String(warnings[0][0]), /GA4_MEASUREMENT_PROTOCOL_API_SECRET is not set/);
+  assert.equal(warnings[0][1], "begin_checkout");
+});
