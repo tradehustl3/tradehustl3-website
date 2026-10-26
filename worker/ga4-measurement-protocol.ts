@@ -179,7 +179,13 @@ export function sendGa4Event(
 ): boolean {
   try {
     const apiSecret = setting(options.config, "GA4_MEASUREMENT_PROTOCOL_API_SECRET");
-    if (!apiSecret || !CLIENT_ID_PATTERN.test(identity.clientId)) return false;
+    if (!apiSecret) {
+      // Without the secret every funnel event (and purchase) silently never reaches GA4,
+      // which leaves A04/A08 blind. Say so in the Worker logs; the name is not a secret.
+      console.warn("GA4 Measurement Protocol disabled: GA4_MEASUREMENT_PROTOCOL_API_SECRET is not set", event.name);
+      return false;
+    }
+    if (!CLIENT_ID_PATTERN.test(identity.clientId)) return false;
 
     const params: Record<string, Ga4ParamValue> = { ...event.params, engagement_time_msec: 1 };
     if (identity.sessionId && SESSION_ID_PATTERN.test(identity.sessionId)) params.session_id = identity.sessionId;
