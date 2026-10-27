@@ -23,7 +23,10 @@ export const metadata: Metadata = {
     type: 'website',
     images: [
       {
-        url: '/optimized/top-trades-guide-v1.webp',
+        url: '/optimized/og-trades-guide-v2.jpg',
+        type: 'image/jpeg',
+        width: 1122,
+        height: 1402,
         alt: 'TRADE HUSTL3 Top 10 Trades for 2026–2027 free guide',
       },
     ],
@@ -32,7 +35,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: PAGE_TITLE,
     description: PAGE_DESCRIPTION,
-    images: ['/optimized/top-trades-guide-v1.webp'],
+    images: ['/optimized/og-trades-guide-v2.jpg'],
   },
 };
 

@@ -50,6 +50,7 @@ export const metadata: Metadata = {
     icon: [
       { url: "/favicon.ico", sizes: "16x16 32x32 48x48" },
       { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+      { url: "/favicon-96x96.png", sizes: "96x96", type: "image/png" },
     ],
     shortcut: "/favicon.ico",
     apple: { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
@@ -72,7 +73,8 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: "/optimized/og-v2.webp",
+        url: "/optimized/og-resume-v3.jpg",
+        type: "image/jpeg",
         width: 1200,
         height: 630,
         alt: "TRADE HUSTL3 Resume Builder",
@@ -84,7 +86,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: SITE_TITLE,
     description: SITE_DESCRIPTION,
-    images: ["/optimized/og-v2.webp"],
+    images: ["/optimized/og-resume-v3.jpg"],
   },
 };
 
