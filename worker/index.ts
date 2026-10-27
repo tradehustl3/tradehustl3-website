@@ -9,6 +9,7 @@ import { getOperationsHealth, operationalEvent } from "./operations-monitoring";
 import { allowsSameOriginFraming, frameHeaders, withFrameAncestors } from "./frame-policy";
 import { CONTENT_SECURITY_POLICY } from "./content-security-policy";
 import { malformedUrlTarget } from "./malformed-url";
+import { withPublicAssetCache } from "./public-asset-cache";
 
 interface Env extends ResumeBuilderEnv, EbookStripeEnv {
   ASSETS: Fetcher;
@@ -810,12 +811,7 @@ const worker = {
     }
 
     const response = withSecurityHeaders(await handler.fetch(request, env, ctx), url.pathname);
-    if (request.method === "GET" && (url.pathname.startsWith("/optimized/") || url.pathname === "/favicon.svg")) {
-      const headers = new Headers(response.headers);
-      headers.set("Cache-Control", "public, max-age=31536000, immutable");
-      return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
-    }
-    return response;
+    return withPublicAssetCache(request, response);
   },
 };
 

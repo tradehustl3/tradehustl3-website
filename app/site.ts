@@ -16,8 +16,8 @@ export const HOME_TITLE = "Skilled-Trades Career Hub and Resume Builder | TRADE 
 export const HOME_DESCRIPTION =
   "Explore skilled trades, certification guides, and job-outlook data. Build a free resume preview with just your email; unlock PDF and Word files for $9.99.";
 
-/** Share image for hub-level pages (homepage, Resource Center). Product pages keep og-v2. */
-export const HUB_OG_IMAGE = "/optimized/og-hub-v1.webp";
+/** Share image for hub-level pages (homepage, Resource Center). JPEG is used for sharing compatibility; on-page images stay WebP. */
+export const HUB_OG_IMAGE = "/optimized/og-hub-v2.jpg";
 
 /** Parent-brand logo for structured data (TH3 mark, 512x512). */
 export const BRAND_LOGO_512 = "/optimized/th3-logo-512.webp";

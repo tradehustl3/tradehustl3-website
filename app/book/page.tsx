@@ -23,7 +23,8 @@ export const metadata: Metadata = {
     type: "book",
     images: [
       {
-        url: "/optimized/book-cover-v2.webp",
+        url: "/optimized/og-book-v1.jpg",
+        type: "image/jpeg",
         width: 800,
         height: 1200,
         alt: "Official TRADE HUSTL3 book cover",
@@ -34,7 +35,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "TRADE HUSTL3 Book | Da Maintenance Mane",
     description: BOOK_DESCRIPTION,
-    images: ["/optimized/book-cover-v2.webp"],
+    images: ["/optimized/og-book-v1.jpg"],
   },
 };
 

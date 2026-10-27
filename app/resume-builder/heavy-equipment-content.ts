@@ -20,7 +20,7 @@ export const HEAVY_EQUIPMENT_OPERATOR_LANDING: TradeLandingContent = {
   seoTitle: "Heavy Equipment Operator Resume Example & Builder | TRADE HUSTL3",
   seoDescription:
     "See heavy equipment operator resume examples, excavator and dozer skills, safety credentials, and jobsite bullet tips. Preview free; unlock for $9.99 once.",
-  ogImage: "/optimized/og-v2.webp",
+  ogImage: "/optimized/og-resume-v3.jpg",
   targetQueries: [
     "heavy equipment operator resume",
     "heavy equipment operator resume example",

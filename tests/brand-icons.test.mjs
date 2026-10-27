@@ -14,6 +14,7 @@ const appDir = fileURLToPath(new URL("../app/", import.meta.url));
 const ICONS = {
   "favicon.ico": { maxBytes: 16 * 1024, sizes: [16, 32, 48] },
   "favicon-32x32.png": { maxBytes: 8 * 1024, size: 32 },
+  "favicon-96x96.png": { maxBytes: 16 * 1024, size: 96 },
   "apple-touch-icon.png": { maxBytes: 40 * 1024, size: 180 },
   "icon-192.png": { maxBytes: 16 * 1024, size: 192 },
   "icon-512.png": { maxBytes: 64 * 1024, size: 512 },

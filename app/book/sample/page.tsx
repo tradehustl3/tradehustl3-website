@@ -22,9 +22,10 @@ export const metadata: Metadata = {
     siteName: SITE_NAME,
     type: 'book',
     images: [{
-      url: '/optimized/book-cover-v2.webp',
-      width: 1024,
-      height: 1536,
+      url: '/optimized/og-book-v1.jpg',
+      type: 'image/jpeg',
+      width: 800,
+      height: 1200,
       alt: 'TRADE HUSTL3: Built by Hustle, Backed by Trades book cover',
     }],
   },
@@ -32,7 +33,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: PAGE_TITLE,
     description: PAGE_DESCRIPTION,
-    images: ['/optimized/book-cover-v2.webp'],
+    images: ['/optimized/og-book-v1.jpg'],
   },
 };
 
