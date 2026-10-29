@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import { trackResumeFunnelEvent } from "./funnel-analytics";
 import {
   recallIntakeTrade,
@@ -35,6 +35,13 @@ export function AccountStart() {
   const [verifying, setVerifying] = useState(false);
   const [codeError, setCodeError] = useState("");
   const [resent, setResent] = useState(false);
+  const codeInput = useRef<HTMLInputElement>(null);
+
+  // After the visitor submits their email, move focus to the code box they now
+  // need (a response to their action, not focus stolen on page load).
+  useEffect(() => {
+    if (sentTo) codeInput.current?.focus();
+  }, [sentTo]);
 
   // Persist a landing-page trade choice so it survives the magic-link email round trip.
   useEffect(() => {
@@ -164,7 +171,7 @@ export function AccountStart() {
             pattern="[0-9 ]*"
             maxLength={7}
             required
-            autoFocus
+            ref={codeInput}
             placeholder="123456"
             value={code}
             onChange={(event) => setCode(event.target.value.replace(/[^\d ]/g, ""))}
