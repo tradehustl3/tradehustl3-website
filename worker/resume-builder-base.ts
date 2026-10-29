@@ -130,6 +130,16 @@ const SESSION_COOKIE_NAME = "tradehustl3_resume_session";
 const SESSION_TTL_SECONDS = 60 * 60 * 24 * 14;
 const MAGIC_LINK_TTL_SECONDS = 60 * 20;
 /**
+ * The sign-in email carries a 6-digit code next to the link so a visitor can
+ * finish on the page they started on. Codes are single-use, bound to one user
+ * (the stored hash includes the user ID), expire sooner than the link, and are
+ * thrown away after LOGIN_CODE_MAX_FAILURES wrong guesses.
+ */
+const LOGIN_CODE_TTL_SECONDS = 60 * 10;
+const LOGIN_CODE_PURPOSE = "login_code";
+const LOGIN_CODE_MAX_FAILURES = 5;
+const LOGIN_CODE_ATTEMPT_WINDOW_SECONDS = 15 * 60;
+/**
  * Synthetic production smoke-test account. The .invalid TLD (RFC 2606) can never
  * receive mail, and magic-link requests for it are refused, so the only way to
  * sign in as it is the secret-protected smoke session endpoint.
@@ -460,6 +470,20 @@ function randomToken(): string {
   return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
 }
 
+/** Uniform 6-digit code (rejection sampling avoids modulo bias). */
+function randomLoginCode(): string {
+  const buffer = new Uint32Array(1);
+  const limit = Math.floor(0x1_0000_0000 / 1_000_000) * 1_000_000;
+  for (;;) {
+    crypto.getRandomValues(buffer);
+    if (buffer[0] < limit) return String(buffer[0] % 1_000_000).padStart(6, "0");
+  }
+}
+
+function loginCodeHash(userId: string, code: string): Promise<string> {
+  return sha256Hex(`${LOGIN_CODE_PURPOSE}:${userId}:${code}`);
+}
+
 export async function sha256Hex(value: string | Uint8Array): Promise<string> {
   const input = typeof value === "string" ? encoder.encode(value) : value;
   const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", Uint8Array.from(input).buffer));
@@ -596,7 +620,7 @@ async function requireUser(request: Request, env: ResumeBuilderEnv): Promise<Aut
   return { userId: row.user_id, email: row.email, fullName: row.full_name, sessionHash };
 }
 
-async function sendMagicLinkEmail(env: ResumeBuilderEnv, email: string, confirmationUrl: string): Promise<void> {
+async function sendMagicLinkEmail(env: ResumeBuilderEnv, email: string, confirmationUrl: string, code: string): Promise<void> {
   const apiKey = env.BREVO_API_KEY?.trim();
   if (!apiKey) throw new Error("Brevo authentication email is not configured.");
   const response = await fetch("https://api.brevo.com/v3/smtp/email", {
@@ -614,15 +638,18 @@ async function sendMagicLinkEmail(env: ResumeBuilderEnv, email: string, confirma
           || "updates@tradehustl3.com",
       },
       to: [{ email }],
-      subject: "Confirm your TRADE HUSTL3 Resume Builder sign-in",
+      subject: "Your TRADE HUSTL3 Resume Builder sign-in code",
       htmlContent: `
         <div style="background:#071a2b;padding:32px;font-family:Arial,sans-serif;color:#f4f0e7">
           <div style="max-width:620px;margin:auto">
             <p style="color:#d6a52a;font-weight:700;letter-spacing:2px">ENTER. EARN. ELEVATE.</p>
-            <h1 style="margin:16px 0;color:#ffffff">Confirm your Resume Builder sign-in.</h1>
-            <p style="font-size:16px;line-height:1.6;color:#c5ced5">Open the confirmation page below, then press the confirmation button. The extra confirmation step keeps automated email security scanners from signing in as you.</p>
-            <p style="margin:28px 0"><a href="${confirmationUrl}" style="display:inline-block;background:#d71920;color:#ffffff;padding:16px 22px;text-decoration:none;font-weight:700">OPEN CONFIRMATION PAGE</a></p>
-            <p style="font-size:13px;line-height:1.6;color:#9cabb5">This link expires in 20 minutes and can only be used once.</p>
+            <h1 style="margin:16px 0;color:#ffffff">Your sign-in code</h1>
+            <p style="font-size:16px;line-height:1.6;color:#c5ced5">Type this code on the Resume Builder page you just left:</p>
+            <p style="margin:20px 0;font-family:'Courier New',monospace;font-size:36px;font-weight:700;letter-spacing:10px;color:#ffffff">${code}</p>
+            <p style="font-size:13px;line-height:1.6;color:#9cabb5">The code expires in 10 minutes and works once. Never share it. TRADE HUSTL3 will never ask you for it.</p>
+            <p style="font-size:15px;line-height:1.6;color:#c5ced5;margin-top:28px">On a different device? Open the confirmation page instead, then press the confirmation button.</p>
+            <p style="margin:16px 0"><a href="${confirmationUrl}" style="display:inline-block;background:#d71920;color:#ffffff;padding:14px 20px;text-decoration:none;font-weight:700">OPEN CONFIRMATION PAGE</a></p>
+            <p style="font-size:13px;line-height:1.6;color:#9cabb5">This link expires in 20 minutes and can only be used once. The extra confirmation step keeps automated email security scanners from signing in as you.</p>
           </div>
         </div>`,
     }),
@@ -640,7 +667,7 @@ async function requestMagicLink(request: Request, env: ResumeBuilderEnv): Promis
   const body = await parseJsonBody(request, 5_000);
   const email = normalizeEmail(body?.email);
   const fullName = cleanText(body?.fullName, 120) || null;
-  const generic = { ok: true, message: "If that email can be used, a confirmation link is on its way." };
+  const generic = { ok: true, message: "If that email can be used, a sign-in code is on its way." };
   if (!isValidEmail(email)) return json(generic);
   // Reserved synthetic account: identical generic response, no user row, no email.
   if (isSmokeTestEmail(email)) return json(generic);
@@ -665,23 +692,30 @@ async function requestMagicLink(request: Request, env: ResumeBuilderEnv): Promis
   const userId = resolvedUser.user_id;
   const rawToken = randomToken();
   const tokenHash = await sha256Hex(rawToken);
+  const loginCode = randomLoginCode();
+  const codeHash = await loginCodeHash(userId, loginCode);
 
+  // A new request replaces every outstanding link and code for this user.
   await env.DB.batch([
-    env.DB.prepare("DELETE FROM auth_tokens WHERE user_id = ? AND purpose = 'login'").bind(userId),
+    env.DB.prepare("DELETE FROM auth_tokens WHERE user_id = ? AND purpose IN ('login', 'login_code')").bind(userId),
     env.DB.prepare(
       `INSERT INTO auth_tokens (token_hash, user_id, purpose, expires_at)
        VALUES (?, ?, 'login', ?)`,
     ).bind(tokenHash, userId, nowSeconds() + MAGIC_LINK_TTL_SECONDS),
+    env.DB.prepare(
+      `INSERT INTO auth_tokens (token_hash, user_id, purpose, expires_at)
+       VALUES (?, ?, 'login_code', ?)`,
+    ).bind(codeHash, userId, nowSeconds() + LOGIN_CODE_TTL_SECONDS),
   ]);
 
   const devOrigin = localDevMagicLinkOrigin(request, env);
   if (devOrigin) {
-    console.info(`[local dev only] Resume Builder sign-in link: ${devOrigin}/resume-builder/confirm?token=${encodeURIComponent(rawToken)}`);
+    console.info(`[local dev only] Resume Builder sign-in link: ${devOrigin}/resume-builder/confirm?token=${encodeURIComponent(rawToken)} code: ${loginCode}`);
     return json(generic);
   }
   const confirmationUrl = `${resumeBuilderPublicOrigin(request)}/resume-builder/confirm?token=${encodeURIComponent(rawToken)}`;
   try {
-    await sendMagicLinkEmail(env, email, confirmationUrl);
+    await sendMagicLinkEmail(env, email, confirmationUrl, loginCode);
   } catch (error) {
     console.error("Resume Builder magic-link request failed", error);
     return json({
@@ -713,6 +747,8 @@ async function confirmMagicLink(request: Request, env: ResumeBuilderEnv): Promis
   if ((consumed.meta?.changes ?? 0) !== 1) {
     return json({ ok: false, message: "This confirmation link has already been used." }, 400);
   }
+  // One sign-in per email: the matching code can no longer be used.
+  await env.DB.prepare("DELETE FROM auth_tokens WHERE user_id = ? AND purpose = 'login_code'").bind(token.user_id).run();
 
   const sessionCookie = await issueResumeSession(env, token.user_id, SESSION_TTL_SECONDS);
   const user = await env.DB.prepare("SELECT email, full_name FROM users WHERE user_id = ?")
@@ -720,6 +756,62 @@ async function confirmMagicLink(request: Request, env: ResumeBuilderEnv): Promis
 
   return json(
     { ok: true, user: { email: user?.email ?? "", fullName: user?.full_name ?? null } },
+    200,
+    { "Set-Cookie": sessionCookie },
+  );
+}
+
+/**
+ * Signs a visitor in with the 6-digit code from the sign-in email, on the page
+ * they started from. Every failure returns the same message so the endpoint
+ * never reveals whether an email has an account. Guessing is bounded three ways:
+ * per email and per IP rate limits, and the code is deleted after
+ * LOGIN_CODE_MAX_FAILURES wrong attempts.
+ */
+async function verifyLoginCode(request: Request, env: ResumeBuilderEnv): Promise<Response> {
+  if (request.method !== "POST") return methodNotAllowed("POST");
+  if (!hasTrustedOrigin(request)) return json({ ok: false, message: "Request origin rejected." }, 403);
+  const body = await parseJsonBody(request, 2_000);
+  const email = normalizeEmail(body?.email);
+  const code = typeof body?.code === "string" ? body.code.replace(/[\s-]/g, "") : "";
+  const invalid = json({ ok: false, message: "That code is incorrect or has expired. Check the latest email or request a new code." }, 400);
+  if (!isValidEmail(email) || !/^\d{6}$/.test(code)) return invalid;
+
+  const [emailAllowed, ipAllowed] = await Promise.all([
+    checkRateLimit(env, `auth-code-email:${await sha256Hex(email)}`, 10, LOGIN_CODE_ATTEMPT_WINDOW_SECONDS),
+    checkRateLimit(env, `auth-code-ip:${await sha256Hex(requestIp(request))}`, 30, LOGIN_CODE_ATTEMPT_WINDOW_SECONDS),
+  ]);
+  if (!emailAllowed || !ipAllowed) {
+    return json({ ok: false, message: "Too many attempts. Wait a few minutes, then request a new code." }, 429);
+  }
+
+  const user = await env.DB.prepare("SELECT user_id FROM users WHERE email = ?").bind(email).first<{ user_id: string }>();
+  if (!user?.user_id) return invalid;
+
+  const codeHash = await loginCodeHash(user.user_id, code);
+  const consumed = await env.DB.prepare(
+    `UPDATE auth_tokens SET consumed_at = CURRENT_TIMESTAMP
+     WHERE token_hash = ? AND user_id = ? AND purpose = 'login_code' AND consumed_at IS NULL AND expires_at > ?`,
+  ).bind(codeHash, user.user_id, nowSeconds()).run() as D1MutationResult;
+
+  if ((consumed.meta?.changes ?? 0) !== 1) {
+    const underFailureLimit = await checkRateLimit(
+      env, `auth-code-fail:${user.user_id}`, LOGIN_CODE_MAX_FAILURES - 1, LOGIN_CODE_ATTEMPT_WINDOW_SECONDS,
+    );
+    if (!underFailureLimit) {
+      await env.DB.prepare("DELETE FROM auth_tokens WHERE user_id = ? AND purpose = 'login_code'").bind(user.user_id).run();
+    }
+    return invalid;
+  }
+
+  // One sign-in per email: the matching link can no longer be used.
+  await env.DB.prepare("DELETE FROM auth_tokens WHERE user_id = ? AND purpose IN ('login', 'login_code')").bind(user.user_id).run();
+  const sessionCookie = await issueResumeSession(env, user.user_id, SESSION_TTL_SECONDS);
+  const profile = await env.DB.prepare("SELECT email, full_name FROM users WHERE user_id = ?")
+    .bind(user.user_id).first<{ email: string; full_name: string | null }>();
+
+  return json(
+    { ok: true, user: { email: profile?.email ?? "", fullName: profile?.full_name ?? null } },
     200,
     { "Set-Cookie": sessionCookie },
   );
@@ -932,7 +1024,10 @@ async function getAgent1FunnelSnapshot(
        SUM(CASE WHEN event_name = 'resume_intake_started' THEN 1 ELSE 0 END) AS intake_started,
        SUM(CASE WHEN event_name = 'resume_intake_complete' THEN 1 ELSE 0 END) AS intake_completed,
        SUM(CASE WHEN event_name = 'resume_preview_generated' THEN 1 ELSE 0 END) AS previews_generated,
-       SUM(CASE WHEN event_name = 'begin_checkout' THEN 1 ELSE 0 END) AS checkout_started
+       SUM(CASE WHEN event_name = 'begin_checkout' THEN 1 ELSE 0 END) AS checkout_started,
+       SUM(CASE WHEN event_name = 'resume_auth_requested' THEN 1 ELSE 0 END) AS auth_requested,
+       SUM(CASE WHEN event_name = 'resume_auth_link_opened' THEN 1 ELSE 0 END) AS auth_link_opened,
+       SUM(CASE WHEN event_name = 'sign_up' THEN 1 ELSE 0 END) AS signed_in
      FROM funnel_events
      WHERE julianday(occurred_at) >= julianday(?)
        AND julianday(occurred_at) ${endOperator} julianday(?)`
@@ -944,6 +1039,9 @@ async function getAgent1FunnelSnapshot(
       intake_completed: number | null;
       previews_generated: number | null;
       checkout_started: number | null;
+      auth_requested: number | null;
+      auth_link_opened: number | null;
+      signed_in: number | null;
     }>();
 
   // Revenue truth comes only from Stripe-verified resume_orders.
@@ -1019,6 +1117,15 @@ async function getAgent1FunnelSnapshot(
       previewsGenerated,
       checkoutStarted,
       verifiedPurchases,
+    },
+
+    // Sign-in steps between `starts` and `intakeStarted`. Kept out of `counts`
+    // so the A01 bridge contract (fixed count keys) is unchanged; the bridge
+    // ignores this field until it opts in.
+    signInSteps: {
+      codeOrLinkRequested: Number(behavioral?.auth_requested ?? 0),
+      linkOpened: Number(behavioral?.auth_link_opened ?? 0),
+      signedIn: Number(behavioral?.signed_in ?? 0),
     },
 
     conversionRates: {
@@ -3790,6 +3897,11 @@ async function serveProtectedPreview(resume: ResumeRecord): Promise<Response> {
 
 const FUNNEL_EVENT_NAMES = new Set([
   "resume_builder_start",
+  // Sign-in steps between the email box and the intake (added Oct 29 2026).
+  // Before this, nothing between a start and an intake was recorded.
+  "resume_auth_requested",
+  "resume_auth_link_opened",
+  "sign_up",
   "resume_intake_started",
   "resume_intake_complete",
   "resume_preview_generated",
@@ -3804,7 +3916,13 @@ const FUNNEL_METADATA_KEYS = new Set([
   "utm_term",
   "trade",
   "device",
+  "auth_method",
 ]);
+
+/** Allowed values per metadata key; keys not listed accept any short string. */
+const FUNNEL_METADATA_VALUES: Record<string, ReadonlySet<string>> = {
+  auth_method: new Set(["code", "magic_link"]),
+};
 
 function funnelString(value: unknown, maxLength: number): string | null {
   if (typeof value !== "string") return null;
@@ -3820,6 +3938,7 @@ function funnelMetadata(value: unknown): string | null {
   for (const [key, rawValue] of Object.entries(value)) {
     if (!FUNNEL_METADATA_KEYS.has(key) || typeof rawValue !== "string") continue;
     const normalized = rawValue.trim().slice(0, 256);
+    if (FUNNEL_METADATA_VALUES[key] && !FUNNEL_METADATA_VALUES[key].has(normalized)) continue;
     if (normalized) safe[key] = normalized;
   }
 
@@ -3849,7 +3968,8 @@ async function recordFunnelEvent(
 
   const eventName = funnelString(payload.eventName, 64);
 
-  // sign_up is a GA4 milestone only; it is not part of the Agent #1 funnel table.
+  // Stored first-party for Agent #1 (including sign_up since Oct 29 2026);
+  // GA4 receives only the names in GA4_FUNNEL_EVENTS.
   const storeEvent = eventName ? FUNNEL_EVENT_NAMES.has(eventName) : false;
   if (!eventName || (!storeEvent && !GA4_FUNNEL_EVENTS.has(eventName))) {
     return json({ ok: false, message: "Invalid funnel event." }, 400);
@@ -3864,7 +3984,11 @@ async function recordFunnelEvent(
 
   if (ga4ConsentGranted(request, payload.analyticsConsent)) {
     const identity = ga4IdentityFromRequest(request, payload.anonymousId, env);
-    const event = ga4FunnelEvent(eventName, ga4CampaignParams(payload.metadata));
+    const authMethod = JSON.parse(funnelMetadata(payload.metadata) ?? "{}").auth_method as string | undefined;
+    const event = ga4FunnelEvent(eventName, {
+      ...ga4CampaignParams(payload.metadata),
+      ...(eventName === "sign_up" && authMethod ? { method: authMethod } : {}),
+    });
     // Forward only when the event can join the visitor's existing GA session.
     // Without a session_id, GA4 opens a new session that has no page_view, which
     // surfaces as a "(not set)" landing page and source/medium in reports.
@@ -3931,6 +4055,7 @@ export async function handleResumeBuilderRoute(
     if (pathname === "/api/resume-builder/funnel-events") return recordFunnelEvent(request, env, dependencies);
     if (pathname === "/api/resume-builder/auth/request") return requestMagicLink(request, env);
     if (pathname === "/api/resume-builder/auth/confirm") return confirmMagicLink(request, env);
+    if (pathname === "/api/resume-builder/auth/verify-code") return verifyLoginCode(request, env);
     if (pathname === "/api/resume-builder/auth/logout") return logout(request, env);
     if (pathname === "/api/resume-builder/me") return getCurrentUser(request, env);
     if (pathname === "/api/resume-builder/resume-import") return importResume(request, env, dependencies);
