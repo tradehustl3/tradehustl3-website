@@ -73,6 +73,8 @@ function sendFirstPartyFunnelEvent(
 
     const metadata = {
       ...attribution,
+      // The only non-campaign field forwarded; the Worker allowlists its values.
+      ...(typeof parameters.auth_method === "string" ? { auth_method: parameters.auth_method } : {}),
     };
 
     void fetch("/api/resume-builder/funnel-events", {

@@ -12,6 +12,7 @@ export function ConfirmMagicLink() {
 
   useEffect(() => {
     if (!token) return;
+    trackResumeFunnelEvent("resume_auth_link_opened");
     window.history.replaceState({}, "", `${window.location.pathname}${window.location.hash}`);
   }, [token]);
 
@@ -31,7 +32,7 @@ export function ConfirmMagicLink() {
       });
       const result = await response.json() as { message?: string };
       if (!response.ok) throw new Error(result.message || "This confirmation link could not be used.");
-      trackResumeFunnelEvent("sign_up");
+      trackResumeFunnelEvent("sign_up", { auth_method: "magic_link" });
       window.location.assign("/resume-builder/intake");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "This confirmation link could not be used.");

@@ -1,6 +1,7 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
+import { trackResumeFunnelEvent } from "./funnel-analytics";
 import {
   recallIntakeTrade,
   rememberIntakeTrade,
@@ -30,6 +31,17 @@ export function AccountStart() {
   const [submitting, setSubmitting] = useState(false);
   const [sentTo, setSentTo] = useState("");
   const [message, setMessage] = useState("");
+  const [code, setCode] = useState("");
+  const [verifying, setVerifying] = useState(false);
+  const [codeError, setCodeError] = useState("");
+  const [resent, setResent] = useState(false);
+  const codeInput = useRef<HTMLInputElement>(null);
+
+  // After the visitor submits their email, move focus to the code box they now
+  // need (a response to their action, not focus stolen on page load).
+  useEffect(() => {
+    if (sentTo) codeInput.current?.focus();
+  }, [sentTo]);
 
   // Persist a landing-page trade choice so it survives the magic-link email round trip.
   useEffect(() => {
@@ -55,6 +67,21 @@ export function AccountStart() {
     return () => { active = false; };
   }, []);
 
+  async function requestCode(email: string): Promise<boolean> {
+    const response = await fetch("/api/resume-builder/auth/request", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "Content-Type": "application/json" },
+      // Email is the only fact required to create/verify the account.
+      // Name comes from an uploaded resume or the scratch intake later.
+      body: JSON.stringify({ email }),
+    });
+    const result = await response.json() as { message?: string };
+    if (!response.ok) throw new Error(result.message || "We could not send your sign-in code.");
+    trackResumeFunnelEvent("resume_auth_requested");
+    return true;
+  }
+
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSubmitting(true);
@@ -63,22 +90,52 @@ export function AccountStart() {
     const email = String(form.get("email") ?? "").trim();
 
     try {
-      const response = await fetch("/api/resume-builder/auth/request", {
+      await requestCode(email);
+      setSentTo(email);
+      setCode("");
+      setCodeError("");
+      setResent(false);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "We could not send your sign-in code.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function verify(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const digits = code.replace(/\D/g, "");
+    if (digits.length !== 6) {
+      setCodeError("Enter the 6-digit code from the email.");
+      return;
+    }
+    setVerifying(true);
+    setCodeError("");
+    try {
+      const response = await fetch("/api/resume-builder/auth/verify-code", {
         method: "POST",
         credentials: "same-origin",
         headers: { "Content-Type": "application/json" },
-        // Email is the only fact required to create/verify the account.
-        // Name comes from an uploaded resume or the scratch intake later.
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email: sentTo, code: digits }),
       });
       const result = await response.json() as { message?: string };
-      if (!response.ok) throw new Error(result.message || "We could not send the confirmation link.");
-      setSentTo(email);
-      setMessage(result.message || "Check your inbox for the confirmation link.");
+      if (!response.ok) throw new Error(result.message || "That code could not be used.");
+      trackResumeFunnelEvent("sign_up", { auth_method: "code" });
+      window.location.assign(intakeHref());
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "We could not send the confirmation link.");
-    } finally {
-      setSubmitting(false);
+      setCodeError(error instanceof Error ? error.message : "That code could not be used.");
+      setVerifying(false);
+    }
+  }
+
+  async function resend() {
+    setCodeError("");
+    try {
+      await requestCode(sentTo);
+      setResent(true);
+      setCode("");
+    } catch (error) {
+      setCodeError(error instanceof Error ? error.message : "We could not send a new code.");
     }
   }
 
@@ -98,15 +155,40 @@ export function AccountStart() {
 
   if (sentTo) {
     return (
-      <div className="rb-message-panel rb-message-success" role="status">
-        <span className="rb-message-icon">✓</span>
-        <p className="rb-kicker">Link sent</p>
-        <h2>Check your inbox.</h2>
-        <p>{message}</p>
-        <strong>{sentTo}</strong>
-        <small>The link expires in 20 minutes. Open it, then choose the confirmation button to finish signing in.</small>
-        <button className="rb-text-button" type="button" onClick={() => { setSentTo(""); setMessage(""); }}>Use a different email</button>
-      </div>
+      <form className="rb-account-form" onSubmit={verify} noValidate>
+        <p className="rb-kicker" role="status">{resent ? "New code sent" : "Code sent"}</p>
+        <p className="rb-form-note">
+          We emailed a 6-digit code to <strong>{sentTo}</strong>. Keep this page open and enter it here.
+        </p>
+        <div className="rb-field">
+          <label htmlFor="login-code">6-digit code</label>
+          <input
+            id="login-code"
+            name="code"
+            type="text"
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            pattern="[0-9 ]*"
+            maxLength={7}
+            required
+            ref={codeInput}
+            placeholder="123456"
+            value={code}
+            onChange={(event) => setCode(event.target.value.replace(/[^\d ]/g, ""))}
+            aria-invalid={codeError ? true : undefined}
+            aria-describedby={codeError ? "login-code-error" : "login-code-help"}
+          />
+        </div>
+        <button className="rb-button rb-button-primary rb-button-full" type="submit" disabled={verifying}>
+          {verifying ? "Checking…" : "Verify & continue"} <span>→</span>
+        </button>
+        {codeError ? <p id="login-code-error" className="rb-inline-error" role="alert">{codeError}</p> : null}
+        <p id="login-code-help" className="rb-form-note">
+          The code expires in 10 minutes. On another device? Use the link in the same email instead.
+        </p>
+        <button className="rb-text-button" type="button" onClick={resend}>Send a new code</button>
+        <button className="rb-text-button" type="button" onClick={() => { setSentTo(""); setMessage(""); setCode(""); setCodeError(""); }}>Use a different email</button>
+      </form>
     );
   }
 

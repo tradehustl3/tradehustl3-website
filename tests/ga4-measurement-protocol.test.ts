@@ -148,7 +148,10 @@ test("consented funnel events without a GA session are stored but not forwarded 
   }
 });
 
-test("sign_up is forwarded to GA4 but never written to the Agent #1 funnel table", async () => {
+// Since Oct 29 2026 sign_up is also stored first-party: it is the only record of a
+// confirmed sign-in between the homepage email box and the intake, which A01
+// could not see before. (It was GA4-only from Oct 16 as a scope choice.)
+test("sign_up is forwarded to GA4 and stored in the Agent #1 funnel table", async () => {
   const { DB, sqlite } = sqliteD1();
   const { calls, fetchImpl } = captureFetch();
   const { ctx, settle } = context();
@@ -158,10 +161,42 @@ test("sign_up is forwarded to GA4 but never written to the Agent #1 funnel table
     { recoveryContext: ctx, ga4Fetch: fetchImpl },
   );
   await settle();
-  assert.equal(response?.status, 202);
-  assert.equal((sqlite.prepare("SELECT COUNT(*) AS n FROM funnel_events").get() as { n: number }).n, 0);
+  assert.equal(response?.status, 201);
+  assert.equal((sqlite.prepare("SELECT COUNT(*) AS n FROM funnel_events WHERE event_name = 'sign_up'").get() as { n: number }).n, 1);
   assert.equal(calls[0].body.events[0].name, "sign_up");
   assert.equal(calls[0].body.events[0].params.method, "magic_link");
+});
+
+test("a code sign-in reaches GA4 as method code; unknown methods fall back to magic_link", async () => {
+  for (const [sent, expected] of [["code", "code"], ["password", "magic_link"]] as const) {
+    const { DB } = sqliteD1();
+    const { calls, fetchImpl } = captureFetch();
+    const { ctx, settle } = context();
+    await handleResumeBuilderRoute(
+      funnelPost({ eventName: "sign_up", anonymousId: "anon-1", analyticsConsent: true, metadata: { auth_method: sent } }),
+      { DB, GA4_MEASUREMENT_PROTOCOL_API_SECRET: API_SECRET },
+      { recoveryContext: ctx, ga4Fetch: fetchImpl },
+    );
+    await settle();
+    assert.equal(calls[0].body.events[0].params.method, expected, `auth_method=${sent}`);
+  }
+});
+
+test("sign-in steps that GA4 does not track are stored but never forwarded", async () => {
+  const { DB, sqlite } = sqliteD1();
+  const { calls, fetchImpl } = captureFetch();
+  const { ctx, settle } = context();
+  for (const eventName of ["resume_auth_requested", "resume_auth_link_opened"]) {
+    const response = await handleResumeBuilderRoute(
+      funnelPost({ eventName, anonymousId: "anon-1", analyticsConsent: true }),
+      { DB, GA4_MEASUREMENT_PROTOCOL_API_SECRET: API_SECRET },
+      { recoveryContext: ctx, ga4Fetch: fetchImpl },
+    );
+    assert.equal(response?.status, 201);
+  }
+  await settle();
+  assert.equal(calls.length, 0);
+  assert.equal((sqlite.prepare("SELECT COUNT(*) AS n FROM funnel_events").get() as { n: number }).n, 2);
 });
 
 test("purchase cannot be submitted through the public funnel endpoint", async () => {

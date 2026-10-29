@@ -145,7 +145,7 @@ export function ga4CampaignParams(metadata: unknown): Record<string, string> {
 export function ga4FunnelEvent(eventName: string, extra: Record<string, string> = {}): Ga4Event | null {
   if (!GA4_FUNNEL_EVENTS.has(eventName)) return null;
   const params: Record<string, Ga4ParamValue> = { product: "resume_builder", ...extra };
-  if (eventName === "sign_up") params.method = "magic_link";
+  if (eventName === "sign_up" && params.method !== "code") params.method = "magic_link";
   if (eventName === "begin_checkout") {
     params.currency = "USD";
     params.value = RESUME_GA4_ITEM.price;
