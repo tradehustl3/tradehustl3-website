@@ -24,3 +24,20 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: node tools/pr186/check-worker-size.mjs
+
+  # Same pipeline, same commit: after tests pass on a push to main, wait for
+  # Cloudflare to deploy this SHA and smoke the live site. Pull requests stop
+  # after `test`; they are never deployed to production.
+  production-smoke:
+    name: Production smoke
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: read
+      checks: read
+    uses: ./.github/workflows/production-smoke.yml
+    with:
+      sha: ${{ github.sha }}
+    secrets:
+      SMOKE_BYPASS_TOKEN: ${{ secrets.SMOKE_BYPASS_TOKEN }}
+      SMOKE_TEST_LOGIN_SECRET: ${{ secrets.SMOKE_TEST_LOGIN_SECRET }}

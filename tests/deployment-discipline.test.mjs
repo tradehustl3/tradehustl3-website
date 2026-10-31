@@ -17,15 +17,46 @@ test("main and pull requests are protected by the repository test workflow", asy
   assert.match(source, /npm test/);
 });
 
-test("production smoke waits for the successful Cloudflare main deployment check", async () => {
+test("production smoke runs in the main Test pipeline, after tests, on the pushed commit", async () => {
+  const source = await readFile(testWorkflow, "utf8");
+  const job = source.slice(source.indexOf("  production-smoke:"));
+  assert.ok(job.length > 0, "Test workflow must have a production-smoke job");
+  assert.match(job, /needs:\s*test\b/, "smoke must wait for the test job");
+  assert.match(job, /if:\s*github\.event_name == 'push' && github\.ref == 'refs\/heads\/main'/, "pull requests are never smoked against production");
+  assert.match(job, /uses:\s*\.\/\.github\/workflows\/production-smoke\.yml/);
+  assert.match(job, /sha:\s*\$\{\{ github\.sha \}\}/, "smoke verifies the same commit the tests ran on");
+  assert.match(job, /checks:\s*read/);
+  assert.doesNotMatch(job, /secrets:\s*inherit/, "pass only the two smoke secrets");
+  assert.match(job, /SMOKE_BYPASS_TOKEN: \$\{\{ secrets\.SMOKE_BYPASS_TOKEN \}\}/);
+  assert.match(job, /SMOKE_TEST_LOGIN_SECRET: \$\{\{ secrets\.SMOKE_TEST_LOGIN_SECRET \}\}/);
+});
+
+test("production smoke is only called, never woken by unrelated check events", async () => {
   const source = await readFile(smokeWorkflow, "utf8");
-  assert.match(source, /check_run:/);
-  assert.match(source, /types:\s*\[completed\]/);
-  assert.match(source, /Workers Builds: tradehustl3-website/);
-  assert.match(source, /cloudflare-workers-and-pages/);
-  assert.match(source, /check_run\.conclusion == 'success'/);
-  assert.match(source, /check_suite\.head_branch == 'main'/);
-  assert.match(source, /cancel-in-progress:\s*false/);
+  const triggers = source.slice(source.indexOf("\non:"), source.indexOf("\njobs:"));
+  assert.match(triggers, /workflow_call:/);
+  assert.match(triggers, /workflow_dispatch:/);
+  assert.doesNotMatch(triggers, /check_run:|push:|pull_request:/, "listening triggers create Skipped noise or duplicate runs");
+  assert.doesNotMatch(source, /github\.event\.check_run/);
+});
+
+test("production smoke waits for Cloudflare to deploy that exact commit before checking the site", async () => {
+  const source = await readFile(smokeWorkflow, "utf8");
+  const deploy = source.slice(source.indexOf("  deploy:"), source.indexOf("  smoke:"));
+  assert.match(deploy, /\^\[0-9a-f\]\{40\}\$/, "only a full commit SHA is accepted");
+  assert.match(deploy, /commits\/\$SMOKE_SHA\/check-runs/);
+  assert.match(deploy, /Workers Builds: tradehustl3-website/);
+  assert.match(deploy, /cloudflare-workers-and-pages/);
+  assert.match(deploy, /"completed success"/);
+  assert.match(deploy, /exit 1/, "a failed or unfinished Cloudflare build fails the pipeline");
+  assert.match(deploy, /checks:\s*read/);
+  assert.match(deploy, /commits\/main" --jq \.sha/, "an older commit hands smoke to the newer main commit");
+
+  const smoke = source.slice(source.indexOf("  smoke:"));
+  assert.match(smoke, /needs:\s*deploy/);
+  assert.match(smoke, /if:\s*needs\.deploy\.outputs\.ready == 'true'/);
+  assert.match(smoke, /group:\s*production-smoke/);
+  assert.match(smoke, /cancel-in-progress:\s*false/);
 });
 
 test("production smoke validates the real custom domain end to end", async () => {
@@ -87,7 +118,7 @@ test("production smoke runs the signed-in review flow without gating deploys on 
   const source = await readFile(smokeWorkflow, "utf8");
   assert.match(source, /SMOKE_TEST_LOGIN_SECRET: \$\{\{ secrets\.SMOKE_TEST_LOGIN_SECRET \}\}/);
   assert.match(source, /node tools\/smoke\/resume-builder-smoke\.mjs/);
-  assert.match(source, /ref: \$\{\{ github\.event\.check_run\.head_sha \}\}/);
+  assert.match(source, /ref: \$\{\{ needs\.deploy\.outputs\.sha \}\}/, "the runner is the commit Cloudflare deployed");
   assert.match(source, /persist-credentials: false/);
   assert.match(source, /npm ci --omit=dev --ignore-scripts/);
   const runner = await readFile(new URL("../tools/smoke/resume-builder-smoke.mjs", import.meta.url), "utf8");
