@@ -734,85 +734,110 @@ const worker = {
 
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
-
-    if (url.protocol === "http:" && (url.hostname === "tradehustl3.com" || url.hostname === "www.tradehustl3.com")) {
-      url.protocol = "https:";
-      url.hostname = "tradehustl3.com";
-      return withSecurityHeaders(Response.redirect(url.toString(), 308), url.pathname);
-    }
-
-    if (url.hostname === "www.tradehustl3.com") {
-      url.hostname = "tradehustl3.com";
-      return withSecurityHeaders(Response.redirect(url.toString(), 308), url.pathname);
-    }
-
-    const repaired = malformedUrlTarget(request.url);
-    if (repaired) {
-      return withSecurityHeaders(Response.redirect(repaired.toString(), 308), url.pathname);
-    }
-
-    if (url.pathname === "/resume") {
-      const target = new URL("/", request.url);
-      target.hash = "resume-start";
-      return withSecurityHeaders(Response.redirect(target.toString(), 308), url.pathname);
-    }
-
-    const resumeBuilderResponse = await handleResumeBuilderRoute(request, env, { recoveryContext: ctx });
-    if (resumeBuilderResponse) return withSecurityHeaders(resumeBuilderResponse, url.pathname);
-
-    const ebookStripeResponse = await handleEbookStripeRoute(request, env);
-    if (ebookStripeResponse) return withSecurityHeaders(ebookStripeResponse, url.pathname);
-
-    if (url.pathname === "/api/health" && request.method === "GET") {
-      const health = await getOperationsHealth(env);
-      if (!health.ok) {
-        console.error(operationalEvent("delivery_queue", "operations_health_unhealthy", "error", {
-          status: health.status,
-          pending: health.queue?.pending ?? 0,
-          deadLetter: health.queue?.deadLetter ?? 0,
-        }));
-      } else if (health.status === "degraded") {
-        console.warn(operationalEvent("delivery_queue", "operations_health_degraded", "warning", {
-          pending: health.queue?.pending ?? 0,
-          deadLetter: health.queue?.deadLetter ?? 0,
-        }));
-      }
+    try {
+      return await routeRequest(request, env, ctx, url);
+    } catch (error) {
+      // Pages keep the framework's own error handling. API callers (the
+      // builder UI, eBook downloads, signup forms, Stripe) get JSON instead of
+      // Cloudflare's raw error page. Stripe still sees a 5xx and retries.
+      if (!url.pathname.startsWith("/api/")) throw error;
+      console.error(operationalEvent(apiFailureArea(url.pathname), "api_unhandled_failure", "error", {
+        path: url.pathname.slice(0, 180),
+      }));
       return withSecurityHeaders(
-        jsonResponse(health as unknown as Record<string, unknown>, health.ok ? 200 : 503),
+        jsonResponse({ ok: false, message: "This service is temporarily unavailable. Please try again." }, 500),
         url.pathname,
       );
     }
-
-    if (url.pathname === "/api/subscribe") {
-      return withSecurityHeaders(await subscribe(request, env), url.pathname);
-    }
-
-    if (url.pathname === FREE_SAMPLE_ROUTE) {
-      return withSecurityHeaders(await serveFreeSample(request, env), url.pathname);
-    }
-
-    if (url.pathname === BOOK_SAMPLE_ROUTE) {
-      return withSecurityHeaders(await serveBookSample(request, env), url.pathname);
-    }
-
-    if (url.pathname === FREE_SAMPLE_PUBLIC_PATH) {
-      return withSecurityHeaders(Response.redirect(`${SITE_URL}/book#sample`, 302), url.pathname);
-    }
-
-    if (url.pathname === "/_vinext/image") {
-      const allowedWidths = [...DEFAULT_DEVICE_SIZES, ...DEFAULT_IMAGE_SIZES];
-      return withSecurityHeaders(await handleImageOptimization(request, {
-        fetchAsset: (path) => env.ASSETS.fetch(new Request(new URL(path, request.url))),
-        transformImage: async (body, { width, format, quality }) => {
-          const result = await env.IMAGES.input(body).transform(width > 0 ? { width } : {}).output({ format, quality });
-          return result.response();
-        },
-      }, allowedWidths), url.pathname);
-    }
-
-    const response = withSecurityHeaders(await handler.fetch(request, env, ctx), url.pathname);
-    return withPublicAssetCache(request, response);
   },
 };
+
+/** Monitoring area for an API failure caught by the top-level safety net. */
+function apiFailureArea(pathname: string): Parameters<typeof operationalEvent>[0] {
+  if (pathname.startsWith("/api/stripe/") || pathname.startsWith("/api/resume-builder/stripe/")) return "stripe";
+  if (pathname === "/api/subscribe" || pathname === "/api/free-sample" || pathname === "/api/book-sample") return "auth_email";
+  if (pathname === "/api/health") return "delivery_queue";
+  return "document_storage";
+}
+
+async function routeRequest(request: Request, env: Env, ctx: ExecutionContext, url: URL): Promise<Response> {
+  if (url.protocol === "http:" && (url.hostname === "tradehustl3.com" || url.hostname === "www.tradehustl3.com")) {
+    url.protocol = "https:";
+    url.hostname = "tradehustl3.com";
+    return withSecurityHeaders(Response.redirect(url.toString(), 308), url.pathname);
+  }
+
+  if (url.hostname === "www.tradehustl3.com") {
+    url.hostname = "tradehustl3.com";
+    return withSecurityHeaders(Response.redirect(url.toString(), 308), url.pathname);
+  }
+
+  const repaired = malformedUrlTarget(request.url);
+  if (repaired) {
+    return withSecurityHeaders(Response.redirect(repaired.toString(), 308), url.pathname);
+  }
+
+  if (url.pathname === "/resume") {
+    const target = new URL("/", request.url);
+    target.hash = "resume-start";
+    return withSecurityHeaders(Response.redirect(target.toString(), 308), url.pathname);
+  }
+
+  const resumeBuilderResponse = await handleResumeBuilderRoute(request, env, { recoveryContext: ctx });
+  if (resumeBuilderResponse) return withSecurityHeaders(resumeBuilderResponse, url.pathname);
+
+  const ebookStripeResponse = await handleEbookStripeRoute(request, env);
+  if (ebookStripeResponse) return withSecurityHeaders(ebookStripeResponse, url.pathname);
+
+  if (url.pathname === "/api/health" && request.method === "GET") {
+    const health = await getOperationsHealth(env);
+    if (!health.ok) {
+      console.error(operationalEvent("delivery_queue", "operations_health_unhealthy", "error", {
+        status: health.status,
+        pending: health.queue?.pending ?? 0,
+        deadLetter: health.queue?.deadLetter ?? 0,
+      }));
+    } else if (health.status === "degraded") {
+      console.warn(operationalEvent("delivery_queue", "operations_health_degraded", "warning", {
+        pending: health.queue?.pending ?? 0,
+        deadLetter: health.queue?.deadLetter ?? 0,
+      }));
+    }
+    return withSecurityHeaders(
+      jsonResponse(health as unknown as Record<string, unknown>, health.ok ? 200 : 503),
+      url.pathname,
+    );
+  }
+
+  if (url.pathname === "/api/subscribe") {
+    return withSecurityHeaders(await subscribe(request, env), url.pathname);
+  }
+
+  if (url.pathname === FREE_SAMPLE_ROUTE) {
+    return withSecurityHeaders(await serveFreeSample(request, env), url.pathname);
+  }
+
+  if (url.pathname === BOOK_SAMPLE_ROUTE) {
+    return withSecurityHeaders(await serveBookSample(request, env), url.pathname);
+  }
+
+  if (url.pathname === FREE_SAMPLE_PUBLIC_PATH) {
+    return withSecurityHeaders(Response.redirect(`${SITE_URL}/book#sample`, 302), url.pathname);
+  }
+
+  if (url.pathname === "/_vinext/image") {
+    const allowedWidths = [...DEFAULT_DEVICE_SIZES, ...DEFAULT_IMAGE_SIZES];
+    return withSecurityHeaders(await handleImageOptimization(request, {
+      fetchAsset: (path) => env.ASSETS.fetch(new Request(new URL(path, request.url))),
+      transformImage: async (body, { width, format, quality }) => {
+        const result = await env.IMAGES.input(body).transform(width > 0 ? { width } : {}).output({ format, quality });
+        return result.response();
+      },
+    }, allowedWidths), url.pathname);
+  }
+
+  const response = withSecurityHeaders(await handler.fetch(request, env, ctx), url.pathname);
+  return withPublicAssetCache(request, response);
+}
 
 export default worker;

@@ -190,7 +190,7 @@ test("only a verified paid checkout can create review invitations; homepage read
 
   const bootstrap = worker.slice(worker.indexOf("const REVIEW_SCHEMA_STATEMENTS"), worker.indexOf("async function queuePaidReviewRequest"));
   assert.doesNotMatch(bootstrap, /INSERT|FROM resume_orders|nowSeconds/);
-  assert.match(worker, /reviews\/public"\) return getPublicCustomerReviews/);
+  assert.match(worker, /reviews\/public"\) return await getPublicCustomerReviews/);
   assert.doesNotMatch(publicReviewsHandler(worker), /INSERT|UPDATE|queuePaidReviewRequest/);
 
   // The homepage component only performs a GET of the public feed.
