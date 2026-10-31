@@ -4,7 +4,8 @@ import { writeFileSync } from 'node:fs';
 import JSZip from 'jszip';
 import { getDocument } from 'pdfjs-dist/legacy/build/pdf.mjs';
 import { createResumeDocx, createResumePdf } from '../worker/resume-documents';
-import { TEXT_SIZES, defaultStyle, type TemplateKey } from '../worker/resume-templates';
+import { BODY_SIZES, RESUME_TEMPLATES, TEXT_SIZES, defaultStyle, type TemplateKey } from '../worker/resume-templates';
+import { skillCharsPerColumn, skillColumnsThatFit } from '../worker/resume-layout-v2';
 import { sampleResume } from '../docs/pr186/sample-resume';
 
 // ATS check (audit finding #2). Skills render in 2-3 tab-stop columns. A skill
@@ -74,4 +75,46 @@ test('every skill reads as one unbroken phrase in PDF and DOCX text, in every te
     try { writeFileSync(`/proc/${process.ppid}/fd/1`, `::error title=ATS skill split::${failures.join('%0A')}\n`); } catch { /* best effort */ }
   }
   assert.deepEqual(failures, [], `skills split by column wrapping (ATS reads them as broken phrases):\n${failures.join('\n')}`);
+});
+
+test('short skills keep each template\'s designed columns; long skills cost columns, never a split', () => {
+  const standard = BODY_SIZES.Standard;
+  // The current sample resume (longest skill 28 chars) keeps every template's layout.
+  for (const theme of themes) {
+    const preferred = RESUME_TEMPLATES[theme].skillsColumns;
+    assert.equal(skillColumnsThatFit(sampleResume.skills, preferred, standard), preferred, `${theme} keeps ${preferred} columns`);
+  }
+  // A 32-character skill no longer fits 3 columns at Standard but fits 2.
+  assert.equal(skillColumnsThatFit(['Lockout/tagout (LOTO) procedures'], 3, standard), 2);
+  // A 48-character skill fits only a single column.
+  assert.equal(skillColumnsThatFit(['Building automation system (BAS) troubleshooting'], 3, standard), 1);
+  // Larger text means fewer characters per column, never more.
+  for (const count of [1, 2, 3]) {
+    assert.ok(skillCharsPerColumn(count, BODY_SIZES.Large) <= skillCharsPerColumn(count, BODY_SIZES.Small));
+  }
+});
+
+// Every skill classifies into a Modern Trade group, so the labelled layout applies.
+const GROUPED_LONG_SKILLS = [
+  'Building automation system (BAS) troubleshooting',
+  'Rooftop unit (RTU) preventive maintenance',
+  'Variable frequency drive (VFD) diagnostics',
+  'Brazing & soldering',
+  'Work order systems',
+];
+
+test('Modern Trade keeps its skill group labels when long skills stack the groups', async () => {
+  const resume = { ...sampleResume, skills: GROUPED_LONG_SKILLS };
+  for (const textSize of TEXT_SIZES) {
+    const style = { ...defaultStyle('navy'), textSize };
+    for (const [format, text] of [
+      ['PDF', await pdfText(await createResumePdf(resume, false, 'navy', 'navy', style))],
+      ['DOCX', await docxText(await createResumeDocx(resume, 'navy', 'navy', style))],
+    ] as const) {
+      assert.match(text, /Systems & equipment/, `${textSize}/${format}`);
+      assert.match(text, /Tools & methods/, `${textSize}/${format}`);
+      const flat = squash(text);
+      for (const skill of GROUPED_LONG_SKILLS) assert.ok(flat.includes(squash(skill)), `${textSize}/${format}: "${skill}" split`);
+    }
+  }
 });
