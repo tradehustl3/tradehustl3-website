@@ -158,7 +158,11 @@ test("invalid account email and unsuccessful creation never notify recovery", as
     assert.equal(response?.status, 201);
   }
   const fixture = createFixture("member@example.com", true);
-  await assert.rejects(handleResumeBuilderRoute(fixture.request, { DB: fixture.DB }, { recoveryContext: context }));
+  // A failed save answers with JSON 500 (never a thrown request / raw error page)
+  // and still never notifies recovery.
+  const failed = await handleResumeBuilderRoute(fixture.request, { DB: fixture.DB }, { recoveryContext: context });
+  assert.equal(failed?.status, 500);
+  assert.equal((await failed?.json() as { ok?: unknown }).ok, false);
   const unauthenticated = createFixture();
   unauthenticated.request.headers.delete("Cookie");
   const response = await handleResumeBuilderRoute(unauthenticated.request, { DB: unauthenticated.DB }, { recoveryContext: context });

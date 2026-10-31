@@ -5,6 +5,7 @@ import {
   type ResumeBuilderEnv,
   type ResumeBuilderDependencies,
 } from "./resume-builder";
+import { json } from "./resume-builder-base";
 import { operationalEvent } from "./operations-monitoring";
 
 export type { ResumeBuilderEnv };
@@ -47,12 +48,19 @@ export async function handleResumeBuilderRoute(
       else console.error(event);
     }
     return response;
-  } catch (error) {
+  } catch {
+    // Outermost Resume Builder boundary (also covers cover-letter, customization
+    // and smoke routes). Rethrowing here sent customers Cloudflare's raw error
+    // page instead of JSON the builder UI can show. Stripe still receives a
+    // 5xx, so webhook deliveries are retried exactly as before.
     const message = "Unhandled Resume Builder error";
     console.error(operationalEvent("document_storage", "resume_builder_unhandled_failure", "error", {
       path: pathname.slice(0, 180),
       message,
     }));
-    throw error;
+    const status = 500;
+    const event = monitoredFailure(pathname, status);
+    if (event) console.error(event);
+    return json({ ok: false, message: "Resume Builder is temporarily unavailable." }, status);
   }
 }

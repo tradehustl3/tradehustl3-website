@@ -2,6 +2,7 @@ import { withCustomerScope } from './resume-presentation-content';
 import { agentReportWindow } from './agent-report-window';
 import { storedStyle, defaultStyle } from './resume-templates';
 import { errorKind } from "./resume-safe-log";
+import { operationalEvent } from "./operations-monitoring";
 import { notifyResumeRecovery, type RecoveryContext } from "./resume-recovery";
 import {
   GA4_FUNNEL_EVENTS,
@@ -4052,43 +4053,50 @@ export async function handleResumeBuilderRoute(
   if (!env.DB) return json({ ok: false, message: "Resume Builder is temporarily unavailable." }, 503);
 
   try {
-    if (pathname === "/api/resume-builder/funnel-events") return recordFunnelEvent(request, env, dependencies);
-    if (pathname === "/api/resume-builder/auth/request") return requestMagicLink(request, env);
-    if (pathname === "/api/resume-builder/auth/confirm") return confirmMagicLink(request, env);
-    if (pathname === "/api/resume-builder/auth/verify-code") return verifyLoginCode(request, env);
-    if (pathname === "/api/resume-builder/auth/logout") return logout(request, env);
-    if (pathname === "/api/resume-builder/me") return getCurrentUser(request, env);
-    if (pathname === "/api/resume-builder/resume-import") return importResume(request, env, dependencies);
-    if (pathname === "/api/resume-builder/resumes") return createResume(request, env, dependencies);
-    if (pathname === "/api/resume-builder/internal/agent1/funnel-snapshot") return getAgent1FunnelSnapshot(request, env);
-    if (pathname === "/api/resume-builder/internal/n8n/purchase-status") return getN8nResumePurchaseStatus(request, env);
-    if (pathname === "/api/resume-builder/stripe/webhook") return handleResumeStripeWebhook(request, env, dependencies);
-    if (pathname === "/api/resume-builder/reviews/public") return getPublicCustomerReviews(request, env);
-    if (pathname === "/api/resume-builder/reviews/request") return getReviewRequest(request, env);
-    if (pathname === "/api/resume-builder/reviews/submit") return submitCustomerReview(request, env);
+    if (pathname === "/api/resume-builder/funnel-events") return await recordFunnelEvent(request, env, dependencies);
+    if (pathname === "/api/resume-builder/auth/request") return await requestMagicLink(request, env);
+    if (pathname === "/api/resume-builder/auth/confirm") return await confirmMagicLink(request, env);
+    if (pathname === "/api/resume-builder/auth/verify-code") return await verifyLoginCode(request, env);
+    if (pathname === "/api/resume-builder/auth/logout") return await logout(request, env);
+    if (pathname === "/api/resume-builder/me") return await getCurrentUser(request, env);
+    if (pathname === "/api/resume-builder/resume-import") return await importResume(request, env, dependencies);
+    if (pathname === "/api/resume-builder/resumes") return await createResume(request, env, dependencies);
+    if (pathname === "/api/resume-builder/internal/agent1/funnel-snapshot") return await getAgent1FunnelSnapshot(request, env);
+    if (pathname === "/api/resume-builder/internal/n8n/purchase-status") return await getN8nResumePurchaseStatus(request, env);
+    if (pathname === "/api/resume-builder/stripe/webhook") return await handleResumeStripeWebhook(request, env, dependencies);
+    if (pathname === "/api/resume-builder/reviews/public") return await getPublicCustomerReviews(request, env);
+    if (pathname === "/api/resume-builder/reviews/request") return await getReviewRequest(request, env);
+    if (pathname === "/api/resume-builder/reviews/submit") return await submitCustomerReview(request, env);
     if (pathname === "/api/resume-builder/reviews/admin") {
       return request.method === "GET"
-        ? getAdminCustomerReviews(request, env)
-        : moderateCustomerReview(request, env);
+        ? await getAdminCustomerReviews(request, env)
+        : await moderateCustomerReview(request, env);
     }
 
     const bulletMatch = pathname.match(/^\/api\/resume-builder\/resumes\/([^/]+)\/bullets$/);
-    if (bulletMatch) return updateResumeBullet(request, env, bulletMatch[1], dependencies);
+    if (bulletMatch) return await updateResumeBullet(request, env, bulletMatch[1], dependencies);
     const checkoutMatch = pathname.match(/^\/api\/resume-builder\/resumes\/([^/]+)\/checkout$/);
-    if (checkoutMatch) return createCheckout(request, env, checkoutMatch[1]);
+    if (checkoutMatch) return await createCheckout(request, env, checkoutMatch[1]);
     const generationMatch = pathname.match(/^\/api\/resume-builder\/resumes\/([^/]+)\/generate$/);
-    if (generationMatch) return generateResume(request, env, generationMatch[1], dependencies);
+    if (generationMatch) return await generateResume(request, env, generationMatch[1], dependencies);
     const fileMatch = pathname.match(/^\/api\/resume-builder\/resumes\/([^/]+)\/files\/(pdf|docx|preview)$/);
-    if (fileMatch) return serveResumeFile(request, env, fileMatch[1], fileMatch[2]);
+    if (fileMatch) return await serveResumeFile(request, env, fileMatch[1], fileMatch[2]);
     const resumeMatch = pathname.match(/^\/api\/resume-builder\/resumes\/([^/]+)$/);
     if (resumeMatch) {
       return request.method === "GET"
-        ? getResumeStatus(request, env, resumeMatch[1])
-        : updateResume(request, env, resumeMatch[1]);
+        ? await getResumeStatus(request, env, resumeMatch[1])
+        : await updateResume(request, env, resumeMatch[1]);
     }
     return json({ ok: false, message: "Route not found." }, 404);
   } catch {
-    console.error("Resume Builder request failed");
+    // Every dispatch above is awaited so a rejected handler lands here. Without
+    // `await`, the rejection skipped this block and reached Cloudflare's raw
+    // error page. Same structured event as the monitored wrapper, so alerting
+    // does not depend on which layer caught the error. No error text: it can
+    // carry request data.
+    console.error(operationalEvent("document_storage", "resume_builder_unhandled_failure", "error", {
+      path: pathname.slice(0, 180),
+    }));
     return json({ ok: false, message: "Resume Builder is temporarily unavailable." }, 500);
   }
 }
