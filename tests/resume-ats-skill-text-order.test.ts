@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { writeFileSync } from 'node:fs';
 import JSZip from 'jszip';
 import { getDocument } from 'pdfjs-dist/legacy/build/pdf.mjs';
 import { createResumeDocx, createResumePdf } from '../worker/resume-documents';
@@ -44,8 +45,10 @@ async function pdfText(bytes: Uint8Array): Promise<string> {
 async function docxText(bytes: Uint8Array): Promise<string> {
   const xml = await (await JSZip.loadAsync(bytes)).file('word/document.xml')!.async('string');
   // Paragraphs in document order; tabs and breaks read as whitespace.
+  const decode = (value: string) => value
+    .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&amp;/g, '&');
   return [...xml.matchAll(/<w:p[ >][\s\S]*?<\/w:p>/g)].map(([paragraph]) =>
-    [...paragraph.matchAll(/<w:t(?: [^>]*)?>([^<]*)<\/w:t>|<w:tab\/>|<w:br\/>/g)].map(([, text]) => text ?? ' ').join(''),
+    [...paragraph.matchAll(/<w:t(?: [^>]*)?>([^<]*)<\/w:t>|<w:tab\/>|<w:br\/>/g)].map(([, text]) => (text === undefined ? ' ' : decode(text))).join(''),
   ).join(' ');
 }
 
@@ -64,6 +67,11 @@ test('every skill reads as one unbroken phrase in PDF and DOCX text, in every te
         if (!flat.includes(squash(skill))) failures.push(`${theme}/${textSize}/${format}: "${skill}"`);
       }
     }
+  }
+  // TEMPORARY DIAGNOSTIC (remove before merge): node:test prefixes child output
+  // with "# ", so write a GitHub annotation straight to the CI step's stdout.
+  if (failures.length && process.env.GITHUB_ACTIONS) {
+    try { writeFileSync(`/proc/${process.ppid}/fd/1`, `::error title=ATS skill split::${failures.join('%0A')}\n`); } catch { /* best effort */ }
   }
   assert.deepEqual(failures, [], `skills split by column wrapping (ATS reads them as broken phrases):\n${failures.join('\n')}`);
 });
