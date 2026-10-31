@@ -15,9 +15,27 @@ const WIDTH = 612, HEIGHT = 792, MARGIN = 48;
 const clean = (s: string | undefined) => (s ?? '').replace(/\s+/g, ' ').trim();
 const color = (hex: string) => rgb(parseInt(hex.slice(0, 2), 16) / 255, parseInt(hex.slice(2, 4), 16) / 255, parseInt(hex.slice(4, 6), 16) / 255);
 const contact = (b: GeneratedResume['basics']) => [b.location, b.phone, b.email].map(clean).filter(Boolean).join(' | ');
+/** Average character width as a share of the font size (the DOCX column-wrap estimate). */
+const SKILL_CHAR_EM = 0.58;
+/** Longest skill, in characters, that fits on one line of a `count`-column skills grid. */
+export function skillCharsPerColumn(count: number, bodyPt: number): number {
+  return Math.max(16, Math.floor((WIDTH - MARGIN * 2) / count / (bodyPt * SKILL_CHAR_EM)));
+}
+/**
+ * Most columns (at most `preferred`) in which every skill fits on one line. A skill
+ * that wraps inside a tab column interleaves with its neighbours when an ATS reads
+ * the row ("Variable frequency drive Brazing diagnostics"), so a long skill costs a
+ * column instead of being split. One column always works: each skill is its own line.
+ * PDF and DOCX both call this, so they always choose the same layout.
+ */
+export function skillColumnsThatFit(skills: readonly string[], preferred: number, bodyPt: number): number {
+  const longest = Math.max(0, ...skills.map(skill => clean(skill).length));
+  for (let count = preferred; count > 1; count--) if (longest <= skillCharsPerColumn(count, bodyPt)) return count;
+  return 1;
+}
 type Block = { kind: 'heading' | 'text' | 'grid' | 'job' | 'education'; text?: string; bold?: boolean; italic?: boolean; accent?: boolean; right?: string; columns?: string[][]; labels?: string[]; bullet?: boolean; keepNext?: boolean; locked?: boolean };
 // `lock` is only passed for the unpaid watermarked PDF; DOCX and paid files never lock.
-function blocksForResume(resume: GeneratedResume, theme: ResumeTheme, track: ResumeTheme, lock?: ResumePreviewLock): Block[] {
+function blocksForResume(resume: GeneratedResume, theme: ResumeTheme, track: ResumeTheme, bodyPt: number, lock?: ResumePreviewLock): Block[] {
   const blocks: Block[] = [], headings = TRACK_HEADINGS[track];
   const heading = (text: string) => blocks.push({ kind: 'heading', text, keepNext: true });
   for (const section of RESUME_TEMPLATES[theme].sections) {
@@ -28,10 +46,21 @@ function blocksForResume(resume: GeneratedResume, theme: ResumeTheme, track: Res
         if (!skills.length) break;
         heading(headings.skills);
         const grouped = theme === 'navy' ? skillGroups(skills) : null;
-        const count = RESUME_TEMPLATES[theme].skillsColumns;
+        if (grouped) {
+          if (skillColumnsThatFit(skills, grouped.columns.length, bodyPt) === grouped.columns.length) {
+            blocks.push({ kind: 'grid', columns: grouped.columns, labels: grouped.labels });
+          } else {
+            // A skill too long for its group column: stack the groups, each a single labelled column.
+            grouped.columns.forEach((column, index) => {
+              if (column.length) blocks.push({ kind: 'grid', columns: [column], labels: [grouped.labels[index]] });
+            });
+          }
+          break;
+        }
+        const count = skillColumnsThatFit(skills, RESUME_TEMPLATES[theme].skillsColumns, bodyPt);
         // Row-major order in both formats for predictable ATS extraction.
-        const columns = grouped?.columns ?? Array.from({ length: count }, (_, col) => skills.filter((_, i) => i % count === col));
-        blocks.push({ kind: 'grid', columns, labels: grouped?.labels });
+        const columns = Array.from({ length: count }, (_, col) => skills.filter((_, i) => i % count === col));
+        blocks.push({ kind: 'grid', columns });
         break;
       }
       case 'certifications': if (resume.certifications.length) {
@@ -96,7 +125,7 @@ export async function renderPdfV2(input: GeneratedResume | GeneratedCoverLetter,
   // The unpaid preview locks most AI-written lines; see resume-preview-lock.ts.
   const blocks = letter
     ? blocksForLetter(input as GeneratedCoverLetter, watermarked)
-    : blocksForResume(input as GeneratedResume, theme, track, watermarked ? resumePreviewLock((input as GeneratedResume).experience) : undefined);
+    : blocksForResume(input as GeneratedResume, theme, track, BODY_SIZES[style.textSize], watermarked ? resumePreviewLock((input as GeneratedResume).experience) : undefined);
   let page: PDFPage = document.addPage([WIDTH, HEIGHT]), y = HEIGHT - MARGIN;
   const newPage = () => { page = document.addPage([WIDTH, HEIGHT]); y = HEIGHT - MARGIN; };
   const ensure = (height: number) => { if (y - height < MARGIN) newPage(); };
@@ -204,7 +233,7 @@ export async function renderPdfV2(input: GeneratedResume | GeneratedCoverLetter,
 export async function renderDocxV2(input: GeneratedResume | GeneratedCoverLetter, theme: ResumeTheme, style: ResumeStyle, track: ResumeTheme = theme, letter = false): Promise<Uint8Array> {
   const size = BODY_SIZES[style.textSize] * 2, space = SPACE_FACTORS[style.spacing];
   const font = FONT_FAMILIES[style.font].docx, accent = ACCENT_HEX[style.accent];
-  const blocks = letter ? blocksForLetter(input as GeneratedCoverLetter) : blocksForResume(input as GeneratedResume, theme, track);
+  const blocks = letter ? blocksForLetter(input as GeneratedCoverLetter) : blocksForResume(input as GeneratedResume, theme, track, BODY_SIZES[style.textSize]);
   const run = (text: string, opts: { bold?: boolean; italics?: boolean; color?: string; size?: number; characterSpacing?: number } = {}) => new TextRun({ text: clean(text), font, size, ...opts });
   const border = (color: string, thickness: number) => ({ color, size: thickness, style: BorderStyle.SINGLE });
   const alignment = theme === 'plain' ? AlignmentType.CENTER : AlignmentType.LEFT;
@@ -228,9 +257,11 @@ export async function renderDocxV2(input: GeneratedResume | GeneratedCoverLetter
       const tabs = Array.from({ length: count - 1 }, (_, i) => ({ type: TabStopType.LEFT, position: Math.round(usableTwips / count * (i + 1)) }));
       if (b.labels) children.push(new Paragraph({ keepNext: true, tabStops: tabs, children: b.labels.map((label, i) => new TextRun({ text: `${i ? '\t' : ''}${label}`, font, size, bold: true })) }));
       for (let row = 0; row < Math.max(...cols.map(c => c.length)); row++) {
-        // Wrap each cell explicitly so long skills cannot cross tab boundaries.
-        const maxChars = Math.max(16, Math.floor(usableTwips / count / (size * 5.8)));
-        const lines = cols.map(col => {
+        // Columns were chosen so every skill fits one line (skillColumnsThatFit). The
+        // explicit wrap is a backstop that keeps text out of the next tab column; a
+        // single column needs no tabs, so Word wraps the whole skill as one paragraph.
+        const maxChars = skillCharsPerColumn(count, size / 2);
+        const lines = count === 1 ? cols.map(col => [clean(col[row])].filter(Boolean)) : cols.map(col => {
           const words = clean(col[row]).split(' '); const result: string[] = []; let line = '';
           for (const word of words) { if (line && (line + ' ' + word).length > maxChars) { result.push(line); line = ''; } line += (line ? ' ' : '') + word; }
           if (line) result.push(line); return result;
