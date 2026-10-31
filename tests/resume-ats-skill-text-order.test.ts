@@ -1,6 +1,5 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { writeFileSync } from 'node:fs';
 import JSZip from 'jszip';
 import { getDocument } from 'pdfjs-dist/legacy/build/pdf.mjs';
 import { createResumeDocx, createResumePdf } from '../worker/resume-documents';
@@ -68,11 +67,6 @@ test('every skill reads as one unbroken phrase in PDF and DOCX text, in every te
         if (!flat.includes(squash(skill))) failures.push(`${theme}/${textSize}/${format}: "${skill}"`);
       }
     }
-  }
-  // TEMPORARY DIAGNOSTIC (remove before merge): node:test prefixes child output
-  // with "# ", so write a GitHub annotation straight to the CI step's stdout.
-  if (failures.length && process.env.GITHUB_ACTIONS) {
-    try { writeFileSync(`/proc/${process.ppid}/fd/1`, `::error title=ATS skill split::${failures.join('%0A')}\n`); } catch { /* best effort */ }
   }
   assert.deepEqual(failures, [], `skills split by column wrapping (ATS reads them as broken phrases):\n${failures.join('\n')}`);
 });
