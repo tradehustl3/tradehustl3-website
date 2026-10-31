@@ -3,23 +3,129 @@ name: Production Smoke
 permissions:
   contents: read
 
+# Production smoke is one stage of the main pipeline, not a separate listener.
+# The Test workflow calls it after the test job passes on a push to main, with
+# the pushed commit. It then waits for Cloudflare Workers Builds to finish
+# deploying that same commit before checking the live site, so every commit on
+# main shows one line: tests, then smoke, on one SHA.
+#
+# The old `check_run` trigger woke this workflow on every check event in the
+# repository and skipped all but the Cloudflare one, which filled the Actions
+# page with "Skipped" runs. Reusable-workflow calls fire only when called.
 on:
-  check_run:
-    types: [completed]
-
-concurrency:
-  group: production-smoke
-  cancel-in-progress: false
+  workflow_call:
+    inputs:
+      sha:
+        description: Commit on main that Cloudflare is deploying.
+        required: true
+        type: string
+    secrets:
+      SMOKE_BYPASS_TOKEN:
+        required: false
+      SMOKE_TEST_LOGIN_SECRET:
+        required: false
+  # Manual re-run from the Actions tab. Leave sha empty to check the current main head.
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: Full commit SHA on main (blank = current main head).
+        required: false
+        type: string
 
 jobs:
+  deploy:
+    name: Wait for Cloudflare deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: read
+      checks: read
+    outputs:
+      ready: ${{ steps.current.outputs.ready }}
+      sha: ${{ steps.target.outputs.sha }}
+    steps:
+      - name: Resolve the commit to verify
+        id: target
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REQUESTED_SHA: ${{ inputs.sha }}
+        run: |
+          set -euo pipefail
+          sha="${REQUESTED_SHA:-}"
+          if [ -z "$sha" ]; then
+            sha="$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq .sha)"
+          fi
+          if ! [[ "$sha" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error::Production smoke needs a full 40-character commit SHA."
+            exit 1
+          fi
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          echo "Verifying production deploy of ${sha:0:7}."
+
+      - name: Wait for Workers Builds to deploy this commit
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SMOKE_SHA: ${{ steps.target.outputs.sha }}
+        run: |
+          set -euo pipefail
+          # Same identity the old check_run filter used: name, app and a success conclusion.
+          check_name='Workers Builds: tradehustl3-website'
+          deadline=$(( $(date +%s) + 20 * 60 ))
+          while :; do
+            state="$(gh api --method GET "repos/$GITHUB_REPOSITORY/commits/$SMOKE_SHA/check-runs" \
+              -f check_name="$check_name" -f filter=latest \
+              --jq '[.check_runs[] | select(.app.slug == "cloudflare-workers-and-pages")]
+                    | sort_by(.started_at) | last
+                    | if . == null then "missing" else "\(.status) \(.conclusion // "none")" end')"
+            case "$state" in
+              "completed success")
+                echo "Cloudflare deployed ${SMOKE_SHA:0:7}."
+                break
+                ;;
+              completed\ *)
+                echo "::error title=Cloudflare deploy failed::Workers Builds finished ${SMOKE_SHA:0:7} as '${state#completed }'. Check the Cloudflare build log; smoke cannot run until this commit deploys."
+                exit 1
+                ;;
+            esac
+            if [ "$(date +%s)" -ge "$deadline" ]; then
+              echo "::error title=Cloudflare deploy not finished::Workers Builds had not finished ${SMOKE_SHA:0:7} after 20 minutes (last state: $state). Check the Cloudflare dashboard."
+              exit 1
+            fi
+            echo "Workers Builds for ${SMOKE_SHA:0:7}: $state. Checking again in 20 seconds."
+            sleep 20
+          done
+
+      - name: Skip if a newer main commit is already deploying
+        id: current
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SMOKE_SHA: ${{ steps.target.outputs.sha }}
+        run: |
+          set -euo pipefail
+          # The live site serves whatever main deployed last. Checking an older
+          # commit against newer code produces false failures, and the newer
+          # commit's own pipeline smokes the site anyway.
+          head="$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq .sha)"
+          if [ "$head" != "$SMOKE_SHA" ]; then
+            echo "::notice title=Smoke handed to newer commit::main moved to ${head:0:7}; that commit's pipeline runs production smoke."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
   smoke:
-    if: >-
-      github.event.check_run.name == 'Workers Builds: tradehustl3-website' &&
-      github.event.check_run.conclusion == 'success' &&
-      github.event.check_run.app.slug == 'cloudflare-workers-and-pages' &&
-      github.event.check_run.check_suite.head_branch == 'main'
+    name: Smoke live site
+    needs: deploy
+    if: needs.deploy.outputs.ready == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    # One smoke at a time against production; a running smoke is never cancelled.
+    concurrency:
+      group: production-smoke
+      cancel-in-progress: false
     env:
       CUSTOM_ORIGIN: https://tradehustl3.com
       SMOKE_BYPASS_TOKEN: ${{ secrets.SMOKE_BYPASS_TOKEN }}
@@ -206,7 +312,7 @@ jobs:
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           # The exact commit Cloudflare just deployed, not whatever main is now.
-          ref: ${{ github.event.check_run.head_sha }}
+          ref: ${{ needs.deploy.outputs.sha }}
           persist-credentials: false
 
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4

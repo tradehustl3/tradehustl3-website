@@ -30,7 +30,8 @@ track. The preview is rendered from the saved style on every request
 
 - Endpoint: `POST /api/resume-builder/internal/smoke/session` (`worker/resume-smoke-session.ts`)
 - Runner: `tools/smoke/resume-builder-smoke.mjs`
-- Workflow step: "Verify signed-in Resume Builder review flow" in `.github/workflows/production-smoke.yml`
+- Workflow step: "Verify signed-in Resume Builder review flow" in `.github/workflows/production-smoke.yml`,
+  called by the Test workflow after tests pass on `main` (see `docs/production-verification.md`)
 
 ## Security model
 

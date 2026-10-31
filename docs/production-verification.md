@@ -1,5 +1,19 @@
 # Production verification after a deploy
 
+## How the automated smoke runs
+
+Production Smoke is a stage of the **Test** workflow, not a separate listener:
+
+1. A push to `main` runs the `test` job.
+2. If tests pass, the `Production smoke` job waits (up to 20 minutes) for Cloudflare
+   **Workers Builds** to finish deploying that same commit, then checks the live site.
+3. If `main` has already moved to a newer commit, the older run hands off with a notice
+   and the newer commit's pipeline runs the smoke.
+
+Each commit on `main` therefore shows one Test run: tests, then smoke, on one SHA.
+Pull requests run tests only. To re-run smoke by hand, use **Actions → Production
+Smoke → Run workflow** (leave the SHA blank to check the current `main`).
+
 ## Why this exists
 
 `tradehustl3.com` runs Cloudflare **Bot Fight Mode** (free plan). It challenges
