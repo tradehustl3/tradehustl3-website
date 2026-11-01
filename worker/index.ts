@@ -345,7 +345,7 @@ async function sendTopTradesDeliveryEmail(env: Env, email: string, sampleUrl: st
             <h1 style="margin:16px 0;color:#ffffff">Your free Top 10 Trades guide is ready.</h1>
             <p style="font-size:16px;line-height:1.6;color:#c5ced5">Open the seven-page 2026-2027 preview (cover included) for trade profiles, national pay context, the guide's source standard, and practical next steps.</p>
             <p style="margin:28px 0"><a href="${sampleUrl}" style="display:inline-block;background:#d71920;color:#ffffff;padding:16px 22px;text-decoration:none;font-weight:700">OPEN THE FREE GUIDE</a></p>
-            <p style="color:#d6a52a;font-weight:700">BUILT BY HUSTLE. BACKED BY TRADES.</p>
+            <p style="color:#d6a52a;font-weight:700">BUILT BY HUSTL3. BACKED BY TRADES.</p>
           </div>
         </div>`,
     }),
@@ -376,7 +376,7 @@ async function sendBookSampleDeliveryEmail(env: Env, email: string, downloadUrl:
       htmlContent: `
         <div style="background:#071a2b;padding:32px;font-family:Arial,sans-serif;color:#f4f0e7">
           <div style="max-width:620px;margin:auto">
-            <p style="color:#d6a52a;font-weight:700;letter-spacing:2px">BUILT BY HUSTLE. BACKED BY TRADES.</p>
+            <p style="color:#d6a52a;font-weight:700;letter-spacing:2px">BUILT BY HUSTL3. BACKED BY TRADES.</p>
             <h1 style="margin:16px 0;color:#ffffff">Your 7-page book sample is ready.</h1>
             <p style="font-size:16px;line-height:1.6;color:#c5ced5">This is the free seven-page sample of TRADE HUSTL3 &mdash; the cover, opening pages, table of contents, and the beginning of Chapter 1.</p>
             <p style="margin:28px 0"><a href="${downloadUrl}" style="display:inline-block;background:#d71920;color:#ffffff;padding:16px 22px;text-decoration:none;font-weight:700">DOWNLOAD THE 7-PAGE SAMPLE (PDF)</a></p>
