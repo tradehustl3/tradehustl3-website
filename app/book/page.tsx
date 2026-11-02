@@ -389,14 +389,14 @@ export default function BookPage() {
             <span>AMAZON PAPERBACK</span>
             <strong>$24.99</strong>
             {AMAZON_PAPERBACK_URL
-              ? <a className="text-link" href={AMAZON_PAPERBACK_URL} rel="noopener" target="_blank">Buy on Amazon <span>↗</span></a>
+              ? <a className="text-link" href={AMAZON_PAPERBACK_URL} rel="noopener noreferrer" target="_blank">Buy on Amazon <span>↗</span></a>
               : <small>438 pages · 6 × 9 in · Amazon link coming soon</small>}
           </article>
           <article>
             <span>KINDLE eBOOK</span>
             <strong>$9.99</strong>
             {AMAZON_KINDLE_URL
-              ? <a className="text-link" href={AMAZON_KINDLE_URL} rel="noopener" target="_blank">Buy on Kindle <span>↗</span></a>
+              ? <a className="text-link" href={AMAZON_KINDLE_URL} rel="noopener noreferrer" target="_blank">Buy on Kindle <span>↗</span></a>
               : <small>Kindle edition coming soon</small>}
           </article>
         </div>
