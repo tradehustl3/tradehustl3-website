@@ -15,6 +15,7 @@ import {
   type GeneratedCoverLetter,
 } from "./cover-letter-documents";
 import type { GeneratedResume, ResumeTheme } from "./resume-documents";
+import { unsupportedExperienceClaims, type ExperienceEvidence } from "./resume-experience-claims";
 
 const SITE_URL = "https://tradehustl3.com";
 const DEFAULT_CLAUDE_MODEL = "claude-sonnet-5";
@@ -283,7 +284,36 @@ function validateParagraphs(value: unknown, supportedSource: string): string[] |
   for (const token of outputNumbers) {
     if (!sourceNumbers.has(token)) return null;
   }
+  if (unsupportedCoverLetterClaims(paragraphs.join("\n"), supportedSource).length) return null;
   return paragraphs;
+}
+
+/**
+ * Years-of-experience and leadership claims in a cover letter must be backed by the
+ * verified resume alone. The job posting is excluded: "requires 9+ years" in a posting
+ * is not the customer's experience.
+ */
+export function unsupportedCoverLetterClaims(text: string, supportedSource: string, now = new Date()) {
+  return unsupportedExperienceClaims(text, coverLetterEvidence(supportedSource), now);
+}
+
+function coverLetterEvidence(supportedSource: string): ExperienceEvidence {
+  let resume: Partial<GeneratedResume> = {};
+  try {
+    const parsed = JSON.parse(supportedSource) as { verifiedResume?: Partial<GeneratedResume> };
+    if (parsed.verifiedResume && typeof parsed.verifiedResume === "object") resume = parsed.verifiedResume;
+  } catch {
+    // Unparseable source: no evidence, so any years or leadership claim is rejected.
+  }
+  const experience = Array.isArray(resume.experience) ? resume.experience : [];
+  return {
+    roles: experience.map((role) => ({ startDate: role.startDate, endDate: role.endDate, jobTitle: role.jobTitle })),
+    statements: [
+      typeof resume.summary === "string" ? resume.summary : "",
+      ...experience.flatMap((role) => Array.isArray(role.bullets) ? role.bullets : []),
+      ...(Array.isArray(resume.additionalInformation) ? resume.additionalInformation : []),
+    ].filter((value): value is string => typeof value === "string" && value.length > 0),
+  };
 }
 
 function coverLetterSystemPrompt(): string {

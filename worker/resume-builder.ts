@@ -66,7 +66,7 @@ const GENERATION_PRESERVATION_INSTRUCTION = `Uploaded-resume enhancement rule:
 Enhancement means preserve first, then improve wording. Use BOTH authoritative customer sources: the structured intake and the original uploaded resume text in sourceResumeText. Keep every supported contact detail, employer, job title, location, date, certification/license, education item, substantive duty/accomplishment, tool/equipment/system, software/CMMS item, and meaningful training fact found in either source. The original uploaded resume is the backup evidence layer whenever structured extraction omitted a supported fact. Reword and reorganize for clarity, trade relevance, and ATS readability, but do not reduce factual coverage. For raw-source-only facts, ground the rewritten claim to the matching upload.raw.* fact. Never add a number, percentage, count, date, years-of-experience claim, unit count, team size, equipment size, or quantity unless that numeric fact is explicitly supported by the structured intake or original uploaded resume. If metrics are absent, write strong nonnumeric bullets instead of inventing metrics.`;
 
 const STRICT_NUMERIC_RETRY_INSTRUCTION = `Safety retry rule:
-A previous draft was rejected because it introduced unsupported numeric wording. Use only numeric facts already supported by the structured intake, original uploaded resume text, or customer correction. Do not create estimates, percentages, counts, quantities, years, dates, team sizes, equipment sizes, work-order volumes, or performance metrics. Prefer accurate nonnumeric wording whenever a number is not required.`;
+A previous draft was rejected because it introduced unsupported numeric wording. Use only numeric facts already supported by the structured intake, original uploaded resume text, or customer correction. Do not create estimates, percentages, counts, quantities, years, dates, team sizes, equipment sizes, work-order volumes, or performance metrics. Prefer accurate nonnumeric wording whenever a number is not required. State years of experience only when the customer stated that number or their dated roles cover it; otherwise describe experience without a year count. Do not say the customer directed, supervised, managed, or led people unless a job title, leadership detail, or the customer's own wording shows it.`;
 
 function patchedSystemInstruction(current: string, strictNumericRetry: boolean): string {
   const isImport = /extract factual resume data for TRADE HUSTL3/i.test(current);
@@ -1205,6 +1205,6 @@ export async function handleResumeBuilderRoute(
     runConsumed: false,
     missing: [],
     intakeUrl: null,
-    message: "HUSTL3 BOT automatically retried the build, but unsupported numeric wording still remained. No customer AI run was consumed. Only review numeric facts that are actually present in your uploaded resume or intake before rebuilding.",
+    message: "HUSTL3 BOT automatically retried the build, but unsupported numeric, years-of-experience, or leadership wording still remained. No customer AI run was consumed. Check that your job dates, years of experience, and any supervisory duties are entered in your intake before rebuilding.",
   }, 502);
 }
