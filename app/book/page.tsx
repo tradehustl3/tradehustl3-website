@@ -10,7 +10,7 @@ import { BrandLockup } from "../brand-lockup";
 
 const BOOK_TITLE = "TRADE HUSTL3: Built by Hustle, Backed by Trades";
 const BOOK_DESCRIPTION =
-  "A skilled-trades career guide for students, career changers, parents and educators: 200 skilled trades, training, certifications, pay growth and a practical 90-Day Action Plan. By Da Maintenance Mane.";
+  "Skilled-trades career guide for students, career changers, parents and educators: 200 trades, certifications, pay growth and a 90-Day Action Plan.";
 
 export const metadata: Metadata = {
   title: "TRADE HUSTL3 Book | Da Maintenance Mane",
