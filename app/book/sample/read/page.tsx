@@ -114,7 +114,7 @@ export default function BookSampleReaderPage() {
           <div className={styles.coverGlow} aria-hidden="true" />
           <Image
             className={styles.cover}
-            src="/optimized/book-cover-v2.webp"
+            src="/optimized/book-cover-v3.webp"
             alt="TRADE HUSTL3: Built by Hustle, Backed by Trades book cover"
             width={1024}
             height={1536}
@@ -140,7 +140,7 @@ export default function BookSampleReaderPage() {
       <section className={styles.reader} aria-label="Seven-page TRADE HUSTL3 book sample">
         <article className={`${styles.bookPage} ${styles.coverPage}`} aria-label="Sample page 1 of 7 — cover">
           <span className={styles.pageNumber}>01 / 07</span>
-          <Image src="/optimized/book-cover-v2.webp" alt="TRADE HUSTL3 book cover" width={1024} height={1536} />
+          <Image src="/optimized/book-cover-v3.webp" alt="TRADE HUSTL3 book cover" width={1024} height={1536} />
         </article>
 
         <article className={`${styles.bookPage} ${styles.titlePage}`} aria-label="Sample page 2 of 7 — title page">
@@ -201,7 +201,7 @@ export default function BookSampleReaderPage() {
         <div>
           <p className={styles.eyebrow}>YOU’VE ONLY SEEN THE START</p>
           <h2>KEEP READING. BUILD YOUR NEXT MOVE.</h2>
-          <p>The full TRADE HUSTL3 book expands into 21 chapters, more than 200 skilled trades, earning leverage, ownership, and a 90-day action plan.</p>
+          <p>The full TRADE HUSTL3 book expands into 21 chapters, 200 skilled trades, earning leverage, ownership, and a 90-day action plan.</p>
         </div>
         <Link className={styles.primaryButton} href="/book" data-cta="the-book" data-cta-location="book-sample-reader">
           Explore the full book <span aria-hidden="true">→</span>
