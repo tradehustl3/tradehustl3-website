@@ -87,7 +87,7 @@ test("server-renders the corrected TRADE HUSTL3 brand and metadata", async () =>
   assert.match(html, /optimized\/th3-logo-header\.webp/i);
   assert.match(html, /favicon\.svg/i);
   assert.match(html, /alt="TRADE HUSTL3 logo"/i);
-  assert.match(html, /BUILT BY HUSTLE\. BACKED BY TRADES\./);
+  assert.match(html, /BUILT BY HUSTL3\. BACKED BY TRADES\./);
   assert.match(html, /Skilled-Trades[\s\S]*Resume Builder/i);
 });
 
@@ -257,7 +257,7 @@ test("server-renders the official book page, cover, portrait, and current editio
   assert.match(html, /Final Word: Build Something That Belongs to You/i);
   assert.doesNotMatch(html, /Launch countdown/i);
   assert.match(html, /Earn your own/i);
-  assert.match(html, /BUILT BY HUSTLE[\s\S]*BACKED BY TRADES/i);
+  assert.match(html, /BUILT BY HUSTL3\. BACKED BY TRADES\./);
   assert.equal(html.includes("fell through an attic"), false);
 });
 

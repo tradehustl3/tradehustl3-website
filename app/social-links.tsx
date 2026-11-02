@@ -2,7 +2,7 @@ const FACEBOOK_URL = "https://www.facebook.com/profile.php?id=61593457675674";
 const INSTAGRAM_URL = "https://www.instagram.com/tradehustl3/";
 const YOUTUBE_URL = "https://www.youtube.com/@tradehustl3";
 const X_URL = "https://x.com/maintenancmt1k";
-const LINKEDIN_URL = "https://www.linkedin.com/in/zachary-ellis-a797193ab";
+const LINKEDIN_URL = "https://www.linkedin.com/company/trade-hustl3-llc/";
 const TIKTOK_URL = "https://www.tiktok.com/@da.maintenance.ma5";
 
 export function SocialLinks() {
@@ -60,7 +60,7 @@ export function SocialLinks() {
         href={LINKEDIN_URL}
         target="_blank"
         rel="noopener noreferrer"
-        aria-label="Connect with Zachary Ellis on LinkedIn"
+        aria-label="Follow TRADE HUSTL3 on LinkedIn"
         title="LinkedIn"
       >
         <svg viewBox="0 0 24 24" aria-hidden="true">

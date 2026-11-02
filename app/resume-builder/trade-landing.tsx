@@ -334,7 +334,7 @@ export function TradeLandingPage({ content }: { content: TradeLandingContent }) 
 
       <SiblingGuides content={content} />
       <footer className="rb-footer">
-        <strong>TRADE HUSTL<span>3</span></strong><p>BUILT BY HUSTLE. BACKED BY TRADES.</p>
+        <strong>TRADE HUSTL<span>3</span></strong><p>BUILT BY HUSTL3. BACKED BY TRADES.</p>
         <div className="rb-footer-links"><a href={HUB_HREF}>Resume Builder</a><a href="/top-10-trades">Top 10 Trades</a>
           <a href="/privacy">Privacy</a><a href="/terms">Terms</a>
           <a href="/resume-builder/refund-policy">Refunds</a><a href="/contact">Support</a></div>

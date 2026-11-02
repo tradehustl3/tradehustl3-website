@@ -11,7 +11,7 @@ const socials = [
   { label: "Instagram", href: "https://www.instagram.com/tradehustl3/", icon: "instagram" },
   { label: "TikTok", href: "https://www.tiktok.com/@da.maintenance.ma5", icon: "tiktok" },
   { label: "YouTube", href: "https://www.youtube.com/@tradehustl3", icon: "youtube" },
-  { label: "LinkedIn", href: "https://www.linkedin.com/in/zachary-ellis-a797193ab", icon: "linkedin" },
+  { label: "LinkedIn", href: "https://www.linkedin.com/company/trade-hustl3-llc/", icon: "linkedin" },
   { label: "X", href: "https://x.com/maintenancmt1k", icon: "x" },
   { label: "GitHub", href: "https://github.com/tradehustl3", icon: "github" },
 ] as const;

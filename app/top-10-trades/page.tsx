@@ -169,7 +169,7 @@ export default function TopTenTradesPage() {
 
       <footer className={styles.footer}>
         <Link className={styles.footerBrand} href="/">TRADE HUSTL<span>3</span> LLC</Link>
-        <p>BUILT BY HUSTLE. BACKED BY TRADES.</p>
+        <p>BUILT BY HUSTL3. BACKED BY TRADES.</p>
         <nav aria-label="Footer links">
           <Link href="/privacy">Privacy</Link>
           <Link href="/terms">Terms</Link>

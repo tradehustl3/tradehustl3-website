@@ -95,10 +95,25 @@ test("public brand identity and checkout reassurance stay consistent", () => {
   assert.match(layout, /"@type": "WebApplication"/);
   assert.match(layout, /price: "9\.99"/);
 
-  assert.match(book, /BUILT BY HUSTLE\. BACKED BY TRADES\./);
+  assert.match(book, /BUILT BY HUSTL3\. BACKED BY TRADES\./);
   assert.doesNotMatch(book, /href="\/#join"/, "the homepage has no #join section");
   assert.match(book, /Secure checkout powered by Stripe/i);
 
   assert.match(tradeLanding, /Secure checkout powered by Stripe/i);
   assert.match(tradeLanding, /support@tradehustl3\.com/i);
+});
+
+test("brand links point LinkedIn at the TRADE HUSTL3 company page", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const company = "https://www.linkedin.com/company/trade-hustl3-llc/";
+  const personal = "https://www.linkedin.com/in/zachary-ellis-a797193ab";
+  const social = await readFile(new URL("../app/social-links.tsx", import.meta.url), "utf8");
+  const footer = await readFile(new URL("../app/footer-enhancements.tsx", import.meta.url), "utf8");
+  const layout = await readFile(new URL("../app/layout.tsx", import.meta.url), "utf8");
+  assert.ok(social.includes(company) && !social.includes(personal));
+  assert.ok(footer.includes(company) && !footer.includes(personal));
+  const org = layout.slice(layout.indexOf('"@type": "Organization"'), layout.indexOf('"@type": "Person"'));
+  const person = layout.slice(layout.indexOf('"@type": "Person"'), layout.indexOf('"@type": "WebApplication"'));
+  assert.ok(org.includes(company) && !org.includes(personal), "Organization sameAs uses the company page");
+  assert.ok(person.includes(personal), "Person keeps the founder's personal profile");
 });

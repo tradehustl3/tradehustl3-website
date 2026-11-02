@@ -120,7 +120,7 @@ const structuredData = {
         "https://www.instagram.com/tradehustl3/",
         "https://www.youtube.com/@tradehustl3",
         "https://x.com/maintenancmt1k",
-        "https://www.linkedin.com/in/zachary-ellis-a797193ab",
+        "https://www.linkedin.com/company/trade-hustl3-llc/",
         "https://www.tiktok.com/@da.maintenance.ma5",
         "https://github.com/tradehustl3",
       ],
@@ -133,6 +133,7 @@ const structuredData = {
       alternateName: "Zachary Ellis",
       jobTitle: "Founder of TRADE HUSTL3 and HVAC/facilities maintenance professional",
       url: SITE_URL,
+      sameAs: ["https://www.linkedin.com/in/zachary-ellis-a797193ab"],
 
       worksFor: {
         "@id": `${SITE_URL}/#organization`,
