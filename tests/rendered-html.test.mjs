@@ -235,7 +235,9 @@ test("server-renders the official book page, cover, portrait, and current editio
 
   assert.match(html, /<title>TRADE HUSTL3 Book \| Da Maintenance Mane<\/title>/i);
   assert.match(html, /<link rel="canonical" href="https:\/\/tradehustl3\.com\/book"/i);
-  assert.match(html, /optimized\/book-cover-v2\.webp/i);
+  assert.match(html, /optimized\/book-cover-v3\.webp/i);
+  assert.doesNotMatch(html, /optimized\/book-cover-v2\.webp/i);
+  assert.match(html, /optimized\/og-book-v2\.jpg/i);
   assert.match(html, /optimized\/author-portrait-v1\.webp/i);
   assert.match(html, /DA[\s\S]*MAINTENANCE[\s\S]*MANE\./i);
   assert.equal(html.includes("Zachary Cameron Ellis"), false);
@@ -244,7 +246,17 @@ test("server-renders the official book page, cover, portrait, and current editio
   assert.match(html, /9798193043355/i);
   assert.match(html, /No experience required/i);
   assert.match(html, /90-Day Action Plan/i);
-  assert.match(html, /more than 200 skilled trades/i);
+  assert.match(html, /200 skilled trades across every major industry, listed in Appendix A/i);
+  assert.doesNotMatch(html, /more than 200 skilled trades/i);
+  assert.match(html, /"numberOfPages":438/);
+  assert.match(html, /id="schools"/);
+  assert.match(html, /mailto:partners@tradehustl3\.com\?subject=Classroom%20or%20program%20order/);
+  assert.match(html, /id="formats"/);
+  assert.match(html, /id="availability"/, "old #availability links keep working");
+  assert.match(html, /ONE BOOK\.[\s\S]*THREE WAYS IN\./);
+  assert.match(html, /BEFORE YOU[\s\S]*BUY\./);
+  assert.match(html, /Amazon link coming soon/, "no Amazon link until the listing URL is configured");
+  assert.match(html, /buy\.stripe\.com\/4gM5kwaQ96EscGf2uKbfO02/);
   assert.match(html, /"datePublished":"2026-09-15"/i);
   assert.match(html, /Get the Free Guide/i);
   assert.match(html, /UNLOCK THE FREE GUIDE/i);
