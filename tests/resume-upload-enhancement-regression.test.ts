@@ -373,3 +373,47 @@ test("bullet editor blocks a newly invented number and leaves existing files unc
   assert.equal(h.state.generatedJson, JSON.stringify(safeResume));
   assert.equal(h.objects.size, 0);
 });
+
+test("an older resume with an unsupported years claim elsewhere can still edit a bullet", async () => {
+  const h = harness();
+  // Generated before the years-of-experience guard existed.
+  const legacy = { ...safeResume, summary: `${safeResume.summary} Brings 45 years of experience.` };
+  h.state.generatedJson = JSON.stringify(legacy);
+  h.state.status = "ready";
+  const rewritten = "Coordinate HVAC replacements across the student housing community.";
+  const response = await handleResumeBuilderRoute(
+    new Request("https://tradehustl3.com/api/resume-builder/resumes/resume-1/bullets", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", Cookie: sessionCookie, Origin: "https://tradehustl3.com" },
+      body: JSON.stringify({ jobIndex: 0, bulletIndex: 0, choice: "edited", text: rewritten }),
+    }),
+    { DB: h.DB as unknown as D1Database, BOOKS: h.BOOKS as unknown as R2Bucket },
+    {
+      createDocx: async () => encoder.encode("DOCX"),
+      createPdf: async () => encoder.encode("PDF"),
+    },
+  );
+  assert.ok(response);
+  assert.equal(response.status, 200);
+  assert.equal((JSON.parse(h.state.generatedJson ?? "{}") as GeneratedResume).experience[0].bullets[0], rewritten);
+});
+
+test("bullet editor blocks a newly added years-of-experience claim the intake does not support", async () => {
+  const h = harness();
+  h.state.generatedJson = JSON.stringify(safeResume);
+  h.state.status = "ready";
+  const response = await handleResumeBuilderRoute(
+    new Request("https://tradehustl3.com/api/resume-builder/resumes/resume-1/bullets", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", Cookie: sessionCookie, Origin: "https://tradehustl3.com" },
+      body: JSON.stringify({ jobIndex: 0, bulletIndex: 0, choice: "edited", text: "Brought forty-five years of HVAC experience to the team." }),
+    }),
+    { DB: h.DB as unknown as D1Database, BOOKS: h.BOOKS as unknown as R2Bucket },
+  );
+  assert.ok(response);
+  assert.equal(response.status, 422);
+  const payload = await response.json() as { code?: string; runConsumed?: boolean };
+  assert.equal(payload.code, "UNSUPPORTED_NUMERIC_CLAIM");
+  assert.equal(payload.runConsumed, false);
+  assert.equal(h.state.generatedJson, JSON.stringify(safeResume));
+});

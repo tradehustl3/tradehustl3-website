@@ -20,6 +20,8 @@ import { serverUploadReview } from "./resume-upload-requirements";
 import { INTAKE_SCHEMA_VERSION, intakeSchemaVersion } from "../app/resume-builder/intake/wizard-data";
 import { createResumeDocx, createResumePdf, GeneratedResume, ResumeTheme } from "./resume-documents";
 import { lockedBulletCount, readableBulletKeys } from "./resume-preview-lock";
+import { unsupportedExperienceClaims, type ExperienceEvidence } from "./resume-experience-claims";
+import { parseResumeDateRange } from "./resume-dates";
 import {
   assessIntakeSubstance,
   canonicalSourceRecord,
@@ -2604,6 +2606,7 @@ export function unsupportedNumbers(
   intake: unknown,
   title = "",
   correctionRequest: string | null = null,
+  now: Date = new Date(),
 ): UnsupportedNumericClaim[] {
   const output = generatedNumericSections(generated);
   const sources = intakeNumericSections(intake, title, correctionRequest);
@@ -2614,7 +2617,75 @@ export function unsupportedNumbers(
       if (!allowed.has(token)) unsupported.push({ section, token });
     }
   }
-  return unsupported;
+  return [...unsupported, ...unsupportedExperienceClaimFlags(generated, intake, title, correctionRequest, now)];
+}
+
+/**
+ * Evidence for years-of-experience and leadership claims: the customer's dated roles,
+ * job titles, leadership notes and their own wording. The target job title and the
+ * job posting are deliberately excluded; a target role is not experience.
+ */
+export function experienceEvidence(
+  intake: unknown,
+  title = "",
+  correctionRequest: string | null = null,
+): ExperienceEvidence {
+  const root = recordValue(intake);
+  const career = recordValue(root.career);
+  const experience = Array.isArray(root.experience) ? root.experience.map(recordValue) : [];
+  const source = canonicalSourceRecord(intake, title);
+  const roles = [
+    ...source.roles.map((role) => ({ startDate: role.startDate, endDate: role.endDate, jobTitle: role.jobTitle })),
+    ...experience.map((role) => {
+      // The guided intake stores either separate start/end fields or one "dates" field.
+      const combined = typeof role.dates === "string" ? parseResumeDateRange(role.dates) : null;
+      return {
+        startDate: typeof role.startDate === "string" && role.startDate ? role.startDate : combined?.startDate,
+        endDate: typeof role.endDate === "string" && role.endDate ? role.endDate : combined?.endDate,
+        jobTitle: typeof role.jobTitle === "string" ? role.jobTitle : undefined,
+      };
+    }),
+    // Date ranges written in the uploaded resume itself. Overlaps with the roles above
+    // are merged when tenure is counted, so a role is never counted twice.
+    ...(typeof root.sourceResumeText === "string" ? root.sourceResumeText.split(/\r?\n/) : [])
+      .map((line) => parseResumeDateRange(line))
+      .filter((range): range is NonNullable<typeof range> => Boolean(range))
+      .map((range) => ({ startDate: range.startDate, endDate: range.endDate })),
+  ];
+  const statements = [
+    career.yearsExperience,
+    career.experienceLevel,
+    career.summaryNotes,
+    root.additionalDetails,
+    root.sourceResumeText,
+    correctionRequest,
+    ...experience.flatMap((role) => [
+      role.responsibilitiesAndWins,
+      role.responsibilities,
+      role.workPerformed,
+      role.workOrders,
+      role.measurable,
+    ]),
+  ].map((value) => sourceText(value)).filter(Boolean);
+  const leadershipNotes = experience.map((role) => sourceText(role.leadership)).filter(Boolean);
+  return { roles, statements, leadershipNotes };
+}
+
+function unsupportedExperienceClaimFlags(
+  generated: GeneratedResume,
+  intake: unknown,
+  title: string,
+  correctionRequest: string | null,
+  now: Date,
+): UnsupportedNumericClaim[] {
+  const evidence = experienceEvidence(intake, title, correctionRequest);
+  const sections: Array<[NumericGuardSection, string]> = [
+    ["career summary", generated.summary],
+    ["work history", generated.experience.flatMap((role) => role.bullets).join("\n")],
+    ["additional information", generated.additionalInformation.join("\n")],
+  ];
+  return sections.flatMap(([section, text]) => unsupportedExperienceClaims(text, evidence, now)
+    .map((claim) => ({ section, token: `${claim.kind === "years" ? "experience years" : "leadership"}: ${claim.phrase}` })));
 }
 
 function resumeSystemPrompt(): string {
@@ -3450,13 +3521,24 @@ async function updateResumeBullet(
       suggestion,
     },
   );
-  const unsupported = unsupportedNumbers(nextStored, intake, resume.title, null);
+  // Check only the bullet being saved. Resumes generated before a guard existed may
+  // carry a flagged phrase elsewhere; that must not lock every bullet edit.
+  const editedBulletOnly: GeneratedResume = {
+    basics: { fullName: "", targetTitle: "" },
+    summary: "",
+    skills: [],
+    certifications: [],
+    experience: [{ jobTitle: job.jobTitle, employer: job.employer, bullets: [nextText] }],
+    education: [],
+    additionalInformation: [],
+  };
+  const unsupported = unsupportedNumbers(editedBulletOnly, intake, resume.title, null);
   if (unsupported.length) {
     return json({
       ok: false,
       code: "UNSUPPORTED_NUMERIC_CLAIM",
       runConsumed: false,
-      message: "That edit adds a number not supported by your intake. Add the verified number to your intake first.",
+      message: "That edit adds a number, years of experience, or a leadership claim not supported by your intake. Add the verified detail to your intake first.",
     }, 422);
   }
 

@@ -95,7 +95,10 @@ test("a certification number cannot authorize an experience claim", () => {
     career: { licensesAndCertifications: "OSHA ten" },
     education: "Akron Career Center HVAC Certificate",
   });
-  assert.deepEqual(flags, [{ section: "career summary", token: "10" }]);
+  assert.deepEqual(flags, [
+    { section: "career summary", token: "10" },
+    { section: "career summary", token: "experience years: 10 years" },
+  ]);
 });
 
 test("06/23 and June 2023 normalize within the work-date section", () => {
@@ -124,7 +127,10 @@ test("a date month cannot authorize years-of-experience inflation", () => {
     education: "Akron Career Center HVAC Certificate",
     experience: [{ dates: "06/23" }],
   });
-  assert.deepEqual(flags, [{ section: "career summary", token: "6" }]);
+  assert.deepEqual(flags, [
+    { section: "career summary", token: "6" },
+    { section: "career summary", token: "experience years: 6 years" },
+  ]);
 });
 
 test("apostrophe years and four-digit years normalize within work dates", () => {

@@ -1,4 +1,5 @@
 import type { GeneratedResume, ResumeCertification, ResumeExperience } from "./resume-documents";
+import { overlappingRoleDates } from "./resume-experience-claims";
 
 export type FactProvenance = "upload" | "guided_intake" | "user_edit";
 
@@ -951,8 +952,25 @@ export function scoreResume(
     total,
     label: total >= 80 ? "Ready to review" : total >= 55 ? "Getting stronger" : "Needs work",
     dimensions,
-    issues: Array.from(new Set(issues.map((issue) => issue.message))).slice(0, 8),
+    issues: Array.from(new Set([
+      ...issues.map((issue) => issue.message),
+      ...roleDateOverlapAdvisories(generated.experience),
+    ])).slice(0, 8),
   };
+}
+
+function roleLabel(role: ResumeExperience): string {
+  return role.employer?.trim() || role.jobTitle.trim() || "One job";
+}
+
+/**
+ * Overlapping job dates are shown to the customer to confirm, never changed and never
+ * scored down: holding two jobs at once is common in the trades.
+ */
+export function roleDateOverlapAdvisories(experience: ResumeExperience[]): string[] {
+  return overlappingRoleDates(experience).map(({ first, second }) =>
+    `The dates for ${roleLabel(experience[first])} and ${roleLabel(experience[second])} overlap. `
+    + "If you worked both jobs at the same time, no change is needed. Otherwise, correct the dates in your intake.");
 }
 
 export function editorialSelection(
