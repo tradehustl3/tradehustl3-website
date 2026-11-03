@@ -99,7 +99,7 @@ export async function getOperationsHealth(env: HealthEnv): Promise<OperationsHea
 }
 
 export function operationalEvent(
-  area: "auth_email" | "ai_generation" | "stripe" | "document_storage" | "delivery_queue",
+  area: "auth_email" | "ai_generation" | "stripe" | "document_storage" | "delivery_queue" | "analytics",
   event: string,
   severity: "info" | "warning" | "error",
   detail: Record<string, string | number | boolean | null> = {},

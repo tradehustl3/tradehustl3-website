@@ -136,6 +136,38 @@ export function ga4IdentityFromRequest(request: Request, fallbackClientId: unkno
   return { clientId, sessionId: parseGaSessionId(readCookie(request, `_ga_${streamSuffix}`)) };
 }
 
+/**
+ * Why a GA4-eligible funnel event was or was not forwarded. Only these fixed
+ * labels are ever stored: no identifiers, cookie values or request data.
+ */
+export const GA4_DELIVERY_OUTCOMES = ["sent", "no_consent", "no_ga_cookie", "no_ga_session", "not_configured"] as const;
+export type Ga4DeliveryOutcome = (typeof GA4_DELIVERY_OUTCOMES)[number];
+
+/**
+ * Single decision point for forwarding a browser funnel event. Mirrors the
+ * rules recordFunnelEvent has applied since Oct 23 2026: consent, then an
+ * identity, then a GA session (so the event joins a real GA session instead of
+ * opening a "(not set)" one), then the API secret. `identity` is returned only
+ * when the outcome is "sent".
+ */
+export function classifyGa4FunnelDelivery(
+  request: Request,
+  reportedConsent: unknown,
+  fallbackClientId: unknown,
+  config?: Ga4Config,
+): { outcome: Ga4DeliveryOutcome; identity: Ga4Identity | null } {
+  if (!ga4ConsentGranted(request, reportedConsent)) return { outcome: "no_consent", identity: null };
+  const identity = ga4IdentityFromRequest(request, fallbackClientId, config);
+  if (!identity?.sessionId) {
+    // Split the dominant failure: no GA cookies at all (tag blocked, bot, or a
+    // visit that never loaded a public page) vs GA client cookie without a live session.
+    const hasGaClient = parseGaClientId(readCookie(request, "_ga")) !== null;
+    return { outcome: hasGaClient ? "no_ga_session" : "no_ga_cookie", identity: null };
+  }
+  if (!ga4MeasurementProtocolConfigured(config)) return { outcome: "not_configured", identity: null };
+  return { outcome: "sent", identity };
+}
+
 /** The browser's opt-out lives in localStorage, so the client reports it; GPC is enforced server-side too. */
 export function ga4ConsentGranted(request: Request, reportedConsent: unknown): boolean {
   return reportedConsent === true && request.headers.get("Sec-GPC")?.trim() !== "1";

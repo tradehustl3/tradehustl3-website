@@ -3,6 +3,32 @@
 Record every change to what a tracked event means, so reports never compare
 periods with different definitions as if they were the same.
 
+## 2026-11-03 — GA4 delivery outcome is recorded for every eligible funnel event
+
+**Before:** when a Resume Builder funnel event was not forwarded to GA4, nothing
+recorded why. D1 showed far more builder events than GA4 (for example, 114 starts
+in D1 vs 0 in GA4 for Oct 19–25) with no way to explain the gap.
+
+**After:** each GA4-eligible funnel event (`GA4_FUNNEL_EVENTS`) writes one row to
+`ga4_delivery_outcomes` (migration 0012) with its event name, server time and
+one fixed outcome:
+
+- `sent`: forwarded to GA4;
+- `no_consent`: the visitor opted out, sent no consent, or sent Global Privacy Control;
+- `no_ga_cookie`: no GA cookies at all (tag blocked, bot, or a visit that never
+  loaded a public page);
+- `no_ga_session`: a GA client cookie but no live GA session cookie;
+- `not_configured`: the Measurement Protocol API secret is missing.
+
+No identifiers, cookies or request data are stored. The A01 funnel snapshot
+reports these as `ga4Delivery` (`total`, `byOutcome`, `byEvent`), separate from
+`counts`, and `null` until the migration is applied.
+
+**Reporting impact:** none on existing counts or on what reaches GA4: the
+forwarding rules are unchanged. Outcome data starts with this release; there is
+no backfill. Expect `ga4Delivery.byOutcome.sent` to roughly match GA4's counts for
+the same events and window.
+
 ## 2026-10-29 — sign-in steps are tracked; `sign_up` is stored first-party
 
 **Before:** nothing between `resume_builder_start` and `resume_intake_started`

@@ -8,8 +8,11 @@ import {
   GA4_FUNNEL_EVENTS,
   GA4_STRIPE_METADATA,
   ga4CampaignParams,
+  GA4_DELIVERY_OUTCOMES,
+  classifyGa4FunnelDelivery,
   ga4ConsentGranted,
   ga4FunnelEvent,
+  type Ga4DeliveryOutcome,
   ga4IdentityFromRequest,
   ga4IdentityFromStripeMetadata,
   ga4PurchaseEvent,
@@ -1087,6 +1090,7 @@ async function getAgent1FunnelSnapshot(
       currency: string;
     }>();
   const orderLedger = buildOrderLedger(ledgerRows.results ?? []);
+  const ga4Delivery = await ga4DeliveryBreakdown(env.DB, windowStartIso, windowEndIso, endOperator);
 
   const starts = Number(behavioral?.starts ?? 0);
   const intakeStarted = Number(behavioral?.intake_started ?? 0);
@@ -1140,6 +1144,10 @@ async function getAgent1FunnelSnapshot(
       overall: rate(verifiedPurchases, starts),
     },
 
+    // Why GA4 reports fewer funnel events than D1. Kept out of `counts` so the
+    // A01 bridge contract is unchanged. null until migration 0012 is applied.
+    ga4Delivery,
+
     revenue: {
       verifiedRevenueCents,
       verifiedRevenueUsd: Number(
@@ -1156,6 +1164,46 @@ async function getAgent1FunnelSnapshot(
       orderLedger: "resume_orders.status IN (paid, refunded) AND paid_at in window; refunds cumulative from Stripe charge.refunded",
     },
   });
+}
+
+/**
+ * GA4 delivery outcomes for GA4-eligible funnel events in the window, by
+ * outcome and by event. Returns null when migration 0012 has not been applied
+ * (or the read fails), so the rest of the snapshot is never affected.
+ */
+export async function ga4DeliveryBreakdown(
+  db: D1Database,
+  windowStartIso: string,
+  windowEndIso: string,
+  endOperator: "<" | "<=",
+): Promise<{
+  total: number;
+  byOutcome: Record<Ga4DeliveryOutcome, number>;
+  byEvent: Record<string, Partial<Record<Ga4DeliveryOutcome, number>>>;
+} | null> {
+  try {
+    const rows = await db.prepare(
+      `SELECT event_name, outcome, COUNT(*) AS n
+       FROM ga4_delivery_outcomes
+       WHERE julianday(occurred_at) >= julianday(?)
+         AND julianday(occurred_at) ${endOperator} julianday(?)
+       GROUP BY event_name, outcome`,
+    ).bind(windowStartIso, windowEndIso).all<{ event_name: string; outcome: string; n: number }>();
+    const byOutcome = Object.fromEntries(GA4_DELIVERY_OUTCOMES.map((outcome) => [outcome, 0])) as Record<Ga4DeliveryOutcome, number>;
+    const byEvent: Record<string, Partial<Record<Ga4DeliveryOutcome, number>>> = {};
+    let total = 0;
+    for (const row of rows.results ?? []) {
+      if (!(GA4_DELIVERY_OUTCOMES as readonly string[]).includes(row.outcome)) continue;
+      const outcome = row.outcome as Ga4DeliveryOutcome;
+      const n = Number(row.n) || 0;
+      byOutcome[outcome] += n;
+      byEvent[row.event_name] = { ...byEvent[row.event_name], [outcome]: n };
+      total += n;
+    }
+    return { total, byOutcome, byEvent };
+  } catch {
+    return null;
+  }
 }
 
 const ORDER_LEDGER_MAX_ROWS = 10_000;
@@ -4065,26 +4113,32 @@ async function recordFunnelEvent(
     if (user && isSmokeTestEmail(user.email)) return json({ ok: true, recorded: false }, 202);
   }
 
-  if (ga4ConsentGranted(request, payload.analyticsConsent)) {
-    const identity = ga4IdentityFromRequest(request, payload.anonymousId, env);
-    const authMethod = JSON.parse(funnelMetadata(payload.metadata) ?? "{}").auth_method as string | undefined;
-    const event = ga4FunnelEvent(eventName, {
-      ...ga4CampaignParams(payload.metadata),
-      ...(eventName === "sign_up" && authMethod ? { method: authMethod } : {}),
-    });
+  if (GA4_FUNNEL_EVENTS.has(eventName)) {
     // Forward only when the event can join the visitor's existing GA session.
     // Without a session_id, GA4 opens a new session that has no page_view, which
     // surfaces as a "(not set)" landing page and source/medium in reports.
     // The event is still stored first-party below, which is the funnel's
     // source of truth. (The verified Stripe purchase path is intentionally not
     // gated: revenue must always reach GA4.)
-    if (identity?.sessionId && event) {
-      sendGa4Event(identity, event, {
-        context: dependencies.recoveryContext,
-        config: env,
-        fetchImpl: dependencies.ga4Fetch,
+    const delivery = classifyGa4FunnelDelivery(request, payload.analyticsConsent, payload.anonymousId, env);
+    if (delivery.outcome === "sent" && delivery.identity) {
+      const authMethod = JSON.parse(funnelMetadata(payload.metadata) ?? "{}").auth_method as string | undefined;
+      const event = ga4FunnelEvent(eventName, {
+        ...ga4CampaignParams(payload.metadata),
+        ...(eventName === "sign_up" && authMethod ? { method: authMethod } : {}),
       });
+      if (event) {
+        sendGa4Event(delivery.identity, event, {
+          context: dependencies.recoveryContext,
+          config: env,
+          fetchImpl: dependencies.ga4Fetch,
+        });
+      }
     }
+    // Measure every outcome so the D1 vs GA4 gap is explained by data, not guesses.
+    const recorded = recordGa4DeliveryOutcome(env.DB, eventName, delivery.outcome);
+    if (dependencies.recoveryContext) dependencies.recoveryContext.waitUntil(recorded);
+    else await recorded;
   }
 
   if (!storeEvent) return json({ ok: true, recorded: false }, 202);
@@ -4123,6 +4177,28 @@ async function recordFunnelEvent(
     .run();
 
   return json({ ok: true, eventId }, 201);
+}
+
+/**
+ * Records why one GA4-eligible funnel event was or was not forwarded: event
+ * name, fixed outcome label and server time only. Never throws: until
+ * migration 0012 is applied (or if D1 hiccups) the write is skipped with a
+ * warning and funnel recording is unaffected.
+ */
+export async function recordGa4DeliveryOutcome(
+  db: D1Database,
+  eventName: string,
+  outcome: Ga4DeliveryOutcome,
+): Promise<void> {
+  try {
+    await db.prepare(
+      `INSERT INTO ga4_delivery_outcomes (event_name, outcome, occurred_at) VALUES (?, ?, ?)`,
+    ).bind(eventName, outcome, new Date().toISOString()).run();
+  } catch (error) {
+    console.warn(operationalEvent("analytics", "ga4_delivery_outcome_not_recorded", "warning", {
+      reason: errorKind(error),
+    }));
+  }
 }
 
 export async function handleResumeBuilderRoute(

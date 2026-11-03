@@ -307,6 +307,20 @@ export const rateLimits = sqliteTable(
   (table) => [index("rate_limits_window_idx").on(table.windowStart)],
 );
 
+/** Why each GA4-eligible funnel event was or was not forwarded (migration 0012). No identifiers. */
+export const ga4DeliveryOutcomes = sqliteTable(
+  "ga4_delivery_outcomes",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    eventName: text("event_name").notNull(),
+    outcome: text("outcome", {
+      enum: ["sent", "no_consent", "no_ga_cookie", "no_ga_session", "not_configured"],
+    }).notNull(),
+    occurredAt: text("occurred_at").notNull(),
+  },
+  (table) => [index("ga4_delivery_outcomes_time_idx").on(table.occurredAt)],
+);
+
 export const funnelEvents = sqliteTable(
   "funnel_events",
   {
