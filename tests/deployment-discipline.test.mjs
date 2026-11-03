@@ -122,7 +122,15 @@ test("production smoke runs the signed-in review flow without gating deploys on 
   assert.match(source, /persist-credentials: false/);
   assert.match(source, /npm ci --omit=dev --ignore-scripts/);
   const runner = await readFile(new URL("../tools/smoke/resume-builder-smoke.mjs", import.meta.url), "utf8");
-  assert.doesNotMatch(runner, /call\("\/api\/health"/, "the queue-coupled health endpoint must not gate deploys");
+  // The queue-coupled /api/health endpoint must never gate deploys. Its only
+  // allowed use is the non-gating GA4 advisory, which can warn but not fail.
+  const healthCalls = [...runner.matchAll(/call\("\/api\/health"/g)].map((match) => match.index);
+  const advisoryStart = runner.indexOf('await advisory("GA4 server-side delivery configured"');
+  const advisoryEnd = runner.indexOf("await step(", advisoryStart);
+  assert.ok(healthCalls.length <= 1, "the queue-coupled health endpoint must not gate deploys");
+  for (const index of healthCalls) {
+    assert.ok(advisoryStart >= 0 && index > advisoryStart && index < advisoryEnd, "the queue-coupled health endpoint must not gate deploys");
+  }
   for (const step of ["smoke sign-in", "switch template", "inspect heading", "change customization", "inspect rendered preview after customization", "render fingerprint", "Download/Print absent", "Lead / Supervisor", "TECHNICAL & OPERATIONS COMPETENCIES", "open legacy resume"]) {
     assert.ok(runner.includes(step), `runner covers: ${step}`);
   }
