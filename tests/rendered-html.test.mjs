@@ -269,6 +269,49 @@ test("server-renders the official book page, cover, portrait, and current editio
   assert.equal(html.includes("fell through an attic"), false);
 });
 
+test("book page roadmap uses the printed part titles, offers both free previews, FAQ, and a mobile buy bar", async () => {
+  const html = await (await renderPath("/book")).text();
+  const text = html.replace(/<!-- -->/g, "");
+
+  // Part titles match the book's printed table of contents in both the Roadmap and the TOC.
+  assert.equal((text.match(/Turn Skill Into Money and Leverage/g) ?? []).length, 2);
+  assert.equal((text.match(/Turn Leverage Into Control/g) ?? []).length, 2);
+  assert.doesNotMatch(text, />Turn Skill Into Leverage</);
+  assert.doesNotMatch(text, />Build Control</);
+  assert.match(text, /<strong>21<\/strong><small>Chapters<\/small>/);
+
+  // Both free offers: the real 7-page book sample and the existing 2026-2027 guide.
+  assert.match(text, /id="book-sample"/);
+  assert.match(text, /Email me the 7-page sample/);
+  assert.match(text, /data-cta-location="book-page-sample"/);
+  assert.match(text, /href="#book-sample"[^>]*>Read 7 pages free/);
+  assert.match(text, /EMAIL TO RECEIVE THE FREE GUIDE/i);
+  assert.equal((text.match(/<form\b/g) ?? []).length, 2);
+
+  // FAQ answers come from verified edition data and the eBook policy.
+  assert.match(text, /id="faq"/);
+  assert.match(text, /What formats can I buy\?/);
+  assert.match(text, /paperback \(\$24\.99, 438 pages\)/);
+  assert.match(text, /Kindle eBook \(\$9\.99\)/);
+  assert.match(text, /href="\/book\/refund-policy">eBook Delivery and Refund Policy/);
+  assert.match(text, /personal, non-transferable license/);
+  assert.doesNotMatch(text, /bulk (pricing|discount|rate)/i);
+
+  // Mobile quick-buy bar is wired to the shared sticky-CTA logic and starts hidden.
+  assert.match(text, /<section class="book-hero" id="top"/);
+  assert.match(text, /class="book-sticky-buy" data-location="mobile_sticky" aria-hidden="true"/);
+  assert.match(text, /aria-labelledby="final-cta-title"/);
+  assert.match(text, /id="final-cta-title"/);
+  assert.match(text, /data-cta-location="book-mobile-sticky"/);
+});
+
+test("book page CSS keeps the mobile buy bar hidden until script shows it", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const css = await readFile(new URL("../app/page-shell.css", import.meta.url), "utf8");
+  assert.match(css, /\.book-sticky-buy \{ display: none;/);
+  assert.doesNotMatch(css, /\.sample-intro/);
+});
+
 test("redirects the duplicate www hostname to the canonical domain", async () => {
   const worker = await loadWorker();
   const response = await worker.fetch(
