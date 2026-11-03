@@ -235,7 +235,7 @@ test("server-renders the official book page, cover, portrait, and current editio
 
   assert.match(html, /<title>TRADE HUSTL3 Book by Zachary Ellis \(Mr\. HUSTL3\)<\/title>/i);
   assert.match(html, /<link rel="canonical" href="https:\/\/tradehustl3\.com\/book"/i);
-  assert.match(html, /optimized\/book-cover-v2\.webp/i);
+  assert.match(html, /optimized\/book-cover-v3\.webp/i);
   assert.match(html, /optimized\/author-portrait-v2\.webp/i);
   assert.match(html, /By Zachary Ellis · Mr\. HUSTL3/);
   assert.match(html, /ZACHARY[\s\S]*ELLIS\./);
