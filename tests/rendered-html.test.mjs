@@ -240,6 +240,8 @@ test("server-renders the official book page, cover, portrait, and current editio
   assert.match(html, /By Zachary Ellis · Mr\. HUSTL3/);
   assert.match(html, /ZACHARY[\s\S]*ELLIS\./);
   assert.equal(html.includes("Da Maintenance Mane is an HVAC"), false);
+  // Author credentials must stay limited to ones the author has confirmed.
+  assert.doesNotMatch(html, /EPA 608 Universal certified/i);
   assert.equal(html.includes("Zachary Cameron Ellis"), false);
   assert.match(html, /Available now/i);
   assert.match(html, /Current KDP ISBN/i);

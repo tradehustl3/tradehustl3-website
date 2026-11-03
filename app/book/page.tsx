@@ -19,7 +19,7 @@ import {
 const BOOK_TITLE = "TRADE HUSTL3: Built by Hustle, Backed by Trades";
 const BOOK_PAGE_TITLE = "TRADE HUSTL3 Book by Zachary Ellis (Mr. HUSTL3)";
 const BOOK_DESCRIPTION =
-  "Explore 200+ skilled trades, training, certifications, and career paths with Zachary Ellis (Mr. HUSTL3). Includes a practical 90-Day Action Plan. Paperback, Kindle, and direct eBook.";
+  "Explore 200+ skilled trades, certifications, and career paths with Zachary Ellis (Mr. HUSTL3). Includes a 90-Day Action Plan. Paperback, Kindle, and eBook.";
 
 const SCHOOLS_MAILTO = `mailto:${BOOK_PARTNERSHIPS_EMAIL}?subject=${encodeURIComponent("TRADE HUSTL3 book order for our program")}`;
 
@@ -401,7 +401,7 @@ export default function BookPage() {
           <p className="section-label">/ ABOUT THE AUTHOR · MR. HUSTL3</p>
           <h2>ZACHARY<br /><span>ELLIS.</span></h2>
           <p>
-            Zachary Ellis, known as Mr. HUSTL3, is an HVAC and facilities maintenance professional with more than a decade of hands-on experience solving real problems in the field. He is EPA 608 Universal certified and OSHA-10 trained. His background includes residential and commercial systems, preventive maintenance, facilities operations, team leadership, vendor coordination, and large-scale equipment.
+            Zachary Ellis, known as Mr. HUSTL3, is an HVAC and facilities maintenance professional with more than a decade of hands-on experience solving real problems in the field. He is OSHA 10 trained.His background includes residential and commercial systems, preventive maintenance, facilities operations, team leadership, vendor coordination, and large-scale equipment.
           </p>
           <p>
             TRADE HUSTL3 was born from real work, real lessons, and a clear purpose: help the next generation enter skilled trades, earn through useful ability, and elevate into leadership, ownership, and long-term opportunity.
