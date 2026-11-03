@@ -401,7 +401,7 @@ export default function BookPage() {
           <p className="section-label">/ ABOUT THE AUTHOR · MR. HUSTL3</p>
           <h2>ZACHARY<br /><span>ELLIS.</span></h2>
           <p>
-            Zachary Ellis, known as Mr. HUSTL3, is an HVAC and facilities maintenance professional with more than a decade of hands-on experience solving real problems in the field. He is OSHA 10 trained.His background includes residential and commercial systems, preventive maintenance, facilities operations, team leadership, vendor coordination, and large-scale equipment.
+            Zachary Ellis, known as Mr. HUSTL3, is an HVAC and facilities maintenance professional with more than a decade of hands-on experience solving real problems in the field. He holds EPA 608 Universal certification, an HVAC certification, NCRR, and OSHA 10. His background includes residential and commercial systems, preventive maintenance, facilities operations, team leadership, vendor coordination, and large-scale equipment.
           </p>
           <p>
             TRADE HUSTL3 was born from real work, real lessons, and a clear purpose: help the next generation enter skilled trades, earn through useful ability, and elevate into leadership, ownership, and long-term opportunity.

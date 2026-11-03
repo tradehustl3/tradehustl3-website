@@ -240,8 +240,12 @@ test("server-renders the official book page, cover, portrait, and current editio
   assert.match(html, /By Zachary Ellis · Mr\. HUSTL3/);
   assert.match(html, /ZACHARY[\s\S]*ELLIS\./);
   assert.equal(html.includes("Da Maintenance Mane is an HVAC"), false);
-  // Author credentials must stay limited to ones the author has confirmed.
-  assert.doesNotMatch(html, /EPA 608 Universal certified/i);
+  // Author credentials are exactly the ones the author has confirmed, and the
+  // sentence stays correctly spaced from the one that follows it.
+  assert.match(
+    html,
+    /He holds EPA 608 Universal certification, an HVAC certification, NCRR, and OSHA 10\. His background/,
+  );
   assert.equal(html.includes("Zachary Cameron Ellis"), false);
   assert.match(html, /Available now/i);
   assert.match(html, /Current KDP ISBN/i);
