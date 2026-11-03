@@ -1,3 +1,5 @@
+import { ga4MeasurementProtocolConfigured } from "./ga4-measurement-protocol";
+
 export type OperationsComponentStatus = "ok" | "degraded" | "unavailable";
 
 export type OperationsHealth = {
@@ -12,6 +14,13 @@ export type OperationsHealth = {
     aiFallback: OperationsComponentStatus;
     stripe: OperationsComponentStatus;
     deliveryQueue: OperationsComponentStatus;
+    /**
+     * Server-side GA4 funnel delivery. Never critical: analytics must not turn
+     * the site unhealthy (503) or gate deploys, but a missing Measurement
+     * Protocol secret should be visible instead of silently dropping events.
+     * Reports configured/not configured only; never the secret value.
+     */
+    analytics: "ok" | "degraded";
   };
   queue?: {
     pending: number;
@@ -28,6 +37,7 @@ type HealthEnv = {
   ANTHROPIC_API_KEY?: string;
   STRIPE_SECRET_KEY?: string;
   STRIPE_RESUME_WEBHOOK_SECRET?: string;
+  GA4_MEASUREMENT_PROTOCOL_API_SECRET?: string;
 };
 
 function configured(...values: Array<string | undefined>): boolean {
@@ -43,6 +53,7 @@ export async function getOperationsHealth(env: HealthEnv): Promise<OperationsHea
     aiFallback: configured(env.ANTHROPIC_API_KEY) ? "ok" : "degraded",
     stripe: configured(env.STRIPE_SECRET_KEY, env.STRIPE_RESUME_WEBHOOK_SECRET) ? "ok" : "unavailable",
     deliveryQueue: "unavailable",
+    analytics: ga4MeasurementProtocolConfigured(env) ? "ok" : "degraded",
   };
 
   let pending = 0;

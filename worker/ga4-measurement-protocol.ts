@@ -68,6 +68,15 @@ function setting(config: Ga4Config | undefined, key: keyof Ga4Config): string {
   return typeof value === "string" ? value.trim() : "";
 }
 
+/**
+ * Whether server-side GA4 delivery can run at all. Uses the same resolution as
+ * sendGa4Event so /api/health reports exactly what the sender will do.
+ * Returns only a boolean: the secret value never leaves this module.
+ */
+export function ga4MeasurementProtocolConfigured(config?: Ga4Config): boolean {
+  return setting(config, "GA4_MEASUREMENT_PROTOCOL_API_SECRET").length > 0;
+}
+
 export function ga4MeasurementId(config?: Ga4Config): string {
   const configured = setting(config, "GA4_MEASUREMENT_ID");
   return MEASUREMENT_ID_PATTERN.test(configured) ? configured : DEFAULT_GA4_MEASUREMENT_ID;
