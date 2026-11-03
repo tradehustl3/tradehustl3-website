@@ -131,7 +131,7 @@
 .book-audience h2 span,
 .author-copy h2 span,
 .book-availability h2 span,
-.sample-intro h2 span { color: var(--red); }
+.book-sample h2 span { color: var(--red); }
 .book-subtitle { margin: 29px 0 8px; color: var(--gold); font-family: var(--font-display), Impact, sans-serif; font-size: clamp(25px, 3vw, 43px); line-height: 1; text-transform: uppercase; letter-spacing: 0.025em; }
 .book-byline { margin: 0 0 28px; text-transform: uppercase; font-size: 11px; font-weight: 800; letter-spacing: 0.18em; color: #b8c3cb; }
 .book-hero-proof { max-width: 680px; display: grid; grid-template-columns: repeat(3, 1fr); margin: 0 0 30px; border-block: 1px solid #d6a52a55; }
@@ -155,10 +155,8 @@
 .book-facts span,
 .availability-grid span { display: block; color: var(--red); font-size: 9px; font-weight: 900; letter-spacing: 0.16em; text-transform: uppercase; margin-bottom: 9px; }
 .book-facts strong { font-family: var(--font-display), Impact, sans-serif; font-weight: 400; font-size: 25px; text-transform: uppercase; }
-.book-sample, .book-discover, .book-structure, .book-toc, .book-audience, .book-author, .book-availability { padding: 120px clamp(24px, 7vw, 110px); }
-.book-sample { display: grid; grid-template-columns: 0.9fr 1.1fr; align-items: center; gap: clamp(55px, 9vw, 145px); background: #061522; border-bottom: 1px solid #d6a52a44; }
-.sample-intro h2 { margin: 23px 0 30px; font-size: clamp(57px, 7vw, 105px); line-height: 0.87; }
-.sample-intro > p:not(.section-label) { max-width: 660px; margin: 0 0 33px; color: #bac6ce; font-size: 17px; line-height: 1.7; }
+.book-sample, .book-discover, .book-structure, .book-toc, .book-audience, .book-author, .book-faq, .book-availability { padding: 120px clamp(24px, 7vw, 110px); }
+.book-sample { background: #061522; border-bottom: 1px solid #d6a52a44; }
 .sample-consent { display: block; max-width: 640px; color: #94a1aa; font-size: 10px; line-height: 1.55; }
 
 /* ---- email signup form (book sample + general), scoped to book/policy shell ---- */
@@ -190,6 +188,41 @@
 .book-page .signup-status.success, .policy-page .signup-status.success { color: #64d69b; }
 .sample-unlock-link { display: inline-flex; align-items: center; gap: 18px; margin-top: 4px; padding: 16px 22px; background: var(--gold); color: var(--navy); font-size: 11px; font-weight: 900; letter-spacing: 0.1em; text-transform: uppercase; }
 .sample-unlock-link:hover { background: var(--red); color: var(--white); }
+.sample-card-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; }
+.sample-card { display: flex; flex-direction: column; padding: clamp(28px, 4vw, 48px); border: 1px solid #d6a52a55; background: #0a2134; }
+.sample-card-book { border-color: #d6a52a; box-shadow: inset 0 6px 0 var(--red), 14px 14px 0 #d9361e1f; }
+.sample-card-kicker { margin: 0 0 16px; color: var(--gold); font-size: 10px; font-weight: 900; letter-spacing: 0.16em; text-transform: uppercase; }
+.sample-card h3 { margin: 0 0 18px; font-size: clamp(32px, 3.4vw, 48px); line-height: 0.95; }
+.sample-card > p:not(.sample-card-kicker) { margin: 0 0 28px; color: #bac6ce; font-size: 16px; line-height: 1.7; }
+.sample-card .sample-consent { margin-top: 16px; }
+.sample-card .signup { max-width: none; margin-top: auto; }
+/* ResourceForm ships homepage styles; restyle it to match the book signup. */
+.sample-card .resource-form { margin-top: auto; gap: 15px; }
+.sample-card .resource-form .field-row label { color: var(--gold); font: 800 10px/1.2 var(--font-body), system-ui, sans-serif; letter-spacing: 0.14em; }
+.sample-card .resource-form .field-row input { min-height: 54px; padding: 0 16px; border: 1px solid #d6a52a99; background: var(--cream); color: var(--navy); font: inherit; font-size: 16px; }
+.sample-card .resource-form .field-row input:focus { outline: none; border-color: var(--red); box-shadow: 0 0 0 3px #d9361e40; }
+.sample-card .resource-form .form-button { min-height: 56px; margin-top: 0; box-shadow: none; font-size: 12px; font-weight: 800; letter-spacing: 0.1em; }
+.sample-card .resource-form .form-status { min-height: 18px; color: var(--muted) !important; font-size: 12px !important; line-height: 1.5 !important; }
+.sample-card .resource-form .form-status.is-error { color: #ff8f7f !important; border-left-color: var(--red); }
+.sample-card .resource-form .form-status.is-success { color: #64d69b !important; }
+.sample-card .resource-guide-link { justify-self: start; margin-top: 0; }
+.book-mindset { padding: 90px clamp(24px, 7vw, 110px); background: #061522; border-block: 1px solid #d6a52a44; }
+.book-mindset .sample-quote { max-width: 1100px; margin: 0 auto; }
+.book-faq { background: #061522; border-top: 1px solid #d6a52a44; }
+.faq-list { max-width: 980px; margin-left: auto; border-top: 1px solid #d6a52a55; }
+.faq-item { border-bottom: 1px solid #d6a52a55; }
+.faq-item summary { position: relative; padding: 26px 56px 26px 4px; cursor: pointer; list-style: none; font-size: 19px; font-weight: 800; line-height: 1.35; }
+.faq-item summary::-webkit-details-marker { display: none; }
+.faq-item summary:after { content: "+"; position: absolute; right: 8px; top: 50%; transform: translateY(-50%); color: var(--red); font-family: var(--font-display), Impact, sans-serif; font-size: 32px; line-height: 1; }
+.faq-item[open] summary:after { content: "−"; }
+.faq-item summary:hover { color: var(--gold); }
+.faq-item p { max-width: 820px; margin: 0; padding: 0 56px 28px 4px; color: #c2ccd3; font-size: 16px; line-height: 1.7; }
+.faq-item p a { color: var(--gold); font-weight: 800; text-decoration: underline; text-underline-offset: 3px; }
+.book-faq h2 span { color: var(--red); }
+/* Mobile quick-buy bar: hidden until CtaAnalytics decides to show it (≤720px). */
+.book-sticky-buy { display: none; position: fixed; z-index: 20; left: 0; right: 0; bottom: 0; align-items: center; gap: 12px; padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); background: #04121ef2; border-top: 1px solid #d6a52a77; box-shadow: 0 -10px 30px #0008; }
+.book-page .book-sticky-buy .button { flex: 1; min-height: 50px; padding: 0 16px; }
+.book-sticky-formats { flex: none; padding: 14px 6px; color: var(--gold) !important; font-size: 11px; font-weight: 900; letter-spacing: 0.1em; text-transform: uppercase; text-decoration: underline; text-underline-offset: 4px; }
 .sample-quote { margin: 0; padding: clamp(32px, 5vw, 68px); border: 1px solid #d6a52a77; background: linear-gradient(135deg, #0b2b42, #071a2b); box-shadow: 18px 18px 0 #d9361e22; }
 .sample-quote blockquote { font-size: clamp(34px, 4vw, 58px); line-height: 1.07; text-transform: none; }
 .sample-quote blockquote span { display: block; margin-top: 20px; color: var(--red); }
@@ -331,7 +364,8 @@
   .book-facts { grid-template-columns: repeat(2, 1fr); }
   .book-facts > div:nth-child(2) { border-right: 0; }
   .book-facts > div:nth-child(-n + 2) { border-bottom: 1px solid #071a2b24; }
-  .book-sample, .book-structure, .book-audience, .book-author, .book-schools { grid-template-columns: 1fr; gap: 55px; }
+  .book-structure, .book-audience, .book-author, .book-schools { grid-template-columns: 1fr; gap: 55px; }
+  .sample-card-grid { grid-template-columns: 1fr; }
   .book-section-heading { display: block; }
   .book-section-heading h2 { text-align: left; margin-top: 25px; }
   .toc-grid { grid-template-columns: 1fr; }
@@ -348,7 +382,12 @@
   .book-facts { grid-template-columns: 1fr; }
   .book-facts > div { border-right: 0; border-bottom: 1px solid #071a2b24; }
   .book-facts > div:last-child { border-bottom: 0; }
-  .book-sample, .book-discover, .book-structure, .book-toc, .book-audience, .book-author, .book-availability, .book-schools { padding: 80px 22px; }
+  .book-sample, .book-discover, .book-structure, .book-toc, .book-audience, .book-author, .book-faq, .book-availability, .book-schools { padding: 80px 22px; }
+  .book-mindset { padding: 60px 22px; }
+  .sample-card { padding: 26px 20px; }
+  .faq-item summary { font-size: 17px; padding-right: 46px; }
+  .faq-item p { padding-right: 0; }
+  .book-page footer { padding-bottom: calc(110px + env(safe-area-inset-bottom)); }
   .book-page .hero-actions { gap: 14px; }
   .book-page .hero-actions .button { width: 100%; }
   .availability-grid .button { align-self: stretch; }

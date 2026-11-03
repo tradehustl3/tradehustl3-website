@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
+import type { ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { SocialLinks } from "../social-links";
 import { SITE_NAME, SITE_URL } from "../site";
 import { SignupForm } from "../signup-form";
+import { ResourceForm } from "../resource-form";
 import LaunchPurchaseButton from "./launch-purchase-button";
 import { BrandLockup } from "../brand-lockup";
 import { CtaAnalytics } from "../cta-analytics";
@@ -141,17 +143,17 @@ const audiences = [
   "Future supervisors, specialists, and business owners",
 ];
 
-const parts = [
-  ["PART I", "Build the Foundation", "Understand what skilled work really is, why demand is growing, and how to begin without experience."],
-  ["PART II", "Know the Landscape", "Explore construction, mechanical, electrical, industrial, fabrication, service, maintenance, and facilities careers."],
-  ["PART III", "Turn Skill Into Leverage", "Learn how certifications, specialization, overtime, side work, and reputation can increase your value."],
-  ["PART IV", "Build Control", "Move from employee thinking toward leadership, ownership, and a focused 90-Day Action Plan."],
-];
-
+/**
+ * Single source for the book's structure. Part and chapter titles match the
+ * printed table of contents (worker/assets/trade-hustl3-seven-page-book-sample.pdf,
+ * page 2); the Roadmap summaries and the Table of Contents both render from
+ * this list so their part titles can never drift apart again.
+ */
 const chapterParts = [
   {
     label: "PART I",
     title: "Build the Foundation",
+    summary: "Understand what skilled work really is, why demand is growing, and how to begin without experience.",
     chapters: [
       "What a Skilled Trade Really Is",
       "Why Skilled Trades Are in High Demand",
@@ -164,6 +166,7 @@ const chapterParts = [
   {
     label: "PART II",
     title: "Know the Landscape",
+    summary: "Explore construction, mechanical, electrical, industrial, fabrication, service, maintenance, and facilities careers.",
     chapters: [
       "The Different Types of Skilled Trades",
       "Construction Trades",
@@ -178,6 +181,7 @@ const chapterParts = [
   {
     label: "PART III",
     title: "Turn Skill Into Money and Leverage",
+    summary: "Learn how certifications, specialization, overtime, side work, and reputation can increase your value.",
     chapters: [
       "Certifications That Actually Matter",
       "How Pay Really Increases in the Trades",
@@ -187,12 +191,63 @@ const chapterParts = [
   {
     label: "PART IV",
     title: "Turn Leverage Into Control",
+    summary: "Move from employee thinking toward leadership, ownership, and a focused 90-Day Action Plan.",
     chapters: [
       "From Employee to Owner",
       "Choosing the Right Trade for You",
       "The Trade Hustle 90-Day Action Plan",
       "Final Word: Build Something That Belongs to You",
     ],
+  },
+];
+
+const CHAPTER_COUNT = chapterParts.reduce((total, part) => total + part.chapters.length, 0);
+
+/**
+ * Every answer is grounded in a verified source: editions.ts (Amazon listings
+ * checked 2026-11-03), the eBook Delivery and Refund Policy, and the 7-page
+ * sample PDF. Update the source first, then this copy.
+ */
+const faqs: Array<{ question: string; answer: ReactNode }> = [
+  {
+    question: "What formats can I buy?",
+    answer: (
+      <>
+        Three: the paperback (${AMAZON_PAPERBACK.price}, {BOOK_PAPERBACK_PAGES} pages) and the Kindle eBook (${AMAZON_KINDLE.price}) are sold on Amazon. The direct eBook (${DIRECT_EBOOK.price}) is a PDF sold by TRADE HUSTL3 through secure Stripe checkout.
+      </>
+    ),
+  },
+  {
+    question: "Who ships the paperback?",
+    answer: <>Amazon sells, prints, and ships the paperback and delivers the Kindle edition. Orders, shipping, and returns for those formats are handled by Amazon under Amazon&apos;s terms.</>,
+  },
+  {
+    question: "How do I get the direct eBook after I pay?",
+    answer: <>After a successful purchase, a protected PDF download link is emailed to the address you used at checkout. Delivery can take several minutes, so check your spam and promotions folders before contacting support.</>,
+  },
+  {
+    question: "Can I get a refund on the direct eBook?",
+    answer: (
+      <>
+        Duplicate charges and nondelivery we can&apos;t fix are reviewed and refunded when confirmed. Except where required by law, change-of-mind refunds aren&apos;t offered once the PDF has been delivered or accessed. See the full <Link href="/book/refund-policy">eBook Delivery and Refund Policy</Link>. Amazon purchases follow Amazon&apos;s policies.
+      </>
+    ),
+  },
+  {
+    question: "Can I read some of it before I buy?",
+    answer: <>Yes. The <a href="#book-sample">free 7-page sample</a> includes the cover, the full table of contents, and the opening of Chapter 1. No purchase required.</>,
+  },
+  {
+    question: "Do I need trade experience to use this book?",
+    answer: <>No. Part I is written for people starting from zero, including a full chapter on the no-experience path into the trades.</>,
+  },
+  {
+    question: "Can I share the PDF with my class or team?",
+    answer: (
+      <>
+        No. Each direct eBook purchase is a personal, non-transferable license, so the file can&apos;t be shared, uploaded, or redistributed. Schools and programs that need copies for a group can <a href="#schools">email us about a program order</a>.
+      </>
+    ),
   },
 ];
 
@@ -211,15 +266,16 @@ export default function BookPage() {
         </Link>
         <nav aria-label="Book page navigation">
           <Link href="/">Home</Link>
-          <a href="#sample">Free guide</a>
+          <a href="#sample">Free sample</a>
           <a href="#chapters">Chapters</a>
           <a href="#author">Author</a>
           <a href="#schools">Schools</a>
+          <a href="#faq">FAQ</a>
           <a className="nav-cta" href="#availability" data-cta="buy-the-book" data-cta-location="book-header">Buy the Book</a>
         </nav>
       </header>
 
-      <section className="book-hero">
+      <section className="book-hero" id="top">
         <div className="book-cover-stage">
           <div className="book-cover-glow" aria-hidden="true" />
           <Image
@@ -239,7 +295,7 @@ export default function BookPage() {
           <p className="book-byline">By Zachary Ellis · Mr. HUSTL3</p>
           <div className="book-hero-proof" aria-label="Book highlights">
             <span><strong>200+</strong><small>Skilled trades</small></span>
-            <span><strong>21</strong><small>Chapters</small></span>
+            <span><strong>{CHAPTER_COUNT}</strong><small>Chapters</small></span>
             <span><strong>90</strong><small>Day action plan</small></span>
           </div>
           <p className="book-lead">
@@ -260,7 +316,7 @@ export default function BookPage() {
             </a>
           </div>
           <p className="book-hero-note">
-            Paperback and Kindle sold on Amazon. Not ready yet? <a className="text-link" href="#sample">Get the Free Guide preview</a>
+            Paperback and Kindle sold on Amazon. Not ready yet? <a className="text-link" href="#book-sample" data-cta="book-sample" data-cta-location="book-hero">Read 7 pages free</a>
           </p>
         </div>
       </section>
@@ -272,22 +328,40 @@ export default function BookPage() {
         <div><span>Current KDP ISBN</span><strong>{BOOK_PAPERBACK_ISBN}</strong></div>
       </section>
 
-      <section className="book-sample" id="sample">
-        <div className="sample-intro">
-          <p className="section-label">/ FREE 2026-2027 GUIDE</p>
-          <h2>GET THE FREE<br /><span>GUIDE PREVIEW.</span></h2>
-          <p>
-            Enter your email to unlock the seven-page preview of <em>TRADE HUSTL3: 10 High-Opportunity Trades — 2026-2027 Edition</em> (cover included). It includes the guide&apos;s source standard, verified power-line and HVAC profiles, national pay context, and practical next steps.
-          </p>
-          <SignupForm mode="sample" />
-          <small className="sample-consent">By unlocking the free guide, you agree to receive TRADE HUSTL3 book and career updates. Unsubscribe anytime.</small>
+      <section className="book-sample" id="sample" aria-labelledby="book-sample-heading">
+        <div className="book-section-heading">
+          <p className="section-label">/ READ BEFORE YOU BUY</p>
+          <h2 id="book-sample-heading">TWO FREE WAYS<br /><span>TO START.</span></h2>
         </div>
-        <figure className="sample-quote">
-          <blockquote>
-            “You don’t have to wait for somebody to hand you a future. Learn a skill. Build your value. Earn your own. Create something nobody can take from you. <span>BUILT BY HUSTL3. BACKED BY TRADES.</span>”
-          </blockquote>
-          <figcaption>The TRADE HUSTL3 mindset</figcaption>
-        </figure>
+        <div className="sample-card-grid">
+          <article className="sample-card sample-card-book" id="book-sample" aria-labelledby="book-sample-card-title">
+            <p className="sample-card-kicker">Free book sample · 7 pages</p>
+            <h3 id="book-sample-card-title">Read the opening of the book.</h3>
+            <p>
+              Get the first seven pages of <em>TRADE HUSTL3: Built by Hustle, Backed by Trades</em>: the cover, the full table of contents, and the opening of Chapter 1. We&apos;ll email you the PDF link.
+            </p>
+            <ResourceForm
+              resourceName="free 7-page TRADE HUSTL3 book sample"
+              buttonLabel="Email me the 7-page sample"
+              includeFirstName={false}
+              ctaId="book-sample"
+              ctaLocation="book-page-sample"
+              metaLeadContentName="book_sample"
+              signupInterest="Book 7-Page Sample"
+              successLinkLabel="Download my 7-page sample (PDF)"
+            />
+            <small className="sample-consent">No purchase required. By requesting the sample, you agree to receive TRADE HUSTL3 book and career updates. Unsubscribe anytime.</small>
+          </article>
+          <article className="sample-card sample-card-guide" aria-labelledby="guide-sample-card-title">
+            <p className="sample-card-kicker">Free 2026-2027 guide</p>
+            <h3 id="guide-sample-card-title">Get the Free Guide preview.</h3>
+            <p>
+              Enter your email to unlock the seven-page preview of <em>TRADE HUSTL3: 10 High-Opportunity Trades — 2026-2027 Edition</em> (cover included). It includes the guide&apos;s source standard, verified power-line and HVAC profiles, national pay context, and practical next steps.
+            </p>
+            <SignupForm mode="sample" />
+            <small className="sample-consent">By unlocking the free guide, you agree to receive TRADE HUSTL3 book and career updates. Unsubscribe anytime.</small>
+          </article>
+        </div>
       </section>
 
       <section className="book-discover" id="inside">
@@ -305,6 +379,15 @@ export default function BookPage() {
         </div>
       </section>
 
+      <section className="book-mindset" aria-label="The TRADE HUSTL3 mindset">
+        <figure className="sample-quote">
+          <blockquote>
+            “You don’t have to wait for somebody to hand you a future. Learn a skill. Build your value. Earn your own. Create something nobody can take from you. <span>BUILT BY HUSTL3. BACKED BY TRADES.</span>”
+          </blockquote>
+          <figcaption>The TRADE HUSTL3 mindset</figcaption>
+        </figure>
+      </section>
+
       <section className="book-structure">
         <div className="book-structure-intro">
           <p className="section-label">/ THE ROADMAP</p>
@@ -314,10 +397,10 @@ export default function BookPage() {
           </p>
         </div>
         <div className="book-parts">
-          {parts.map(([label, title, copy]) => (
-            <article key={label}>
-              <span>{label}</span>
-              <div><h3>{title}</h3><p>{copy}</p></div>
+          {chapterParts.map((part) => (
+            <article key={part.label}>
+              <span>{part.label}</span>
+              <div><h3>{part.title}</h3><p>{part.summary}</p></div>
             </article>
           ))}
         </div>
@@ -326,7 +409,7 @@ export default function BookPage() {
       <section className="book-toc" id="chapters">
         <div className="book-section-heading">
           <p className="section-label">/ TABLE OF CONTENTS</p>
-          <h2>21 CHAPTERS. FOUR PARTS.<br /><span>ONE PLAN.</span></h2>
+          <h2>{`${CHAPTER_COUNT} CHAPTERS. FOUR PARTS.`}<br /><span>ONE PLAN.</span></h2>
         </div>
         <div className="toc-grid">
           {chapterParts.map((part, partIndex) => {
@@ -409,9 +492,24 @@ export default function BookPage() {
         </div>
       </section>
 
-      <section className="book-availability" id="availability">
+      <section className="book-faq" id="faq" aria-labelledby="book-faq-title">
+        <div className="book-section-heading">
+          <p className="section-label">/ QUESTIONS</p>
+          <h2 id="book-faq-title">BEFORE YOU<br /><span>BUY.</span></h2>
+        </div>
+        <div className="faq-list">
+          {faqs.map((faq) => (
+            <details className="faq-item" key={faq.question}>
+              <summary>{faq.question}</summary>
+              <p>{faq.answer}</p>
+            </details>
+          ))}
+        </div>
+      </section>
+
+      <section className="book-availability" id="availability" aria-labelledby="final-cta-title">
         <p className="section-label">/ AVAILABILITY</p>
-        <h2>PICK YOUR FORMAT.<br /><span>AVAILABLE NOW.</span></h2>
+        <h2 id="final-cta-title">PICK YOUR FORMAT.<br /><span>AVAILABLE NOW.</span></h2>
         <p>
           The paperback and Kindle editions are sold and delivered by Amazon. The direct eBook is a PDF from TRADE HUSTL3, delivered by email after secure checkout.
         </p>
@@ -455,9 +553,26 @@ export default function BookPage() {
         <p className="purchase-terms">By purchasing the direct eBook, you agree to the <Link href="/terms">Terms of Service</Link>, <Link href="/privacy">Privacy Policy</Link>, and <Link href="/book/refund-policy">eBook Delivery and Refund Policy</Link>. Amazon purchases are covered by Amazon&apos;s terms.</p>
       </section>
 
+      {/* Mobile-only quick-buy bar. CtaAnalytics shows it once the hero is
+          scrolled past and hides it while the availability section is visible. */}
+      <div className="book-sticky-buy" data-location="mobile_sticky" aria-hidden="true">
+        <a
+          className="button button-primary"
+          href={AMAZON_PAPERBACK.url}
+          rel="noopener"
+          data-cta="amazon-paperback"
+          data-cta-location="book-mobile-sticky"
+        >
+          Paperback ${AMAZON_PAPERBACK.price} <span aria-hidden="true">↗</span>
+        </a>
+        <a className="book-sticky-formats" href="#availability" data-cta="book-formats" data-cta-location="book-mobile-sticky">
+          All formats
+        </a>
+      </div>
+
       <footer>
         <div className="footer-brand"><div className="wordmark">TRADE HUSTL<span>3</span></div><p>BUILT BY HUSTL3. BACKED BY TRADES.</p><SocialLinks /></div>
-        <div className="footer-links"><Link href="/">Home</Link><a href="#sample">Free guide</a><a href="#chapters">Chapters</a><a href="#author">Author</a><a href="#availability">Buy the Book</a><a href="#schools">Schools &amp; programs</a><a href={`mailto:${BOOK_PARTNERSHIPS_EMAIL}`}>Partnerships</a></div>
+        <div className="footer-links"><Link href="/">Home</Link><a href="#sample">Free sample</a><a href="#chapters">Chapters</a><a href="#author">Author</a><a href="#faq">FAQ</a><a href="#availability">Buy the Book</a><a href="#schools">Schools &amp; programs</a><a href={`mailto:${BOOK_PARTNERSHIPS_EMAIL}`}>Partnerships</a></div>
         <div className="footer-legal"><Link href="/privacy">Privacy</Link><Link href="/terms">Terms</Link><Link href="/book/refund-policy">eBook policy</Link><Link href="/data-deletion">Data requests</Link><Link href="/contact">Support</Link></div>
         <p className="copyright">© 2026 TRADE HUSTL3. ALL GRIT RESERVED.</p>
       </footer>
