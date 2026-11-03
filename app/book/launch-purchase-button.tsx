@@ -1,11 +1,14 @@
-"use client";
+import { DIRECT_EBOOK } from "./editions";
 
-const EBOOK_PAYMENT_LINK = "https://buy.stripe.com/4gM5kwaQ96EscGf2uKbfO02";
-
-export default function LaunchPurchaseButton() {
+export default function LaunchPurchaseButton({ location = "book-availability" }: { location?: string }) {
   return (
-    <a className="button button-primary ebook-buy-button" href={EBOOK_PAYMENT_LINK}>
-      Buy the eBook — $9.99 <span>↗</span>
+    <a
+      className="button button-primary ebook-buy-button"
+      href={DIRECT_EBOOK.url}
+      data-cta="direct-ebook"
+      data-cta-location={location}
+    >
+      Buy the eBook — ${DIRECT_EBOOK.price} <span>↗</span>
     </a>
   );
 }

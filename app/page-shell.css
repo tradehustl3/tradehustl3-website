@@ -249,6 +249,17 @@
 .availability-grid article:last-child { border-right: 0; }
 .availability-grid strong { font-family: var(--font-display), Impact, sans-serif; font-weight: 400; font-size: 40px; line-height: 1; text-transform: uppercase; margin: auto 0 17px; }
 .availability-grid small { color: #57636c; font-size: 12px; }
+.availability-grid .button { align-self: flex-start; margin-top: 22px; }
+.availability-featured { background: #071a2b0d; box-shadow: inset 0 6px 0 var(--red); }
+.book-page .button-outline { background: transparent; border-color: var(--navy); color: var(--navy); }
+.book-page .button-outline:hover { background: var(--navy); color: var(--cream); }
+.book-hero-note { margin: 22px 0 0; color: #b8c3cb; font-size: 13px; line-height: 1.6; }
+.book-hero-note .text-link { margin-left: 6px; font-size: 11px; }
+.book-schools { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(45px, 8vw, 120px); align-items: center; padding: 110px clamp(24px, 7vw, 110px); background: #0a2134; border-block: 1px solid #d6a52a44; }
+.book-schools h2 { font-size: clamp(52px, 6vw, 92px); line-height: 0.92; margin-top: 22px; }
+.book-schools h2 span { color: var(--red); }
+.book-schools-copy p { max-width: 640px; margin: 0 0 20px; color: #c2ccd3; font-size: 17px; line-height: 1.7; }
+.book-schools-copy .button { margin-top: 12px; max-width: 100%; overflow-wrap: anywhere; text-align: left; }
 .ebook-launch-gate { max-width: 560px; margin: 0 auto; padding: 19px 24px; border: 1px solid #071a2b44; background: #071a2b0a; text-transform: uppercase; }
 .ebook-launch-gate span, .ebook-launch-gate strong, .ebook-launch-gate small { display: block; }
 .ebook-launch-gate span { color: var(--red); font-size: 10px; font-weight: 900; letter-spacing: 0.16em; }
@@ -311,12 +322,16 @@
 .policy-footer > small { grid-column: 1 / -1; padding-top: 22px; border-top: 1px solid #d6a52a22; color: #687984; font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; }
 
 /* ---- responsive ---- */
+/* globals.css hides header links under 960px; keep the book purchase CTA reachable. */
+@media (max-width: 960px) {
+  .book-page .site-header nav > a.nav-cta { display: inline-flex; white-space: nowrap; }
+}
 @media (max-width: 1000px) {
   .book-hero { grid-template-columns: 0.75fr 1.25fr; gap: 55px; }
   .book-facts { grid-template-columns: repeat(2, 1fr); }
   .book-facts > div:nth-child(2) { border-right: 0; }
   .book-facts > div:nth-child(-n + 2) { border-bottom: 1px solid #071a2b24; }
-  .book-sample, .book-structure, .book-audience, .book-author { grid-template-columns: 1fr; gap: 55px; }
+  .book-sample, .book-structure, .book-audience, .book-author, .book-schools { grid-template-columns: 1fr; gap: 55px; }
   .book-section-heading { display: block; }
   .book-section-heading h2 { text-align: left; margin-top: 25px; }
   .toc-grid { grid-template-columns: 1fr; }
@@ -333,7 +348,10 @@
   .book-facts { grid-template-columns: 1fr; }
   .book-facts > div { border-right: 0; border-bottom: 1px solid #071a2b24; }
   .book-facts > div:last-child { border-bottom: 0; }
-  .book-sample, .book-discover, .book-structure, .book-toc, .book-audience, .book-author, .book-availability { padding: 80px 22px; }
+  .book-sample, .book-discover, .book-structure, .book-toc, .book-audience, .book-author, .book-availability, .book-schools { padding: 80px 22px; }
+  .book-page .hero-actions { gap: 14px; }
+  .book-page .hero-actions .button { width: 100%; }
+  .availability-grid .button { align-self: stretch; }
   .book-discover-grid { grid-template-columns: 1fr; }
   .book-discover-grid article { min-height: 160px; grid-template-columns: 40px 1fr; border-right: 0; }
   .toc-part summary { grid-template-columns: 1fr; padding: 22px 54px 22px 20px; gap: 7px; }

@@ -233,11 +233,13 @@ test("server-renders the official book page, cover, portrait, and current editio
   assert.equal(response.status, 200);
   const html = await response.text();
 
-  assert.match(html, /<title>TRADE HUSTL3 Book \| Da Maintenance Mane<\/title>/i);
+  assert.match(html, /<title>TRADE HUSTL3 Book by Zachary Ellis \(Mr\. HUSTL3\)<\/title>/i);
   assert.match(html, /<link rel="canonical" href="https:\/\/tradehustl3\.com\/book"/i);
   assert.match(html, /optimized\/book-cover-v2\.webp/i);
-  assert.match(html, /optimized\/author-portrait-v1\.webp/i);
-  assert.match(html, /DA[\s\S]*MAINTENANCE[\s\S]*MANE\./i);
+  assert.match(html, /optimized\/author-portrait-v2\.webp/i);
+  assert.match(html, /By Zachary Ellis · Mr\. HUSTL3/);
+  assert.match(html, /ZACHARY[\s\S]*ELLIS\./);
+  assert.equal(html.includes("Da Maintenance Mane is an HVAC"), false);
   assert.equal(html.includes("Zachary Cameron Ellis"), false);
   assert.match(html, /Available now/i);
   assert.match(html, /Current KDP ISBN/i);
@@ -772,6 +774,62 @@ test("keeps the direct eBook available after launch", async () => {
   assert.match(html, /Available now/i);
   assert.match(html, /secure PDF delivered by email after payment/i);
   assert.match(html, /href="https:\/\/buy\.stripe\.com\/4gM5kwaQ96EscGf2uKbfO02"/i);
+});
+
+test("links the live Amazon paperback and Kindle editions and leads with the paperback", async () => {
+  const html = await (await renderPath("/book")).text();
+  const paperback = "https://www.amazon.com/dp/B0HFQ2ZNJN";
+  const kindle = "https://www.amazon.com/dp/B0HPZ2KQ1R";
+
+  assert.doesNotMatch(html, /link added after the listing is confirmed live/i);
+  assert.match(html, new RegExp(`href="${paperback.replaceAll(".", "\\.").replaceAll("/", "\\/")}"`));
+  assert.match(html, new RegExp(`href="${kindle.replaceAll(".", "\\.").replaceAll("/", "\\/")}"`));
+
+  // The first purchase button in the hero is the Amazon paperback.
+  const hero = html.slice(html.indexOf('class="book-hero"'), html.indexOf('class="book-facts"'));
+  const firstHref = hero.match(/class="button button-primary"[^>]*href="([^"]+)"|href="([^"]+)"[^>]*class="button button-primary"/);
+  assert.ok(firstHref, "hero has a primary button");
+  assert.equal(firstHref[1] ?? firstHref[2], paperback);
+  assert.match(hero, /Buy the Paperback — \$<!-- -->24\.99|Buy the Paperback — \$24\.99/);
+
+  // Purchase clicks are measurable through the shared CTA analytics.
+  assert.match(html, /data-cta="amazon-paperback"/);
+  assert.match(html, /data-cta="amazon-kindle"/);
+  assert.match(html, /data-cta="direct-ebook"/);
+
+  // Header CTA goes to the purchase section, not the email signup.
+  assert.match(html, /class="nav-cta" href="#availability"/);
+});
+
+test("book structured data lists every edition with a USD offer", async () => {
+  const html = await (await renderPath("/book")).text();
+  const blocks = [...html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)].map((m) => JSON.parse(m[1]));
+  const book = blocks.find((block) => block["@type"] === "Book");
+  assert.ok(book, "Book JSON-LD is present");
+  assert.equal(book.isbn, "9798193043355");
+  assert.equal(book.author["@id"], "https://tradehustl3.com/#zachary-ellis");
+  assert.equal(book.workExample.length, 3);
+
+  const byId = Object.fromEntries(book.workExample.map((edition) => [edition["@id"].split("#")[1], edition]));
+  assert.equal(byId.paperback.bookFormat, "https://schema.org/Paperback");
+  assert.equal(byId.paperback.offers.url, "https://www.amazon.com/dp/B0HFQ2ZNJN");
+  assert.equal(byId.paperback.offers.price, "24.99");
+  assert.equal(byId.kindle.offers.url, "https://www.amazon.com/dp/B0HPZ2KQ1R");
+  assert.equal(byId.kindle.identifier.value, "B0HPZ2KQ1R");
+  assert.equal(byId["direct-ebook"].offers.price, "9.99");
+  for (const edition of book.workExample) {
+    assert.equal(edition.offers.priceCurrency, "USD");
+    assert.equal(edition.offers.availability, "https://schema.org/InStock");
+  }
+});
+
+test("book page offers a contact-only path for schools and programs", async () => {
+  const html = await (await renderPath("/book")).text();
+  const schools = html.slice(html.indexOf('id="schools"'), html.indexOf('id="author"'));
+  assert.match(schools, /FOR SCHOOLS &amp; PROGRAMS/);
+  assert.match(schools, /href="mailto:partners@tradehustl3\.com\?subject=/);
+  // No bulk pricing is promised before it exists.
+  assert.doesNotMatch(schools, /\$\d|discount|% off/i);
 });
 
 test("renders a private order-confirmation page", async () => {
