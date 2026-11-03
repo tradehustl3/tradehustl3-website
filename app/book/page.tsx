@@ -35,7 +35,7 @@ export const metadata: Metadata = {
     type: "book",
     images: [
       {
-        url: "/optimized/og-book-v1.jpg",
+        url: "/optimized/og-book-v2.jpg",
         type: "image/jpeg",
         width: 800,
         height: 1200,
@@ -47,7 +47,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: BOOK_PAGE_TITLE,
     description: BOOK_DESCRIPTION,
-    images: ["/optimized/og-book-v1.jpg"],
+    images: ["/optimized/og-book-v2.jpg"],
   },
 };
 
@@ -64,7 +64,7 @@ const bookStructuredData = {
   datePublished: "2026-09-15",
   inLanguage: "en-US",
   url: `${SITE_URL}/book`,
-  image: `${SITE_URL}/optimized/book-cover-v2.webp`,
+  image: `${SITE_URL}/optimized/book-cover-v3.webp`,
   sameAs: [AMAZON_PAPERBACK.url, AMAZON_KINDLE.url],
   author: {
     "@id": `${SITE_URL}/#zachary-ellis`,
@@ -224,7 +224,7 @@ export default function BookPage() {
           <div className="book-cover-glow" aria-hidden="true" />
           <Image
             className="book-cover-image"
-            src="/optimized/book-cover-v2.webp"
+            src="/optimized/book-cover-v3.webp"
             alt="Official front cover of TRADE HUSTL3"
             width={1024}
             height={1536}
