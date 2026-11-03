@@ -274,8 +274,12 @@ test("book page roadmap uses the printed part titles, offers both free previews,
   const text = html.replace(/<!-- -->/g, "");
 
   // Part titles match the book's printed table of contents in both the Roadmap and the TOC.
-  assert.equal((text.match(/Turn Skill Into Money and Leverage/g) ?? []).length, 2);
-  assert.equal((text.match(/Turn Leverage Into Control/g) ?? []).length, 2);
+  // (Counts would double-count the RSC payload, so check placement in the markup instead.)
+  assert.match(text, /<h3>Turn Skill Into Money and Leverage<\/h3>/);
+  assert.match(text, /<h3>Turn Leverage Into Control<\/h3>/);
+  assert.match(text, /<strong>Turn Skill Into Money and Leverage<\/strong>/);
+  assert.match(text, /<strong>Turn Leverage Into Control<\/strong>/);
+  assert.match(html, />21 CHAPTERS\. FOUR PARTS\.<br\/>/);
   assert.doesNotMatch(text, />Turn Skill Into Leverage</);
   assert.doesNotMatch(text, />Build Control</);
   assert.match(text, /<strong>21<\/strong><small>Chapters<\/small>/);
@@ -286,7 +290,8 @@ test("book page roadmap uses the printed part titles, offers both free previews,
   assert.match(text, /data-cta-location="book-page-sample"/);
   assert.match(text, /href="#book-sample"[^>]*>Read 7 pages free/);
   assert.match(text, /EMAIL TO RECEIVE THE FREE GUIDE/i);
-  assert.equal((text.match(/<form\b/g) ?? []).length, 2);
+  assert.match(text, /<form class="resource-form"/);
+  assert.match(text, /<form class="signup sample-signup"/);
 
   // FAQ answers come from verified edition data and the eBook policy.
   assert.match(text, /id="faq"/);

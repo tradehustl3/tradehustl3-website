@@ -409,7 +409,7 @@ export default function BookPage() {
       <section className="book-toc" id="chapters">
         <div className="book-section-heading">
           <p className="section-label">/ TABLE OF CONTENTS</p>
-          <h2>{CHAPTER_COUNT} CHAPTERS. FOUR PARTS.<br /><span>ONE PLAN.</span></h2>
+          <h2>{`${CHAPTER_COUNT} CHAPTERS. FOUR PARTS.`}<br /><span>ONE PLAN.</span></h2>
         </div>
         <div className="toc-grid">
           {chapterParts.map((part, partIndex) => {
