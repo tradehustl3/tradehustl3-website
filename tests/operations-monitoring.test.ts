@@ -24,6 +24,7 @@ const configuredHealthEnv = {
   ANTHROPIC_API_KEY: "anthropic",
   STRIPE_SECRET_KEY: "stripe",
   STRIPE_RESUME_WEBHOOK_SECRET: "webhook",
+  GA4_MEASUREMENT_PROTOCOL_API_SECRET: "ga4-mp-test-secret",
 };
 
 test("operations health is healthy when critical services are configured", async () => {
@@ -34,6 +35,34 @@ test("operations health is healthy when critical services are configured", async
   assert.equal(health.components.database, "ok");
   assert.equal(health.components.deliveryQueue, "ok");
   assert.equal(health.components.stripe, "ok");
+  assert.equal(health.components.analytics, "ok");
+});
+
+test("missing GA4 Measurement Protocol secret degrades health without failing it", async () => {
+  const env = { ...configuredHealthEnv, GA4_MEASUREMENT_PROTOCOL_API_SECRET: undefined };
+  const previous = process.env.GA4_MEASUREMENT_PROTOCOL_API_SECRET;
+  delete process.env.GA4_MEASUREMENT_PROTOCOL_API_SECRET;
+  try {
+    const health = await getOperationsHealth({ DB: db(), ...env });
+    assert.equal(health.ok, true, "analytics must never make /api/health return 503");
+    assert.equal(health.status, "degraded");
+    assert.equal(health.components.analytics, "degraded");
+  } finally {
+    if (previous !== undefined) process.env.GA4_MEASUREMENT_PROTOCOL_API_SECRET = previous;
+  }
+});
+
+test("whitespace-only GA4 secret is treated as not configured", async () => {
+  const health = await getOperationsHealth({ DB: db(), ...configuredHealthEnv, GA4_MEASUREMENT_PROTOCOL_API_SECRET: "   " });
+  assert.equal(health.components.analytics, "degraded");
+});
+
+test("health snapshot never contains the GA4 secret value", async () => {
+  const secret = "ga4-unique-secret-value-should-not-leak";
+  const health = await getOperationsHealth({ DB: db(), ...configuredHealthEnv, GA4_MEASUREMENT_PROTOCOL_API_SECRET: secret });
+  assert.equal(health.components.analytics, "ok");
+  assert.equal(JSON.stringify(health).includes(secret), false);
+  assert.equal(JSON.stringify(health).includes("GA4_MEASUREMENT_PROTOCOL_API_SECRET"), false);
 });
 
 test("dead-letter delivery jobs degrade health without exposing customer data", async () => {

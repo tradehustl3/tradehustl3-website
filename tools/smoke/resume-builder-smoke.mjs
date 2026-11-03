@@ -153,6 +153,18 @@ async function step(name, run) {
   }
 }
 
+/** Like step(), but a failure is a GitHub warning annotation and never fails the run. */
+async function advisory(name, run) {
+  try {
+    const note = await run();
+    console.log(note ? `skip ${name}: ${note}` : `ok   ${name}`);
+  } catch (error) {
+    const message = error instanceof SmokeFailure ? error.message : `unexpected ${error?.name || "error"}`;
+    console.log(`WARN ${name}`);
+    console.log(`::warning::Resume Builder smoke — ${name}: ${message}`);
+  }
+}
+
 async function main() {
   if (LOGIN_SECRET.length < 32) {
     console.log("::error::SMOKE_TEST_LOGIN_SECRET is missing or shorter than 32 characters.");
@@ -170,6 +182,19 @@ async function main() {
     expect(response.status === 200, `HTTP ${response.status}`);
     const body = await jsonOf(response, "public reviews");
     expect(Array.isArray(body.reviews), "database-backed read did not return a reviews array");
+  });
+
+  // Advisory only: a missing GA4 Measurement Protocol secret silently drops every
+  // server-side funnel event, so surface it in the run, but never fail the smoke
+  // (analytics must not gate deploys). Reads /api/health's body whatever its HTTP
+  // status, since a 503 there is about the email queue, not analytics.
+  await advisory("GA4 server-side delivery configured", async () => {
+    const response = await call("/api/health");
+    const body = await jsonOf(response, "operations health");
+    const analytics = body.components?.analytics;
+    if (analytics === undefined) return "not reported (Worker predates the analytics health field)";
+    expect(analytics === "ok", "GA4_MEASUREMENT_PROTOCOL_API_SECRET is not set in Cloudflare; Resume Builder funnel events are not reaching GA4");
+    return null;
   });
 
   await step("smoke sign-in", async () => {
