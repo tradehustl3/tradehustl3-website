@@ -25,7 +25,7 @@ import {
 const BOOK_TITLE = "TRADE HUSTL3: Built by Hustle, Backed by Trades";
 const BOOK_PAGE_TITLE = "TRADE HUSTL3 Book by Zachary Ellis (Mr. HUSTL3)";
 const BOOK_DESCRIPTION =
-  "A skilled-trades career guide by Zachary Ellis (Mr. HUSTL3): get in with no experience, choose a trade, earn more, and build toward ownership. Includes a 90-Day Action Plan. Paperback, Kindle, and eBook.";
+  "Skilled-trades career guide by Zachary Ellis (Mr. HUSTL3): start with no experience, pick a trade, earn more, build toward ownership. With a 90-Day Action Plan.";
 
 const SCHOOLS_MAILTO = `mailto:${BOOK_PARTNERSHIPS_EMAIL}?subject=${encodeURIComponent("TRADE HUSTL3 book order for our program")}`;
 
