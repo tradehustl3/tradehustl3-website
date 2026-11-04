@@ -334,8 +334,12 @@ test("book sample reader matches the final 486-page interior", async () => {
   assert.match(text, /About the Author<\/span><b>486<\/b>/);
   assert.match(text, /1\. What a Skilled Trade Really Is<\/span><b>5<\/b>/);
   assert.match(text, /THE TOOLS ARE NOT THE TRADE/);
-  assert.doesNotMatch(text, /Maintenance Man\b|Da Maintenance Mane|KNOW THE LANDSCAPE|more than 200 skilled trades/i);
-  assert.match(text, /directory of 200 skilled trades/);
+  // Check the book content only: the site-wide <head> author tags still use the
+  // public "Da Maintenance Mane" persona by design, and that is not book text.
+  const main = text.match(/<main[\s\S]*?<\/main>/)?.[0] ?? "";
+  assert.ok(main.length > 0, "sample reader renders a <main> element");
+  assert.doesNotMatch(main, /Maintenance Man\b|Da Maintenance Mane|KNOW THE LANDSCAPE|more than 200 skilled trades/i);
+  assert.match(main, /directory of 200 skilled trades/);
 });
 
 test("book page CSS keeps the mobile buy bar hidden until script shows it", async () => {
