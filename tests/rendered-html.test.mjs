@@ -262,8 +262,8 @@ test("server-renders the official book page, cover, portrait, and current editio
   assert.doesNotMatch(html, /href="\/trade-hustl3-free-sample\.pdf/i);
   assert.match(html, /GUIDE PREVIEW/i);
   assert.match(html, /verified power-line and HVAC profiles/i);
-  assert.match(html, /21 CHAPTERS[\s\S]*FOUR PARTS[\s\S]*ONE PLAN/i);
-  assert.match(html, /What a Skilled Trade Really Is/i);
+  assert.doesNotMatch(html, /class="book-toc"|id="chapters"|href="#chapters"/);
+  assert.doesNotMatch(html, /class="toc-appendices"/);
   assert.match(html, /Final Word: Build Something That Belongs to You/i);
   assert.doesNotMatch(html, /Launch countdown/i);
   // The quoted mindset line is verbatim from Chapter 21 (book page 463) of the final interior;
@@ -280,17 +280,13 @@ test("book page roadmap uses the printed part titles, offers both free previews,
   const html = await (await renderPath("/book")).text();
   const text = html.replace(/<!-- -->/g, "");
 
-  // Part titles match the book's printed table of contents in both the Roadmap and the TOC.
+  // The Roadmap keeps the printed part titles after the detailed TOC is removed.
   // (Counts would double-count the RSC payload, so check placement in the markup instead.)
   assert.match(text, /<h3>Know the Tradescape<\/h3>/);
-  assert.match(text, /<strong>Know the Tradescape<\/strong>/);
   assert.doesNotMatch(text, /Know the Landscape/i);
   assert.match(text, /What You Will Learn/);
   assert.match(text, /<h3>Turn Skill Into Money and Leverage<\/h3>/);
   assert.match(text, /<h3>Turn Leverage Into Control<\/h3>/);
-  assert.match(text, /<strong>Turn Skill Into Money and Leverage<\/strong>/);
-  assert.match(text, /<strong>Turn Leverage Into Control<\/strong>/);
-  assert.match(html, />21 CHAPTERS\. FOUR PARTS\.<br\/>/);
   assert.doesNotMatch(text, />Turn Skill Into Leverage</);
   assert.doesNotMatch(text, />Build Control</);
   assert.match(text, /<strong>21<\/strong><small>Chapters<\/small>/);
