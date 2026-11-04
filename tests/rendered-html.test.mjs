@@ -299,7 +299,7 @@ test("book page roadmap uses the printed part titles, offers both free previews,
   assert.match(text, /id="book-sample"/);
   assert.match(text, /Email me the 7-page sample/);
   assert.match(text, /data-cta-location="book-page-sample"/);
-  assert.match(text, /href="#book-sample"[^>]*>Read 7 pages free/);
+  assert.match(text, /href="#book-sample"[^>]*data-cta-location="book-hero"[^>]*>Read 7 Pages Free/);
   assert.match(text, /EMAIL TO RECEIVE THE FREE GUIDE/i);
   assert.match(text, /<form class="resource-form"/);
   assert.match(text, /<form class="signup sample-signup"/);
@@ -320,6 +320,31 @@ test("book page roadmap uses the printed part titles, offers both free previews,
   assert.match(text, /aria-labelledby="final-cta-title"/);
   assert.match(text, /id="final-cta-title"/);
   assert.match(text, /data-cta-location="book-mobile-sticky"/);
+});
+
+test("book hero follows the approved mockup and keeps its figures tied to verified data", async () => {
+  const html = (await (await renderPath("/book")).text()).replace(/<!-- -->/g, "");
+  const hero = html.match(/<section class="book-hero" id="top">[\s\S]*?<\/section>/)?.[0] ?? "";
+  assert.ok(hero.length > 0, "hero renders");
+
+  assert.match(hero, /<p class="book-hero-eyebrow">The Official Book<\/p>/);
+  assert.match(hero, /<h1>TRADE<br\/>HUSTL<span>3<\/span><\/h1>/);
+  assert.match(hero, /Built by Hustle, Backed by Trades\./);
+  assert.match(hero, /By Zachary Ellis <span aria-hidden="true">·<\/span> Mr\. HUSTL3/);
+  // Proof row: 200 trades (Appendix A), the computed chapter count, the 90-Day Action Plan chapter.
+  assert.match(hero, /<strong>200<\/strong><small>Trades<\/small>/);
+  assert.match(hero, /<strong>21<\/strong><small>Chapters<\/small>/);
+  assert.match(hero, /<strong>90-Day<\/strong><small>Action Plan<\/small>/);
+  assert.match(hero, /Choose your path\. Build your skills\. Create your future\./);
+  // Primary CTA is the verified Amazon paperback; secondary is the free sample.
+  assert.match(hero, /href="https:\/\/www\.amazon\.com\/dp\/B0HFQ2ZNJN"[^>]*data-cta="amazon-paperback"[^>]*data-cta-location="book-hero"[^>]*>Buy the Paperback<\/a>/);
+  assert.match(hero, /href="#availability"[^>]*data-cta="book-formats"[^>]*>Paperback/);
+  assert.doesNotMatch(hero, /200\+|over 200/i);
+
+  assert.match(html, /<\/section><p class="book-hero-band">Enter\. Earn\. Elevate\.<\/p>/);
+  assert.match(html, /class="nav-cta nav-cta-buy" href="#availability"/);
+  // Schools stays reachable from the header: the page is the schools acquisition page.
+  assert.match(html, /<nav aria-label="Book page navigation">[\s\S]*?href="#schools">Schools<\/a>/);
 });
 
 test("book sample reader matches the final 486-page interior", async () => {
