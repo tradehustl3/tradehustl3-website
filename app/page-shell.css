@@ -476,12 +476,13 @@
 }
 
 /* ---- book hero: approved Nov 2026 mockup ----
-   Royal-blue grit backdrop, warm rim light on the cover, centered title stack,
+   Approved standalone tradespeople artwork, warm rim light on the cover, centered title stack,
    gold-number proof row, two buy/sample buttons, and the ENTER. EARN. ELEVATE.
    band under the hero. Kept as one block at the end of the file so it overrides
    the original hero rules above at every width, including its own mobile rules. */
-.book-hero { min-height: 860px; padding: 140px clamp(24px, 6vw, 100px) 80px; grid-template-columns: minmax(280px, 0.85fr) minmax(0, 1.15fr); gap: clamp(40px, 6vw, 100px); background: radial-gradient(ellipse at 10% 6%, #0a52c9b3 0, transparent 42%), radial-gradient(ellipse at 92% 28%, #0b4ab399 0, transparent 46%), radial-gradient(ellipse at 26% 92%, #ff8a1e26 0, transparent 32%), linear-gradient(160deg, #003289 0%, #00256c 46%, #001538 100%); }
-.book-hero:after { opacity: 0.3; mix-blend-mode: overlay; -webkit-mask-image: none; mask-image: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E"), repeating-linear-gradient(-24deg, transparent 0 46px, #ffffff0d 47px 49px, transparent 50px 120px); }
+.book-hero { min-height: 860px; padding: 140px clamp(24px, 6vw, 100px) 80px; grid-template-columns: minmax(280px, 0.85fr) minmax(0, 1.15fr); gap: clamp(40px, 6vw, 100px); isolation: isolate; overflow: hidden; background: #021633 url("/optimized/book-hero-trades-v1.webp") center bottom / 100% calc(100% - 92px) no-repeat; }
+.book-hero:after { opacity: 1; mix-blend-mode: normal; -webkit-mask-image: none; mask-image: none; background: linear-gradient(90deg, #00102a0d 0%, #00102a0d 45%, #00102a66 60%, #00102a4d 84%, transparent 100%); }
+.book-hero .book-cover-stage { width: min(100%, 390px); justify-self: end; }
 .book-cover-glow { inset: 6% -14% -8%; background: #ff7a1a59; filter: blur(70px); }
 .book-cover-image { box-shadow: -18px 24px 0 #01081a, 0 35px 80px #000b, 0 0 70px #ff8a1e45; }
 .book-hero-copy { max-width: 780px; justify-self: center; text-align: center; }
@@ -522,6 +523,9 @@
 }
 @media (max-width: 760px) {
   .book-hero { min-height: 0; padding: 120px 20px 60px; grid-template-columns: 1fr; gap: 45px; }
+  .book-hero { background-position: center 76px; background-size: auto 620px; }
+  .book-hero:after { background: linear-gradient(180deg, transparent 76px, #00102a33 430px, #00102ae6 660px, #00102a 820px); }
+  .book-hero .book-cover-stage { width: min(75vw, 330px); justify-self: center; }
   .book-hero-copy { max-width: 100%; }
   .book-hero-copy h1 { font-size: clamp(72px, 22vw, 110px); }
   .book-subtitle { font-size: 21px; }

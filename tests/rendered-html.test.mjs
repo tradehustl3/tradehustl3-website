@@ -237,7 +237,7 @@ test("server-renders the official book page, cover, portrait, and current editio
   assert.match(html, /<link rel="canonical" href="https:\/\/tradehustl3\.com\/book"/i);
   assert.match(html, /optimized\/book-cover-v3\.webp/i);
   assert.match(html, /optimized\/author-portrait-v2\.webp/i);
-  assert.match(html, /By Zachary Ellis · Mr\. HUSTL3/);
+  assert.match(html.replace(/<[^>]+>/g, ""), /By Zachary Ellis · Mr\. HUSTL3/);
   assert.match(html, /ZACHARY[\s\S]*ELLIS\./);
   assert.equal(html.includes("Da Maintenance Mane is an HVAC"), false);
   // Author credentials are exactly the ones the author has confirmed, and the
@@ -901,7 +901,10 @@ test("links the live Amazon paperback and Kindle editions and leads with the pap
   const firstHref = hero.match(/class="button button-primary"[^>]*href="([^"]+)"|href="([^"]+)"[^>]*class="button button-primary"/);
   assert.ok(firstHref, "hero has a primary button");
   assert.equal(firstHref[1] ?? firstHref[2], paperback);
-  assert.match(hero, /Buy the Paperback — \$<!-- -->24\.99|Buy the Paperback — \$24\.99/);
+  assert.match(hero, />Buy the Paperback<\/a>/);
+  // The mockup keeps the hero CTA concise; the format card still shows its price.
+  const formats = html.slice(html.indexOf('class="availability-grid"'));
+  assert.match(formats, /AMAZON PAPERBACK<\/span><strong>\$(?:<!-- -->)?24\.99/);
 
   // Purchase clicks are measurable through the shared CTA analytics.
   assert.match(html, /data-cta="amazon-paperback"/);
@@ -909,7 +912,7 @@ test("links the live Amazon paperback and Kindle editions and leads with the pap
   assert.match(html, /data-cta="direct-ebook"/);
 
   // Header CTA goes to the purchase section, not the email signup.
-  assert.match(html, /class="nav-cta" href="#availability"/);
+  assert.match(html, /class="nav-cta(?: [^"]*)?" href="#availability"/);
 });
 
 test("book structured data lists every edition with a USD offer", async () => {
