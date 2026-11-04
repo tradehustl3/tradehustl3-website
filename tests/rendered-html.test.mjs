@@ -345,6 +345,17 @@ test("book hero follows the approved mockup and keeps its figures tied to verifi
   assert.match(html, /class="nav-cta nav-cta-buy" href="#availability"/);
   // Schools stays reachable from the header: the page is the schools acquisition page.
   assert.match(html, /<nav aria-label="Book page navigation">[\s\S]*?href="#schools">Schools<\/a>/);
+
+  // Approved background art: CSS-only (decorative, no alt text needed), a
+  // smaller file on phones, and both files ship in public/optimized.
+  const { readFile, stat } = await import("node:fs/promises");
+  const css = await readFile(new URL("../app/page-shell.css", import.meta.url), "utf8");
+  assert.match(css, /\.book-hero \{[^}]*url\("\/optimized\/book-hero-bg-v1\.webp"\)/);
+  assert.match(css, /url\("\/optimized\/book-hero-bg-v1-960\.webp"\)/);
+  for (const file of ["book-hero-bg-v1.webp", "book-hero-bg-v1-960.webp"]) {
+    const { size } = await stat(new URL(`../public/optimized/${file}`, import.meta.url));
+    assert.ok(size > 0 && size < 150_000, `${file} stays light (${size} bytes)`);
+  }
 });
 
 test("book sample reader matches the final 486-page interior", async () => {
