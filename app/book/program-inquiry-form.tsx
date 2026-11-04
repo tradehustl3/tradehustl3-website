@@ -11,7 +11,7 @@ import {
 
 type Status = "idle" | "submitting" | "success" | "error";
 
-const IDLE_MESSAGE = "We reply by email. No bulk pricing is quoted on this page.";
+const IDLE_MESSAGE = "We reply by email with the options available for your program.";
 
 export function ProgramInquiryForm({ fallbackEmail }: { fallbackEmail: string }) {
   const id = useId();
