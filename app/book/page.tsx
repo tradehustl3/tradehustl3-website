@@ -315,7 +315,7 @@ export default function BookPage() {
           <p className="book-subtitle">Built by Hustle, Backed by Trades.</p>
           <p className="book-byline">By Zachary Ellis · Mr. HUSTL3</p>
           <div className="book-hero-proof" aria-label="Book highlights">
-            <span><strong>200+</strong><small>Skilled trades in America<a className="book-hero-source-ref" href="#trades-source" aria-label="Source for 200+ skilled trades">*</a></small></span>
+            <span><strong>200+</strong><small>Skilled trades in America<a className="book-hero-source-ref" href="#trades-source" aria-label="See the source for this number">*</a></small></span>
             <span><strong>{BOOK_CHAPTER_COUNT}</strong><small>Chapters</small></span>
             <span><strong>90</strong><small>Day action plan</small></span>
           </div>
