@@ -7,6 +7,9 @@ import { SITE_NAME, SITE_URL } from "../site";
 import { SignupForm } from "../signup-form";
 import { ResourceForm } from "../resource-form";
 import LaunchPurchaseButton from "./launch-purchase-button";
+import { ProgramInquiryForm } from "./program-inquiry-form";
+import { READER_REVIEWS, type ReaderReview } from "./reader-reviews";
+import { isHolidayGiftSeason } from "./holiday-gift";
 import { BrandLockup } from "../brand-lockup";
 import { CtaAnalytics } from "../cta-analytics";
 import {
@@ -245,13 +248,70 @@ const faqs: Array<{ question: string; answer: ReactNode }> = [
     question: "Can I share the PDF with my class or team?",
     answer: (
       <>
-        No. Each direct eBook purchase is a personal, non-transferable license, so the file can&apos;t be shared, uploaded, or redistributed. Schools and programs that need copies for a group can <a href="#schools">email us about a program order</a>.
+        No. Each direct eBook purchase is a personal, non-transferable license, so the file can&apos;t be shared, uploaded, or redistributed. Schools and programs that need copies for a group can <a href="#schools">send a program request</a>.
       </>
     ),
   },
 ];
 
+const programHighlights = [
+  "21 chapters in four parts, from the no-experience path to a 90-Day Action Plan",
+  "Part II walks through construction, mechanical, electrical, industrial, fabrication, service, maintenance, and facilities careers",
+  "Appendix A lists 200 skilled trades; Appendix B is a training, certification, and supply-house resource directory; Appendix C holds the official source notes",
+  "Written for people starting from zero, so no trade experience is required",
+];
+
+function StarRating({ rating }: { rating: NonNullable<ReaderReview["rating"]> }) {
+  return (
+    <p className="reader-review-rating" aria-label={`${rating} out of 5 stars`}>
+      <span aria-hidden="true">{"★".repeat(rating)}{"☆".repeat(5 - rating)}</span>
+    </p>
+  );
+}
+
+/** Renders nothing until a real, permissioned review exists in reader-reviews.ts. */
+function ReaderReviews({ reviews }: { reviews: readonly ReaderReview[] }) {
+  const approved = reviews.filter((review) => review.permissionToQuote === true && review.quote.trim().length > 0);
+  if (approved.length === 0) return null;
+
+  return (
+    <section className="book-reviews" id="reviews" aria-labelledby="book-reviews-title">
+      <div className="book-section-heading">
+        <p className="section-label">/ FROM READERS</p>
+        <h2 id="book-reviews-title">WHAT READERS<br /><span>ARE SAYING.</span></h2>
+      </div>
+      <ul className="reader-review-grid">
+        {approved.map((review) => (
+          <li className="reader-review" key={review.id}>
+            {review.rating ? <StarRating rating={review.rating} /> : null}
+            <blockquote>“{review.quote}”</blockquote>
+            <p className="reader-review-credit">
+              <strong>{review.name}</strong>
+              <span>{review.role}{review.source === "amazon" ? " · Amazon review" : ""}</span>
+            </p>
+          </li>
+        ))}
+      </ul>
+      <p className="reader-review-more">
+        <a href={AMAZON_PAPERBACK.url} rel="noopener" data-cta="amazon-reviews" data-cta-location="book-reviews">Read all reviews on Amazon <span aria-hidden="true">↗</span></a>
+      </p>
+    </section>
+  );
+}
+
+function HolidayGiftBanner() {
+  return (
+    <aside className="book-gift-banner" aria-label="Gift season">
+      <p>
+        <strong>Gift season:</strong> know someone figuring out what&apos;s next? Give them a plan. Amazon prints and ships the paperback, so order early for holiday delivery. The eBook editions are delivered digitally.
+      </p>
+      <a href="#availability" data-cta="book-gift" data-cta-location="book-gift-banner">Pick a format <span aria-hidden="true">↗</span></a>
+    </aside>
+  );
+}
+
 export default function BookPage() {
+  const showGiftBanner = isHolidayGiftSeason();
   return (
     <main className="book-page">
       <script
@@ -274,6 +334,8 @@ export default function BookPage() {
           <a className="nav-cta" href="#availability" data-cta="buy-the-book" data-cta-location="book-header">Buy the Book</a>
         </nav>
       </header>
+
+      {showGiftBanner ? <HolidayGiftBanner /> : null}
 
       <section className="book-hero" id="top">
         <div className="book-cover-stage">
@@ -325,21 +387,23 @@ export default function BookPage() {
         <div><span>Paperback</span><strong>{BOOK_PAPERBACK_PAGES} pages</strong></div>
         <div><span>Formats</span><strong>Paperback · Kindle · eBook</strong></div>
         <div><span>Starting point</span><strong>No experience required</strong></div>
-        <div><span>Current KDP ISBN</span><strong>{BOOK_PAPERBACK_ISBN}</strong></div>
+        <div><span>Also inside</span><strong>200-trade list + resource directory</strong></div>
       </section>
 
       <section className="book-sample" id="sample" aria-labelledby="book-sample-heading">
         <div className="book-section-heading">
           <p className="section-label">/ READ BEFORE YOU BUY</p>
-          <h2 id="book-sample-heading">TWO FREE WAYS<br /><span>TO START.</span></h2>
+          <h2 id="book-sample-heading">START READING<br /><span>FREE.</span></h2>
         </div>
-        <div className="sample-card-grid">
-          <article className="sample-card sample-card-book" id="book-sample" aria-labelledby="book-sample-card-title">
+        <article className="sample-card sample-card-book" id="book-sample" aria-labelledby="book-sample-card-title">
+          <div className="sample-card-intro">
             <p className="sample-card-kicker">Free book sample · 7 pages</p>
             <h3 id="book-sample-card-title">Read the opening of the book.</h3>
             <p>
               Get the first seven pages of <em>TRADE HUSTL3: Built by Hustle, Backed by Trades</em>: the cover, the full table of contents, and the opening of Chapter 1. We&apos;ll email you the PDF link.
             </p>
+          </div>
+          <div className="sample-card-action">
             <ResourceForm
               resourceName="free 7-page TRADE HUSTL3 book sample"
               buttonLabel="Email me the 7-page sample"
@@ -351,17 +415,23 @@ export default function BookPage() {
               successLinkLabel="Download my 7-page sample (PDF)"
             />
             <small className="sample-consent">No purchase required. By requesting the sample, you agree to receive TRADE HUSTL3 book and career updates. Unsubscribe anytime.</small>
-          </article>
-          <article className="sample-card sample-card-guide" aria-labelledby="guide-sample-card-title">
-            <p className="sample-card-kicker">Free 2026-2027 guide</p>
-            <h3 id="guide-sample-card-title">Get the Free Guide preview.</h3>
+          </div>
+        </article>
+        {/* Secondary offer: same guide and signup contract as before, folded so it
+            no longer competes with the book sample. */}
+        <details className="sample-guide-alt">
+          <summary>
+            <span className="sample-card-kicker">Free 2026-2027 guide</span>
+            <strong>Still choosing a trade? Get the Free Guide preview.</strong>
+          </summary>
+          <div className="sample-guide-alt-body">
             <p>
               Enter your email to unlock the seven-page preview of <em>TRADE HUSTL3: 10 High-Opportunity Trades — 2026-2027 Edition</em> (cover included). It includes the guide&apos;s source standard, verified power-line and HVAC profiles, national pay context, and practical next steps.
             </p>
             <SignupForm mode="sample" />
             <small className="sample-consent">By unlocking the free guide, you agree to receive TRADE HUSTL3 book and career updates. Unsubscribe anytime.</small>
-          </article>
-        </div>
+          </div>
+        </details>
       </section>
 
       <section className="book-discover" id="inside">
@@ -447,25 +517,36 @@ export default function BookPage() {
       </section>
 
       <section className="book-schools" id="schools" aria-labelledby="book-schools-title">
-        <div>
+        <div className="book-schools-copy">
           <p className="section-label">/ FOR SCHOOLS &amp; PROGRAMS</p>
           <h2 id="book-schools-title">BRING IT TO<br /><span>YOUR PROGRAM.</span></h2>
+          <p>
+            High schools, trade schools, Job Corps centers, workforce programs, apprenticeship programs, and employers: if you want copies of TRADE HUSTL3 for your students, trainees, or new hires, send a request and we&apos;ll reply with the options available for your order.
+          </p>
+          <h3>What your program gets</h3>
+          <ul className="book-schools-highlights">
+            {programHighlights.map((item) => <li key={item}>{item}</li>)}
+          </ul>
+          <dl className="book-schools-details">
+            <div><dt>Formats</dt><dd>Paperback or direct eBook (PDF). Each PDF is a personal license, so group copies go through a program request.</dd></div>
+            <div><dt>Current KDP ISBN</dt><dd>{BOOK_PAPERBACK_ISBN}</dd></div>
+          </dl>
+          <p className="book-schools-sample">
+            Reviewing it first? <a className="text-link" href="#book-sample" data-cta="book-sample" data-cta-location="book-schools">Read the free 7-page sample</a>
+          </p>
         </div>
-        <div className="book-schools-copy">
-          <p>
-            High schools, trade schools, Job Corps centers, workforce programs, and employers: if you want copies of TRADE HUSTL3 for your students, trainees, or new hires, email us.
+        <div className="book-schools-form">
+          <ProgramInquiryForm fallbackEmail={BOOK_PARTNERSHIPS_EMAIL} />
+          <p className="book-schools-email">
+            Prefer email?{" "}
+            <a
+              href={SCHOOLS_MAILTO}
+              data-cta="schools-inquiry"
+              data-cta-location="book-schools"
+            >
+              {BOOK_PARTNERSHIPS_EMAIL}
+            </a>
           </p>
-          <p>
-            Include your organization, how many copies you need, the format (paperback or eBook), and when you need them. We&apos;ll reply with the options available for your order.
-          </p>
-          <a
-            className="button button-primary"
-            href={SCHOOLS_MAILTO}
-            data-cta="schools-inquiry"
-            data-cta-location="book-schools"
-          >
-            Email {BOOK_PARTNERSHIPS_EMAIL} <span>↗</span>
-          </a>
         </div>
       </section>
 
@@ -491,6 +572,8 @@ export default function BookPage() {
           </p>
         </div>
       </section>
+
+      <ReaderReviews reviews={READER_REVIEWS} />
 
       <section className="book-faq" id="faq" aria-labelledby="book-faq-title">
         <div className="book-section-heading">

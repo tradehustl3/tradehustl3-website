@@ -206,6 +206,38 @@
 .sample-card .resource-form .form-status.is-error { color: #ff8f7f !important; border-left-color: var(--red); }
 .sample-card .resource-form .form-status.is-success { color: #64d69b !important; }
 .sample-card .resource-guide-link { justify-self: start; margin-top: 0; }
+/* Book sample is the single primary offer; the 2026-2027 guide folds below it. */
+.book-sample > .sample-card-book { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr); gap: clamp(28px, 4vw, 60px); align-items: end; }
+.sample-card-intro > p:not(.sample-card-kicker) { margin: 0; color: #bac6ce; font-size: 16px; line-height: 1.7; }
+.sample-card-action { display: grid; gap: 4px; }
+.sample-guide-alt { margin-top: 22px; border: 1px solid #d6a52a44; background: #071a2b; }
+.sample-guide-alt summary { display: grid; gap: 6px; padding: 22px clamp(20px, 3vw, 34px); padding-right: 64px; position: relative; cursor: pointer; list-style: none; }
+.sample-guide-alt summary::-webkit-details-marker { display: none; }
+.sample-guide-alt summary::after { content: "+"; position: absolute; right: 26px; top: 50%; transform: translateY(-50%); color: var(--gold); font-size: 28px; font-weight: 300; }
+.sample-guide-alt[open] summary::after { content: "−"; }
+.sample-guide-alt summary .sample-card-kicker { margin: 0; }
+.sample-guide-alt summary strong { color: var(--cream); font-size: 18px; line-height: 1.35; }
+.sample-guide-alt summary:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+.sample-guide-alt-body { padding: 0 clamp(20px, 3vw, 34px) 30px; max-width: 760px; }
+.sample-guide-alt-body > p { margin: 0 0 22px; color: #bac6ce; font-size: 15px; line-height: 1.7; }
+.sample-guide-alt-body .sample-consent { display: block; margin-top: 14px; }
+/* Gift-season banner (window set in app/book/holiday-gift.ts). */
+.book-gift-banner { position: relative; z-index: 2; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px 22px; margin-top: 92px; padding: 14px clamp(20px, 5vw, 60px); background: var(--gold); color: var(--navy); text-align: center; }
+.book-gift-banner + .book-hero { padding-top: 90px; }
+.book-gift-banner p { margin: 0; font-size: 14px; line-height: 1.5; }
+.book-gift-banner a { color: var(--navy); font-size: 11px; font-weight: 900; letter-spacing: 0.12em; text-transform: uppercase; text-decoration: underline; text-underline-offset: 3px; }
+.book-gift-banner a:hover { color: var(--red); }
+/* Reader reviews: rendered only when app/book/reader-reviews.ts has approved entries. */
+.book-reviews { padding: 110px clamp(24px, 7vw, 110px); background: #0a2134; border-top: 1px solid #d6a52a44; }
+.reader-review-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 22px; margin: 0; padding: 0; list-style: none; }
+.reader-review { display: flex; flex-direction: column; gap: 16px; padding: 30px; border: 1px solid #d6a52a55; background: #071a2b; }
+.reader-review-rating { margin: 0; color: var(--gold); font-size: 18px; letter-spacing: 0.1em; }
+.reader-review blockquote { margin: 0; color: var(--cream); font-size: 17px; line-height: 1.65; }
+.reader-review-credit { display: grid; gap: 4px; margin: auto 0 0; }
+.reader-review-credit strong { color: var(--white); font-size: 15px; }
+.reader-review-credit span { color: var(--muted); font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; }
+.reader-review-more { margin: 28px 0 0; }
+.reader-review-more a { color: var(--gold); font-size: 12px; font-weight: 900; letter-spacing: 0.12em; text-transform: uppercase; }
 .book-mindset { padding: 90px clamp(24px, 7vw, 110px); background: #061522; border-block: 1px solid #d6a52a44; }
 .book-mindset .sample-quote { max-width: 1100px; margin: 0 auto; }
 .book-faq { background: #061522; border-top: 1px solid #d6a52a44; }
@@ -293,6 +325,37 @@
 .book-schools h2 span { color: var(--red); }
 .book-schools-copy p { max-width: 640px; margin: 0 0 20px; color: #c2ccd3; font-size: 17px; line-height: 1.7; }
 .book-schools-copy .button { margin-top: 12px; max-width: 100%; overflow-wrap: anywhere; text-align: left; }
+.book-schools { align-items: start; }
+.book-schools-copy h3 { margin: 34px 0 16px; color: var(--gold); font-size: 12px; font-weight: 900; letter-spacing: 0.16em; text-transform: uppercase; }
+.book-schools-highlights { display: grid; gap: 12px; margin: 0 0 28px; padding: 0; list-style: none; }
+.book-schools-highlights li { position: relative; padding-left: 26px; color: #c2ccd3; font-size: 16px; line-height: 1.6; }
+.book-schools-highlights li::before { content: ""; position: absolute; left: 0; top: 0.62em; width: 12px; height: 3px; background: var(--red); }
+.book-schools-details { display: grid; gap: 14px; margin: 0 0 24px; padding: 20px 0 0; border-top: 1px solid #d6a52a44; }
+.book-schools-details div { display: grid; grid-template-columns: 150px 1fr; gap: 14px; }
+.book-schools-details dt { color: var(--gold); font-size: 10px; font-weight: 900; letter-spacing: 0.14em; text-transform: uppercase; padding-top: 4px; }
+.book-schools-details dd { margin: 0; color: #c2ccd3; font-size: 15px; line-height: 1.6; }
+.book-schools-copy .book-schools-sample { font-size: 14px; }
+.book-schools-copy .book-schools-sample .text-link { margin-left: 6px; font-size: 11px; }
+.book-schools-form { padding: clamp(24px, 3.5vw, 42px); border: 1px solid #d6a52a; background: #071a2b; box-shadow: inset 0 6px 0 var(--red); }
+.program-inquiry-form { display: grid; gap: 16px; }
+.program-inquiry-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.program-inquiry-form .field-row { display: grid; gap: 8px; min-width: 0; }
+.program-inquiry-form .field-row-wide { grid-column: 1 / -1; }
+.program-inquiry-form label { color: var(--gold); font: 800 10px/1.2 var(--font-body), system-ui, sans-serif; letter-spacing: 0.14em; text-transform: uppercase; }
+.program-inquiry-form label span { color: var(--muted); font-weight: 600; letter-spacing: 0.06em; text-transform: none; }
+.program-inquiry-form input, .program-inquiry-form select, .program-inquiry-form textarea { width: 100%; min-height: 52px; padding: 0 14px; border: 1px solid #d6a52a99; border-radius: 0; background: var(--cream); color: var(--navy); font: inherit; font-size: 16px; }
+.program-inquiry-form textarea { min-height: 96px; padding: 12px 14px; resize: vertical; line-height: 1.5; }
+.program-inquiry-form select { appearance: none; -webkit-appearance: none; cursor: pointer; padding-right: 38px; background-image: linear-gradient(45deg, transparent 50%, var(--navy) 50%), linear-gradient(135deg, var(--navy) 50%, transparent 50%); background-position: calc(100% - 20px) 50%, calc(100% - 14px) 50%; background-size: 6px 6px; background-repeat: no-repeat; }
+.program-inquiry-form input:focus, .program-inquiry-form select:focus, .program-inquiry-form textarea:focus { outline: none; border-color: var(--red); box-shadow: 0 0 0 3px #d9361e40; }
+.program-inquiry-form .form-button { width: 100%; min-height: 56px; justify-content: center; font-size: 12px; font-weight: 800; letter-spacing: 0.1em; }
+.program-inquiry-form .form-button:disabled { opacity: 0.6; cursor: wait; }
+.program-inquiry-form .form-status { min-height: 18px; margin: 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
+.program-inquiry-form .form-status.is-error { color: #ff8f7f; }
+.program-inquiry-form .form-status.is-success { color: #64d69b; }
+.program-inquiry-consent { color: #8a99a4; font-size: 11px; line-height: 1.6; }
+.program-inquiry-trap { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
+.book-schools-email { margin: 18px 0 0; color: #9fb0bd; font-size: 13px; }
+.book-schools-email a { color: var(--gold); font-weight: 800; overflow-wrap: anywhere; }
 .ebook-launch-gate { max-width: 560px; margin: 0 auto; padding: 19px 24px; border: 1px solid #071a2b44; background: #071a2b0a; text-transform: uppercase; }
 .ebook-launch-gate span, .ebook-launch-gate strong, .ebook-launch-gate small { display: block; }
 .ebook-launch-gate span { color: var(--red); font-size: 10px; font-weight: 900; letter-spacing: 0.16em; }
@@ -366,6 +429,7 @@
   .book-facts > div:nth-child(-n + 2) { border-bottom: 1px solid #071a2b24; }
   .book-structure, .book-audience, .book-author, .book-schools { grid-template-columns: 1fr; gap: 55px; }
   .sample-card-grid { grid-template-columns: 1fr; }
+  .book-sample > .sample-card-book { grid-template-columns: 1fr; align-items: start; }
   .book-section-heading { display: block; }
   .book-section-heading h2 { text-align: left; margin-top: 25px; }
   .toc-grid { grid-template-columns: 1fr; }
@@ -385,6 +449,11 @@
   .book-sample, .book-discover, .book-structure, .book-toc, .book-audience, .book-author, .book-faq, .book-availability, .book-schools { padding: 80px 22px; }
   .book-mindset { padding: 60px 22px; }
   .sample-card { padding: 26px 20px; }
+  .program-inquiry-grid { grid-template-columns: 1fr; }
+  .book-schools-details div { grid-template-columns: 1fr; gap: 4px; }
+  .book-reviews { padding: 80px 22px; }
+  .book-gift-banner { margin-top: 76px; }
+  .book-gift-banner + .book-hero { padding-top: 70px; }
   .faq-item summary { font-size: 17px; padding-right: 46px; }
   .faq-item p { padding-right: 0; }
   .book-page footer { padding-bottom: calc(110px + env(safe-area-inset-bottom)); }
