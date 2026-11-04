@@ -155,6 +155,9 @@ const audiences = [
  * one-line summaries are written for the site, and each one describes chapters
  * that are actually in that part.
  */
+/** Source for the "200+ skilled trades in America" stat (CRS report R44174, Jan 29, 2016). */
+const TRADES_COUNT_SOURCE_URL = "https://www.everycrsreport.com/reports/R44174.html";
+
 const PART_SUMMARIES: Record<string, string> = {
   "PART I": "Understand what skilled work really is, why demand is growing, and how to begin without experience.",
   "PART II": "Explore construction, mechanical, electrical, industrial, fabrication, service, maintenance, and facilities careers.",
@@ -312,8 +315,8 @@ export default function BookPage() {
           <p className="book-subtitle">Built by Hustle, Backed by Trades.</p>
           <p className="book-byline">By Zachary Ellis · Mr. HUSTL3</p>
           <div className="book-hero-proof" aria-label="Book highlights">
+            <span><strong>200+</strong><small>Skilled trades in America<a className="book-hero-source-ref" href="#trades-source" aria-label="Source for 200+ skilled trades">*</a></small></span>
             <span><strong>{BOOK_CHAPTER_COUNT}</strong><small>Chapters</small></span>
-            <span><strong>{BOOK_PART_COUNT}</strong><small>Parts</small></span>
             <span><strong>90</strong><small>Day action plan</small></span>
           </div>
           <p className="book-lead">
@@ -335,6 +338,10 @@ export default function BookPage() {
           </div>
           <p className="book-hero-note">
             Paperback and Kindle sold on Amazon. Not ready yet? <a className="text-link" href="#book-sample" data-cta="book-sample" data-cta-location="book-hero">Read 7 pages free</a>
+          </p>
+          {/* A fact about America (also on the front cover), not a count of what the book lists. */}
+          <p className="book-hero-source" id="trades-source">
+            * 200+ is a conservative count: the U.S. Department of Labor lists more than 1,000 occupations that can register an apprenticeship (<a href={TRADES_COUNT_SOURCE_URL} rel="noopener">Congressional Research Service, 2016</a>).
           </p>
         </div>
       </section>

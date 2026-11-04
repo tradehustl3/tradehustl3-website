@@ -930,6 +930,9 @@ test("book contents on /book and the sample reader match the final paperback exa
     assert.doesNotMatch(html, /200\+? skilled trades|more than 200|over 200/i, `${name} repeats the unsourced 200-trades claim`);
     assert.doesNotMatch(html, /Know the Landscape/i, `${name} uses the old Part II title`);
   }
+  // "200+" stays only as a sourced fact about America, never as a count of what the book lists.
+  assert.match(book, /<strong>200\+<\/strong><small>Skilled trades in America/);
+  assert.match(book, /id="trades-source"[^>]*>[\s\S]*more than 1,000 occupations that can register an apprenticeship[\s\S]*href="https:\/\/www\.everycrsreport\.com\/reports\/R44174\.html"/);
   assert.match(reader, /PART II — KNOW THE TRADESCAPE/);
   assert.match(reader, /Zachary C\. Ellis/);
   assert.doesNotMatch(reader, /By Da Maintenance Mane/);

@@ -137,6 +137,9 @@
 .book-hero-proof { max-width: 680px; display: grid; grid-template-columns: repeat(3, 1fr); margin: 0 0 30px; border-block: 1px solid #d6a52a55; }
 .book-hero-proof > span { padding: 17px 16px 17px 0; border-right: 1px solid #d6a52a44; }
 .book-hero-proof > span:not(:first-child) { padding-left: 20px; }
+.book-hero-source-ref { margin-left: 2px; color: var(--gold); text-decoration: none; }
+.book-hero-source { max-width: 680px; margin: 14px 0 0; color: #8a99a4; font-size: 11px; line-height: 1.55; }
+.book-hero-source a { color: #b8c3cb; text-decoration: underline; text-underline-offset: 2px; }
 .book-hero-proof > span:last-child { border-right: 0; }
 .book-hero-proof strong { display: block; color: var(--gold); font-family: var(--font-display), Impact, sans-serif; font-size: 36px; font-weight: 400; line-height: 1; }
 .book-hero-proof small { display: block; margin-top: 7px; color: #c7d0d6; font-size: 9px; font-weight: 900; letter-spacing: 0.13em; text-transform: uppercase; }
