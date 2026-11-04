@@ -266,7 +266,12 @@ test("server-renders the official book page, cover, portrait, and current editio
   assert.match(html, /What a Skilled Trade Really Is/i);
   assert.match(html, /Final Word: Build Something That Belongs to You/i);
   assert.doesNotMatch(html, /Launch countdown/i);
-  assert.match(html, /Earn your own/i);
+  // The quoted mindset line is verbatim from Chapter 21 (book page 463) of the final interior;
+  // claims the book does not make stay off the page.
+  assert.match(html, /“Do not build your future on hype\. Build it on ability\.[^”]*Do not wait for somebody to hand you leverage\. Create value\.”/);
+  assert.match(html, /From Chapter 21 · Final Word: Build Something That Belongs to You/);
+  assert.doesNotMatch(html, /Earn your own|hand you a future|nobody can take from you|generational wealth/i);
+  assert.match(html, /How skill can create income, leverage, leadership, and ownership/);
   assert.match(html, /BUILT BY HUSTL3\. BACKED BY TRADES\./);
   assert.equal(html.includes("fell through an attic"), false);
 });

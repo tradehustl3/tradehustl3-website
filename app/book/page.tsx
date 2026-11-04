@@ -132,10 +132,10 @@ const bookStructuredData = {
 };
 
 const discoveries = [
-  "A directory of 200 skilled trades, plus a deep look at every major trade family",
+  "A directory of 200 skilled trades, plus a chapter on each major trade family",
   "How to enter the trades with no experience and start building value",
   "Training, certifications, apprenticeships, and real-world career paths",
-  "How skill can create leverage, leadership, ownership, and generational wealth",
+  "How skill can create income, leverage, leadership, and ownership",
 ];
 
 const audiences = [
@@ -451,11 +451,13 @@ export default function BookPage() {
       </section>
 
       <section className="book-mindset" aria-label="The TRADE HUSTL3 mindset">
+        {/* Verbatim from the final interior (Nov 3, 2026), Chapter 21, book page 463.
+            Anything inside the quotation marks must appear in the book word for word. */}
         <figure className="sample-quote">
           <blockquote>
-            “You don’t have to wait for somebody to hand you a future. Learn a skill. Build your value. Earn your own. Create something nobody can take from you. <span>BUILT BY HUSTL3. BACKED BY TRADES.</span>”
+            “Do not build your future on hype. Build it on ability. Do not chase the image. Build the worker. Do not fake the skill. Earn it. Do not wait for somebody to hand you leverage. Create value.” <span>BUILT BY HUSTL3. BACKED BY TRADES.</span>
           </blockquote>
-          <figcaption>The TRADE HUSTL3 mindset</figcaption>
+          <figcaption>From Chapter 21 · Final Word: Build Something That Belongs to You</figcaption>
         </figure>
       </section>
 
