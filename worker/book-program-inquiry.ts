@@ -65,11 +65,22 @@ export type ParseResult =
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const DATE_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
 
+/** Replaces ASCII control characters (except any listed in `keep`) with a space. */
+function replaceControlChars(value: string, keep: ReadonlySet<number> = new Set()): string {
+  let out = "";
+  for (const char of value) {
+    const code = char.charCodeAt(0);
+    out += (code < 0x20 || code === 0x7f) && !keep.has(code) ? " " : char;
+  }
+  return out;
+}
+
+const LINE_FEED = new Set([0x0a]);
+
 /** Collapses whitespace and strips control characters from a single-line field. */
 function cleanLine(value: unknown, maxLength: number): string {
   if (typeof value !== "string") return "";
-  return value
-    .replace(/[\u0000-\u001f\u007f]/g, " ")
+  return replaceControlChars(value)
     .replace(/\s+/g, " ")
     .trim()
     .slice(0, maxLength);
@@ -78,9 +89,8 @@ function cleanLine(value: unknown, maxLength: number): string {
 /** Keeps line breaks in the free-text message but strips other control characters. */
 function cleanMessage(value: unknown, maxLength: number): string {
   if (typeof value !== "string") return "";
-  return value
-    .replace(/\r\n?/g, "\n")
-    .replace(/[\u0000-\u0009\u000b-\u001f\u007f]/g, " ")
+  return replaceControlChars(value.replace(/\r\n?/g, "\n"), LINE_FEED)
+    .replace(/[^\S\n]+\n/g, "\n")
     .replace(/\n{3,}/g, "\n\n")
     .trim()
     .slice(0, maxLength);
