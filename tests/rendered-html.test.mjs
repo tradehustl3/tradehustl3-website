@@ -263,7 +263,10 @@ test("server-renders the official book page, cover, portrait, and current editio
   assert.match(html, /What a Skilled Trade Really Is/i);
   assert.match(html, /Final Word: Build Something That Belongs to You/i);
   assert.doesNotMatch(html, /Launch countdown/i);
-  assert.match(html, /Earn your own/i);
+  // The quote on the page is verbatim from Chapter 1, not invented copy.
+  assert.match(html, /There is a difference between having a job and having a skill\./);
+  assert.match(html, /From Chapter 1/);
+  assert.doesNotMatch(html, /hand you a future|Earn your own|generational wealth/i);
   assert.match(html, /BUILT BY HUSTL3\. BACKED BY TRADES\./);
   assert.equal(html.includes("fell through an attic"), false);
 });

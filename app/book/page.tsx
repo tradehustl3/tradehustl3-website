@@ -136,15 +136,17 @@ const discoveries = [
   "The major trade families: construction, mechanical, electrical, industrial, fabrication, service, maintenance, and facilities",
   "How to enter the trades with no experience and start building value",
   "Training, certifications, apprenticeships, and real-world career paths",
-  "How skill can create leverage, leadership, ownership, and generational wealth",
+  "How skill can create leverage, leadership, and ownership",
 ];
 
+/** Each line matches who the book itself speaks to (see Chapter 4 and the 90-Day Action Plan). */
 const audiences = [
-  "Students and young adults exploring careers",
-  "Job seekers and career changers",
-  "Parents, educators, and workforce programs",
-  "Working tradespeople ready to earn more",
-  "Future supervisors, specialists, and business owners",
+  "Young people, 16 and up, deciding on a first move",
+  "Beginners starting with no trade experience",
+  "Career changers who need a transition plan",
+  "Experienced tradespeople ready for the next level",
+  "Future leaders and business owners",
+  "Parents, teachers, and programs guiding someone toward a trade",
 ];
 
 /**
@@ -354,7 +356,7 @@ export default function BookPage() {
             <p className="sample-card-kicker">Free book sample · 7 pages</p>
             <h3 id="book-sample-card-title">Read the opening of the book.</h3>
             <p>
-              Get the first seven pages of <em>TRADE HUSTL3: Built by Hustle, Backed by Trades</em>: the title page, the full table of contents, and the opening of Chapter 1. We&apos;ll email you the PDF link.
+              Get seven pages from the start of <em>TRADE HUSTL3: Built by Hustle, Backed by Trades</em>: the title page, the full table of contents, and the opening of Chapter 1. We&apos;ll email you the PDF link.
             </p>
           </div>
           <div className="sample-card-action">
@@ -403,12 +405,13 @@ export default function BookPage() {
         </div>
       </section>
 
-      <section className="book-mindset" aria-label="The TRADE HUSTL3 mindset">
+      <section className="book-mindset" aria-label="From the book">
         <figure className="sample-quote">
+          {/* Verbatim from Chapter 1, page 5 of the paperback. */}
           <blockquote>
-            “You don’t have to wait for somebody to hand you a future. Learn a skill. Build your value. Earn your own. Create something nobody can take from you. <span>BUILT BY HUSTL3. BACKED BY TRADES.</span>”
+            “There is a difference between having a job and having a skill. A job can give you a paycheck. <span>A skill can give you leverage.</span>”
           </blockquote>
-          <figcaption>The TRADE HUSTL3 mindset</figcaption>
+          <figcaption>From Chapter 1, “What a Skilled Trade Really Is”</figcaption>
         </figure>
       </section>
 
