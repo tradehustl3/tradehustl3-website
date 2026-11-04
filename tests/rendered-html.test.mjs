@@ -252,7 +252,6 @@ test("server-renders the official book page, cover, portrait, and current editio
   assert.match(html, /9798193043355/i);
   assert.match(html, /No experience required/i);
   assert.match(html, /90-Day Action Plan/i);
-  assert.match(html, /more than 200 skilled trades/i);
   assert.match(html, /"datePublished":"2026-09-15"/i);
   assert.match(html, /Get the Free Guide/i);
   assert.match(html, /UNLOCK THE FREE GUIDE/i);
@@ -260,11 +259,14 @@ test("server-renders the official book page, cover, portrait, and current editio
   assert.doesNotMatch(html, /href="\/trade-hustl3-free-sample\.pdf/i);
   assert.match(html, /GUIDE PREVIEW/i);
   assert.match(html, /verified power-line and HVAC profiles/i);
-  assert.match(html, /21 CHAPTERS[\s\S]*FOUR PARTS[\s\S]*ONE PLAN/i);
+  assert.match(html, /WHAT&#x27;S INSIDE|WHAT&apos;S INSIDE|WHAT'S INSIDE/);
   assert.match(html, /What a Skilled Trade Really Is/i);
   assert.match(html, /Final Word: Build Something That Belongs to You/i);
   assert.doesNotMatch(html, /Launch countdown/i);
-  assert.match(html, /Earn your own/i);
+  // The quote on the page is verbatim from Chapter 1, not invented copy.
+  assert.match(html, /There is a difference between having a job and having a skill\./);
+  assert.match(html, /From Chapter 1/);
+  assert.doesNotMatch(html, /hand you a future|Earn your own|generational wealth/i);
   assert.match(html, /BUILT BY HUSTL3\. BACKED BY TRADES\./);
   assert.equal(html.includes("fell through an attic"), false);
 });
@@ -279,7 +281,6 @@ test("book page roadmap uses the printed part titles, offers both free previews,
   assert.match(text, /<h3>Turn Leverage Into Control<\/h3>/);
   assert.match(text, /<strong>Turn Skill Into Money and Leverage<\/strong>/);
   assert.match(text, /<strong>Turn Leverage Into Control<\/strong>/);
-  assert.match(html, />21 CHAPTERS\. FOUR PARTS\.<br\/>/);
   assert.doesNotMatch(text, />Turn Skill Into Leverage</);
   assert.doesNotMatch(text, />Build Control</);
   assert.match(text, /<strong>21<\/strong><small>Chapters<\/small>/);
@@ -894,8 +895,56 @@ test("book page offers a contact-only path for schools and programs", async () =
   // Only facts the book page already states elsewhere.
   assert.match(schools, /Current KDP ISBN/);
   assert.match(schools, /9798193043355/);
-  assert.match(schools, /Appendix A lists 200 skilled trades/);
+  assert.match(schools, /Part III covers the certifications that matter/);
   assert.doesNotMatch(schools, /learning objective/i);
+});
+
+test("book contents on /book and the sample reader match the final paperback exactly", async () => {
+  const { BOOK_PARTS, BOOK_BACK_MATTER, BOOK_CHAPTER_COUNT } = await import("../app/book/book-contents.ts");
+  // Final 438-page interior (KDP, Oct 31 2026): 21 numbered chapters in four parts, no appendices.
+  assert.equal(BOOK_CHAPTER_COUNT, 21);
+  assert.deepEqual(BOOK_PARTS.map((part) => part.chapters.length), [6, 8, 3, 4]);
+  assert.deepEqual(BOOK_PARTS.map((part) => part.title), [
+    "Build the Foundation", "Know the Tradescape", "Turn Skill Into Money and Leverage", "Turn Leverage Into Control",
+  ]);
+  assert.deepEqual(BOOK_PARTS.flatMap((part) => part.chapters.map((chapter) => chapter.number)), Array.from({ length: 21 }, (_, i) => i + 1));
+  const pages = BOOK_PARTS.flatMap((part) => part.chapters.map((chapter) => chapter.page));
+  assert.deepEqual([...pages].sort((a, b) => a - b), pages, "page numbers increase");
+  assert.deepEqual(BOOK_BACK_MATTER, [{ title: "About the Author", page: 438 }]);
+
+  const book = (await (await renderPath("/book")).text()).replace(/<!-- -->/g, "");
+  const toc = book.slice(book.indexOf('id="chapters"'), book.indexOf('class="book-audience"'));
+  for (const part of BOOK_PARTS) {
+    assert.ok(toc.includes(`<strong>${part.title}</strong>`), part.title);
+    for (const chapter of part.chapters) assert.ok(toc.includes(chapter.title), chapter.title);
+  }
+  assert.doesNotMatch(toc, /<details/, "every part is visible without clicking");
+  assert.doesNotMatch(toc, /\d+ chapters</i);
+  assert.match(toc, /About the Author/);
+  assert.match(toc, /Page numbers are from the 438-page paperback/);
+
+  // Claims the final edition does not support are gone from both pages.
+  const reader = (await (await renderPath("/book/sample/read")).text()).replace(/<!-- -->/g, "");
+  for (const [name, html] of [["/book", book], ["/book/sample/read", reader]]) {
+    assert.doesNotMatch(html, /appendix/i, `${name} mentions appendices`);
+    assert.doesNotMatch(html, /200\+? skilled trades|more than 200|over 200/i, `${name} repeats the unsourced 200-trades claim`);
+    assert.doesNotMatch(html, /Know the Landscape/i, `${name} uses the old Part II title`);
+  }
+  // "200+" stays only as a sourced fact about America, never as a count of what the book lists.
+  assert.match(book, /<strong>200\+<\/strong><small>Skilled trades in America/);
+  assert.match(book, /id="trades-source"[^>]*>[\s\S]*more than 1,000 occupations that can register an apprenticeship[\s\S]*href="https:\/\/www\.everycrsreport\.com\/reports\/R44174\.html"/);
+  assert.match(reader, /PART II — KNOW THE TRADESCAPE/);
+  assert.match(reader, /Zachary C\. Ellis/);
+  assert.doesNotMatch(reader, /By Da Maintenance Mane/);
+  assert.doesNotMatch(reader, /\| PAGE \d/);
+});
+
+test("the gated 7-page sample PDF is cut from the final 438-page edition", async () => {
+  const pdf = await readFile(new URL("../worker/assets/trade-hustl3-seven-page-book-sample.pdf", import.meta.url));
+  const text = pdf.toString("latin1");
+  assert.match(text, /^%PDF-/);
+  assert.equal((text.match(/\/Type\s*\/Page[^s]/g) ?? []).length, 7, "seven pages");
+  assert.ok(pdf.length < 200_000, "stays small enough to inline in the Worker");
 });
 
 test("book page leads with the book sample and folds the guide preview below it", async () => {
@@ -909,7 +958,7 @@ test("book page leads with the book sample and folds the guide preview below it"
   // The ISBN moved out of the shopper-facing facts strip.
   const facts = html.slice(html.indexOf('class="book-facts"'), html.indexOf('id="sample"'));
   assert.doesNotMatch(facts, /ISBN/);
-  assert.match(facts, /200-trade list \+ resource directory/);
+  assert.match(facts, /90-Day Action Plan/);
 });
 
 test("book page shows no reviews section until a real, permissioned review exists", async () => {

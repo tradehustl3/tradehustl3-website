@@ -10,6 +10,7 @@ import LaunchPurchaseButton from "./launch-purchase-button";
 import { ProgramInquiryForm } from "./program-inquiry-form";
 import { READER_REVIEWS, type ReaderReview } from "./reader-reviews";
 import { isHolidayGiftSeason } from "./holiday-gift";
+import { BOOK_BACK_MATTER, BOOK_CHAPTER_COUNT, BOOK_PARTS, BOOK_PART_COUNT } from "./book-contents";
 import { BrandLockup } from "../brand-lockup";
 import { CtaAnalytics } from "../cta-analytics";
 import {
@@ -24,7 +25,7 @@ import {
 const BOOK_TITLE = "TRADE HUSTL3: Built by Hustle, Backed by Trades";
 const BOOK_PAGE_TITLE = "TRADE HUSTL3 Book by Zachary Ellis (Mr. HUSTL3)";
 const BOOK_DESCRIPTION =
-  "Explore 200+ skilled trades, certifications, and career paths with Zachary Ellis (Mr. HUSTL3). Includes a 90-Day Action Plan. Paperback, Kindle, and eBook.";
+  "Skilled-trades career guide by Zachary Ellis (Mr. HUSTL3): start with no experience, pick a trade, earn more, build toward ownership. With a 90-Day Action Plan.";
 
 const SCHOOLS_MAILTO = `mailto:${BOOK_PARTNERSHIPS_EMAIL}?subject=${encodeURIComponent("TRADE HUSTL3 book order for our program")}`;
 
@@ -132,79 +133,37 @@ const bookStructuredData = {
 };
 
 const discoveries = [
-  "More than 200 skilled trades across every major industry",
+  "The major trade families: construction, mechanical, electrical, industrial, fabrication, service, maintenance, and facilities",
   "How to enter the trades with no experience and start building value",
   "Training, certifications, apprenticeships, and real-world career paths",
-  "How skill can create leverage, leadership, ownership, and generational wealth",
+  "How skill can create leverage, leadership, and ownership",
 ];
 
+/** Each line matches who the book itself speaks to (see Chapter 4 and the 90-Day Action Plan). */
 const audiences = [
-  "Students and young adults exploring careers",
-  "Job seekers and career changers",
-  "Parents, educators, and workforce programs",
-  "Working tradespeople ready to earn more",
-  "Future supervisors, specialists, and business owners",
+  "Young people, 16 and up, deciding on a first move",
+  "Beginners starting with no trade experience",
+  "Career changers who need a transition plan",
+  "Experienced tradespeople ready for the next level",
+  "Future leaders and business owners",
+  "Parents, teachers, and programs guiding someone toward a trade",
 ];
 
 /**
- * Single source for the book's structure. Part and chapter titles match the
- * printed table of contents (worker/assets/trade-hustl3-seven-page-book-sample.pdf,
- * page 2); the Roadmap summaries and the Table of Contents both render from
- * this list so their part titles can never drift apart again.
+ * Site copy for each part of the book. Part titles, chapters, and page numbers
+ * come from book-contents.ts (the final paperback's Contents page); only these
+ * one-line summaries are written for the site, and each one describes chapters
+ * that are actually in that part.
  */
-const chapterParts = [
-  {
-    label: "PART I",
-    title: "Build the Foundation",
-    summary: "Understand what skilled work really is, why demand is growing, and how to begin without experience.",
-    chapters: [
-      "What a Skilled Trade Really Is",
-      "Why Skilled Trades Are in High Demand",
-      "College vs. Trades: The Real Math",
-      "The No-Experience Path",
-      "Learning on the Job",
-      "Trade Myths That Keep People Broke",
-    ],
-  },
-  {
-    label: "PART II",
-    title: "Know the Landscape",
-    summary: "Explore construction, mechanical, electrical, industrial, fabrication, service, maintenance, and facilities careers.",
-    chapters: [
-      "The Different Types of Skilled Trades",
-      "Construction Trades",
-      "Mechanical Trades: HVAC, Plumbing, Pipefitting, and Refrigeration",
-      "Electrical and Power Trades",
-      "Industrial, Energy, and Infrastructure Trades",
-      "Fabrication and Precision Trades",
-      "Service, Maintenance, and Facilities Trades",
-      "Personal Skilled Trades and Solo Ownership Paths",
-    ],
-  },
-  {
-    label: "PART III",
-    title: "Turn Skill Into Money and Leverage",
-    summary: "Learn how certifications, specialization, overtime, side work, and reputation can increase your value.",
-    chapters: [
-      "Certifications That Actually Matter",
-      "How Pay Really Increases in the Trades",
-      "Side Work, Overtime, and Specialization",
-    ],
-  },
-  {
-    label: "PART IV",
-    title: "Turn Leverage Into Control",
-    summary: "Move from employee thinking toward leadership, ownership, and a focused 90-Day Action Plan.",
-    chapters: [
-      "From Employee to Owner",
-      "Choosing the Right Trade for You",
-      "The Trade Hustle 90-Day Action Plan",
-      "Final Word: Build Something That Belongs to You",
-    ],
-  },
-];
+/** Source for the "200+ skilled trades in America" stat (CRS report R44174, Jan 29, 2016). */
+const TRADES_COUNT_SOURCE_URL = "https://www.everycrsreport.com/reports/R44174.html";
 
-const CHAPTER_COUNT = chapterParts.reduce((total, part) => total + part.chapters.length, 0);
+const PART_SUMMARIES: Record<string, string> = {
+  "PART I": "Understand what skilled work really is, why demand is growing, and how to begin without experience.",
+  "PART II": "Explore construction, mechanical, electrical, industrial, fabrication, service, maintenance, and facilities careers.",
+  "PART III": "Learn how certifications, pay growth, side work, overtime, and specialization can increase your value.",
+  "PART IV": "Move from employee thinking toward ownership, choose your trade, and follow the 90-Day Action Plan.",
+};
 
 /**
  * Every answer is grounded in a verified source: editions.ts (Amazon listings
@@ -238,7 +197,7 @@ const faqs: Array<{ question: string; answer: ReactNode }> = [
   },
   {
     question: "Can I read some of it before I buy?",
-    answer: <>Yes. The <a href="#book-sample">free 7-page sample</a> includes the cover, the full table of contents, and the opening of Chapter 1. No purchase required.</>,
+    answer: <>Yes. The <a href="#book-sample">free 7-page sample</a> includes the title page, the full table of contents, and the opening of Chapter 1. No purchase required.</>,
   },
   {
     question: "Do I need trade experience to use this book?",
@@ -255,9 +214,9 @@ const faqs: Array<{ question: string; answer: ReactNode }> = [
 ];
 
 const programHighlights = [
-  "21 chapters in four parts, from the no-experience path to a 90-Day Action Plan",
+  `${BOOK_CHAPTER_COUNT} chapters in ${BOOK_PART_COUNT} parts, from the no-experience path to a 90-Day Action Plan`,
   "Part II walks through construction, mechanical, electrical, industrial, fabrication, service, maintenance, and facilities careers",
-  "Appendix A lists 200 skilled trades; Appendix B is a training, certification, and supply-house resource directory; Appendix C holds the official source notes",
+  "Part III covers the certifications that matter, how pay really increases, side work, overtime, and specialization",
   "Written for people starting from zero, so no trade experience is required",
 ];
 
@@ -356,8 +315,8 @@ export default function BookPage() {
           <p className="book-subtitle">Built by Hustle, Backed by Trades.</p>
           <p className="book-byline">By Zachary Ellis · Mr. HUSTL3</p>
           <div className="book-hero-proof" aria-label="Book highlights">
-            <span><strong>200+</strong><small>Skilled trades</small></span>
-            <span><strong>{CHAPTER_COUNT}</strong><small>Chapters</small></span>
+            <span><strong>200+</strong><small>Skilled trades in America<a className="book-hero-source-ref" href="#trades-source" aria-label="See the source for this number">*</a></small></span>
+            <span><strong>{BOOK_CHAPTER_COUNT}</strong><small>Chapters</small></span>
             <span><strong>90</strong><small>Day action plan</small></span>
           </div>
           <p className="book-lead">
@@ -380,6 +339,10 @@ export default function BookPage() {
           <p className="book-hero-note">
             Paperback and Kindle sold on Amazon. Not ready yet? <a className="text-link" href="#book-sample" data-cta="book-sample" data-cta-location="book-hero">Read 7 pages free</a>
           </p>
+          {/* A fact about America (also on the front cover), not a count of what the book lists. */}
+          <p className="book-hero-source" id="trades-source">
+            * 200+ is a conservative count: the U.S. Department of Labor lists more than 1,000 occupations that can register an apprenticeship (<a href={TRADES_COUNT_SOURCE_URL} rel="noopener">Congressional Research Service, 2016</a>).
+          </p>
         </div>
       </section>
 
@@ -387,7 +350,7 @@ export default function BookPage() {
         <div><span>Paperback</span><strong>{BOOK_PAPERBACK_PAGES} pages</strong></div>
         <div><span>Formats</span><strong>Paperback · Kindle · eBook</strong></div>
         <div><span>Starting point</span><strong>No experience required</strong></div>
-        <div><span>Also inside</span><strong>200-trade list + resource directory</strong></div>
+        <div><span>Includes</span><strong>90-Day Action Plan</strong></div>
       </section>
 
       <section className="book-sample" id="sample" aria-labelledby="book-sample-heading">
@@ -400,7 +363,7 @@ export default function BookPage() {
             <p className="sample-card-kicker">Free book sample · 7 pages</p>
             <h3 id="book-sample-card-title">Read the opening of the book.</h3>
             <p>
-              Get the first seven pages of <em>TRADE HUSTL3: Built by Hustle, Backed by Trades</em>: the cover, the full table of contents, and the opening of Chapter 1. We&apos;ll email you the PDF link.
+              Get seven pages from the start of <em>TRADE HUSTL3: Built by Hustle, Backed by Trades</em>: the title page, the full table of contents, and the opening of Chapter 1. We&apos;ll email you the PDF link.
             </p>
           </div>
           <div className="sample-card-action">
@@ -449,12 +412,13 @@ export default function BookPage() {
         </div>
       </section>
 
-      <section className="book-mindset" aria-label="The TRADE HUSTL3 mindset">
+      <section className="book-mindset" aria-label="From the book">
         <figure className="sample-quote">
+          {/* Verbatim from Chapter 1, page 5 of the paperback. */}
           <blockquote>
-            “You don’t have to wait for somebody to hand you a future. Learn a skill. Build your value. Earn your own. Create something nobody can take from you. <span>BUILT BY HUSTL3. BACKED BY TRADES.</span>”
+            “There is a difference between having a job and having a skill. A job can give you a paycheck. <span>A skill can give you leverage.</span>”
           </blockquote>
-          <figcaption>The TRADE HUSTL3 mindset</figcaption>
+          <figcaption>From Chapter 1, “What a Skilled Trade Really Is”</figcaption>
         </figure>
       </section>
 
@@ -463,46 +427,49 @@ export default function BookPage() {
           <p className="section-label">/ THE ROADMAP</p>
           <h2>ENTER.<br />EARN.<br /><span>ELEVATE.</span></h2>
           <p>
-            Twenty-one chapters move from the foundation of skilled work to career selection, certifications, pay growth, specialization, leadership, ownership, and a practical 90-Day Action Plan.
+            The chapters move from the foundation of skilled work to career selection, certifications, pay growth, specialization, leadership, ownership, and a practical 90-Day Action Plan.
           </p>
         </div>
         <div className="book-parts">
-          {chapterParts.map((part) => (
+          {BOOK_PARTS.map((part) => (
             <article key={part.label}>
               <span>{part.label}</span>
-              <div><h3>{part.title}</h3><p>{part.summary}</p></div>
+              <div><h3>{part.title}</h3><p>{PART_SUMMARIES[part.label]}</p></div>
             </article>
           ))}
         </div>
       </section>
 
-      <section className="book-toc" id="chapters">
+      <section className="book-toc" id="chapters" aria-labelledby="book-toc-title">
         <div className="book-section-heading">
-          <p className="section-label">/ TABLE OF CONTENTS</p>
-          <h2>{`${CHAPTER_COUNT} CHAPTERS. FOUR PARTS.`}<br /><span>ONE PLAN.</span></h2>
+          <p className="section-label">/ CONTENTS</p>
+          <h2 id="book-toc-title">WHAT&apos;S INSIDE<br /><span>THE BOOK.</span></h2>
         </div>
+        {/* Mirrors the printed Contents page of the paperback (app/book/book-contents.ts). */}
         <div className="toc-grid">
-          {chapterParts.map((part, partIndex) => {
-            const chapterOffset = chapterParts
-              .slice(0, partIndex)
-              .reduce((total, item) => total + item.chapters.length, 0);
-
-            return (
-              <details className="toc-part" key={part.label} open={partIndex === 0}>
-                <summary>
-                  <span>{part.label}</span>
-                  <strong>{part.title}</strong>
-                  <small>{part.chapters.length} chapters</small>
-                </summary>
-                <ol start={chapterOffset + 1}>
-                  {part.chapters.map((chapter) => <li key={chapter}>{chapter}</li>)}
-                </ol>
-              </details>
-            );
-          })}
+          {BOOK_PARTS.map((part) => (
+            <article className="toc-part" key={part.label} aria-labelledby={`toc-${part.label.replace(" ", "-").toLowerCase()}`}>
+              <h3 className="toc-part-heading" id={`toc-${part.label.replace(" ", "-").toLowerCase()}`}>
+                <span>{part.label}</span>
+                <strong>{part.title}</strong>
+              </h3>
+              <ol className="toc-chapters">
+                {part.chapters.map((chapter) => (
+                  <li key={chapter.number}>
+                    <span className="toc-chapter-number">{chapter.number}.</span>
+                    <span className="toc-chapter-title">{chapter.title}</span>
+                    <span className="toc-chapter-page" aria-label={`page ${chapter.page}`}>{chapter.page}</span>
+                  </li>
+                ))}
+              </ol>
+            </article>
+          ))}
         </div>
-        <p className="toc-appendices">
-          Also included: Appendix A—200 Skilled Trades · Appendix B—Training, Certification &amp; Supply-House Resource Directory · Appendix C—Official Source Notes
+        <p className="toc-back-matter">
+          {BOOK_BACK_MATTER.map((item) => (
+            <span key={item.title}>{item.title} <b aria-label={`page ${item.page}`}>{item.page}</b></span>
+          ))}
+          <small>Page numbers are from the {BOOK_PAPERBACK_PAGES}-page paperback.</small>
         </p>
       </section>
 

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { CtaAnalytics } from '../../../cta-analytics';
 import styles from '../page.module.css';
 import { BrandLockup } from '../../../brand-lockup';
+import { BOOK_BACK_MATTER, BOOK_PARTS, BOOK_CHAPTER_COUNT } from '../../book-contents';
 
 export const metadata: Metadata = {
   title: 'Your 7-Page TRADE HUSTL3 Book Sample',
@@ -11,36 +12,13 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-const tableOfContents = [
-  ['PART I — BUILD THE FOUNDATION', ''],
-  ['1. What a Skilled Trade Really Is', '3'],
-  ['2. Why Skilled Trades Are in High Demand', '37'],
-  ['3. College vs. Trades: The Real Math', '57'],
-  ['4. The No-Experience Path', '77'],
-  ['5. Learning on the Job', '105'],
-  ['6. Trade Myths That Keep People Broke', '131'],
-  ['PART II — KNOW THE LANDSCAPE', ''],
-  ['7. The Different Types of Skilled Trades', '160'],
-  ['8. Construction Trades', '190'],
-  ['9. Mechanical Trades: HVAC, Plumbing, Pipefitting, and Refrigeration', '221'],
-  ['10. Electrical and Power Trades', '254'],
-  ['11. Industrial, Energy, and Infrastructure Trades', '284'],
-  ['12. Fabrication and Precision Trades', '318'],
-  ['13. Service, Maintenance, and Facilities Trades', '339'],
-  ['14. Personal Skilled Trades and Solo Ownership Paths', '362'],
-  ['PART III — TURN SKILL INTO MONEY AND LEVERAGE', ''],
-  ['15. Certifications That Actually Matter', '382'],
-  ['16. How Pay Really Increases in the Trades', '400'],
-  ['17. Side Work, Overtime, and Specialization', '419'],
-  ['PART IV — TURN LEVERAGE INTO CONTROL', ''],
-  ['18. From Employee to Owner', '440'],
-  ['19. Choosing the Right Trade for You', '459'],
-  ['20. The Trade Hustle 90-Day Action Plan', '495'],
-  ['21. Final Word: Build Something That Belongs to You', '534'],
-  ['APPENDIX A — 200 SKILLED TRADES', '566'],
-  ['APPENDIX B — TRAINING, CERTIFICATION & SUPPLY-HOUSE RESOURCE DIRECTORY', '574'],
-  ['APPENDIX C — OFFICIAL SOURCE NOTES', '584'],
-  ['ABOUT THE AUTHOR', '586'],
+// Same source as /book: the final paperback's Contents page.
+const tableOfContents: Array<[string, string]> = [
+  ...BOOK_PARTS.flatMap((part): Array<[string, string]> => [
+    [`${part.label} — ${part.title.toUpperCase()}`, ''],
+    ...part.chapters.map((chapter): [string, string] => [`${chapter.number}. ${chapter.title}`, String(chapter.page)]),
+  ]),
+  ...BOOK_BACK_MATTER.map((item): [string, string] => [item.title, String(item.page)]),
 ];
 
 const samplePages = [
@@ -125,7 +103,7 @@ export default function BookSampleReaderPage() {
           <p className={styles.eyebrow}>YOUR FREE 7-PAGE BOOK SAMPLE</p>
           <h1>YOUR SAMPLE<br /><span>IS READY.</span></h1>
           <p className={styles.lede}>
-            Your signup is complete. Read the cover, opening pages, table of contents, and the beginning of Chapter 1 below.
+            Your signup is complete. Read the title page, the full table of contents, and the beginning of Chapter 1 below.
           </p>
           <a className={styles.readJump} href="#read">Start reading the 7 pages <span aria-hidden="true">↓</span></a>
         </div>
@@ -134,7 +112,7 @@ export default function BookSampleReaderPage() {
       <section className={styles.readerIntro} id="read" aria-labelledby="reader-title">
         <p className={styles.eyebrow}>THE SAMPLE</p>
         <h2 id="reader-title">7 PAGES. COVER INCLUDED.</h2>
-        <p>These are the opening seven pages of the current TRADE HUSTL3 eBook interior.</p>
+        <p>The cover, title page, full contents, and the opening of Chapter 1 from the current TRADE HUSTL3 edition.</p>
       </section>
 
       <section className={styles.reader} aria-label="Seven-page TRADE HUSTL3 book sample">
@@ -147,15 +125,15 @@ export default function BookSampleReaderPage() {
           <span className={styles.pageNumber}>02 / 07</span>
           <div>
             <h3>TRADE HUSTL3</h3>
-            <p>BUILT BY HUSTLE. BACKED BY TRADES.</p>
+            <p>Built by Hustle, Backed by Trades</p>
             <p>ENTER • EARN • ELEVATE</p>
-            <small>By Da Maintenance Mane</small>
+            <small>Zachary C. Ellis</small>
           </div>
         </article>
 
         <article className={`${styles.bookPage} ${styles.tocPage}`} aria-label="Sample page 3 of 7 — table of contents">
           <span className={styles.pageNumber}>03 / 07</span>
-          <h3>TABLE OF CONTENTS</h3>
+          <h3>CONTENTS</h3>
           <div className={styles.tocList}>
             {tableOfContents.map(([title, page]) => (
               <div key={title} className={page ? '' : styles.tocPart}>
@@ -163,19 +141,18 @@ export default function BookSampleReaderPage() {
               </div>
             ))}
           </div>
-          <footer>BUILT BY HUSTLE. BACKED BY TRADES. | PAGE 2</footer>
+          <footer>TRADE HUSTL3 · Built by Hustle, Backed by Trades</footer>
         </article>
 
         <article className={styles.bookPage} aria-label="Sample page 4 of 7 — Chapter 1">
           <span className={styles.pageNumber}>04 / 07</span>
           <div className={styles.chapterHeading}>
-            <p>PART I — BUILD THE FOUNDATION</p>
             <p>CHAPTER 1</p>
             <h3>WHAT A SKILLED TRADE REALLY IS</h3>
             <h4>BEFORE I BECAME THE MAINTENANCE MAN</h4>
           </div>
           <p>On my first day working in HVAC, I fell through an attic.</p>
-          <p>Not once. Not twice. Three times in one day.</p>
+          <p>Not once. Not twice. Three times. Three times in one day.</p>
           <p>That was my introduction to the skilled trades.</p>
           <p>There was no perfect first day. No walking onto the job already knowing what I was doing. No magic moment where somebody handed me a tool bag and suddenly I became the Maintenance Man.</p>
           <p>The field humbled me immediately. And looking back, I needed that.</p>
@@ -185,14 +162,14 @@ export default function BookSampleReaderPage() {
           <p>That first day taught the Maintenance Man something that has stayed with me ever since:</p>
           <p><strong>There is a difference between having a job and having a skill.</strong></p>
           <p>A job can give you a paycheck.</p>
-          <footer>BUILT BY HUSTLE. BACKED BY TRADES. | PAGE 3</footer>
+          <footer>TRADE HUSTL3 · Built by Hustle, Backed by Trades</footer>
         </article>
 
         {samplePages.map((paragraphs, index) => (
           <article key={index} className={styles.bookPage} aria-label={`Sample page ${index + 5} of 7 — Chapter 1 continued`}>
             <span className={styles.pageNumber}>0{index + 5} / 07</span>
             {paragraphs.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
-            <footer>BUILT BY HUSTLE. BACKED BY TRADES. | PAGE {index + 4}</footer>
+            <footer>TRADE HUSTL3 · Built by Hustle, Backed by Trades</footer>
           </article>
         ))}
       </section>
@@ -201,7 +178,7 @@ export default function BookSampleReaderPage() {
         <div>
           <p className={styles.eyebrow}>YOU’VE ONLY SEEN THE START</p>
           <h2>KEEP READING. BUILD YOUR NEXT MOVE.</h2>
-          <p>The full TRADE HUSTL3 book expands into 21 chapters, more than 200 skilled trades, earning leverage, ownership, and a 90-day action plan.</p>
+          <p>The full TRADE HUSTL3 book runs {BOOK_CHAPTER_COUNT} chapters across four parts: the foundation, the trades themselves, turning skill into money and leverage, and ownership, ending with a 90-Day Action Plan.</p>
         </div>
         <Link className={styles.primaryButton} href="/book" data-cta="the-book" data-cta-location="book-sample-reader">
           Explore the full book <span aria-hidden="true">→</span>
