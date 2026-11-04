@@ -87,7 +87,7 @@ export default function BookSamplePage() {
           <p className={styles.eyebrow}>FREE 7-PAGE BOOK SAMPLE</p>
           <h1>READ BEFORE<br /><span>YOU BUY.</span></h1>
           <p className={styles.lede}>
-            Get the opening seven pages of TRADE HUSTL3, including the cover, opening pages, table of contents, and the beginning of Chapter 1. No purchase required.
+            Get the opening seven pages of TRADE HUSTL3, including the title page, the full table of contents, and the beginning of Chapter 1. No purchase required.
           </p>
 
           <div className={styles.formCard} id="get-sample">

@@ -380,7 +380,7 @@ async function sendBookSampleDeliveryEmail(env: Env, email: string, downloadUrl:
           <div style="max-width:620px;margin:auto">
             <p style="color:#d6a52a;font-weight:700;letter-spacing:2px">BUILT BY HUSTL3. BACKED BY TRADES.</p>
             <h1 style="margin:16px 0;color:#ffffff">Your 7-page book sample is ready.</h1>
-            <p style="font-size:16px;line-height:1.6;color:#c5ced5">This is the free seven-page sample of TRADE HUSTL3 &mdash; the cover, opening pages, table of contents, and the beginning of Chapter 1.</p>
+            <p style="font-size:16px;line-height:1.6;color:#c5ced5">This is the free seven-page sample of TRADE HUSTL3 &mdash; the title page, the full table of contents, and the beginning of Chapter 1.</p>
             <p style="margin:28px 0"><a href="${downloadUrl}" style="display:inline-block;background:#d71920;color:#ffffff;padding:16px 22px;text-decoration:none;font-weight:700">DOWNLOAD THE 7-PAGE SAMPLE (PDF)</a></p>
             <p style="font-size:14px;line-height:1.6;color:#9fb0bd">Prefer to read in your browser? <a href="${readerUrl}" style="color:#d6a52a;font-weight:700">Open the online reader</a>.</p>
             <p style="color:#d6a52a;font-weight:700">ENTER. EARN. ELEVATE.</p>
