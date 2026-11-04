@@ -331,8 +331,7 @@ export default function BookPage() {
           <a href="#chapters">Chapters</a>
           <a href="#author">Author</a>
           <a href="#schools">Schools</a>
-          <a href="#faq">FAQ</a>
-          <a className="nav-cta" href="#availability" data-cta="buy-the-book" data-cta-location="book-header">Buy the Book</a>
+          <a className="nav-cta nav-cta-buy" href="#availability" data-cta="buy-the-book" data-cta-location="book-header">Buy the Book</a>
         </nav>
       </header>
 
@@ -350,20 +349,19 @@ export default function BookPage() {
             priority
           />
         </div>
+        {/* Layout follows the approved Nov 2026 book hero mockup. Every figure
+            here reads from the verified sources above (editions.ts, chapterParts). */}
         <div className="book-hero-copy">
-          <p className="section-label">/ THE OFFICIAL BOOK</p>
-          <p className="book-release-badge">Paperback · Kindle · eBook — Available now</p>
+          <p className="book-hero-eyebrow">The Official Book</p>
           <h1>TRADE<br />HUSTL<span>3</span></h1>
           <p className="book-subtitle">Built by Hustle, Backed by Trades.</p>
-          <p className="book-byline">By Zachary Ellis · Mr. HUSTL3</p>
+          <p className="book-byline">By Zachary Ellis <span aria-hidden="true">·</span> Mr. HUSTL3</p>
           <div className="book-hero-proof" aria-label="Book highlights">
-            <span><strong>200</strong><small>Trades in the directory</small></span>
+            <span><strong>200</strong><small>Trades</small></span>
             <span><strong>{CHAPTER_COUNT}</strong><small>Chapters</small></span>
-            <span><strong>90</strong><small>Day action plan</small></span>
+            <span><strong>90-Day</strong><small>Action Plan</small></span>
           </div>
-          <p className="book-lead">
-            The blueprint, the game plan, and the movement for people ready to build a future through skilled trades. Go from exploring your options to choosing a path, developing real ability, increasing your value, and creating something that belongs to you.
-          </p>
+          <p className="book-hero-tagline">Choose your path. Build your skills. Create your future.</p>
           <div className="hero-actions">
             <a
               className="button button-primary"
@@ -372,17 +370,21 @@ export default function BookPage() {
               data-cta="amazon-paperback"
               data-cta-location="book-hero"
             >
-              Buy the Paperback — ${AMAZON_PAPERBACK.price} <span>↗</span>
+              Buy the Paperback
             </a>
-            <a className="button button-secondary" href="#availability" data-cta="book-formats" data-cta-location="book-hero">
-              Kindle or eBook — ${AMAZON_KINDLE.price}
+            <a className="button button-secondary" href="#book-sample" data-cta="book-sample" data-cta-location="book-hero">
+              Read 7 Pages Free
             </a>
           </div>
-          <p className="book-hero-note">
-            Paperback and Kindle sold on Amazon. Not ready yet? <a className="text-link" href="#book-sample" data-cta="book-sample" data-cta-location="book-hero">Read 7 pages free</a>
+          <p className="book-hero-formats">
+            <a href="#availability" data-cta="book-formats" data-cta-location="book-hero">
+              Paperback <span aria-hidden="true">·</span> Kindle <span aria-hidden="true">·</span> eBook
+            </a>
           </p>
         </div>
       </section>
+
+      <p className="book-hero-band">Enter. Earn. Elevate.</p>
 
       <section className="book-facts" aria-label="Book details">
         <div><span>Paperback</span><strong>{BOOK_PAPERBACK_PAGES} pages</strong></div>

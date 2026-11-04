@@ -123,7 +123,6 @@
 .book-cover-glow { position: absolute; inset: 9% -12% -5%; background: #d9361e50; filter: blur(60px); transform: rotate(-4deg); }
 .book-cover-image { width: 100%; height: auto; display: block; position: relative; border: 1px solid #d6a52a99; box-shadow: -18px 24px 0 #020b12, 0 35px 80px #000a, 0 0 45px #d6a52a25; transform: rotateY(5deg) rotateZ(-1deg); }
 .book-hero-copy { position: relative; z-index: 1; }
-.book-release-badge { display: inline-block; margin: 22px 0 28px; padding: 10px 14px; border: 1px solid #d6a52a77; color: var(--gold); background: #04121e88; text-transform: uppercase; font-size: 10px; font-weight: 800; letter-spacing: 0.14em; }
 .book-hero-copy h1 { font-size: clamp(84px, 10.5vw, 160px); line-height: 0.78; letter-spacing: -0.025em; }
 .book-hero-copy h1 span,
 .book-section-heading h2 span,
@@ -140,7 +139,6 @@
 .book-hero-proof > span:last-child { border-right: 0; }
 .book-hero-proof strong { display: block; color: var(--gold); font-family: var(--font-display), Impact, sans-serif; font-size: 36px; font-weight: 400; line-height: 1; }
 .book-hero-proof small { display: block; margin-top: 7px; color: #c7d0d6; font-size: 9px; font-weight: 900; letter-spacing: 0.13em; text-transform: uppercase; }
-.book-lead { max-width: 760px; color: #cbd3d9; font-size: 18px; line-height: 1.7; margin: 0 0 35px; border-left: 3px solid var(--red); padding-left: 22px; }
 .countdown-wrap { max-width: 610px; margin-top: 28px; }
 .countdown-wrap > p { margin: 0 0 11px; color: #9daab4; font-size: 9px; font-weight: 900; letter-spacing: 0.15em; text-transform: uppercase; }
 .release-countdown { display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid #d6a52a55; background: #03101b88; }
@@ -318,8 +316,6 @@
 .availability-featured { background: #071a2b0d; box-shadow: inset 0 6px 0 var(--red); }
 .book-page .button-outline { background: transparent; border-color: var(--navy); color: var(--navy); }
 .book-page .button-outline:hover { background: var(--navy); color: var(--cream); }
-.book-hero-note { margin: 22px 0 0; color: #b8c3cb; font-size: 13px; line-height: 1.6; }
-.book-hero-note .text-link { margin-left: 6px; font-size: 11px; }
 .book-schools { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(45px, 8vw, 120px); align-items: center; padding: 110px clamp(24px, 7vw, 110px); background: #0a2134; border-block: 1px solid #d6a52a44; }
 .book-schools h2 { font-size: clamp(52px, 6vw, 92px); line-height: 0.92; margin-top: 22px; }
 .book-schools h2 span { color: var(--red); }
@@ -442,7 +438,6 @@
   .book-cover-stage { width: min(75vw, 330px); }
   .book-hero-copy h1 { font-size: clamp(72px, 23vw, 110px); }
   .book-hero-proof strong { font-size: 30px; }
-  .book-lead { font-size: 16px; }
   .book-facts { grid-template-columns: 1fr; }
   .book-facts > div { border-right: 0; border-bottom: 1px solid #071a2b24; }
   .book-facts > div:last-child { border-bottom: 0; }
@@ -478,4 +473,70 @@
   .policy-footer { grid-template-columns: 1fr; }
   .policy-footer-links { justify-content: flex-start; }
   .policy-footer > small { grid-column: 1; }
+}
+
+/* ---- book hero: approved Nov 2026 mockup ----
+   Approved standalone tradespeople artwork, warm rim light on the cover, centered title stack,
+   gold-number proof row, two buy/sample buttons, and the ENTER. EARN. ELEVATE.
+   band under the hero. Kept as one block at the end of the file so it overrides
+   the original hero rules above at every width, including its own mobile rules. */
+.book-hero { min-height: 860px; padding: 140px clamp(24px, 6vw, 100px) 80px; grid-template-columns: minmax(280px, 0.85fr) minmax(0, 1.15fr); gap: clamp(40px, 6vw, 100px); isolation: isolate; overflow: hidden; background: #021633 url("/optimized/book-hero-trades-v1.webp") center bottom / 100% calc(100% - 92px) no-repeat; }
+.book-hero:after { opacity: 1; mix-blend-mode: normal; -webkit-mask-image: none; mask-image: none; background: linear-gradient(90deg, #00102a0d 0%, #00102a0d 45%, #00102a66 60%, #00102a4d 84%, transparent 100%); }
+.book-hero .book-cover-stage { width: min(100%, 390px); justify-self: end; }
+.book-cover-glow { inset: 6% -14% -8%; background: #ff7a1a59; filter: blur(70px); }
+.book-cover-image { box-shadow: -18px 24px 0 #01081a, 0 35px 80px #000b, 0 0 70px #ff8a1e45; }
+.book-hero-copy { max-width: 780px; justify-self: center; text-align: center; }
+.book-hero-eyebrow { display: flex; align-items: center; justify-content: center; gap: 18px; margin: 0 0 22px; color: var(--gold); font-size: clamp(13px, 1.3vw, 17px); font-style: italic; font-weight: 800; letter-spacing: 0.28em; text-transform: uppercase; }
+.book-hero-eyebrow:before,
+.book-hero-eyebrow:after { content: ""; width: clamp(36px, 6vw, 90px); height: 2px; background: linear-gradient(90deg, transparent, var(--gold)); }
+.book-hero-eyebrow:after { background: linear-gradient(90deg, var(--gold), transparent); }
+.book-hero-copy h1 { display: inline-block; color: var(--white); font-size: clamp(88px, 10vw, 168px); line-height: 0.84; transform: skewX(-7deg); text-shadow: 0 6px 0 #00000080, 0 18px 40px #000000a6; }
+.book-hero-copy h1 span { text-shadow: 0 6px 0 #5a0d04, 0 18px 40px #000000a6; }
+.book-subtitle { margin: 26px 0 10px; color: var(--white); font-family: var(--font-body), system-ui, sans-serif; font-size: clamp(22px, 2.3vw, 34px); font-style: italic; font-weight: 700; line-height: 1.15; letter-spacing: -0.01em; text-transform: none; }
+.book-byline { margin: 0 0 34px; color: #dfe6ee; font-family: Georgia, "Times New Roman", serif; font-size: clamp(17px, 1.6vw, 22px); font-style: italic; font-weight: 400; letter-spacing: 0.02em; text-transform: none; }
+.book-byline span { margin: 0 8px; }
+.book-hero-proof { max-width: 680px; margin: 0 auto 26px; border-block: 0; }
+.book-hero-proof > span,
+.book-hero-proof > span:not(:first-child) { padding: 2px 16px; border-right: 2px solid var(--gold); }
+.book-hero-proof > span:last-child { border-right: 0; }
+.book-hero-proof strong { font-size: clamp(40px, 4.4vw, 64px); text-shadow: 0 4px 18px #0008; }
+.book-hero-proof small { margin-top: 6px; color: var(--white); font-size: clamp(14px, 1.4vw, 20px); font-weight: 700; letter-spacing: 0; text-transform: none; }
+.book-hero-tagline { margin: 0 0 30px; color: #dfe6ee; font-size: clamp(16px, 1.5vw, 21px); font-style: italic; font-weight: 500; line-height: 1.45; }
+.book-hero .hero-actions { justify-content: center; gap: 22px; }
+.book-hero .button { min-height: 62px; padding: 0 clamp(26px, 3vw, 44px); border-radius: 6px; font-size: clamp(16px, 1.5vw, 20px); font-weight: 800; letter-spacing: 0; text-transform: none; }
+.book-hero .button-primary { background: linear-gradient(#e8422a, #b8230f); border-color: #ef4a30; box-shadow: 0 10px 28px #b8230f66; }
+.book-hero .button-primary:hover { background: linear-gradient(#f2563c, #c92a14); }
+.book-hero .button-secondary { border: 2px solid var(--white); background: #00143a66; color: var(--white); }
+.book-hero .button-secondary:hover { border-color: var(--gold); color: var(--gold); }
+.book-hero-formats { margin: 22px 0 0; font-size: 15px; font-style: italic; }
+.book-hero-formats a { color: #d5dde6; text-decoration: none; }
+.book-hero-formats a:hover { color: var(--gold); }
+.book-hero-formats span { margin: 0 10px; }
+.book-hero-band { display: flex; align-items: center; justify-content: center; gap: clamp(16px, 3vw, 40px); margin: 0; padding: 26px clamp(20px, 5vw, 80px); background: linear-gradient(#00163f, #000f2c); border-top: 1px solid #d6a52a44; color: var(--white); font-family: var(--font-display), Impact, sans-serif; font-size: clamp(24px, 3vw, 44px); font-style: italic; letter-spacing: 0.22em; line-height: 1; text-transform: uppercase; white-space: nowrap; }
+.book-hero-band:before,
+.book-hero-band:after { content: ""; flex: 1; max-width: 420px; height: 2px; background: linear-gradient(90deg, transparent, var(--gold)); }
+.book-hero-band:after { background: linear-gradient(90deg, var(--gold), transparent); }
+.book-page .nav-cta-buy { padding: 12px 22px; border-color: var(--red); border-radius: 6px; background: var(--red); color: var(--white); font-size: 12px; }
+.book-page .nav-cta-buy:hover { border-color: #ef4a30; background: #ef4a30; color: var(--white); }
+@media (max-width: 1000px) {
+  .book-hero { grid-template-columns: 0.75fr 1.25fr; gap: 45px; }
+}
+@media (max-width: 760px) {
+  .book-hero { min-height: 0; padding: 120px 20px 60px; grid-template-columns: 1fr; gap: 45px; }
+  .book-hero { background-position: center 76px; background-size: auto 620px; }
+  .book-hero:after { background: linear-gradient(180deg, transparent 76px, #00102a33 430px, #00102ae6 660px, #00102a 820px); }
+  .book-hero .book-cover-stage { width: min(75vw, 330px); justify-self: center; }
+  .book-hero-copy { max-width: 100%; }
+  .book-hero-copy h1 { font-size: clamp(72px, 22vw, 110px); }
+  .book-subtitle { font-size: 21px; }
+  .book-byline { font-size: 16px; margin-bottom: 28px; }
+  .book-hero-proof > span,
+  .book-hero-proof > span:not(:first-child) { padding: 2px 8px; }
+  .book-hero-proof strong { font-size: clamp(28px, 9vw, 38px); }
+  .book-hero-proof small { font-size: 13px; }
+  .book-hero .hero-actions { gap: 12px; }
+  .book-hero .button { width: 100%; justify-content: center; min-height: 56px; font-size: 17px; }
+  .book-hero-band { font-size: clamp(17px, 5.6vw, 24px); letter-spacing: 0.14em; padding-block: 20px; }
+  .book-hero-band:before, .book-hero-band:after { max-width: 36px; }
+  .book-page .nav-cta-buy { padding: 10px 14px; }
 }
