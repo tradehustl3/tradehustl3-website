@@ -8,7 +8,11 @@
  */
 
 export const BOOK_PAPERBACK_ISBN = "9798193043355";
-export const BOOK_PAPERBACK_PAGES = 438;
+/**
+ * Page count of the final paperback interior uploaded to KDP on 2026-11-03
+ * (TRADE_HUSTL3_Interior_6x9.pdf, 486 pages, MD5 a43700cf6521764ad2dc16178debbf3d).
+ */
+export const BOOK_PAPERBACK_PAGES = 486;
 
 export const AMAZON_PAPERBACK = {
   asin: "B0HFQ2ZNJN",

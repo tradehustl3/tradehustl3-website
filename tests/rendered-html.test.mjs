@@ -252,7 +252,9 @@ test("server-renders the official book page, cover, portrait, and current editio
   assert.match(html, /9798193043355/i);
   assert.match(html, /No experience required/i);
   assert.match(html, /90-Day Action Plan/i);
-  assert.match(html, /more than 200 skilled trades/i);
+  // The book lists 200 trades (Appendix A); "over 200" is a fact about America on the cover, not a count of the book.
+  assert.match(html, /directory of 200 skilled trades/i);
+  assert.doesNotMatch(html, /200\+|more than 200 skilled trades/i);
   assert.match(html, /"datePublished":"2026-09-15"/i);
   assert.match(html, /Get the Free Guide/i);
   assert.match(html, /UNLOCK THE FREE GUIDE/i);
@@ -275,6 +277,10 @@ test("book page roadmap uses the printed part titles, offers both free previews,
 
   // Part titles match the book's printed table of contents in both the Roadmap and the TOC.
   // (Counts would double-count the RSC payload, so check placement in the markup instead.)
+  assert.match(text, /<h3>Know the Tradescape<\/h3>/);
+  assert.match(text, /<strong>Know the Tradescape<\/strong>/);
+  assert.doesNotMatch(text, /Know the Landscape/i);
+  assert.match(text, /What You Will Learn/);
   assert.match(text, /<h3>Turn Skill Into Money and Leverage<\/h3>/);
   assert.match(text, /<h3>Turn Leverage Into Control<\/h3>/);
   assert.match(text, /<strong>Turn Skill Into Money and Leverage<\/strong>/);
@@ -296,7 +302,8 @@ test("book page roadmap uses the printed part titles, offers both free previews,
   // FAQ answers come from verified edition data and the eBook policy.
   assert.match(text, /id="faq"/);
   assert.match(text, /What formats can I buy\?/);
-  assert.match(text, /paperback \(\$24\.99, 438 pages\)/);
+  assert.match(text, /paperback \(\$24\.99, 486 pages\)/);
+  assert.doesNotMatch(text, /438 pages/);
   assert.match(text, /Kindle eBook \(\$9\.99\)/);
   assert.match(text, /href="\/book\/refund-policy">eBook Delivery and Refund Policy/);
   assert.match(text, /personal, non-transferable license/);
@@ -308,6 +315,22 @@ test("book page roadmap uses the printed part titles, offers both free previews,
   assert.match(text, /aria-labelledby="final-cta-title"/);
   assert.match(text, /id="final-cta-title"/);
   assert.match(text, /data-cta-location="book-mobile-sticky"/);
+});
+
+test("book sample reader matches the final 486-page interior", async () => {
+  const response = await renderPath("/book/sample/read");
+  assert.equal(response.status, 200);
+  const text = (await response.text()).replace(/<!-- -->/g, "");
+
+  assert.match(text, /BEFORE I BECAME MR\. HUSTL3/);
+  assert.match(text, /suddenly I became Mr\. HUSTL3\./);
+  assert.match(text, /WHAT YOU WILL LEARN/);
+  assert.match(text, /PART II — KNOW THE TRADESCAPE/);
+  assert.match(text, /About the Author<\/span><b>486<\/b>/);
+  assert.match(text, /1\. What a Skilled Trade Really Is<\/span><b>5<\/b>/);
+  assert.match(text, /THE TOOLS ARE NOT THE TRADE/);
+  assert.doesNotMatch(text, /Maintenance Man\b|Da Maintenance Mane|KNOW THE LANDSCAPE|more than 200 skilled trades/i);
+  assert.match(text, /directory of 200 skilled trades/);
 });
 
 test("book page CSS keeps the mobile buy bar hidden until script shows it", async () => {

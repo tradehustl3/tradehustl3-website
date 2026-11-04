@@ -24,7 +24,7 @@ import {
 const BOOK_TITLE = "TRADE HUSTL3: Built by Hustle, Backed by Trades";
 const BOOK_PAGE_TITLE = "TRADE HUSTL3 Book by Zachary Ellis (Mr. HUSTL3)";
 const BOOK_DESCRIPTION =
-  "Explore 200+ skilled trades, certifications, and career paths with Zachary Ellis (Mr. HUSTL3). Includes a 90-Day Action Plan. Paperback, Kindle, and eBook.";
+  "A 200-trade career guide by Zachary Ellis (Mr. HUSTL3): certifications, career paths, and a 90-Day Action Plan. Paperback, Kindle, and eBook.";
 
 const SCHOOLS_MAILTO = `mailto:${BOOK_PARTNERSHIPS_EMAIL}?subject=${encodeURIComponent("TRADE HUSTL3 book order for our program")}`;
 
@@ -132,7 +132,7 @@ const bookStructuredData = {
 };
 
 const discoveries = [
-  "More than 200 skilled trades across every major industry",
+  "A directory of 200 skilled trades, plus a deep look at every major trade family",
   "How to enter the trades with no experience and start building value",
   "Training, certifications, apprenticeships, and real-world career paths",
   "How skill can create leverage, leadership, ownership, and generational wealth",
@@ -148,8 +148,8 @@ const audiences = [
 
 /**
  * Single source for the book's structure. Part and chapter titles match the
- * printed table of contents (worker/assets/trade-hustl3-seven-page-book-sample.pdf,
- * page 2); the Roadmap summaries and the Table of Contents both render from
+ * printed table of contents of the final 486-page interior (Nov 3, 2026), which
+ * is page 2 of worker/assets/trade-hustl3-seven-page-book-sample.pdf; the Roadmap summaries and the Table of Contents both render from
  * this list so their part titles can never drift apart again.
  */
 const chapterParts = [
@@ -168,7 +168,7 @@ const chapterParts = [
   },
   {
     label: "PART II",
-    title: "Know the Landscape",
+    title: "Know the Tradescape",
     summary: "Explore construction, mechanical, electrical, industrial, fabrication, service, maintenance, and facilities careers.",
     chapters: [
       "The Different Types of Skilled Trades",
@@ -256,6 +256,7 @@ const faqs: Array<{ question: string; answer: ReactNode }> = [
 
 const programHighlights = [
   "21 chapters in four parts, from the no-experience path to a 90-Day Action Plan",
+  "Every chapter opens with “What You Will Learn” objectives, so it can anchor a lesson plan",
   "Part II walks through construction, mechanical, electrical, industrial, fabrication, service, maintenance, and facilities careers",
   "Appendix A lists 200 skilled trades; Appendix B is a training, certification, and supply-house resource directory; Appendix C holds the official source notes",
   "Written for people starting from zero, so no trade experience is required",
@@ -356,7 +357,7 @@ export default function BookPage() {
           <p className="book-subtitle">Built by Hustle, Backed by Trades.</p>
           <p className="book-byline">By Zachary Ellis · Mr. HUSTL3</p>
           <div className="book-hero-proof" aria-label="Book highlights">
-            <span><strong>200+</strong><small>Skilled trades</small></span>
+            <span><strong>200</strong><small>Trades in the directory</small></span>
             <span><strong>{CHAPTER_COUNT}</strong><small>Chapters</small></span>
             <span><strong>90</strong><small>Day action plan</small></span>
           </div>
