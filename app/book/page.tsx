@@ -149,8 +149,8 @@ const audiences = [
 /**
  * Single source for the book's structure. Part and chapter titles match the
  * printed table of contents of the final 486-page interior (Nov 3, 2026), which
- * is page 2 of worker/assets/trade-hustl3-seven-page-book-sample.pdf; the Roadmap summaries and the Table of Contents both render from
- * this list so their part titles can never drift apart again.
+ * is page 2 of worker/assets/trade-hustl3-seven-page-book-sample.pdf. The Roadmap
+ * renders the part titles from this list, and the hero's chapter count is derived from it.
  */
 const chapterParts = [
   {
@@ -461,7 +461,7 @@ export default function BookPage() {
         </figure>
       </section>
 
-      <section className="book-structure">
+      <section className="book-structure" id="chapters">
         <div className="book-structure-intro">
           <p className="section-label">/ THE ROADMAP</p>
           <h2>ENTER.<br />EARN.<br /><span>ELEVATE.</span></h2>
@@ -477,36 +477,6 @@ export default function BookPage() {
             </article>
           ))}
         </div>
-      </section>
-
-      <section className="book-toc" id="chapters">
-        <div className="book-section-heading">
-          <p className="section-label">/ TABLE OF CONTENTS</p>
-          <h2>{`${CHAPTER_COUNT} CHAPTERS. FOUR PARTS.`}<br /><span>ONE PLAN.</span></h2>
-        </div>
-        <div className="toc-grid">
-          {chapterParts.map((part, partIndex) => {
-            const chapterOffset = chapterParts
-              .slice(0, partIndex)
-              .reduce((total, item) => total + item.chapters.length, 0);
-
-            return (
-              <details className="toc-part" key={part.label} open={partIndex === 0}>
-                <summary>
-                  <span>{part.label}</span>
-                  <strong>{part.title}</strong>
-                  <small>{part.chapters.length} chapters</small>
-                </summary>
-                <ol start={chapterOffset + 1}>
-                  {part.chapters.map((chapter) => <li key={chapter}>{chapter}</li>)}
-                </ol>
-              </details>
-            );
-          })}
-        </div>
-        <p className="toc-appendices">
-          Also included: Appendix A—200 Skilled Trades · Appendix B—Training, Certification &amp; Supply-House Resource Directory · Appendix C—Official Source Notes
-        </p>
       </section>
 
       <section className="book-audience">
