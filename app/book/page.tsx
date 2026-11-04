@@ -150,8 +150,8 @@ const audiences = [
 /**
  * Single source for the book's structure. Part and chapter titles match the
  * printed table of contents of the final 486-page interior (Nov 3, 2026), which
- * is page 2 of worker/assets/trade-hustl3-seven-page-book-sample.pdf; the Roadmap summaries and the Table of Contents both render from
- * this list so their part titles can never drift apart again.
+ * is page 2 of worker/assets/trade-hustl3-seven-page-book-sample.pdf. The Roadmap
+ * summaries and hero chapter count both use this list.
  */
 const chapterParts = [
   {
@@ -329,7 +329,6 @@ export default function BookPage() {
         <nav aria-label="Book page navigation">
           <Link href="/">Home</Link>
           <a href="#sample">Free sample</a>
-          <a href="#chapters">Chapters</a>
           <a href="#author">Author</a>
           <a href="#schools">Schools</a>
           <a className="nav-cta nav-cta-buy" href="#availability" data-cta="buy-the-book" data-cta-location="book-header">Buy the Book</a>
@@ -483,36 +482,6 @@ export default function BookPage() {
         </div>
       </section>
 
-      <section className="book-toc" id="chapters">
-        <div className="book-section-heading">
-          <p className="section-label">/ TABLE OF CONTENTS</p>
-          <h2>{`${CHAPTER_COUNT} CHAPTERS. FOUR PARTS.`}<br /><span>ONE PLAN.</span></h2>
-        </div>
-        <div className="toc-grid">
-          {chapterParts.map((part, partIndex) => {
-            const chapterOffset = chapterParts
-              .slice(0, partIndex)
-              .reduce((total, item) => total + item.chapters.length, 0);
-
-            return (
-              <details className="toc-part" key={part.label} open={partIndex === 0}>
-                <summary>
-                  <span>{part.label}</span>
-                  <strong>{part.title}</strong>
-                  <small>{part.chapters.length} chapters</small>
-                </summary>
-                <ol start={chapterOffset + 1}>
-                  {part.chapters.map((chapter) => <li key={chapter}>{chapter}</li>)}
-                </ol>
-              </details>
-            );
-          })}
-        </div>
-        <p className="toc-appendices">
-          Also included: Appendix A—200 Skilled Trades · Appendix B—Training, Certification &amp; Supply-House Resource Directory · Appendix C—Official Source Notes
-        </p>
-      </section>
-
       <section className="book-audience">
         <div>
           <p className="section-label">/ WHO THIS BOOK IS FOR</p>
@@ -662,7 +631,7 @@ export default function BookPage() {
 
       <footer>
         <div className="footer-brand"><div className="wordmark">TRADE HUSTL<span>3</span></div><p>BUILT BY HUSTL3. BACKED BY TRADES.</p><SocialLinks /></div>
-        <div className="footer-links"><Link href="/">Home</Link><a href="#sample">Free sample</a><a href="#chapters">Chapters</a><a href="#author">Author</a><a href="#faq">FAQ</a><a href="#availability">Buy the Book</a><a href="#schools">Schools &amp; programs</a><a href={`mailto:${BOOK_PARTNERSHIPS_EMAIL}`}>Partnerships</a></div>
+        <div className="footer-links"><Link href="/">Home</Link><a href="#sample">Free sample</a><a href="#author">Author</a><a href="#faq">FAQ</a><a href="#availability">Buy the Book</a><a href="#schools">Schools &amp; programs</a><a href={`mailto:${BOOK_PARTNERSHIPS_EMAIL}`}>Partnerships</a></div>
         <div className="footer-legal"><Link href="/privacy">Privacy</Link><Link href="/terms">Terms</Link><Link href="/book/refund-policy">eBook policy</Link><Link href="/data-deletion">Data requests</Link><Link href="/contact">Support</Link></div>
         <p className="copyright">© 2026 TRADE HUSTL3. ALL GRIT RESERVED.</p>
       </footer>
