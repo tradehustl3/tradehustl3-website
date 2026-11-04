@@ -350,3 +350,28 @@ export const funnelEvents = sqliteTable(
     ),
   ],
 );
+
+/** Schools & programs book inquiries (drizzle/0013_book_program_inquiries.sql). */
+export const bookProgramInquiries = sqliteTable(
+  "book_program_inquiries",
+  {
+    inquiryId: text("inquiry_id").primaryKey(),
+    organization: text("organization").notNull(),
+    contactName: text("contact_name").notNull(),
+    email: text("email").notNull(),
+    role: text("role"),
+    programType: text("program_type").notNull(),
+    format: text("format").notNull(),
+    copies: integer("copies").notNull(),
+    neededBy: text("needed_by"),
+    message: text("message"),
+    status: text("status").notNull().default("new"),
+    notifiedAt: text("notified_at"),
+    createdAt: text("created_at").notNull().default(sql`(CURRENT_TIMESTAMP)`),
+  },
+  (table) => [
+    check("book_program_inquiries_copies_check", sql`${table.copies} BETWEEN 1 AND 10000`),
+    index("book_program_inquiries_created_idx").on(table.createdAt),
+    index("book_program_inquiries_email_idx").on(table.email, table.createdAt),
+  ],
+);

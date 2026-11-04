@@ -884,6 +884,106 @@ test("book page offers a contact-only path for schools and programs", async () =
   assert.match(schools, /href="mailto:partners@tradehustl3\.com\?subject=/);
   // No bulk pricing is promised before it exists.
   assert.doesNotMatch(schools, /\$\d|discount|% off/i);
+  // A real request form captures the program's details; email stays as a fallback.
+  assert.match(schools, /<form class="program-inquiry-form"/);
+  for (const name of ["organization", "contactName", "email", "programType", "format", "copies", "neededBy", "message"]) {
+    assert.match(schools, new RegExp(`name="${name}"`), `missing field ${name}`);
+  }
+  assert.match(schools, /name="company_website"[^>]*tabindex="-1"|tabindex="-1"[^>]*name="company_website"/i);
+  assert.match(schools, /data-cta="schools-inquiry-form"/);
+  // Only facts the book page already states elsewhere.
+  assert.match(schools, /Current KDP ISBN/);
+  assert.match(schools, /9798193043355/);
+  assert.match(schools, /Appendix A lists 200 skilled trades/);
+  assert.doesNotMatch(schools, /learning objective/i);
+});
+
+test("book page leads with the book sample and folds the guide preview below it", async () => {
+  const html = (await (await renderPath("/book")).text()).replace(/<!-- -->/g, "");
+  const sample = html.slice(html.indexOf('id="sample"'), html.indexOf('id="inside"'));
+  assert.ok(sample.indexOf('id="book-sample"') < sample.indexOf('class="sample-guide-alt"'), "book sample comes first");
+  assert.match(sample, /<details class="sample-guide-alt">/);
+  assert.doesNotMatch(sample, /<details class="sample-guide-alt" open/);
+  // The guide keeps its existing signup contract (interest "The TRADE HUSTL3 Book").
+  assert.match(sample, /<form class="signup sample-signup"/);
+  // The ISBN moved out of the shopper-facing facts strip.
+  const facts = html.slice(html.indexOf('class="book-facts"'), html.indexOf('id="sample"'));
+  assert.doesNotMatch(facts, /ISBN/);
+  assert.match(facts, /200-trade list \+ resource directory/);
+});
+
+test("book page shows no reviews section until a real, permissioned review exists", async () => {
+  const html = await (await renderPath("/book")).text();
+  assert.doesNotMatch(html, /id="reviews"/);
+  assert.doesNotMatch(html, /WHAT READERS/);
+});
+
+test("book gift banner appears only inside the Nov 25 to Dec 31 gift window", async () => {
+  const before = await withFrozenDateNow(Date.parse("2026-11-20T15:00:00Z"), async () => (await renderPath("/book")).text());
+  assert.doesNotMatch(before, /class="book-gift-banner"/);
+
+  const during = await withFrozenDateNow(Date.parse("2026-11-27T15:00:00Z"), async () => (await renderPath("/book")).text());
+  assert.match(during, /<aside class="book-gift-banner" aria-label="Gift season">/);
+  assert.match(during, /order early for holiday delivery/);
+  assert.match(during, /data-cta-location="book-gift-banner"/);
+  assert.ok(during.indexOf('class="book-gift-banner"') < during.indexOf('class="book-hero"'), "banner sits above the hero");
+
+  const after = await withFrozenDateNow(Date.parse("2027-01-02T15:00:00Z"), async () => (await renderPath("/book")).text());
+  assert.doesNotMatch(after, /class="book-gift-banner"/);
+});
+
+test("program inquiry route stores the request and returns JSON through the deployed Worker", async () => {
+  const worker = await loadWorker();
+  const dbCalls = [];
+  const outbound = [];
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (input, init) => {
+    outbound.push({ input: String(input), body: JSON.parse(String(init.body)) });
+    return new Response(null, { status: 201 });
+  };
+  const DB = {
+    prepare(sql) {
+      return {
+        bind(...values) { return {
+          async first() { return /RETURNING count/i.test(sql) ? { count: 1 } : null; },
+          async run() { dbCalls.push({ sql, values }); return { success: true }; },
+        }; },
+        async run() { dbCalls.push({ sql, values: [] }); return { success: true }; },
+      };
+    },
+  };
+
+  let response;
+  try {
+    response = await worker.fetch(
+      new Request("https://tradehustl3.com/api/book/program-inquiry", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Origin: "https://tradehustl3.com" },
+        body: JSON.stringify({
+          organization: "Eastside Job Corps",
+          contactName: "Sam Lee",
+          email: "sam@example.org",
+          programType: "Job Corps center",
+          format: "Not sure yet",
+          copies: 40,
+        }),
+      }),
+      { DB, BREVO_API_KEY: "test-brevo-key", BREVO_LIST_ID: "3" },
+      { waitUntil() {}, passThroughOnException() {} },
+    );
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get("cache-control"), "no-store");
+  assert.equal(response.headers.get("x-content-type-options"), "nosniff");
+  assert.equal((await response.json()).ok, true);
+  assert.ok(dbCalls.some((call) => /INSERT INTO book_program_inquiries/.test(call.sql)));
+  assert.ok(outbound.some((call) => call.input === "https://api.brevo.com/v3/smtp/email" && call.body.to[0].email === "partners@tradehustl3.com"));
+  const contact = outbound.find((call) => call.input === "https://api.brevo.com/v3/contacts");
+  assert.equal(contact.body.attributes.INTEREST, "School / Workforce Partnership");
+  assert.equal(contact.body.attributes.SIGNUP_SOURCE, "book_program_inquiry");
 });
 
 test("renders a private order-confirmation page", async () => {

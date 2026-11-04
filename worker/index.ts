@@ -10,6 +10,8 @@ import { allowsSameOriginFraming, frameHeaders, withFrameAncestors } from "./fra
 import { CONTENT_SECURITY_POLICY } from "./content-security-policy";
 import { malformedUrlTarget } from "./malformed-url";
 import { withPublicAssetCache } from "./public-asset-cache";
+import { handleProgramInquiry } from "./book-program-inquiry";
+import { PROGRAM_INQUIRY_ROUTE } from "../app/book/program-inquiry-options";
 
 interface Env extends ResumeBuilderEnv, EbookStripeEnv {
   ASSETS: Fetcher;
@@ -755,7 +757,7 @@ const worker = {
 /** Monitoring area for an API failure caught by the top-level safety net. */
 function apiFailureArea(pathname: string): Parameters<typeof operationalEvent>[0] {
   if (pathname.startsWith("/api/stripe/") || pathname.startsWith("/api/resume-builder/stripe/")) return "stripe";
-  if (pathname === "/api/subscribe" || pathname === "/api/free-sample" || pathname === "/api/book-sample") return "auth_email";
+  if (pathname === "/api/subscribe" || pathname === "/api/free-sample" || pathname === "/api/book-sample" || pathname === PROGRAM_INQUIRY_ROUTE) return "auth_email";
   if (pathname === "/api/health") return "delivery_queue";
   return "document_storage";
 }
@@ -811,6 +813,19 @@ async function routeRequest(request: Request, env: Env, ctx: ExecutionContext, u
 
   if (url.pathname === "/api/subscribe") {
     return withSecurityHeaders(await subscribe(request, env), url.pathname);
+  }
+
+  if (url.pathname === PROGRAM_INQUIRY_ROUTE) {
+    return withSecurityHeaders(await handleProgramInquiry(request, env, {
+      siteUrl: SITE_URL,
+      checkRateLimit: (bucket, limit, windowSeconds) => checkRateLimit(env, bucket, limit, windowSeconds),
+      sha256Hex,
+      requestIp,
+      readJsonBody,
+      syncContact: (contact) => syncBrevoContact(env, { ...contact, utmSource: "", utmMedium: "", utmCampaign: "" }),
+      queueContactSync: (email, payload, error) => queueLeadDelivery(env, email, "brevo_contact", payload, error),
+      logEvent: (event, severity, details) => console.error(operationalEvent("auth_email", event, severity, details as Record<string, string | number | boolean | null>)),
+    }), url.pathname);
   }
 
   if (url.pathname === FREE_SAMPLE_ROUTE) {
