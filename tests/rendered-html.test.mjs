@@ -262,9 +262,10 @@ test("server-renders the official book page, cover, portrait, and current editio
   assert.doesNotMatch(html, /href="\/trade-hustl3-free-sample\.pdf/i);
   assert.match(html, /GUIDE PREVIEW/i);
   assert.match(html, /verified power-line and HVAC profiles/i);
-  assert.match(html, /21 CHAPTERS[\s\S]*FOUR PARTS[\s\S]*ONE PLAN/i);
-  assert.match(html, /What a Skilled Trade Really Is/i);
-  assert.match(html, /Final Word: Build Something That Belongs to You/i);
+  // The chapter-by-chapter table of contents was removed from /book (Nov 3, 2026);
+  // the Roadmap keeps the four part titles and the hero keeps the chapter count.
+  assert.doesNotMatch(html, /TABLE OF CONTENTS|ONE PLAN\.|class="book-toc"|class="toc-/);
+  assert.doesNotMatch(html, /What a Skilled Trade Really Is|Also included: Appendix A/);
   assert.doesNotMatch(html, /Launch countdown/i);
   // The quoted mindset line is verbatim from Chapter 21 (book page 463) of the final interior;
   // claims the book does not make stay off the page.
@@ -280,17 +281,14 @@ test("book page roadmap uses the printed part titles, offers both free previews,
   const html = await (await renderPath("/book")).text();
   const text = html.replace(/<!-- -->/g, "");
 
-  // Part titles match the book's printed table of contents in both the Roadmap and the TOC.
-  // (Counts would double-count the RSC payload, so check placement in the markup instead.)
+  // Roadmap part titles match the book's printed table of contents, and the
+  // Chapters nav link lands on the Roadmap.
+  assert.match(text, /<section class="book-structure" id="chapters">/);
   assert.match(text, /<h3>Know the Tradescape<\/h3>/);
-  assert.match(text, /<strong>Know the Tradescape<\/strong>/);
   assert.doesNotMatch(text, /Know the Landscape/i);
   assert.match(text, /What You Will Learn/);
   assert.match(text, /<h3>Turn Skill Into Money and Leverage<\/h3>/);
   assert.match(text, /<h3>Turn Leverage Into Control<\/h3>/);
-  assert.match(text, /<strong>Turn Skill Into Money and Leverage<\/strong>/);
-  assert.match(text, /<strong>Turn Leverage Into Control<\/strong>/);
-  assert.match(html, />21 CHAPTERS\. FOUR PARTS\.<br\/>/);
   assert.doesNotMatch(text, />Turn Skill Into Leverage</);
   assert.doesNotMatch(text, />Build Control</);
   assert.match(text, /<strong>21<\/strong><small>Chapters<\/small>/);
