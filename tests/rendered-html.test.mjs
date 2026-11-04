@@ -342,6 +342,21 @@ test("book sample reader matches the final 486-page interior", async () => {
   assert.match(main, /directory of 200 skilled trades/);
 });
 
+test("book hero jobsite scene is decorative, inline, and behind the copy", async () => {
+  const html = (await (await renderPath("/book")).text()).replace(/<!-- -->/g, "");
+  const scene = html.match(/<div class="book-hero-scene" aria-hidden="true">[\s\S]*?<\/svg><\/div>/)?.[0] ?? "";
+  assert.ok(scene.length > 0, "hero renders the jobsite scene");
+  // Sits inside the hero, ahead of the cover and the copy.
+  assert.match(html, /<section class="book-hero" id="top"><div class="book-hero-scene" aria-hidden="true">/);
+  // Purely visual: no text, links, images, or focusable content for assistive tech.
+  assert.doesNotMatch(scene, /<(a|img|text|title|button)\b|tabindex/i);
+  assert.equal((scene.match(/focusable="false"/g) ?? []).length, 2);
+
+  const css = await readFile(new URL("../app/page-shell.css", import.meta.url), "utf8");
+  assert.match(css, /\.book-hero-scene \{ position: absolute; inset: 0; z-index: 0; pointer-events: none;/);
+  assert.match(css, /\.book-hero-copy \{ position: relative; z-index: 1; \}/);
+});
+
 test("book page CSS keeps the mobile buy bar hidden until script shows it", async () => {
   const { readFile } = await import("node:fs/promises");
   const css = await readFile(new URL("../app/page-shell.css", import.meta.url), "utf8");
