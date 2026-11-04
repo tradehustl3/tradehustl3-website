@@ -12,7 +12,6 @@ import { READER_REVIEWS, type ReaderReview } from "./reader-reviews";
 import { isHolidayGiftSeason } from "./holiday-gift";
 import { BrandLockup } from "../brand-lockup";
 import { CtaAnalytics } from "../cta-analytics";
-import { BookHeroScene } from "./hero-scene";
 import {
   AMAZON_KINDLE,
   AMAZON_PAPERBACK,
@@ -338,7 +337,6 @@ export default function BookPage() {
       {showGiftBanner ? <HolidayGiftBanner /> : null}
 
       <section className="book-hero" id="top">
-        <BookHeroScene />
         <div className="book-cover-stage">
           <div className="book-cover-glow" aria-hidden="true" />
           <Image
