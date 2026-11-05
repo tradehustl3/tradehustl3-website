@@ -421,7 +421,9 @@ test("homepage is the Resume Builder sales page and verified account entry", asy
   assert.match(html, /<form\b/i);
   assert.match(html, /Continue with email/i);
   assert.doesNotMatch(html, /name="fullName"/i);
-  assert.match(html, /ACCOUNT · STAGE 1 OF 5/i);
+  assert.match(html, /FREE PREVIEW · NO CREDIT CARD/i);
+  assert.match(html, /Start your free preview/);
+  assert.doesNotMatch(html, /STAGE 1 OF 5/i, "the email step no longer reads as a long process");
   assert.match(html, /FREE CAREER GUIDE/i);
   assert.match(html, /href="\/top-10-trades"/i);
   assert.match(html, /href="\/book"/i);

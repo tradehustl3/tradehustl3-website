@@ -105,6 +105,20 @@ export function intakeEntryHref(track: TradeTrack): string {
   return `/?trade=${slugForTradeTrack(track)}#resume-start`;
 }
 
+/**
+ * Return `href` with its `?trade=` set to `track`'s canonical slug, or removed
+ * when `track` is null. Every other query parameter (utm_*, fbclid, ...) and
+ * the hash are kept, so campaign attribution survives a trade pick on the
+ * email step. A relative href comes back relative (path + query + hash).
+ */
+export function withTradeParam(href: string, track: TradeTrack | null): string {
+  const base = "https://tradehustl3.invalid";
+  const url = new URL(href, base);
+  if (track) url.searchParams.set("trade", slugForTradeTrack(track));
+  else url.searchParams.delete("trade");
+  return url.origin === base ? `${url.pathname}${url.search}${url.hash}` : url.toString();
+}
+
 /** Direct intake URL with a preselected trade (used once an account is verified). */
 export function intakeWizardHref(track: TradeTrack): string {
   return `/resume-builder/intake?trade=${slugForTradeTrack(track)}`;

@@ -13,7 +13,7 @@ import { ToolRail } from './tool-silhouettes';
 import { JobsiteTruths } from './jobsite-truths';
 import { KnowYourTrade } from './home-know-your-trade';
 import { knowYourTradeMyths, knowYourTradeTrades } from './home-know-your-trade-data';
-import { heroTradeFromParam } from './home-hero-trades';
+import { HERO_TRADES, heroTradeFromParam } from './home-hero-trades';
 import { resolveTradeParam } from './resume-builder/trade-preselect';
 import { AccountStart } from './resume-builder/account-start';
 import { ResumeBuilderStartAnalytics } from './resume-builder/funnel-analytics';
@@ -200,7 +200,7 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
         <div className={styles.startIntro}>
           <p className={styles.eyebrow}>START YOUR RESUME</p>
           <h2 id="resume-start-title">ONE PAGE TO LEARN IT. ONE PLACE TO START IT.</h2>
-          <p>You already know what the Resume Builder does. Start here with your verified account, then go straight into your trade experience, resume system, preview, and download flow.</p>
+          <p>Your email saves your work. After that you add your experience, pick a resume system, and read your full preview. You pay $9.99 only if you want the files.</p>
           <div className={styles.startPath} aria-label="Resume Builder stages">
             <span>Account</span><i>→</i><span>Experience</span><i>→</i><span>Choose system</span><i>→</i><span>Preview</span><i>→</i><span>Unlock</span>
           </div>
@@ -211,10 +211,13 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
           </div>
         </div>
         <aside className={`${styles.startPanel} rb-scope ${rbFont.variable}`}>
-          <p className={styles.startIndex}>Account · stage 1 of 5</p>
-          <h3>Build my resume</h3>
-          <p>Create or verify your account. Your work is saved to your account so you can continue across devices.</p>
-          <AccountStart />
+          <p className={styles.startIndex}>Free preview · No credit card</p>
+          <h3>Start your free preview</h3>
+          <p>Enter your email and we&apos;ll send you a 6-digit code. Your preview saves to your account, so you can finish on any device.</p>
+          <AccountStart
+            tradeOptions={HERO_TRADES.map(({ label, track }) => ({ label, track }))}
+            initialTrack={campaignTrack}
+          />
         </aside>
       </section>
 
