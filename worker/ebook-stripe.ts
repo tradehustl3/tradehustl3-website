@@ -1,9 +1,11 @@
+import { bookSenderEmail } from "./sender-addresses";
 /** Stripe checkout/refund webhook handling and private eBook delivery. */
 export interface EbookStripeEnv {
   DB: D1Database;
   BOOKS?: R2Bucket;
   BREVO_API_KEY?: string;
   BREVO_SAMPLE_SENDER_EMAIL?: string;
+  BREVO_BOOK_SENDER_EMAIL?: string;
   STRIPE_WEBHOOK_SECRET?: string;
   STRIPE_EBOOK_PAYMENT_LINK_ID?: string;
 }
@@ -108,7 +110,7 @@ async function sendEbookDeliveryEmail(env: EbookStripeEnv, email: string, downlo
     body: JSON.stringify({
       sender: {
         name: "TRADE HUSTL3",
-        email: env.BREVO_SAMPLE_SENDER_EMAIL?.trim() || "updates@tradehustl3.com",
+        email: bookSenderEmail(env),
       },
       to: [{ email }],
       subject: "Your TRADE HUSTL3 eBook is ready",
@@ -147,7 +149,7 @@ async function sendEbookPreorderConfirmationEmail(env: EbookStripeEnv, email: st
     body: JSON.stringify({
       sender: {
         name: "TRADE HUSTL3",
-        email: env.BREVO_SAMPLE_SENDER_EMAIL?.trim() || "updates@tradehustl3.com",
+        email: bookSenderEmail(env),
       },
       to: [{ email }],
       subject: "Your TRADE HUSTL3 eBook preorder is confirmed",
