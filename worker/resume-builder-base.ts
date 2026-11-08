@@ -25,6 +25,7 @@ import { createResumeDocx, createResumePdf, GeneratedResume, ResumeTheme } from 
 import { lockedBulletCount, readableBulletKeys } from "./resume-preview-lock";
 import { unsupportedExperienceClaims, type ExperienceEvidence } from "./resume-experience-claims";
 import { parseResumeDateRange } from "./resume-dates";
+import { resumeSenderEmail } from "./sender-addresses";
 import {
   assessIntakeSubstance,
   canonicalSourceRecord,
@@ -48,6 +49,8 @@ export interface ResumeBuilderEnv {
   BREVO_API_KEY?: string;
   BREVO_SAMPLE_SENDER_EMAIL?: string;
   BREVO_AUTH_SENDER_EMAIL?: string;
+  /** Overrides resume@tradehustl3.com for Resume Builder emails. */
+  BREVO_RESUME_SENDER_EMAIL?: string;
   /** Local development only ("1"): print the sign-in link to the dev console instead of emailing it. */
   RESUME_DEV_MAGIC_LINK_CONSOLE?: string;
   STRIPE_SECRET_KEY?: string;
@@ -639,9 +642,7 @@ async function sendMagicLinkEmail(env: ResumeBuilderEnv, email: string, confirma
     body: JSON.stringify({
       sender: {
         name: "TRADE HUSTL3",
-        email: env.BREVO_AUTH_SENDER_EMAIL?.trim()
-          || env.BREVO_SAMPLE_SENDER_EMAIL?.trim()
-          || "updates@tradehustl3.com",
+        email: resumeSenderEmail(env),
       },
       to: [{ email }],
       subject: "Your TRADE HUSTL3 Resume Builder sign-in code",
@@ -2026,9 +2027,7 @@ async function sendReviewRequestEmail(env: ResumeBuilderEnv, email: string, revi
     body: JSON.stringify({
       sender: {
         name: "TRADE HUSTL3",
-        email: env.BREVO_AUTH_SENDER_EMAIL?.trim()
-          || env.BREVO_SAMPLE_SENDER_EMAIL?.trim()
-          || "updates@tradehustl3.com",
+        email: resumeSenderEmail(env),
       },
       to: [{ email }],
       subject: "How did TRADE HUSTL3 work for you?",

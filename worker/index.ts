@@ -12,6 +12,7 @@ import { malformedUrlTarget } from "./malformed-url";
 import { withPublicAssetCache } from "./public-asset-cache";
 import { handleProgramInquiry } from "./book-program-inquiry";
 import { PROGRAM_INQUIRY_ROUTE } from "../app/book/program-inquiry-options";
+import { bookSenderEmail } from "./sender-addresses";
 
 interface Env extends ResumeBuilderEnv, EbookStripeEnv {
   ASSETS: Fetcher;
@@ -20,6 +21,8 @@ interface Env extends ResumeBuilderEnv, EbookStripeEnv {
   BREVO_API_KEY?: string;
   BREVO_LIST_ID?: string;
   BREVO_SAMPLE_SENDER_EMAIL?: string;
+  /** Overrides book@tradehustl3.com for book emails (sample, eBook, program inquiries). */
+  BREVO_BOOK_SENDER_EMAIL?: string;
   /** Brevo double opt-in template ID (template tagged `optin`, containing
    * `{{ doubleoptin }}`). When set, website signups join the subscriber list
    * only after the person confirms by email. Unset keeps direct list adds. */
@@ -417,7 +420,7 @@ async function sendBookSampleDeliveryEmail(env: Env, email: string, downloadUrl:
     body: JSON.stringify({
       sender: {
         name: "TRADE HUSTL3",
-        email: env.BREVO_SAMPLE_SENDER_EMAIL?.trim() || "updates@tradehustl3.com",
+        email: bookSenderEmail(env),
       },
       to: [{ email }],
       subject: "Your free 7-page TRADE HUSTL3 book sample is ready",

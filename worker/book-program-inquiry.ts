@@ -7,6 +7,7 @@ import {
   type ProgramType,
 } from "../app/book/program-inquiry-options";
 import { BOOK_PARTNERSHIPS_EMAIL } from "../app/book/editions";
+import { bookSenderEmail } from "./sender-addresses";
 
 /**
  * Schools & programs inquiry for the TRADE HUSTL3 book.
@@ -192,6 +193,7 @@ export type ProgramInquiryEnv = {
   DB?: D1Like;
   BREVO_API_KEY?: string;
   BREVO_SAMPLE_SENDER_EMAIL?: string;
+  BREVO_BOOK_SENDER_EMAIL?: string;
 };
 
 export type ProgramInquiryDependencies = {
@@ -237,7 +239,7 @@ async function sendPartnersNotification(env: ProgramInquiryEnv, inquiry: Program
     method: "POST",
     headers: { Accept: "application/json", "Content-Type": "application/json", "api-key": apiKey },
     body: JSON.stringify({
-      sender: { name: "TRADE HUSTL3 Website", email: env.BREVO_SAMPLE_SENDER_EMAIL?.trim() || "updates@tradehustl3.com" },
+      sender: { name: "TRADE HUSTL3 Website", email: bookSenderEmail(env) },
       to: [{ email: BOOK_PARTNERSHIPS_EMAIL }],
       replyTo: { email: inquiry.email, name: inquiry.contactName },
       subject,
