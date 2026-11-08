@@ -530,6 +530,94 @@ test("subscriber endpoint validates and stores normalized signups", async () => 
   });
 });
 
+function signupTestDb() {
+  return {
+    prepare(sql) {
+      return {
+        bind() {
+          return {
+            async first() {
+              return /RETURNING count/i.test(sql) ? { count: 1 } : null;
+            },
+            async run() {
+              return { success: true };
+            },
+          };
+        },
+      };
+    },
+    async batch() { return []; },
+  };
+}
+
+test("subscriber endpoint sends a Brevo double opt-in when a confirmation template is configured", async () => {
+  const worker = await loadWorker();
+  const brevoCalls = [];
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (input, init) => {
+    brevoCalls.push({ input: String(input), init });
+    return new Response(null, { status: 204 });
+  };
+  let response;
+  try {
+    response = await worker.fetch(
+      new Request("http://localhost/api/subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: " Member@Example.com ", interest: "HUSTL3 PRO", utm_source: "google" }),
+      }),
+      { DB: signupTestDb(), BREVO_API_KEY: "test-brevo-key", BREVO_LIST_ID: "3", BREVO_DOI_TEMPLATE_ID: "18" },
+      { waitUntil() {}, passThroughOnException() {} },
+    );
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+
+  assert.equal(response.status, 200);
+  assert.deepEqual(await response.json(), {
+    ok: true,
+    message: "Almost there. Check your inbox and tap Confirm to join the TRADE HUSTL3 list.",
+  });
+  assert.equal(brevoCalls.length, 1);
+  assert.equal(brevoCalls[0].input, "https://api.brevo.com/v3/contacts/doubleOptinConfirmation");
+  assert.deepEqual(JSON.parse(brevoCalls[0].init.body), {
+    email: "member@example.com",
+    attributes: { INTEREST: "HUSTL3 PRO", SIGNUP_SOURCE: "website", UTM_SOURCE: "google" },
+    includeListIds: [3],
+    templateId: 18,
+    redirectionUrl: "https://tradehustl3.com/subscribed",
+  });
+});
+
+test("subscriber endpoint keeps direct list adds when the confirmation template ID is invalid", async () => {
+  const worker = await loadWorker();
+  const brevoCalls = [];
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (input, init) => {
+    brevoCalls.push({ input: String(input), init });
+    return new Response(null, { status: 201 });
+  };
+  let response;
+  try {
+    response = await worker.fetch(
+      new Request("http://localhost/api/subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: "member@example.com", interest: "HUSTL3 PRO" }),
+      }),
+      { DB: signupTestDb(), BREVO_API_KEY: "test-brevo-key", BREVO_LIST_ID: "3", BREVO_DOI_TEMPLATE_ID: "not-a-number" },
+      { waitUntil() {}, passThroughOnException() {} },
+    );
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+
+  assert.equal(response.status, 200);
+  assert.deepEqual(await response.json(), { ok: true, message: "You're on the TRADE HUSTL3 list." });
+  assert.equal(brevoCalls.length, 1);
+  assert.equal(brevoCalls[0].input, "https://api.brevo.com/v3/contacts");
+});
+
 test("subscriber endpoint rejects invalid submissions", async () => {
   const worker = await loadWorker();
   let prepared = false;

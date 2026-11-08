@@ -20,6 +20,10 @@ interface Env extends ResumeBuilderEnv, EbookStripeEnv {
   BREVO_API_KEY?: string;
   BREVO_LIST_ID?: string;
   BREVO_SAMPLE_SENDER_EMAIL?: string;
+  /** Brevo double opt-in template ID (template tagged `optin`, containing
+   * `{{ doubleoptin }}`). When set, website signups join the subscriber list
+   * only after the person confirms by email. Unset keeps direct list adds. */
+  BREVO_DOI_TEMPLATE_ID?: string;
   /** Dedicated HMAC secret for guide sample links. */
   SAMPLE_TOKEN_SECRET?: string;
   /** Dedicated HMAC secret for the gated 7-page book-sample link. */
@@ -274,6 +278,16 @@ async function isValidBookSampleToken(token: string, secret: string): Promise<bo
   }
 }
 
+/** Where Brevo sends people after they tap Confirm in the double opt-in email. */
+const DOUBLE_OPT_IN_REDIRECT_URL = `${SITE_URL}/subscribed`;
+
+/** Returns the configured double opt-in template ID, or null when website
+ * signups should keep the direct list add (the pre-DOI behavior). */
+function doubleOptInTemplateId(env: Env): number | null {
+  const templateId = Number.parseInt(env.BREVO_DOI_TEMPLATE_ID ?? "", 10);
+  return Number.isSafeInteger(templateId) && templateId > 0 ? templateId : null;
+}
+
 async function syncBrevoContact(
   env: Env,
   contact: {
@@ -283,6 +297,9 @@ async function syncBrevoContact(
     utmSource: string;
     utmMedium: string;
     utmCampaign: string;
+    /** Website signups set this; program inquiries do not. It only takes
+     * effect when BREVO_DOI_TEMPLATE_ID is configured. */
+    doubleOptIn?: boolean;
   },
 ): Promise<void> {
   const apiKey = env.BREVO_API_KEY?.trim();
@@ -299,6 +316,35 @@ async function syncBrevoContact(
   if (contact.utmSource) attributes.UTM_SOURCE = contact.utmSource;
   if (contact.utmMedium) attributes.UTM_MEDIUM = contact.utmMedium;
   if (contact.utmCampaign) attributes.UTM_CAMPAIGN = contact.utmCampaign;
+
+  const templateId = contact.doubleOptIn ? doubleOptInTemplateId(env) : null;
+  if (templateId) {
+    // Brevo emails the confirmation and adds the contact to the list (which
+    // starts the nurture automations) only after the link is clicked, so
+    // mistyped or fake addresses never reach the marketing list.
+    const response = await fetch("https://api.brevo.com/v3/contacts/doubleOptinConfirmation", {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        "api-key": apiKey,
+      },
+      body: JSON.stringify({
+        email: contact.email,
+        attributes,
+        includeListIds: [listId],
+        templateId,
+        redirectionUrl: DOUBLE_OPT_IN_REDIRECT_URL,
+      }),
+    });
+
+    if (!response.ok) {
+      const detail = (await response.text()).slice(0, 500);
+      console.error(operationalEvent("auth_email", "brevo_double_opt_in_failed", "error", { status: response.status, detail }));
+      throw new Error("Brevo double opt-in request failed.");
+    }
+    return;
+  }
 
   const response = await fetch("https://api.brevo.com/v3/contacts", {
     method: "POST",
@@ -446,6 +492,7 @@ async function performLeadDelivery(env: Env, job: LeadDeliveryJob): Promise<void
       utmSource: trackingValue(payload.utmSource),
       utmMedium: trackingValue(payload.utmMedium),
       utmCampaign: trackingValue(payload.utmCampaign),
+      doubleOptIn: payload.doubleOptIn === true,
     });
     return;
   }
@@ -570,6 +617,11 @@ async function subscribe(request: Request, env: Env): Promise<Response> {
          status = 'active'`,
     ).bind(email, interest, source).run();
 
+    const confirmationRequired = doubleOptInTemplateId(env) !== null;
+    const confirmNote = confirmationRequired
+      ? " Check your inbox and tap Confirm to join the TRADE HUSTL3 list."
+      : "";
+
     try {
       await syncBrevoContact(env, {
         email,
@@ -578,6 +630,7 @@ async function subscribe(request: Request, env: Env): Promise<Response> {
         utmSource: trackingValue(body.utm_source),
         utmMedium: trackingValue(body.utm_medium),
         utmCampaign: trackingValue(body.utm_campaign),
+        doubleOptIn: true,
       });
     } catch (error) {
       console.error(operationalEvent("auth_email", "subscriber_brevo_sync_deferred", "warning", {
@@ -589,6 +642,7 @@ async function subscribe(request: Request, env: Env): Promise<Response> {
         utmSource: trackingValue(body.utm_source),
         utmMedium: trackingValue(body.utm_medium),
         utmCampaign: trackingValue(body.utm_campaign),
+        doubleOptIn: true,
       }, error);
     }
 
@@ -619,7 +673,7 @@ async function subscribe(request: Request, env: Env): Promise<Response> {
           : `You're in. Your ${guideName} is ready below, but we could not email the copy. Please use the download link.`;
 
       return Response.json(
-        { ok: true, message, sampleUrl: FREE_SAMPLE_ROUTE, emailDelivered, emailQueued },
+        { ok: true, message: `${message}${confirmNote}`, sampleUrl: FREE_SAMPLE_ROUTE, emailDelivered, emailQueued },
         {
           headers: {
             "Cache-Control": "no-store",
@@ -648,11 +702,11 @@ async function subscribe(request: Request, env: Env): Promise<Response> {
       return Response.json(
         {
           ok: true,
-          message: emailDelivered
+          message: `${emailDelivered
             ? "You're in. Your free 7-page TRADE HUSTL3 book sample is ready to download, and a copy is on its way to your inbox."
             : emailQueued
               ? "Your free 7-page book sample is ready below. Email delivery is delayed, so we queued it for another attempt."
-              : "Your free 7-page book sample is ready below, but we could not email the copy. Please use the download link.",
+              : "Your free 7-page book sample is ready below, but we could not email the copy. Please use the download link."}${confirmNote}`,
           sampleUrl: BOOK_SAMPLE_ROUTE,
           emailDelivered,
           emailQueued,
@@ -666,7 +720,12 @@ async function subscribe(request: Request, env: Env): Promise<Response> {
       );
     }
 
-    return jsonResponse({ ok: true, message: "You're on the TRADE HUSTL3 list." });
+    return jsonResponse({
+      ok: true,
+      message: confirmationRequired
+        ? "Almost there. Check your inbox and tap Confirm to join the TRADE HUSTL3 list."
+        : "You're on the TRADE HUSTL3 list.",
+    });
   } catch (error) {
     console.error(operationalEvent("auth_email", "subscriber_signup_failed", "error", {
       error: deliveryError(error),
