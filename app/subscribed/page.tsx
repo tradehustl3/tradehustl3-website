@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 
 export default function SubscribedPage() {
   return (
-    <PolicyPage eyebrow="ENTER. EARN. ELEVATE." title="YOU'RE CONFIRMED" summary={PAGE_DESCRIPTION}>
+    <PolicyPage eyebrow="ENTER. EARN. ELEVATE." title="YOU'RE CONFIRMED" summary={PAGE_DESCRIPTION} showUpdated={false}>
       <PolicySection title="What happens next">
         <p>Watch your inbox for practical skilled-trades guidance from TRADE HUSTL3. You can unsubscribe from any email at any time.</p>
       </PolicySection>

@@ -56,6 +56,9 @@ const localBindingConfig = {
   vars: {
     BREVO_LIST_ID: "3",
     BREVO_SAMPLE_SENDER_EMAIL: "updates@tradehustl3.com",
+    // Brevo template #18 "Website signup confirmation (double opt-in)".
+    // Website signups join the list only after confirming by email.
+    BREVO_DOI_TEMPLATE_ID: "18",
   },
   d1_databases: d1
     ? [

@@ -11,11 +11,14 @@ export function PolicyPage({
   title,
   summary,
   children,
+  showUpdated = true,
 }: {
   eyebrow: string;
   title: string;
   summary: string;
   children: ReactNode;
+  /** Legal pages show their revision date; non-policy pages (e.g. /subscribed) opt out. */
+  showUpdated?: boolean;
 }) {
   return (
     <main className="policy-page">
@@ -32,7 +35,7 @@ export function PolicyPage({
         <p className="section-label">/ {eyebrow}</p>
         <h1>{title}</h1>
         <p>{summary}</p>
-        <small>Last updated {LEGAL_UPDATED}</small>
+        {showUpdated ? <small>Last updated {LEGAL_UPDATED}</small> : null}
       </section>
 
       <article className="policy-content">{children}</article>
