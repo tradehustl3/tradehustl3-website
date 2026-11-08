@@ -194,6 +194,15 @@ test("Top 10 Trades CTAs link straight to the builder start point", async () => 
   }
 });
 
+test("signup confirmation page renders without a legal revision date and stays out of search", async () => {
+  const response = await renderPath("/subscribed");
+  assert.equal(response.status, 200);
+  const html = await response.text();
+  assert.match(html, /YOU'RE CONFIRMED|YOU&#x27;RE CONFIRMED|YOU&#39;RE CONFIRMED/);
+  assert.doesNotMatch(html, /Last updated/i);
+  assert.match(html, /<meta name="robots" content="noindex, nofollow"/i);
+});
+
 test("publishes the customer protection pages with TRADE HUSTL3 LLC contact details", async () => {
   const pages = [
     ["/privacy", /Privacy Policy/i],
