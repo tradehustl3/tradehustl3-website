@@ -6,6 +6,11 @@ const CONTENT_REFRESHED_AT = new Date("2026-09-28T00:00:00.000Z");
 const RESOURCE_CENTER_REFRESHED_AT = new Date("2026-10-21T00:00:00.000Z");
 // The homepage became the TRADE HUSTL3 hub on 2026-10-21.
 const HOMEPAGE_REFRESHED_AT = new Date("2026-10-21T00:00:00.000Z");
+// /book and /book/sample were rebuilt for the final book on 2026-11-03:
+// corrected cover, final 486-page interior, author credentials, sample and FAQ.
+// lastmod must track substantive content changes only (not slogan or styling
+// tweaks), so Google keeps trusting it. Bump these when that content changes.
+const BOOK_REFRESHED_AT = new Date("2026-11-03T00:00:00.000Z");
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const publicPages: MetadataRoute.Sitemap = [
@@ -17,13 +22,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
     {
       url: `${SITE_URL}/book`,
-      lastModified: CONTENT_REFRESHED_AT,
+      lastModified: BOOK_REFRESHED_AT,
       changeFrequency: "daily",
       priority: 0.9,
     },
     {
       url: `${SITE_URL}/book/sample`,
-      lastModified: CONTENT_REFRESHED_AT,
+      lastModified: BOOK_REFRESHED_AT,
       changeFrequency: "daily",
       priority: 0.8,
     },
