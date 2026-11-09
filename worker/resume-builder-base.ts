@@ -659,6 +659,19 @@ async function sendMagicLinkEmail(env: ResumeBuilderEnv, email: string, confirma
             <p style="font-size:13px;line-height:1.6;color:#9cabb5">This link expires in 20 minutes and can only be used once. The extra confirmation step keeps automated email security scanners from signing in as you.</p>
           </div>
         </div>`,
+      // Plain-text part: HTML-only mail is a common spam-filter signal.
+      textContent: [
+        "TRADE HUSTL3 Resume Builder",
+        "",
+        `Your sign-in code: ${code}`,
+        "",
+        "Type this code on the Resume Builder page you just left. The code expires in 10 minutes and works once. Never share it. TRADE HUSTL3 will never ask you for it.",
+        "",
+        "On a different device? Open the confirmation page instead, then press the confirmation button:",
+        confirmationUrl,
+        "",
+        "This link expires in 20 minutes and can only be used once.",
+      ].join("\n"),
     }),
   });
   if (!response.ok) {
@@ -2042,6 +2055,19 @@ async function sendReviewRequestEmail(env: ResumeBuilderEnv, email: string, revi
             <p style="font-size:13px;line-height:1.6;color:#9cabb5">This private review link can be used once and expires 30 days after it is sent.</p>
           </div>
         </div>`,
+      textContent: [
+        "TRADE HUSTL3 Resume Builder",
+        "",
+        "Tell us how the builder worked for you.",
+        "",
+        "We want your honest feedback. Positive, negative, and mixed feedback are all welcome. Your review helps us improve the Resume Builder for skilled-trades job seekers.",
+        "",
+        "You choose whether TRADE HUSTL3 may publish your review. No discount, payment, reward, or other incentive is provided for leaving a review.",
+        "",
+        `Leave honest feedback: ${reviewUrl}`,
+        "",
+        "This private review link can be used once and expires 30 days after it is sent.",
+      ].join("\n"),
     }),
   });
   if (!response.ok) {

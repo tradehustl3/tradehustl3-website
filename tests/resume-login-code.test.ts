@@ -11,7 +11,7 @@ import { sqliteD1 } from "./helpers/sqlite-d1";
 const ORIGIN = "https://tradehustl3.com";
 const NOW = Date.parse("2026-10-29T12:00:00.000Z");
 
-type Sent = { subject: string; html: string; code: string; token: string };
+type Sent = { subject: string; html: string; text: string; code: string; token: string };
 
 function api(path: string, body: unknown, headers: Record<string, string> = {}): Request {
   return new Request(`${ORIGIN}/api/resume-builder/${path}`, {
@@ -25,10 +25,10 @@ async function withEmailCapture<T>(run: (sent: Sent[]) => Promise<T>): Promise<T
   const sent: Sent[] = [];
   const originalFetch = globalThis.fetch;
   globalThis.fetch = async (_input, init) => {
-    const payload = JSON.parse(String(init?.body)) as { subject: string; htmlContent: string };
+    const payload = JSON.parse(String(init?.body)) as { subject: string; htmlContent: string; textContent?: string };
     const code = /letter-spacing:10px;color:#ffffff">(\d{6})</.exec(payload.htmlContent)?.[1] ?? "";
     const token = /confirm\?token=([A-Za-z0-9_-]+)/.exec(payload.htmlContent)?.[1] ?? "";
-    sent.push({ subject: payload.subject, html: payload.htmlContent, code, token });
+    sent.push({ subject: payload.subject, html: payload.htmlContent, text: payload.textContent ?? "", code, token });
     return new Response(null, { status: 201 });
   };
   try {
@@ -67,6 +67,10 @@ test("the sign-in email carries a 6-digit code and the existing link; only hashe
     assert.match(email.html, /\/resume-builder\/confirm\?token=/);
     assert.match(email.subject, /sign-in code/i);
     assert.doesNotMatch(email.subject, /\d{6}/, "the code stays out of the subject line and provider logs");
+    // Plain-text part (spam filters penalize HTML-only mail): same code and link, no markup.
+    assert.ok(email.text.includes(`Your sign-in code: ${email.code}`), "plain-text part carries the code");
+    assert.ok(email.text.includes(`/resume-builder/confirm?token=${email.token}`), "plain-text part carries the same link");
+    assert.doesNotMatch(email.text, /<[a-z]/i, "plain-text part has no HTML");
 
     const rows = sqlite.prepare("SELECT token_hash, purpose FROM auth_tokens ORDER BY purpose").all() as Array<{ token_hash: string; purpose: string }>;
     assert.deepEqual(rows.map((row) => row.purpose), ["login", "login_code"]);
