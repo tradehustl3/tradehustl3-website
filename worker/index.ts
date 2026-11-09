@@ -399,6 +399,15 @@ async function sendTopTradesDeliveryEmail(env: Env, email: string, sampleUrl: st
             <p style="color:#d6a52a;font-weight:700">BUILT BY HUSTL3. BACKED BY TRADES.</p>
           </div>
         </div>`,
+      // Plain-text part: HTML-only mail is a common spam-filter signal.
+      textContent: [
+        "Your free Top 10 Trades guide is ready.",
+        "",
+        "Open the seven-page 2026-2027 preview (cover included) for trade profiles, national pay context, the guide's source standard, and practical next steps:",
+        sampleUrl,
+        "",
+        "BUILT BY HUSTL3. BACKED BY TRADES.",
+      ].join("\n"),
     }),
   });
 
@@ -435,6 +444,16 @@ async function sendBookSampleDeliveryEmail(env: Env, email: string, downloadUrl:
             <p style="color:#d6a52a;font-weight:700">ENTER. EARN. ELEVATE.</p>
           </div>
         </div>`,
+      textContent: [
+        "Your 7-page book sample is ready.",
+        "",
+        "This is the free seven-page sample of TRADE HUSTL3: the cover, opening pages, table of contents, and the beginning of Chapter 1.",
+        "",
+        `Download the 7-page sample (PDF): ${downloadUrl}`,
+        `Prefer to read in your browser? ${readerUrl}`,
+        "",
+        "ENTER. EARN. ELEVATE.",
+      ].join("\n"),
     }),
   });
 

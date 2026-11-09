@@ -184,7 +184,7 @@ export function AccountStart() {
         </button>
         {codeError ? <p id="login-code-error" className="rb-inline-error" role="alert">{codeError}</p> : null}
         <p id="login-code-help" className="rb-form-note">
-          The code expires in 10 minutes. On another device? Use the link in the same email instead.
+          The code expires in 10 minutes. Not in your inbox within a minute? Check Spam, Promotions or Updates, and mark it &ldquo;Not spam&rdquo; so the next one lands in your inbox. On another device? Use the link in the same email instead.
         </p>
         <button className="rb-text-button" type="button" onClick={resend}>Send a new code</button>
         <button className="rb-text-button" type="button" onClick={() => { setSentTo(""); setMessage(""); setCode(""); setCodeError(""); }}>Use a different email</button>

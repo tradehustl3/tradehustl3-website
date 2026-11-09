@@ -125,6 +125,17 @@ async function sendEbookDeliveryEmail(env: EbookStripeEnv, email: string, downlo
             <p style="color:#d6a52a;font-weight:700">BUILT BY HUSTL3. BACKED BY TRADES.</p>
           </div>
         </div>`,
+      // Plain-text part: HTML-only mail is a common spam-filter signal.
+      textContent: [
+        "Your TRADE HUSTL3 eBook is ready.",
+        "",
+        "Thank you for investing in your skilled-trades future. Use this private link to download the complete eBook:",
+        downloadUrl,
+        "",
+        "Keep this email for future downloads. This private link is tied to your purchase and should not be shared.",
+        "",
+        "BUILT BY HUSTL3. BACKED BY TRADES.",
+      ].join("\n"),
     }),
   });
 
@@ -163,6 +174,15 @@ async function sendEbookPreorderConfirmationEmail(env: EbookStripeEnv, email: st
             <p style="color:#d6a52a;font-weight:700">BUILT BY HUSTL3. BACKED BY TRADES.</p>
           </div>
         </div>`,
+      textContent: [
+        "Your eBook preorder is confirmed.",
+        "",
+        "Thank you for investing in your skilled-trades future. Your complete TRADE HUSTL3 eBook will be delivered to this email address on September 15, 2026.",
+        "",
+        "No download is available before launch. You will receive a second email with your private download link when the book is released.",
+        "",
+        "BUILT BY HUSTL3. BACKED BY TRADES.",
+      ].join("\n"),
     }),
   });
 
