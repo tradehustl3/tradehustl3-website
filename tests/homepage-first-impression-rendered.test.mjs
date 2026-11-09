@@ -194,3 +194,33 @@ test("campaign visits for trades without a quick-pick card keep the resume-first
     assert.doesNotMatch(html, /<button[^>]*aria-pressed="true"[^>]*data-location="hero_trade_picker"/, `${slug}: no unrelated chip preselected`);
   }
 });
+
+test("the email step offers an optional trade picker above the email box", async () => {
+  const html = await renderHome();
+  const panel = between(html, 'id="resume-start"', 'id="included-cover-letter"');
+  assert.match(panel, /Free preview · No credit card/);
+  assert.match(panel, /Start your free preview/);
+  assert.doesNotMatch(panel, /stage 1 of 5/i);
+  assert.match(panel, /we&#x27;ll send you a 6-digit code/);
+  assert.match(panel, /Your trade <span>\(optional\)<\/span>/);
+  const chips = panel.match(/<button\b[^>]*class="rb-start-trade"[^>]*>[^<]*<\/button>/g) ?? [];
+  assert.equal(chips.length, 6);
+  for (const chip of chips) {
+    assert.match(chip, /type="button"/, "a trade chip must never submit the email form");
+    assert.match(chip, /aria-pressed="false"/, "nothing is preselected on a plain visit");
+    assert.match(chip, /data-location="start_panel_trade_picker"/);
+  }
+  assert.ok(panel.indexOf("rb-start-trades") < panel.indexOf('type="email"'), "picker sits above the email box");
+  assert.match(panel, /Continue with email/);
+  assert.match(panel, /You read the whole resume before you pay anything\./);
+});
+
+test("the email step shows a ?trade= visit's trade as chosen, including trades without a hero chip", async () => {
+  const plumbing = between(await renderHome("/?trade=plumbing"), 'id="resume-start"', 'id="included-cover-letter"');
+  assert.equal((plumbing.match(/class="rb-start-trade" aria-pressed="true"/g) ?? []).length, 1);
+  assert.match(plumbing, /aria-pressed="true"[^>]*data-item="plumbing"[^>]*>Plumbing</);
+
+  const roofing = between(await renderHome("/?trade=roofing"), 'id="resume-start"', 'id="included-cover-letter"');
+  assert.equal((roofing.match(/class="rb-start-trade"/g) ?? []).length, 7);
+  assert.match(roofing, /aria-pressed="true"[^>]*data-item="roofing-exterior-trades"[^>]*>Roofing &amp; Exterior Trades</);
+});

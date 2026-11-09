@@ -253,6 +253,25 @@
 
 /* Account entry (homepage panel + magic-link states) */
 .rb-account-form { margin-top: 24px; }
+/* Optional trade quick-pick above the email box; 44px touch targets. */
+.rb-start-trades { margin: 0 0 18px; }
+.rb-start-trades-label { margin: 0 0 8px; color: var(--rb-text); font-size: 14px; font-weight: 600; }
+.rb-start-trades-label span { color: var(--rb-text-2); font-weight: 400; }
+.rb-start-trades-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.rb-start-trade {
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--rb-border-strong);
+  border-radius: var(--rb-radius-sm);
+  background: var(--rb-surface);
+  color: var(--rb-text);
+  cursor: pointer;
+  font: inherit;
+  font-size: 15px;
+}
+.rb-start-trade:hover { border-color: var(--rb-navy); }
+.rb-start-trade[aria-pressed="true"] { border-color: var(--rb-red); background: var(--rb-red-soft); color: #991b1b; font-weight: 600; }
+@media (prefers-reduced-motion: no-preference) { .rb-start-trade { transition: border-color .15s, background-color .15s; } }
 .rb-account-ready {
   display: grid;
   grid-template-columns: auto 1fr;

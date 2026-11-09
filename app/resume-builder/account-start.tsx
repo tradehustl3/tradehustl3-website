@@ -1,15 +1,21 @@
 "use client";
 
-import { FormEvent, useEffect, useRef, useState } from "react";
+import { FormEvent, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { trackResumeFunnelEvent } from "./funnel-analytics";
+import type { TradeTrack } from "./trade-content";
 import {
+  clearIntakeTrade,
   recallIntakeTrade,
   rememberIntakeTrade,
   resolveTradeParam,
   slugForTradeTrack,
+  withTradeParam,
 } from "./trade-preselect";
 
 type User = { email: string; fullName: string | null };
+
+/** One quick-pick trade on the email step. The page passes the homepage hero's trades. */
+export type StartTradeOption = { label: string; track: TradeTrack };
 
 /**
  * Where the verified-account CTA points. A trade landing page (e.g.
@@ -25,7 +31,74 @@ function intakeHref(): string {
   return track ? `/resume-builder/intake?trade=${slugForTradeTrack(track)}` : "/resume-builder/intake";
 }
 
-export function AccountStart() {
+/**
+ * Optional trade picker shown above the email box. Most homepage CTAs land on
+ * the plain #resume-start, so without this the visitor reaches the email step
+ * with no trade chosen. A pick is stored exactly like a landing-page
+ * `?trade=`: in the URL (so `intakeHref()` and a refresh agree) and in the
+ * magic-link bridge (so it survives the inbox round trip). Choosing is never
+ * required; the intake still asks when nothing was picked.
+ */
+function TradePicker({
+  options,
+  selected,
+  onSelect,
+}: {
+  options: readonly StartTradeOption[];
+  selected: TradeTrack | null;
+  onSelect: (track: TradeTrack | null) => void;
+}) {
+  // A ?trade= for a track without a quick-pick chip (e.g. roofing) still shows as chosen.
+  const shown = selected && !options.some((option) => option.track === selected)
+    ? [{ label: selected, track: selected }, ...options]
+    : options;
+  return (
+    <div className="rb-start-trades" role="group" aria-labelledby="start-trade-label">
+      <p id="start-trade-label" className="rb-start-trades-label">
+        Your trade <span>(optional)</span>
+      </p>
+      <div className="rb-start-trades-chips">
+        {shown.map((option) => {
+          const pressed = option.track === selected;
+          return (
+            <button
+              key={option.track}
+              type="button"
+              className="rb-start-trade"
+              aria-pressed={pressed}
+              onClick={() => onSelect(pressed ? null : option.track)}
+              data-analytics-event="select_content"
+              data-location="start_panel_trade_picker"
+              data-item={slugForTradeTrack(option.track)}
+              data-destination="#resume-start"
+            >
+              {option.label}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+const subscribeToNothing = () => () => undefined;
+const recallNothing = () => null;
+
+export function AccountStart({
+  tradeOptions = [],
+  initialTrack = null,
+}: {
+  /** Quick-pick trades for the email step. Empty hides the picker. */
+  tradeOptions?: readonly StartTradeOption[];
+  /** The server-resolved `?trade=`, so the first render already shows it chosen. */
+  initialTrack?: TradeTrack | null;
+} = {}) {
+  // undefined = the visitor has not touched the picker; null = they cleared it.
+  const [picked, setPicked] = useState<TradeTrack | null | undefined>(undefined);
+  // A trade remembered earlier in this visit (bridge value). Read on the client
+  // only, so the server render and hydration both start from `initialTrack`.
+  const recalled = useSyncExternalStore(subscribeToNothing, recallIntakeTrade, recallNothing);
+  const trade = picked !== undefined ? picked : initialTrack ?? recalled;
   const [user, setUser] = useState<User | null>(null);
   const [checking, setChecking] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -48,6 +121,17 @@ export function AccountStart() {
     const fromParam = resolveTradeParam(new URLSearchParams(window.location.search).get("trade"));
     if (fromParam) rememberIntakeTrade(fromParam);
   }, []);
+
+  function selectTrade(next: TradeTrack | null) {
+    setPicked(next);
+    if (next) rememberIntakeTrade(next);
+    else clearIntakeTrade();
+    try {
+      window.history.replaceState(window.history.state, "", withTradeParam(window.location.href, next));
+    } catch {
+      // History API unavailable: the bridge value above still carries the pick.
+    }
+  }
 
   useEffect(() => {
     let active = true;
@@ -194,13 +278,17 @@ export function AccountStart() {
 
   return (
     <form className="rb-account-form" onSubmit={submit}>
+      {tradeOptions.length > 0 ? <TradePicker options={tradeOptions} selected={trade} onSelect={selectTrade} /> : null}
       <div className="rb-field">
         <label htmlFor="email">Email address</label>
         <input id="email" name="email" type="email" autoComplete="email" maxLength={254} required placeholder="you@example.com" />
       </div>
       <button className="rb-button rb-button-primary rb-button-full" type="submit" disabled={submitting || checking}>
-        {submitting ? "Sending secure link…" : "Continue with email"} <span>→</span>
+        {submitting ? "Sending your code…" : "Continue with email"} <span>→</span>
       </button>
+      <p className="rb-form-note">
+        Next: upload your resume or answer a few questions about your work. You read the whole resume before you pay anything.
+      </p>
       <p className="rb-form-note">No password. We only use your email to verify your account. If you upload a resume, your name and resume facts come from that file.</p>
       {message ? <p className="rb-inline-error" role="alert">{message}</p> : null}
     </form>
