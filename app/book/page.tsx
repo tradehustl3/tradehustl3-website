@@ -629,7 +629,7 @@ export default function BookPage() {
 
       <footer>
         <div className="footer-brand"><div className="wordmark">TRADE HUSTL<span>3</span></div><p>BUILT BY HUSTL3. BACKED BY TRADES.</p><SocialLinks /></div>
-        <div className="footer-links"><Link href="/">Home</Link><a href="#sample">Free sample</a><a href="#author">Author</a><a href="#faq">FAQ</a><a href="#availability">Buy the Book</a><a href="#schools">Schools &amp; programs</a><a href={`mailto:${BOOK_PARTNERSHIPS_EMAIL}`}>Partnerships</a></div>
+        <div className="footer-links"><Link href="/">Home</Link><a href="#sample">Free sample</a><Link href="/book/sample">Sample page</Link><a href="#author">Author</a><a href="#faq">FAQ</a><a href="#availability">Buy the Book</a><a href="#schools">Schools &amp; programs</a><a href={`mailto:${BOOK_PARTNERSHIPS_EMAIL}`}>Partnerships</a></div>
         <div className="footer-legal"><Link href="/privacy">Privacy</Link><Link href="/terms">Terms</Link><Link href="/book/refund-policy">eBook policy</Link><Link href="/data-deletion">Data requests</Link><Link href="/contact">Support</Link></div>
         <p className="copyright">© 2026 TRADE HUSTL3. ALL GRIT RESERVED.</p>
       </footer>
