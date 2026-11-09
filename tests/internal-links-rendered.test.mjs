@@ -61,7 +61,9 @@ test("every sitemap page has a server-rendered internal link from another page",
 test("homepage footer links to pages the stage picker hides until clicked", async () => {
   const worker = await loadWorker();
   const html = await (await worker.fetch(new Request("https://tradehustl3.com/", { headers: { accept: "text/html" } }), env, ctx)).text();
-  for (const path of ["/resume-examples/skilled-trades", "/resume-examples/maintenance-resume-tips", "/book/sample"]) {
+  // /book/sample is deliberately not linked from the homepage (book content
+  // stays on /book; see rendered-html.test.mjs). /book links to it instead.
+  for (const path of ["/resume-examples/skilled-trades", "/resume-examples/maintenance-resume-tips"]) {
     assert.ok(internalLinkTargets(html, "/").has(path), `homepage should link to ${path}`);
   }
 });

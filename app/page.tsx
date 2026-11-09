@@ -311,7 +311,6 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
           <Link href="/resume-examples/maintenance-resume-tips">Maintenance Resume Tips</Link>
           <Link href="/top-10-trades">Top 10 Trades</Link>
           <Link href="/book">The Book</Link>
-          <Link href="/book/sample">Free Book Sample</Link>
           <Link href="/privacy">Privacy</Link>
           <Link href="/terms">Terms</Link>
           <Link href="/contact">Support</Link>
