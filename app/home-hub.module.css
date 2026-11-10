@@ -192,6 +192,18 @@
   line-height: 1;
 }
 
+
+/* Retain the established section eyebrow styles below the story bridge. */
+.kicker {
+  margin: 0;
+  font-family: var(--font-home-display), Impact, sans-serif;
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: 3px;
+  color: var(--gold);
+}
+.section .kicker { color: var(--red); }
+
 .section { max-width: 1200px; margin: 0 auto; padding: 64px 24px 40px; display: flex; flex-direction: column; gap: 22px; color: var(--navy);
   /* Full-bleed cream band behind a centered column. */
   background: var(--cream); box-shadow: 0 0 0 100vmax var(--cream); clip-path: inset(0 -100vmax); }
