@@ -131,57 +131,6 @@ export function HubHero() {
   );
 }
 
-type Division = { title: string; copy: string; tag: string; href?: string; cta?: string; paid?: boolean };
-
-const DIVISIONS: readonly Division[] = [
-  { title: "Trade Explorer", tag: "Free", copy: `${CATALOG_METRICS.careerFamilies} trade families and ${CATALOG_METRICS.mappedRoles} job titles, with what each trade looks for.`, href: "/resume-examples", cta: "Explore trades" },
-  { title: "Credential Center", tag: "Free", copy: `${CREDENTIAL_LIBRARY.length} certifications, licenses, and training cards — labeled by type and linked to the issuer.`, href: "/resources/certifications", cta: "Browse credentials" },
-  { title: "Career Tools", tag: "Free preview · $9.99", copy: "The TRADE HUSTL3 Resume Builder with a matching cover letter, PDF and editable Word.", href: "#resume-start", cta: "Build my resume", paid: true },
-];
-
-export function HubDivisions() {
-  return (
-    <section className={styles.section} aria-labelledby="divisions-title">
-      <div className={styles.sectionHead}>
-        <p className={styles.kicker}>EXPLORE WHAT’S AVAILABLE</p>
-        <h2 id="divisions-title" className={styles.h2}>Tools for your next career move</h2>
-      </div>
-      <ul className={styles.divisions}>
-        {DIVISIONS.map((division) => {
-          const body = (
-            <>
-              <span className={styles.divisionTag} data-variant={division.paid ? "paid" : division.href ? "free" : "soon"}>{division.tag}</span>
-              <span className={styles.divisionTitle}>{division.title}</span>
-              <span className={styles.divisionCopy}>{division.copy}</span>
-              {division.cta ? <span className={styles.divisionCta}>{division.cta} →</span> : null}
-            </>
-          );
-          return (
-            <li key={division.title}>
-              {division.href ? (
-                <Link
-                  className={styles.division}
-                  data-live="true"
-                  href={division.href}
-                  data-analytics-event="select_content"
-                  data-location="hub_divisions"
-                  data-destination={division.href}
-                  data-item={division.title}
-                >
-                  {body}
-                </Link>
-              ) : (
-                <div className={styles.division} data-live="false">{body}</div>
-              )}
-            </li>
-          );
-        })}
-      </ul>
-      <p className={styles.sectionLead}>Coming next: training and job resources, career advice, and the Field Report.</p>
-    </section>
-  );
-}
-
 export function HubOutlook() {
   return (
     <section className={styles.section} aria-labelledby="outlook-title">
