@@ -22,7 +22,8 @@ test("homepage server-renders Know Your Trade with HVAC selected and real button
   const html = await render("/");
   const start = html.indexOf('id="know-your-trade"');
   assert.ok(start > 0, "section present");
-  assert.ok(start > html.indexOf('id="resume-start"'), "comes after the resume start section");
+  assert.ok(start > html.indexOf('id="first-steps"'), "follows Your First Steps");
+  assert.ok(start < html.indexOf('id="resume-start"'), "comes before the paid tools");
   const section = html.slice(start, html.indexOf("</section>", start));
   for (const label of ["HVAC", "Electrical", "Plumbing", "Facilities", "Welding", "Driving", "Construction"]) {
     assert.match(section, new RegExp(`<button[^>]*aria-pressed="(true|false)"[^>]*>${label}</button>`), `${label} chip`);
@@ -35,7 +36,7 @@ test("homepage server-renders Know Your Trade with HVAC selected and real button
 });
 
 test("homepage cover-letter sample no longer calls OSHA 10 a certification", async () => {
-  const html = await render("/");
+  const html = await render("/?trade=hvac");
   assert.doesNotMatch(html, /OSHA 10 certifications/);
   assert.match(html, /completed OSHA 10-Hour training/);
 });

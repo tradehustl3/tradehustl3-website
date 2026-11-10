@@ -267,7 +267,7 @@ for (const page of PAGES) {
   });
 }
 
-test("the homepage carries the eight-trade discovery links after the hub is removed", async () => {
+test("the homepage Find Your Lane cards carry the eight-trade discovery links", async () => {
   const html = await (await renderPath("/")).text();
   assert.equal(PAGES.length, 8, "expected the full eight-page trade cluster");
   for (const page of PAGES) {
@@ -279,9 +279,9 @@ test("the homepage carries the eight-trade discovery links after the hub is remo
     "Electrical",
     "Plumbing",
     "Welding &amp; Fabrication",
-    "Construction &amp; Carpentry",
-    "General Labor / Maintenance Tech",
-    "Heavy Equipment Operator",
+    "Construction",
+    "General Labor",
+    "Heavy Equipment",
   ]) {
     assert.ok(html.includes(label), `homepage missing trade label: ${label}`);
   }

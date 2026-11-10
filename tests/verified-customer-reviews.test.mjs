@@ -34,7 +34,9 @@ test("homepage reviews come only from the verified paid-customer review API", ()
   const page = read("app/page.tsx");
   const reviews = read("app/customer-reviews.tsx");
   assert.equal(page.match(/<CustomerReviews \/>/g)?.length, 1);
-  assert.ok(page.indexOf("<CustomerReviews />") < page.indexOf('id="resume-start"'), "customer proof appears before the start form");
+  assert.ok(page.indexOf("<CustomerReviews />") < page.indexOf("<ResumeStartSection />"), "customer proof appears before the start form");
+  const campaign = read("app/home-resume-first.tsx");
+  assert.equal(campaign.match(/<CustomerReviews \/>/g)?.length, 1);
   assert.match(reviews, /\/api\/resume-builder\/reviews\/public/);
   assert.match(reviews, /if \(reviews\.length === 0\) return null;/);
   assert.match(reviews, /VERIFIED PAID CUSTOMER/);
