@@ -58,12 +58,12 @@ export function HubHero() {
           <p className={styles.storyKicker}>THE TRADE HUSTL3 STORY · BUILT BY A TRADESMAN</p>
           <p className={styles.storyPromise}>ENTER <span aria-hidden="true">•</span> EARN <span aria-hidden="true">•</span> ELEVATE</p>
           <h2 id="hub-title" className={styles.storyTitle}>
-            Your future is built. <span>Not handed to you.</span>
+            Your future is built, <span>not handed to you.</span>
           </h2>
           <p className={styles.storyLead}>
-            In school? Changing direction? Already putting in work? You don&apos;t need to have
-            every answer today. You need honest information, a trade to explore, and a next
-            step you can actually take. That&apos;s why TRADE HUSTL3 exists.
+            You might be in school, starting your first job, changing careers, or already working
+            in the field. Wherever you&apos;re starting, TRADE HUSTL3 gives you real trade
+            information, practical career tools, and a clearer path to your next move.
           </p>
         </div>
 

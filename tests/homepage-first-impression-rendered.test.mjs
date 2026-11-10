@@ -78,7 +78,7 @@ test("default homepage leads with the two-product storefront, then the hub and R
   assert.equal((html.match(/<h1\b/g) ?? []).length, 1);
   // The gold accent span is presentational; the h1's full text must stay exactly the approved headline.
   assert.match(html, /<h1 id="storefront-heading"[^>]*>Build your career\.\s*(?:<!-- -->)?\s*<span[^>]*>Own your future\.<\/span><\/h1>/);
-  assert.match(html, /<h2 id="hub-title"[^>]*>Your future is built\./);
+  assert.match(html, /<h2 id="hub-title"[^>]*>Your future is built,\s*(?:<!-- -->)?\s*<span[^>]*>not handed to you\.<\/span><\/h2>/);
   assert.ok(html.indexOf("Skilled-Trades Resume Builder") < html.indexOf("TRADE HUSTL3 — The Book"), "resume offer precedes book offer");
   const order = ['id="storefront-heading"', 'id="hub-title"', 'id="start-here"', 'id="divisions-title"', 'id="resume-hero"', 'id="resume-start"', 'id="know-your-trade"', 'id="outlook-title"']
     .map((marker) => html.indexOf(marker));
@@ -94,9 +94,8 @@ test("hub story follows ENTER, EARN, ELEVATE with real paths and sourced guides"
   const html = await renderHome();
   const story = between(html, 'id="hub-mission"', 'id="start-here"');
   assert.match(story, /THE TRADE HUSTL3 STORY/);
-  assert.match(story, /Your future is built\./);
-  assert.match(story, /Not handed to you\./);
-  assert.match(story, /In school\?/);
+  assert.match(story, /You might be in school, starting your first job, changing careers, or already working\s+in the field\./);
+  assert.match(story, /real trade\s+information, practical career tools, and a clearer path to your next move\./);
   const pillars = ["ENTER", "EARN", "ELEVATE"].map((word) => story.indexOf('>' + word + '</span>'));
   pillars.forEach((index, i) => assert.ok(index > (pillars[i - 1] ?? -1), 'story pillar order'));
   assert.match(story, /href="\/resume-examples"/);
