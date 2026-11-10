@@ -305,16 +305,18 @@
   .assetFrame { min-height: 122px; }
   .resumeImage { max-width: 91px; }
   .bookImage { max-width: 78px; max-height: 124px; }
-  .cardKicker { font-size: .64rem; margin-bottom: 3px; }
+  .cardKicker { font-size: .7rem; margin-bottom: 3px; }
   .title { font-size: 1.12rem; margin-bottom: 4px; }
   .description { font-size: .8rem; line-height: 1.29; margin-bottom: 6px; }
-  .price { font-size: .77rem; margin-bottom: 8px; }
+  /* Price is purchase-critical information; keep it at a readable size. */
+  .price { font-size: .82rem; margin-bottom: 8px; }
   .button { padding: 8px 11px; min-height: 44px; font-size: .82rem; }
-  .secondary { min-height: 31px; font-size: .78rem; }
+  /* Kindle purchase link: keep a 44px touch target on phones. */
+  .secondary { min-height: 44px; font-size: .8rem; }
   .trustStrip { grid-template-columns: 1fr 1fr; gap: 10px; padding: 10px; }
   .trustStrip p:last-child { grid-column: 1 / -1; }
   .tradeList { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-  .tradeList a { min-height: 57px; font-size: .68rem; }
+  .tradeList a { min-height: 57px; font-size: .72rem; }
   .leadMagnets { grid-template-columns: 1fr; gap: 8px; }
   .leadMagnets a { min-height: 55px; }
 }

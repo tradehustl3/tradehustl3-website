@@ -76,8 +76,8 @@ test("homepage header leads with the TRADE HUSTL3 brand, four hub links, and one
 test("default homepage leads with the two-product storefront, then the hub and Resume Builder", async () => {
   const html = await renderHome();
   assert.equal((html.match(/<h1\b/g) ?? []).length, 1);
-  assert.match(html, /<h1 id="storefront-heading"[^>]*>/);
-  assert.match(html, /Own your future\./);
+  // The gold accent span is presentational; the h1's full text must stay exactly the approved headline.
+  assert.match(html, /<h1 id="storefront-heading"[^>]*>Build your career\.\s*(?:<!-- -->)?\s*<span[^>]*>Own your future\.<\/span><\/h1>/);
   assert.match(html, /<h2 id="hub-title"[^>]*>Built for the people who build, maintain, repair, and move America\.<\/h2>/);
   assert.ok(html.indexOf("Skilled-Trades Resume Builder") < html.indexOf("TRADE HUSTL3 — The Book"), "resume offer precedes book offer");
   const order = ['id="storefront-heading"', 'id="hub-title"', 'id="start-here"', 'id="divisions-title"', 'id="resume-hero"', 'id="resume-start"', 'id="know-your-trade"', 'id="outlook-title"']
