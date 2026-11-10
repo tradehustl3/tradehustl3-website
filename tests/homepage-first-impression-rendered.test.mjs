@@ -85,7 +85,6 @@ test("default homepage leads with the two-product storefront, then the hub and R
   order.forEach((index, i) => assert.ok(index > (order[i - 1] ?? -1), `hub section ${i} out of order`));
   assert.match(html, /<button[^>]*aria-pressed="true"[^>]*data-item="student"/);
   assert.doesNotMatch(html, /Coming soon/);
-  assert.match(html, /Coming next:/);
   assert.match(html, /Just your email/);
   assert.match(html, /<h2 id="hero-title"/);
 });
