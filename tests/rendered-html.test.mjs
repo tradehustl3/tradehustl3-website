@@ -445,8 +445,8 @@ test("homepage features the approved book cover and edition links without duplic
   assert.match(html, /optimized\/book-cover-v3\.webp/i);
   assert.match(html, /href="https:\/\/www\.amazon\.com\/dp\/B0HFQ2ZNJN"/i);
   assert.match(html, /href="https:\/\/www\.amazon\.com\/dp\/B0HPZ2KQ1R"/i);
-  assert.match(html, /Kindle \$9\.99/i);
-  assert.match(html, /Paperback \$24\.99/i);
+  assert.match(html, /Kindle \$(?:<!-- -->)?9\.99/i);
+  assert.match(html, /Paperback \$(?:<!-- -->)?24\.99/i);
   assert.doesNotMatch(html, /FREE BOOK SAMPLE/i);
   assert.doesNotMatch(html, /BOOK &amp; MISSION/i);
   assert.doesNotMatch(html, /optimized\/zachary-ellis\.webp/i);
