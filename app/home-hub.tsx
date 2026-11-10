@@ -3,7 +3,6 @@ import { CREDENTIAL_LIBRARY } from "./resources/credential-library";
 import { LABOR_MARKET_FACTS, LABOR_MARKET_PERIOD, formatCount, formatPay } from "./resources/labor-market";
 import { CATALOG_METRICS } from "./resume-examples/catalog-metrics";
 import styles from "./home-hub.module.css";
-import { FieldInstrumentArt, PowerLineBackdrop } from "./home-field-art";
 
 /**
  * Hub homepage sections (approved design, Oct 21 2026): TRADE HUSTL3 as a
@@ -18,44 +17,94 @@ const POPULAR = [
   ["Forklift training", "/resources/certifications#forklift-operator"],
 ] as const;
 
+/** A clear next step for new entrants, experienced tradespeople, and career changers.
+ * The three pillars match the actual TRADE HUSTL3 brand lockup.
+ */
+const STORY_STEPS = [
+  {
+    number: "01",
+    pillar: "ENTER",
+    heading: "Find the trade that fits.",
+    copy: "Explore the work, compare career families, and see the job titles before choosing your direction.",
+    href: "/resume-examples",
+    cta: "Explore the trades",
+    item: "enter_explore",
+  },
+  {
+    number: "02",
+    pillar: "EARN",
+    heading: "Learn what the work takes.",
+    copy: "Get clear on training, licenses, and employer-preferred credentials with guides linked to their sources.",
+    href: "/resources/certifications",
+    cta: "Check credentials",
+    item: "earn_qualify",
+  },
+  {
+    number: "03",
+    pillar: "ELEVATE",
+    heading: "Show what you can do.",
+    copy: "Put your real skills and experience on a trades-focused resume. Preview it free before deciding to buy.",
+    href: "#resume-start",
+    cta: "Build my free preview",
+    item: "elevate_resume",
+  },
+] as const;
+
 export function HubHero() {
   return (
     <section className={styles.hero} id="hub-mission" aria-labelledby="hub-title">
-      <PowerLineBackdrop />
-      <div className={styles.heroInner}>
-        <div className={styles.heroCopy}>
-          <p className={styles.kicker}>SKILLED-TRADES CAREER &amp; RESOURCE HUB</p>
-          <h2 id="hub-title" className={styles.h1}>Built for the people who build, maintain, repair, and move America.</h2>
-          <p className={styles.lead}>
-            <span className={styles.leadStatement}>Explore your trade. Develop your skills. Advance your career.</span>
-            Free trade guides, sourced credential guides, and career tools — built by a tradesman.
+      <div className={styles.storyInner}>
+        <div className={styles.storyIntro}>
+          <p className={styles.storyKicker}>THE TRADE HUSTL3 STORY · BUILT BY A TRADESMAN</p>
+          <p className={styles.storyPromise}>ENTER <span aria-hidden="true">•</span> EARN <span aria-hidden="true">•</span> ELEVATE</p>
+          <h2 id="hub-title" className={styles.storyTitle}>
+            Your future is built. <span>Not handed to you.</span>
+          </h2>
+          <p className={styles.storyLead}>
+            In school? Changing direction? Already putting in work? You don&apos;t need to have
+            every answer today. You need honest information, a trade to explore, and a next
+            step you can actually take. That&apos;s why TRADE HUSTL3 exists.
           </p>
-          <div className={styles.heroActions}>
+        </div>
+
+        <div className={styles.storyCards} aria-label="Three ways to move forward in the skilled trades">
+          {STORY_STEPS.map((step) => (
+            <article className={styles.storyCard} key={step.pillar}>
+              <div className={styles.storyCardTop}>
+                <span className={styles.storyNumber} aria-hidden="true">{step.number}</span>
+                <span className={styles.storyPillar}>{step.pillar}</span>
+              </div>
+              <h3 className={styles.storyCardTitle}>{step.heading}</h3>
+              <p className={styles.storyCardCopy}>{step.copy}</p>
+              <Link
+                className={styles.storyAction}
+                href={step.href}
+                data-analytics-event="cta_click"
+                data-location="hub_story"
+                data-destination={step.href}
+                data-item={step.item}
+              >
+                {step.cta} <span aria-hidden="true">→</span>
+              </Link>
+            </article>
+          ))}
+        </div>
+
+        <div className={styles.storyResources}>
+          <div className={styles.storyResourcesHeader}>
+            <p>Real answers, not guesswork. Start with the guides.</p>
             <Link
-              className={styles.lightCta}
+              className={styles.storyAllResources}
               href="/resources"
               data-analytics-event="cta_click"
               data-location="hub_hero"
               data-destination="/resources"
               data-item="resource_center"
             >
-              Explore the Resource Center
-              <span className={styles.ctaArrow} aria-hidden="true">↗</span>
+              Explore the Resource Center <span aria-hidden="true">↗</span>
             </Link>
-            <a
-              className={styles.outlineCta}
-              href="#resume-start"
-              data-analytics-event="cta_click"
-              data-location="hub_hero"
-              data-destination="#resume-start"
-              data-item="resume_builder"
-            >
-              Build a resume — free preview
-              <span className={styles.ctaArrow} aria-hidden="true">→</span>
-            </a>
           </div>
-          <div className={styles.popular}>
-            <span>Popular:</span>
+          <nav className={styles.popular} aria-label="Popular credential and training guides">
             {POPULAR.map(([label, href]) => (
               <Link
                 key={href}
@@ -65,17 +114,17 @@ export function HubHero() {
                 data-destination={href}
                 data-item={label}
               >
-                {label}
+                {label} <span aria-hidden="true">↗</span>
               </Link>
             ))}
-          </div>
+          </nav>
         </div>
-        <FieldInstrumentArt />
-        <dl className={styles.stats}>
-          <div><dt>trade families</dt><dd>{CATALOG_METRICS.careerFamilies}</dd></div>
-          <div><dt>mapped job titles</dt><dd>{CATALOG_METRICS.mappedRoles}</dd></div>
-          <div><dt>credentials checked against official sources</dt><dd>{CREDENTIAL_LIBRARY.length}</dd></div>
-          <div><dt>to use every guide</dt><dd>$0</dd></div>
+
+        <dl className={styles.stats} aria-label="Explore the TRADE HUSTL3 resource library">
+          <div><dt>trade families to explore</dt><dd>{CATALOG_METRICS.careerFamilies}</dd></div>
+          <div><dt>mapped skilled-trades roles</dt><dd>{CATALOG_METRICS.mappedRoles}</dd></div>
+          <div><dt>credentials linked to sources</dt><dd>{CREDENTIAL_LIBRARY.length}</dd></div>
+          <div><dt>cost to use the guides</dt><dd>$0</dd></div>
         </dl>
       </div>
     </section>
