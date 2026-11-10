@@ -92,9 +92,10 @@ test("server-renders the corrected TRADE HUSTL3 brand and metadata", async () =>
 });
 
 test("campaign homepage server-renders Resume Builder credibility and audience content", async () => {
+  const hub = await (await render()).text();
+  assert.match(hub, /optimized\/resume-builder-logo-header\.webp/i, "hub shows the Resume Builder badge");
   const html = await (await renderPath("/?trade=hvac")).text();
   assert.match(html, /Built around the way skilled-trades people actually work/i);
-  assert.match(html, /optimized\/resume-builder-logo-header\.webp/i);
   assert.match(html, /Shaped by 10\+ years of HVAC and facilities work\./i);
   assert.doesNotMatch(html, /TRADE-CORRECT SETUP/i);
   for (const proofPoint of ["Trade-specific language", "ATS-friendly structure", "Upload or guided intake", "Real preview before payment", "PDF + editable DOCX", "Built for skilled trades"]) assert.match(html, new RegExp(proofPoint.replace("+", "\\+"), "i"));
