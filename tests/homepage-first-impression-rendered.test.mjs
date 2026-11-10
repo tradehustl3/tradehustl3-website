@@ -83,7 +83,7 @@ test("default homepage leads with the two-product storefront, then the hub and R
   const order = ['id="storefront-heading"', 'id="hub-title"', 'id="start-here"', 'id="resume-hero"', 'id="resume-start"', 'id="know-your-trade"', 'id="outlook-title"']
     .map((marker) => html.indexOf(marker));
   order.forEach((index, i) => assert.ok(index > (order[i - 1] ?? -1), `hub section ${i} out of order`));
-  assert.match(html, /<button[^>]*aria-pressed="true"[^>]*data-item="exploring"/);
+  assert.match(html, /<button[^>]*aria-pressed="true"[^>]*data-item="student"/);
   assert.doesNotMatch(html, /Coming soon/);
   assert.match(html, /Coming next:/);
   assert.match(html, /Just your email/);
