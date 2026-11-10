@@ -78,7 +78,7 @@ test("default homepage leads with the two-product storefront, then the hub and R
   assert.equal((html.match(/<h1\b/g) ?? []).length, 1);
   // The gold accent span is presentational; the h1's full text must stay exactly the approved headline.
   assert.match(html, /<h1 id="storefront-heading"[^>]*>Build your career\.\s*(?:<!-- -->)?\s*<span[^>]*>Own your future\.<\/span><\/h1>/);
-  assert.match(html, /<h2 id="hub-title"[^>]*>Built for the people who build, maintain, repair, and move America\.<\/h2>/);
+  assert.match(html, /<h2 id="hub-title"[^>]*>Your future is built\./);
   assert.ok(html.indexOf("Skilled-Trades Resume Builder") < html.indexOf("TRADE HUSTL3 — The Book"), "resume offer precedes book offer");
   const order = ['id="storefront-heading"', 'id="hub-title"', 'id="start-here"', 'id="divisions-title"', 'id="resume-hero"', 'id="resume-start"', 'id="know-your-trade"', 'id="outlook-title"']
     .map((marker) => html.indexOf(marker));
@@ -88,6 +88,27 @@ test("default homepage leads with the two-product storefront, then the hub and R
   assert.match(html, /Coming next:/);
   assert.match(html, /Just your email/);
   assert.match(html, /<h2 id="hero-title"/);
+});
+
+test("hub story follows ENTER, EARN, ELEVATE with real paths and sourced guides", async () => {
+  const html = await renderHome();
+  const story = between(html, 'id="hub-mission"', 'id="start-here"');
+  assert.match(story, /THE TRADE HUSTL3 STORY/);
+  assert.match(story, /Your future is built\./);
+  assert.match(story, /Not handed to you\./);
+  assert.match(story, /In school\?/);
+  const pillars = ["ENTER", "EARN", "ELEVATE"].map((word) => story.indexOf('>' + word + '</span>'));
+  pillars.forEach((index, i) => assert.ok(index > (pillars[i - 1] ?? -1), 'story pillar order'));
+  assert.match(story, /href="\/resume-examples"/);
+  assert.match(story, /href="\/resources\/certifications"/);
+  assert.match(story, /href="#resume-start"/);
+  assert.match(story, /href="\/resources\/certifications#epa-608"/);
+  assert.match(story, /href="\/resources\/certifications#osha-outreach-10-30"/);
+  assert.match(story, /href="\/resources\/certifications#cdl"/);
+  assert.match(story, /href="\/resources\/certifications#forklift-operator"/);
+  assert.match(story, /data-location="hub_story"/);
+  assert.match(story, /credentials linked to sources/);
+  assert.doesNotMatch(story, /guaranteed income|guaranteed job|AI.generated workers/i);
 });
 
 test("campaign visits (?trade=) keep the resume-first layout without the hub sections", async () => {
