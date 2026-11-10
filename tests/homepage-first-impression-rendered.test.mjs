@@ -73,11 +73,13 @@ test("homepage header leads with the TRADE HUSTL3 brand, four hub links, and one
   assert.match(header, /data-location="sticky_header"/);
 });
 
-test("default homepage is the hub: one h1, stage picker, divisions, then the Resume Builder hero as a section", async () => {
+test("default homepage leads with the two-product storefront, then the hub and Resume Builder", async () => {
   const html = await renderHome();
   assert.equal((html.match(/<h1\b/g) ?? []).length, 1);
-  assert.match(html, /<h1 id="hub-title"[^>]*>Built for the people who build, maintain, repair, and move America\.<\/h1>/);
-  const order = ['id="hub-title"', 'id="start-here"', 'id="divisions-title"', 'id="resume-hero"', 'id="resume-start"', 'id="know-your-trade"', 'id="outlook-title"']
+  assert.match(html, /<h1 id="storefront-heading"[^>]*>Build your career\. Own your future\.<\/h1>/);
+  assert.match(html, /<h2 id="hub-title"[^>]*>Built for the people who build, maintain, repair, and move America\.<\/h2>/);
+  assert.ok(html.indexOf("Skilled-Trades Resume Builder") < html.indexOf("TRADE HUSTL3 — The Book"), "resume offer precedes book offer");
+  const order = ['id="storefront-heading"', 'id="hub-title"', 'id="start-here"', 'id="divisions-title"', 'id="resume-hero"', 'id="resume-start"', 'id="know-your-trade"', 'id="outlook-title"']
     .map((marker) => html.indexOf(marker));
   order.forEach((index, i) => assert.ok(index > (order[i - 1] ?? -1), `hub section ${i} out of order`));
   assert.match(html, /<button[^>]*aria-pressed="true"[^>]*data-item="exploring"/);
