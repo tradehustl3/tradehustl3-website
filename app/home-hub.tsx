@@ -20,12 +20,12 @@ const POPULAR = [
 
 export function HubHero() {
   return (
-    <section className={styles.hero} id="top" aria-labelledby="hub-title">
+    <section className={styles.hero} id="hub-mission" aria-labelledby="hub-title">
       <PowerLineBackdrop />
       <div className={styles.heroInner}>
         <div className={styles.heroCopy}>
           <p className={styles.kicker}>SKILLED-TRADES CAREER &amp; RESOURCE HUB</p>
-          <h1 id="hub-title" className={styles.h1}>Built for the people who build, maintain, repair, and move America.</h1>
+          <h2 id="hub-title" className={styles.h1}>Built for the people who build, maintain, repair, and move America.</h2>
           <p className={styles.lead}>
             <span className={styles.leadStatement}>Explore your trade. Develop your skills. Advance your career.</span>
             Free trade guides, sourced credential guides, and career tools — built by a tradesman.

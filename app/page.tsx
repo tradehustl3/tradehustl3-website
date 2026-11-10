@@ -6,6 +6,7 @@ import { CtaAnalytics } from './cta-analytics';
 import { CustomerReviews } from './customer-reviews';
 import { homeBodyFont, homeDisplayFont } from './home-fonts';
 import { HomeHero } from './home-hero';
+import { HomeStorefront } from './home-storefront';
 import { HomeNavigation } from './home-navigation';
 import { HubDivisions, HubHero, HubOutlook } from './home-hub';
 import { HubStages } from './home-hub-stages';
@@ -121,6 +122,7 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
           <HomeHero initialTradeId={initialTrade?.id ?? null} campaignTrack={initialTrade ? null : campaignTrack} />
         ) : (
           <>
+            <HomeStorefront />
             <HubHero />
             <ToolRail />
             <HubStages />

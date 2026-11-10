@@ -439,10 +439,14 @@ test("homepage is the Resume Builder sales page and verified account entry", asy
   assert.ok(resumeLinks.length >= 5);
 });
 
-test("homepage keeps book content on the dedicated book page", async () => {
+test("homepage features the approved book cover and edition links without duplicating the full book page", async () => {
   const html = await (await render()).text();
   assert.match(html, /href="\/book"[^>]*>The Book<\/a>/i);
-  assert.doesNotMatch(html, /book-cover/i);
+  assert.match(html, /optimized\/book-cover-v3\.webp/i);
+  assert.match(html, /href="https:\/\/www\.amazon\.com\/dp\/B0HFQ2ZNJN"/i);
+  assert.match(html, /href="https:\/\/www\.amazon\.com\/dp\/B0HPZ2KQ1R"/i);
+  assert.match(html, /Kindle \$(?:<!-- -->)?9\.99/i);
+  assert.match(html, /Paperback \$(?:<!-- -->)?24\.99/i);
   assert.doesNotMatch(html, /FREE BOOK SAMPLE/i);
   assert.doesNotMatch(html, /BOOK &amp; MISSION/i);
   assert.doesNotMatch(html, /optimized\/zachary-ellis\.webp/i);
