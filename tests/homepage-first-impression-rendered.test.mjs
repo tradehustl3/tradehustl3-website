@@ -25,12 +25,16 @@ const between = (html, start, end) => {
   return html.slice(from, to);
 };
 
-test("default homepage render without a trade shows HVAC and the plain intake CTA", async () => {
-  const html = await renderHome();
+test("the hub homepage no longer opens on the resume hero; ?trade=hvac still renders the HVAC hero", async () => {
+  const hub = await renderHome();
+  assert.doesNotMatch(hub, /RESUME BUILDER FOR THE SKILLED TRADES/);
+  assert.doesNotMatch(hub, /data-hero-cta/);
+
+  const html = await renderHome("/?trade=hvac");
   assert.match(html, /RESUME BUILDER FOR THE SKILLED TRADES/);
-  assert.match(html, /Build an <span[^>]*>HVAC tech<\/span> resume that looks ready for the job\./);
+  assert.match(html, /<h1 id="hero-title"[^>]*>Build an <span[^>]*>HVAC tech<\/span> resume that looks ready for the job\./);
   const cta = html.match(/<a\b[^>]*data-hero-cta[^>]*>/)?.[0] ?? "";
-  assert.match(cta, /href="#resume-start"/);
+  assert.match(cta, /href="\/\?trade=hvac#resume-start"/);
   assert.match(cta, /data-location="hero"/);
   assert.match(html, /Build my free HVAC preview/);
   assert.match(html, /What&#x27;s your trade\?/);
@@ -73,20 +77,87 @@ test("homepage header leads with the TRADE HUSTL3 brand, four hub links, and one
   assert.match(header, /data-location="sticky_header"/);
 });
 
-test("default homepage leads with the two-product storefront, then the hub and Resume Builder", async () => {
+test("default homepage follows the approved hub order: discover, first steps, free guides, paid tools, founder", async () => {
   const html = await renderHome();
   assert.equal((html.match(/<h1\b/g) ?? []).length, 1);
   // The gold accent span is presentational; the h1's full text must stay exactly the approved headline.
   assert.match(html, /<h1 id="storefront-heading"[^>]*>Build your career\.\s*(?:<!-- -->)?\s*<span[^>]*>Own your future\.<\/span><\/h1>/);
   assert.match(html, /<h2 id="hub-title"[^>]*>Your future is built,\s*(?:<!-- -->)?\s*<span[^>]*>not handed to you\.<\/span><\/h2>/);
   assert.ok(html.indexOf("Skilled-Trades Resume Builder") < html.indexOf("TRADE HUSTL3 — The Book"), "resume offer precedes book offer");
-  const order = ['id="storefront-heading"', 'id="hub-title"', 'id="start-here"', 'id="resume-hero"', 'id="resume-start"', 'id="know-your-trade"', 'id="outlook-title"']
-    .map((marker) => html.indexOf(marker));
+  const order = [
+    'id="storefront-heading"',
+    'id="hub-title"',
+    'id="start-here"',
+    'id="find-your-lane-title"',
+    'id="outlook-title"',
+    'id="first-steps-title"',
+    'id="know-your-trade"',
+    'id="free-guides-title"',
+    'id="opportunity-title"',
+    'aria-label="What the Resume Builder promises"',
+    'id="resume-start"',
+    'id="founder-title"',
+  ].map((marker) => html.indexOf(marker));
   order.forEach((index, i) => assert.ok(index > (order[i - 1] ?? -1), `hub section ${i} out of order`));
   assert.match(html, /<button[^>]*aria-pressed="true"[^>]*data-item="student"/);
   assert.doesNotMatch(html, /Coming soon/);
-  assert.match(html, /Just your email/);
-  assert.match(html, /<h2 id="hero-title"/);
+  // The resume-first sales sections stay on campaign visits only.
+  for (const gone of ['id="resume-hero"', "Jobsite truths. If you know, you know.", "Three steps. Preview before you pay.", "Real coverage. Clear numbers.", 'id="included-cover-letter"', "READY WHEN YOU ARE"]) {
+    assert.equal(html.includes(gone), false, `hub still renders ${gone}`);
+  }
+});
+
+test("Find Your Lane renders eight trade cards that each answer what, how, and which credentials", async () => {
+  const html = await renderHome();
+  const section = between(html, 'id="trade-guides"', 'id="outlook-title"');
+  assert.match(section, /EXPLORE YOUR FUTURE/);
+  assert.match(section, /<h2 id="find-your-lane-title"[^>]*>Find your lane\.\s*<span[^>]*>Explore the trades\.<\/span><\/h2>/);
+  assert.match(section, /Every skill starts somewhere\./);
+  assert.match(section, /You don&#x27;t need to have it all figured out\./);
+  const titles = ["HVAC &amp; Refrigeration", "Electrical", "Plumbing", "Welding &amp; Fabrication", "Construction", "Facilities Maintenance", "Heavy Equipment", "General Labor"];
+  const cards = section.split('<li class="').filter((chunk) => chunk.includes("data-lane="));
+  assert.equal(cards.length, 8, "eight trade cards");
+  cards.forEach((card, index) => {
+    assert.ok(card.includes(`>${titles[index]}</h3>`), `card ${index} is ${titles[index]}`);
+    for (const label of ["The work", "How to start", "Credentials to know"]) assert.ok(card.includes(`>${label}</dt>`), `${titles[index]}: ${label}`);
+    assert.match(card, /href="\/resources\/certifications#[a-z0-9-]+"/, `${titles[index]}: credential guide link`);
+    assert.match(card, /Source: <a href="https:\/\/www\.bls\.gov\/ooh\//, `${titles[index]}: BLS source`);
+    assert.match(card, /href="\/resources\/certifications#trade-[a-z0-9-]+"/, `${titles[index]}: explore link`);
+    assert.match(card, /href="\/resume-builder\/[a-z-]+"/, `${titles[index]}: existing trade page`);
+    assert.match(card, /<img\b[^>]*alt="[^"]{20,}"/, `${titles[index]}: photo alt text`);
+  });
+  assert.match(section, /href="\/resume-examples"[^>]*data-item="explore_all_trades"/);
+  assert.match(section, /href="\/resources"[^>]*>Start with our free career resources/);
+  assert.doesNotMatch(section, /guarantee|get hired|\$\d|per hour|salary/i, "no pay figures or outcome promises in trade discovery");
+});
+
+test("first steps, free guides, paid tools, and the founder story render with real destinations", async () => {
+  const html = await renderHome();
+  const steps = between(html, 'id="first-steps"', 'id="know-your-trade"');
+  assert.match(steps, /href="https:\/\/www\.apprenticeship\.gov\/apprenticeship-job-finder"/);
+  assert.match(steps, /href="https:\/\/www\.apprenticeship\.gov\/registered-apprenticeship"/);
+  assert.match(steps, /href="https:\/\/www\.careeronestop\.org\/Toolkit\/Training\/find-licenses\.aspx"/);
+  for (const slug of ["osha-outreach-10-30", "epa-608", "forklift-operator", "cdl"]) assert.match(steps, new RegExp(`href="/resources/certifications#${slug}"`));
+  assert.match(steps, /OSHA 10-Hour and 30-Hour Outreach Training[\s\S]*?Training card/);
+
+  const guides = between(html, 'id="free-guides"', 'id="opportunity"');
+  assert.equal((guides.match(/<form\b/g) ?? []).length, 2, "two email signups");
+  assert.equal((guides.match(/type="email"/g) ?? []).length, 2);
+  assert.match(guides, /Top 10 Trades for 2026–2027/);
+  assert.match(guides, /Read the first 7 pages of TRADE HUSTL3/);
+  assert.match(guides, /data-cta-location="homepage_free_guides"/);
+
+  const opportunity = between(html, 'id="opportunity"', 'id="resume-start"');
+  assert.match(opportunity, /data-location="opportunity_resume"[^>]*>Build my free preview|href="#resume-start"[^>]*data-location="opportunity_resume"/);
+  assert.match(opportunity, /href="https:\/\/www\.amazon\.com\/dp\/B0HFQ2ZNJN"/);
+  assert.match(opportunity, /href="https:\/\/www\.amazon\.com\/dp\/B0HPZ2KQ1R"/);
+  assert.match(opportunity, /Never invents a license, cert, employer, or number\./);
+
+  const founder = html.slice(html.indexOf('id="built-by-a-tradesman"'), html.indexOf("<footer"));
+  assert.match(founder, /Zachary Ellis/);
+  for (const credential of ["EPA 608 Universal certification", "HVAC certification", "NCRR", "OSHA 10-Hour training"]) assert.ok(founder.includes(credential), credential);
+  assert.doesNotMatch(founder, /author-portrait|zachary-ellis\.webp/, "no founder photo on the homepage");
+  assert.doesNotMatch(founder, /OSHA 10 certif/i);
 });
 
 test("hub story follows ENTER, EARN, ELEVATE with real paths and sourced guides", async () => {
@@ -134,8 +205,8 @@ test("campaign visits (?trade=) keep the resume-first layout without the hub sec
   assert.match(html, /id="resume-start"/);
 });
 
-test("promise band, steps and jobsite truths follow the hero in order", async () => {
-  const html = await renderHome();
+test("on campaign visits the promise band, steps and jobsite truths follow the hero in order", async () => {
+  const html = await renderHome("/?trade=hvac");
   const order = [
     'id="top"',
     "See it first",
@@ -162,8 +233,8 @@ const JOBSITE_TRUTHS = [
 
 const escapeHtml = (text) => text.replace(/&/g, "&amp;").replace(/'/g, "&#x27;").replace(/"/g, "&quot;");
 
-test("jobsite truths render six cards with the exact copy, photos and alt text", async () => {
-  const html = await renderHome();
+test("jobsite truths render six cards with the exact copy, photos and alt text on campaign visits", async () => {
+  const html = await renderHome("/?trade=hvac");
   const section = between(html, 'aria-labelledby="jobsite-truths-title"', "</section>");
   assert.match(section, /BUILT FOR PEOPLE WHO KNOW THE WORK/);
   assert.match(section, /Jobsite truths\. If you know, you know\./);

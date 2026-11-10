@@ -423,7 +423,7 @@ test("repairs a path with a pasted full site URL instead of returning 404", asyn
   assert.equal(response.headers.get("strict-transport-security"), "max-age=31536000");
 });
 
-test("homepage is the Resume Builder sales page and verified account entry", async () => {
+test("homepage keeps the verified account entry and free guide signups", async () => {
   const html = await (await render()).text();
   assert.match(html, /id="resume-start"/i);
   assert.match(html, /type="email"/i);
@@ -431,7 +431,7 @@ test("homepage is the Resume Builder sales page and verified account entry", asy
   assert.match(html, /Continue with email/i);
   assert.doesNotMatch(html, /name="fullName"/i);
   assert.match(html, /ACCOUNT · STAGE 1 OF 5/i);
-  assert.match(html, /FREE CAREER GUIDE/i);
+  assert.match(html, /FREE TRADE HUSTL3 GUIDES/i);
   assert.match(html, /href="\/top-10-trades"/i);
   assert.match(html, /href="\/book"/i);
   assert.match(html, /href="\/book\/sample"/i, "free sample signup belongs below the storefront offers");
@@ -453,8 +453,8 @@ test("homepage features the approved book cover and edition links without duplic
   assert.doesNotMatch(html, /BUILT IN THE FIELD/i);
 });
 
-test("homepage leads with preview-before-payment proof and the included cover letter before free resources", async () => {
-  const html = await (await render()).text();
+test("campaign homepage leads with preview-before-payment proof and the included cover letter before free resources", async () => {
+  const html = await (await renderPath("/?trade=hvac")).text();
   assert.match(html, /\$0<\/b> to preview/i, "hero price line");
   assert.match(html, /Build My Free Preview/i);
   assert.match(html, /INCLUDED WITH YOUR RESUME PURCHASE/i);
@@ -1483,7 +1483,11 @@ test("launch sweep delivers a pending preorder once after release", async () => 
 });
 
 test("server-renders the focused homepage paths without book promotion", async () => {
-  const html = await (await render()).text();
+  const hub = await (await render()).text();
+  for (const location of ["sticky_header", "find_your_lane", "first_steps", "opportunity_resume", "opportunity_book", "built_by_a_tradesman"]) {
+    assert.match(hub, new RegExp(`data-location="${location}"`, "i"));
+  }
+  const html = await (await renderPath("/?trade=hvac")).text();
   assert.doesNotMatch(html, /TRADE HUSTL3 Gear/i);
   assert.doesNotMatch(html, /TRADE HUSTL3 Resources/i);
   for (const title of ["Resume Builder", "Top 10 Trades for 2026–2027"]) assert.match(html, new RegExp(title, "i"));

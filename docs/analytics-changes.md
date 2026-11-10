@@ -3,6 +3,32 @@
 Record every change to what a tracked event means, so reports never compare
 periods with different definitions as if they were the same.
 
+## 2026-11-10 — Hub homepage restructured around trade discovery
+
+**Before:** the hub homepage (no `?trade=`) ran storefront → story → stage band →
+the full Resume Builder sales page (hero, promises, steps, jobsite truths, catalog
+proof, `#resume-start`, cover letter, Know Your Trade, outlook, guide CTA, final CTA).
+
+**After:** storefront → story → stage band → Find Your Lane (`#trade-guides`) →
+BLS outlook → Your First Steps → Know Your Trade → Free Guides (inline Top 10 and
+book-sample signups) → Turn Skills Into Opportunity → purchase promises →
+`#resume-start` → Built by a Tradesman. Campaign and trade-landing visits
+(`?trade=`) keep the resume-first page unchanged.
+
+- New `data-location` values on the hub: `find_your_lane`, `find_your_lane_credential`,
+  `find_your_lane_trade_page`, `first_steps`, `first_steps_credential`,
+  `opportunity_resume`, `opportunity_book`, `opportunity_book_kindle`,
+  `built_by_a_tradesman`. Signup forms report `data-cta-location="homepage_free_guides"`.
+- `hero`, `hero_trade_picker`, `jobsite_truths`, `homepage_catalog`,
+  `cover_letter_proof`, `guide_signup` and `footer_cta` now fire only on `?trade=` visits.
+
+**Reporting impact:** `resume_builder_start` on hub visits still fires when
+`#resume-start` is 40% on screen, but that section now sits further down the page,
+so hub start counts are expected to fall even if intent does not. Compare hub
+starts before and after 2026-11-10 as different definitions; campaign starts
+(`trigger="mount"`) are unaffected. Free-guide signups from the homepage are new
+`generate_lead` sources, not a change to the existing pages' counts.
+
 ## 2026-11-03 — GA4 delivery outcome is recorded for every eligible funnel event
 
 **Before:** when a Resume Builder funnel event was not forwarded to GA4, nothing

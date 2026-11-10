@@ -61,8 +61,8 @@ test("resume catalog server-renders every family and the requested transportatio
   assert.match(html, /do not multiply the same resume by colors/i);
 });
 
-test("homepage surfaces the truthful catalog counters and catalog link", async () => {
-  const html = await (await render("/")).text();
+test("campaign homepage surfaces the truthful catalog counters and catalog link", async () => {
+  const html = await (await render("/?trade=hvac")).text();
   assert.match(html, /href="\/resume-examples"/i);
   assert.match(html, /Real coverage\. Clear numbers\./i);
   assert.match(html, />14<\/dt>[\s\S]*Career families inside the guided builder/i);
