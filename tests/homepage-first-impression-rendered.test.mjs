@@ -196,3 +196,34 @@ test("campaign visits for trades without a quick-pick card keep the resume-first
     assert.doesNotMatch(html, /<button[^>]*aria-pressed="true"[^>]*data-location="hero_trade_picker"/, `${slug}: no unrelated chip preselected`);
   }
 });
+
+test("homepage industrial storefront uses real brand assets, clear offers, proof, trade links and free signup paths", async () => {
+  const html = await renderHome();
+  const storefront = between(html, 'id="top"', 'id="hub-mission"');
+
+  assert.equal((html.match(/<h1\\b/g) ?? []).length, 1, "one accessible primary headline");
+  assert.match(storefront, /Build your career\\./);
+  assert.match(storefront, /Own your future\\./);
+  assert.match(storefront, /Built for the people who build, maintain, repair, and move America\\./);
+  assert.match(storefront, /optimized\\/resume-builder-logo-header\\.webp/);
+  assert.match(storefront, /optimized\\/book-cover-v3\\.webp/);
+  assert.match(storefront, /sample-hvac-resume\\.webp/);
+
+  assert.ok(storefront.indexOf('data-product="resume-builder"') < storefront.indexOf('data-product="the-book"'));
+  assert.match(storefront, /No subscription/i);
+  assert.match(storefront, /10\\+ years in HVAC and facilities maintenance/);
+  assert.match(storefront, /data-location="homepage_storefront_resume"/);
+  assert.match(storefront, /href="#resume-start"/);
+  assert.match(storefront, /data-location="homepage_storefront_book"/);
+  assert.match(storefront, /href="https:\\/\\/www\\.amazon\\.com\\/dp\\/B0HFQ2ZNJN"/);
+  assert.match(storefront, /href="https:\\/\\/www\\.amazon\\.com\\/dp\\/B0HPZ2KQ1R"/);
+
+  for (const href of ["/resume-builder/hvac", "/resume-builder/electrician", "/resume-builder/plumbing",
+    "/resume-builder/welding-fabrication", "/resume-builder/construction-carpentry",
+    "/resume-builder/facilities-maintenance", "/resume-builder/heavy-equipment-operator",
+    "/resources", "/top-10-trades", "/book/sample"]) {
+    assert.ok(storefront.includes(`href="${href}"`), `verified destination ${href}`);
+  }
+  assert.ok(storefront.indexOf('data-location="homepage_storefront_book"') < storefront.indexOf('href="/top-10-trades"'), "products before free guides");
+  assert.doesNotMatch(storefront, /AI-generated workers|pre-order|coming soon/i);
+});
