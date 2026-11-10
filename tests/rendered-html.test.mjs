@@ -91,8 +91,8 @@ test("server-renders the corrected TRADE HUSTL3 brand and metadata", async () =>
   assert.match(html, /Skilled-Trades[\s\S]*Resume Builder/i);
 });
 
-test("server-renders Resume Builder credibility and audience content", async () => {
-  const html = await (await render()).text();
+test("campaign homepage server-renders Resume Builder credibility and audience content", async () => {
+  const html = await (await renderPath("/?trade=hvac")).text();
   assert.match(html, /Built around the way skilled-trades people actually work/i);
   assert.match(html, /optimized\/resume-builder-logo-header\.webp/i);
   assert.match(html, /Shaped by 10\+ years of HVAC and facilities work\./i);
