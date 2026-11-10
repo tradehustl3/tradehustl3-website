@@ -434,7 +434,7 @@ test("homepage is the Resume Builder sales page and verified account entry", asy
   assert.match(html, /FREE CAREER GUIDE/i);
   assert.match(html, /href="\/top-10-trades"/i);
   assert.match(html, /href="\/book"/i);
-  assert.doesNotMatch(html, /href="\/book\/sample"/i);
+  assert.match(html, /href="\/book\/sample"/i, "free sample signup belongs below the storefront offers");
   const resumeLinks = html.match(/href="#resume-start"/gi) ?? [];
   assert.ok(resumeLinks.length >= 5);
 });

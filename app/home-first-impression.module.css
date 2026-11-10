@@ -24,8 +24,12 @@
 /* Header ---------------------------------------------------------------- */
 
 .header {
-  background: #02142B;
-  border-bottom: 2px solid #D7261C;
+  background:
+    radial-gradient(ellipse 45% 125% at 70% 0%, rgba(26, 106, 173, .22), transparent 78%),
+    repeating-linear-gradient(112deg, rgba(192, 205, 216, .017) 0 1px, transparent 1px 6px),
+    linear-gradient(105deg, #04090e, #111f30 55%, #060b12);
+  border-bottom: 2px solid #b88d43;
+  box-shadow: inset 0 -1px 0 rgba(243, 203, 121, .21);
 }
 
 .headerInner {

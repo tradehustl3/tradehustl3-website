@@ -76,8 +76,9 @@ test("homepage header leads with the TRADE HUSTL3 brand, four hub links, and one
 test("default homepage leads with the two-product storefront, then the hub and Resume Builder", async () => {
   const html = await renderHome();
   assert.equal((html.match(/<h1\b/g) ?? []).length, 1);
-  assert.match(html, /<h1 id="storefront-heading"[^>]*>Build your career\. Own your future\.<\/h1>/);
-  assert.match(html, /<h2 id="hub-title"[^>]*>Built for the people who build, maintain, repair, and move America\.<\/h2>/);
+  // The gold accent span is presentational; the h1's full text must stay exactly the approved headline.
+  assert.match(html, /<h1 id="storefront-heading"[^>]*>Build your career\.\s*(?:<!-- -->)?\s*<span[^>]*>Own your future\.<\/span><\/h1>/);
+  assert.match(html, /<h2 id="hub-title"[^>]*>Your future is built\./);
   assert.ok(html.indexOf("Skilled-Trades Resume Builder") < html.indexOf("TRADE HUSTL3 — The Book"), "resume offer precedes book offer");
   const order = ['id="storefront-heading"', 'id="hub-title"', 'id="start-here"', 'id="divisions-title"', 'id="resume-hero"', 'id="resume-start"', 'id="know-your-trade"', 'id="outlook-title"']
     .map((marker) => html.indexOf(marker));
@@ -87,6 +88,27 @@ test("default homepage leads with the two-product storefront, then the hub and R
   assert.match(html, /Coming next:/);
   assert.match(html, /Just your email/);
   assert.match(html, /<h2 id="hero-title"/);
+});
+
+test("hub story follows ENTER, EARN, ELEVATE with real paths and sourced guides", async () => {
+  const html = await renderHome();
+  const story = between(html, 'id="hub-mission"', 'id="start-here"');
+  assert.match(story, /THE TRADE HUSTL3 STORY/);
+  assert.match(story, /Your future is built\./);
+  assert.match(story, /Not handed to you\./);
+  assert.match(story, /In school\?/);
+  const pillars = ["ENTER", "EARN", "ELEVATE"].map((word) => story.indexOf('>' + word + '</span>'));
+  pillars.forEach((index, i) => assert.ok(index > (pillars[i - 1] ?? -1), 'story pillar order'));
+  assert.match(story, /href="\/resume-examples"/);
+  assert.match(story, /href="\/resources\/certifications"/);
+  assert.match(story, /href="#resume-start"/);
+  assert.match(story, /href="\/resources\/certifications#epa-608"/);
+  assert.match(story, /href="\/resources\/certifications#osha-outreach-10-30"/);
+  assert.match(story, /href="\/resources\/certifications#cdl"/);
+  assert.match(story, /href="\/resources\/certifications#forklift-operator"/);
+  assert.match(story, /data-location="hub_story"/);
+  assert.match(story, /credentials linked to sources/);
+  assert.doesNotMatch(story, /guaranteed income|guaranteed job|AI.generated workers/i);
 });
 
 test("campaign visits (?trade=) keep the resume-first layout without the hub sections", async () => {
@@ -195,4 +217,35 @@ test("campaign visits for trades without a quick-pick card keep the resume-first
     assert.match(cta, /href="\/\?trade=[a-z0-9-]+#resume-start"/, `${slug}: CTA keeps the trade`);
     assert.doesNotMatch(html, /<button[^>]*aria-pressed="true"[^>]*data-location="hero_trade_picker"/, `${slug}: no unrelated chip preselected`);
   }
+});
+
+test("homepage industrial storefront uses real brand assets, clear offers, proof, trade links and free signup paths", async () => {
+  const html = await renderHome();
+  const storefront = between(html, 'id="top"', 'id="hub-mission"');
+
+  assert.equal((html.match(/<h1\b/g) ?? []).length, 1, "one accessible primary headline");
+  assert.match(storefront, /Build your career\./);
+  assert.match(storefront, /Own your future\./);
+  assert.match(storefront, /Built for the people who build, maintain, repair, and move America\./);
+  assert.match(storefront, /optimized\/resume-builder-logo-header\.webp/);
+  assert.match(storefront, /optimized\/book-cover-v3\.webp/);
+  assert.match(storefront, /sample-hvac-resume\.webp/);
+
+  assert.ok(storefront.indexOf('data-product="resume-builder"') < storefront.indexOf('data-product="the-book"'));
+  assert.match(storefront, /No subscription/i);
+  assert.match(storefront, /10\+ years in HVAC and facilities maintenance/);
+  assert.match(storefront, /data-location="homepage_storefront_resume"/);
+  assert.match(storefront, /href="#resume-start"/);
+  assert.match(storefront, /data-location="homepage_storefront_book"/);
+  assert.match(storefront, /href="https:\/\/www\.amazon\.com\/dp\/B0HFQ2ZNJN"/);
+  assert.match(storefront, /href="https:\/\/www\.amazon\.com\/dp\/B0HPZ2KQ1R"/);
+
+  for (const href of ["/resume-builder/hvac", "/resume-builder/electrician", "/resume-builder/plumbing",
+    "/resume-builder/welding-fabrication", "/resume-builder/construction-carpentry",
+    "/resume-builder/facilities-maintenance", "/resume-builder/heavy-equipment-operator",
+    "/resources", "/top-10-trades", "/book/sample"]) {
+    assert.ok(storefront.includes(`href="${href}"`), `verified destination ${href}`);
+  }
+  assert.ok(storefront.indexOf('data-location="homepage_storefront_book"') < storefront.indexOf('href="/top-10-trades"'), "products before free guides");
+  assert.doesNotMatch(storefront, /AI-generated workers|pre-order|coming soon/i);
 });
