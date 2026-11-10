@@ -80,12 +80,11 @@ test("default homepage leads with the two-product storefront, then the hub and R
   assert.match(html, /<h1 id="storefront-heading"[^>]*>Build your career\.\s*(?:<!-- -->)?\s*<span[^>]*>Own your future\.<\/span><\/h1>/);
   assert.match(html, /<h2 id="hub-title"[^>]*>Your future is built,\s*(?:<!-- -->)?\s*<span[^>]*>not handed to you\.<\/span><\/h2>/);
   assert.ok(html.indexOf("Skilled-Trades Resume Builder") < html.indexOf("TRADE HUSTL3 — The Book"), "resume offer precedes book offer");
-  const order = ['id="storefront-heading"', 'id="hub-title"', 'id="start-here"', 'id="divisions-title"', 'id="resume-hero"', 'id="resume-start"', 'id="know-your-trade"', 'id="outlook-title"']
+  const order = ['id="storefront-heading"', 'id="hub-title"', 'id="start-here"', 'id="resume-hero"', 'id="resume-start"', 'id="know-your-trade"', 'id="outlook-title"']
     .map((marker) => html.indexOf(marker));
   order.forEach((index, i) => assert.ok(index > (order[i - 1] ?? -1), `hub section ${i} out of order`));
-  assert.match(html, /<button[^>]*aria-pressed="true"[^>]*data-item="exploring"/);
+  assert.match(html, /<button[^>]*aria-pressed="true"[^>]*data-item="student"/);
   assert.doesNotMatch(html, /Coming soon/);
-  assert.match(html, /Coming next:/);
   assert.match(html, /Just your email/);
   assert.match(html, /<h2 id="hero-title"/);
 });
@@ -108,6 +107,22 @@ test("hub story follows ENTER, EARN, ELEVATE with real paths and sourced guides"
   assert.match(story, /data-location="hub_story"/);
   assert.match(story, /credentials linked to sources/);
   assert.doesNotMatch(story, /guaranteed income|guaranteed job|AI.generated workers/i);
+});
+
+test("trade stage band replaces the old start-here and tools sections with five real paths", async () => {
+  const html = await renderHome();
+  const band = between(html, 'id="start-here"', 'data-item="group_access"');
+  assert.match(band, /<h2 id="stage-title"[^>]*>Where are you in your trade\?<\/h2>/);
+  const labels = ["Student", "New to Trades", "In the Trade", "Supervisor / Lead", "Career Changer"];
+  const positions = labels.map((label) => band.indexOf(`<strong>${label}</strong>`));
+  positions.forEach((index, i) => assert.ok(index > (positions[i - 1] ?? -1), `persona order: ${labels[i]}`));
+  assert.equal((band.match(/data-location="hub_stage_picker"/g) ?? []).length, 5);
+  assert.equal((band.match(/aria-pressed="true"/g) ?? []).length, 1, "exactly one persona selected by default");
+  assert.match(band, /aria-controls="stage-panel"/);
+  assert.match(band, /id="stage-panel"/);
+  assert.match(band, /href="\/contact"/, "schools, programs, and employers keep a contact path");
+  assert.doesNotMatch(html, /id="divisions-title"|Tools for your next career move|START WHERE YOU ARE/);
+  assert.doesNotMatch(band, /guaranteed|get hired|<img/i, "no outcome promises or photos in the band");
 });
 
 test("campaign visits (?trade=) keep the resume-first layout without the hub sections", async () => {

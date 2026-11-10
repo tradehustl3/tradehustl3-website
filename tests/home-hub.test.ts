@@ -24,3 +24,13 @@ test("hub stage copy uses the catalog's real counts", () => {
     assert.ok([CATALOG_METRICS.careerFamilies, CATALOG_METRICS.mappedRoles].includes(Number(count)), `unexpected count ${count}`);
   }
 });
+
+test("hub stages match the approved persona band and make no outcome promises", () => {
+  assert.deepEqual(
+    HUB_STAGES.map((stage) => stage.label),
+    ["Student", "New to Trades", "In the Trade", "Supervisor / Lead", "Career Changer"],
+  );
+  for (const stage of HUB_STAGES) assert.ok(stage.sublabel.length > 0, stage.id);
+  const copy = HUB_STAGES.flatMap((stage) => [stage.headline, stage.copy, ...stage.steps.map((s) => `${s.title} ${s.sub}`)]).join(" ");
+  assert.doesNotMatch(copy, /guarantee|get hired|\$\d+k|per hour|salary|income/i);
+});

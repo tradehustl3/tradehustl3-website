@@ -8,7 +8,7 @@ import { homeBodyFont, homeDisplayFont } from './home-fonts';
 import { HomeHero } from './home-hero';
 import { HomeStorefront } from './home-storefront';
 import { HomeNavigation } from './home-navigation';
-import { HubDivisions, HubHero, HubOutlook } from './home-hub';
+import { HubHero, HubOutlook } from './home-hub';
 import { HubStages } from './home-hub-stages';
 import { ToolRail } from './tool-silhouettes';
 import { JobsiteTruths } from './jobsite-truths';
@@ -126,7 +126,6 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
             <HubHero />
             <ToolRail />
             <HubStages />
-            <HubDivisions />
             <HomeHero
               asSection
               logo={
