@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useId, useRef, useState } from 'react';
 import { createFormStartTracker, createMetaLeadTracker, type MetaLeadContentName } from './meta-pixel';
 import { submitSignup } from './signup-request';
 import { ConversionCta } from './conversion-cta';
+import { BOOK_SAMPLE_OPEN_LABEL } from './book/sample-links';
 
 type ResourceFormProps = {
   resourceName: string;
@@ -13,7 +14,6 @@ type ResourceFormProps = {
   metaLeadContentName?: MetaLeadContentName;
   signupInterest?: string;
   successLinkLabel?: string;
-  readerHref?: string;
   conversion?: boolean;
   marketingConsent?: boolean;
 };
@@ -47,8 +47,7 @@ export function ResourceForm({
   ctaLocation,
   metaLeadContentName,
   signupInterest,
-  successLinkLabel = 'Open your free guide',
-  readerHref,
+  successLinkLabel,
   conversion = false,
   marketingConsent,
 }: ResourceFormProps) {
@@ -58,16 +57,27 @@ export function ResourceForm({
   const restoreFocus = useRef(false);
   const [status, setStatus] = useState<Status>('idle');
   const [message, setMessage] = useState('');
-  const [guideUrl, setGuideUrl] = useState('');
+  const [resourceUrl, setResourceUrl] = useState('');
   const [trackMetaLead] = useState(() => (
     metaLeadContentName ? createMetaLeadTracker(metaLeadContentName, ctaLocation) : undefined
   ));
   const [trackFormStart] = useState(() => (
     metaLeadContentName ? createFormStartTracker(metaLeadContentName, ctaLocation) : undefined
   ));
-  const resolvedSignupInterest = metaLeadContentName === 'book_sample'
+  const isBookSample = metaLeadContentName === 'book_sample';
+  const resolvedSignupInterest = isBookSample
     ? BOOK_SAMPLE_INTEREST
     : (signupInterest || TOP_TRADES_INTEREST);
+  const openLabel = successLinkLabel ?? (isBookSample ? BOOK_SAMPLE_OPEN_LABEL : 'Open your free guide');
+  const resourceLink = {
+    href: resourceUrl,
+    target: isBookSample ? undefined : '_blank',
+    rel: isBookSample ? undefined : 'noreferrer',
+    'data-analytics-event': 'resource_open',
+    'data-location': ctaLocation,
+    'data-item': metaLeadContentName,
+    'data-destination': isBookSample ? 'resource_reader' : 'resource_pdf',
+  };
 
   useEffect(() => {
     if (status === 'success' && restoreFocus.current) successStatus.current?.focus();
@@ -84,7 +94,7 @@ export function ResourceForm({
 
     setStatus('submitting');
     setMessage(`Submitting your request for ${resourceName}…`);
-    setGuideUrl('');
+    setResourceUrl('');
 
     try {
       const result = await submitSignup(
@@ -97,7 +107,7 @@ export function ResourceForm({
       restoreFocus.current = form.contains(document.activeElement);
       setStatus('success');
       setMessage(result.message || "Your request was received.");
-      setGuideUrl(result.sampleUrl || '');
+      setResourceUrl(result.sampleUrl || '');
     } catch (error) {
       setStatus('error');
       setMessage(error instanceof Error ? error.message : 'We could not save your request. Please try again.');
@@ -145,27 +155,15 @@ export function ResourceForm({
       >
         {message}
       </p>
-      {status === 'success' && guideUrl ? (
+      {status === 'success' && resourceUrl ? (
         <div className="resource-access">
-          {conversion ? <>
-            <ConversionCta href={guideUrl} target="_blank" rel="noreferrer"
-              data-analytics-event="resource_open" data-location={ctaLocation} data-item={metaLeadContentName} data-destination="resource_pdf">
-              {successLinkLabel}
-            </ConversionCta>
-            {readerHref && <ConversionCta href={readerHref} variant="secondary"
-              data-analytics-event="resource_open" data-location={ctaLocation} data-item={metaLeadContentName} data-destination="resource_reader">
-              Read in browser
-            </ConversionCta>}
-          </> : <>
-          <a className="resource-guide-link" href={guideUrl} target="_blank" rel="noreferrer"
-            data-analytics-event="resource_open" data-location={ctaLocation} data-item={metaLeadContentName} data-destination="resource_pdf">
-            {successLinkLabel} <span aria-hidden="true">↗</span>
-          </a>
-          {readerHref && <a className="resource-guide-link" href={readerHref}
-            data-analytics-event="resource_open" data-location={ctaLocation} data-item={metaLeadContentName} data-destination="resource_reader">
-            Read in browser <span aria-hidden="true">→</span>
-          </a>}
-          </>}
+          {conversion ? (
+            <ConversionCta {...resourceLink}>{openLabel}</ConversionCta>
+          ) : (
+            <a className="resource-guide-link" {...resourceLink}>
+              {openLabel} <span aria-hidden="true">{isBookSample ? '→' : '↗'}</span>
+            </a>
+          )}
         </div>
       ) : null}
     </form>

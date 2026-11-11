@@ -6,10 +6,11 @@ import { ResourceForm } from '../../resource-form';
 import { SITE_NAME, SITE_URL } from '../../site';
 import styles from './page.module.css';
 import { BrandLockup } from '../../brand-lockup';
+import { BOOK_SAMPLE_READER_PATH } from '../sample-links';
 
 const PAGE_TITLE = 'Free 7-Page TRADE HUSTL3 Book Sample';
 const PAGE_DESCRIPTION =
-  'Get the free 7-page sample of TRADE HUSTL3: Built by Hustle, Backed by Trades. Enter your email and download the 7-page sample PDF.';
+  'Get the free 7-page sample of TRADE HUSTL3: Built by Hustle, Backed by Trades. Enter your email to open the sample in your browser.';
 
 export const metadata: Metadata = {
   title: PAGE_TITLE,
@@ -54,7 +55,7 @@ export default function BookSamplePage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }} />
       <script
         dangerouslySetInnerHTML={{
-          __html: `if (window.location.hash === '#read') window.location.replace('/book/sample/read');`,
+          __html: `if (window.location.hash === '#read') window.location.replace('${BOOK_SAMPLE_READER_PATH}');`,
         }}
       />
       <CtaAnalytics />
@@ -91,7 +92,7 @@ export default function BookSamplePage() {
           </p>
 
           <div className={styles.formCard} id="get-sample">
-            <p className={styles.formKicker}>Read online or open the PDF</p>
+            <p className={styles.formKicker}>Read online</p>
             <h2>Get the 7 pages free.</h2>
             <ResourceForm
               resourceName="free 7-page TRADE HUSTL3 book sample"
@@ -100,8 +101,6 @@ export default function BookSamplePage() {
               ctaLocation="book-sample-campaign"
               metaLeadContentName="book_sample"
               signupInterest="Book 7-Page Sample"
-              successLinkLabel="Open the 7-page PDF"
-              readerHref="/book/sample/read"
             />
             <p className={styles.consent}>
               No purchase required. By requesting the sample, you agree to receive TRADE HUSTL3 book and career updates. Unsubscribe anytime.
@@ -115,7 +114,7 @@ export default function BookSamplePage() {
           <p className={styles.eyebrow}>WHAT HAPPENS NEXT</p>
           <h2>START READING RIGHT AWAY.</h2>
           <p>
-            After you submit your email, open the PDF or read in your browser. We&rsquo;ll also email the links. Confirm separately by email to join book and career updates.
+            After you submit your email, open the sample right here. We&rsquo;ll also email you the same link. Confirm separately by email to join book and career updates.
           </p>
         </div>
         <Link className={styles.primaryButton} href="/book" data-cta="the-book" data-cta-location="book-sample-landing">

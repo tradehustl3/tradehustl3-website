@@ -21,9 +21,9 @@ for (const template of [undefined, '18']) {
       return new Response(null, { status: 201 });
     };
     try {
-      for (const [interest, route] of [['Book 7-Page Sample', '/api/book-sample'], ['Top 10 Trades', '/api/free-sample']]) {
+      for (const [interest, route] of [['Book 7-Page Sample', '/book/sample/read'], ['Top 10 Trades', '/api/free-sample']]) {
         const env = { DB, BREVO_API_KEY: 'test-key', BREVO_LIST_ID: '3', BREVO_DOI_TEMPLATE_ID: template,
-          SAMPLE_TOKEN_SECRET: 'test-guide-secret', BOOK_SAMPLE_TOKEN_SECRET: 'test-book-secret' };
+          SAMPLE_TOKEN_SECRET: 'test-guide-secret' };
         const response = await worker.fetch(new Request('https://tradehustl3.com/api/subscribe', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email: 'resource@example.test', interest, marketingConsent: false }),
@@ -32,6 +32,10 @@ for (const template of [undefined, '18']) {
         const result = await response.json();
         assert.equal(result.sampleUrl, route);
         assert.doesNotMatch(result.message, /confirm|join.*updates/i);
+        if (interest === 'Book 7-Page Sample') {
+          assert.equal(response.headers.get('set-cookie'), null);
+          continue;
+        }
         const cookie = response.headers.get('set-cookie').split(';')[0];
         const pdf = await worker.fetch(new Request(`https://tradehustl3.com${route}`, { headers: { Cookie: cookie } }), env, ctx);
         assert.equal(pdf.status, 200);

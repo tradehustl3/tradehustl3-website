@@ -32,7 +32,9 @@ Brevo must contain the text attributes `INTEREST`, `SIGNUP_SOURCE`, `UTM_SOURCE`
 
 Set `BREVO_DOI_TEMPLATE_ID` (regular variable) to the ID of an **active** Brevo template tagged `optin` whose button links to `{{ doubleoptin }}` (template #18, "Website signup confirmation (double opt-in)"). With it set, website signups call `/v3/contacts/doubleOptinConfirmation`: Brevo emails the confirmation, and the contact joins `BREVO_LIST_ID` (starting the nurture automations) only after clicking Confirm, which redirects to `/subscribed`. Free guide and book-sample delivery stay immediate. Leave the variable unset to keep direct list adds. Book program inquiries always use direct adds.
 
-Book-interest signups receive the gated seven-page preview (cover included) of *TRADE HUSTL3: 10 High-Opportunity Trades — 2026-2027 Edition*. The Worker serves the PDF from `worker/assets/trade-hustl3-free-sample.pdf` through `/api/free-sample`; direct public asset requests continue to redirect to the email gate.
+Book sample requests open the seven-page reader at `/book/sample/read`. The signup confirmation and delivery email both use that link. Previously issued book-sample PDF links remain valid until they expire.
+
+Top 10 Trades requests still receive the guide preview PDF from `worker/assets/trade-hustl3-free-sample.pdf` through `/api/free-sample`. Direct public asset requests redirect to the email signup.
 
 ## Production Brevo nurture automations
 
