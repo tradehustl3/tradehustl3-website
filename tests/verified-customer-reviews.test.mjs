@@ -35,8 +35,11 @@ test("homepage reviews come only from the verified paid-customer review API", ()
   const offer = read("app/home-opportunity.tsx");
   const reviews = read("app/customer-reviews.tsx");
   assert.match(page, /<TurnSkillsIntoOpportunity \/>/);
-  assert.equal(offer.match(/<CustomerReviews \/>/g)?.length, 1, "the builder section includes verified customer proof");
-  assert.match(offer, /<ResumeStartSection compact \/>/);
+  assert.equal(offer.match(/<VerifiedCustomerReviews\b[^>]*\/>/g)?.length, 1, "the builder section includes verified customer proof");
+  assert.doesNotMatch(offer, /<CustomerReviews \/>/, "the builder section states its promises once");
+  assert.ok(offer.indexOf("<VerifiedCustomerReviews") > offer.indexOf("<ResumePreviewCta />"), "customer proof follows the builder offer");
+  assert.match(offer, /<ResumePreviewCta \/>/);
+  assert.match(reviews, /export function VerifiedCustomerReviews[\s\S]*?fetch\("\/api\/resume-builder\/reviews\/public"/);
   const campaign = read("app/home-resume-first.tsx");
   assert.equal(campaign.match(/<CustomerReviews \/>/g)?.length, 1);
   assert.match(reviews, /\/api\/resume-builder\/reviews\/public/);

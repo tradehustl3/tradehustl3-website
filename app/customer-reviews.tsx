@@ -21,7 +21,32 @@ const PROMISES = [
   { id: "delivery", label: "Delivered or refunded", title: "Files or a full refund.", body: "If we permanently cannot generate or deliver your paid resume, you get a full refund under the refund policy.", href: "/resume-builder/refund-policy" },
 ] as const;
 
+/** Verified reviews plus the promise band (campaign layout). */
 export function CustomerReviews() {
+  return (
+    <div className={styles.wrap}>
+      <VerifiedCustomerReviews />
+
+      <ul className={styles.promiseGrid} aria-label="What the Resume Builder promises">
+        {PROMISES.map((promise) => (
+          <li className={styles.promiseCard} key={promise.id}>
+            <span>{promise.label}</span>
+            <strong>{promise.title}</strong>
+            <p>{promise.body}</p>
+            {"href" in promise ? <a href={promise.href}>Read the refund policy</a> : null}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+/**
+ * Loads approved paid-customer reviews from the public API and renders only
+ * the review band. Used where the surrounding section already states the
+ * product promises, so they are not repeated.
+ */
+export function VerifiedCustomerReviews({ className }: { className?: string } = {}) {
   const [verifiedReviews, setVerifiedReviews] = useState<PublicReview[]>([]);
   const [loaded, setLoaded] = useState(false);
 
@@ -52,33 +77,18 @@ export function CustomerReviews() {
     };
   }, []);
 
-  return (
-    <div className={styles.wrap}>
-      <VerifiedReviews reviews={loaded ? verifiedReviews : []} />
-
-      <ul className={styles.promiseGrid} aria-label="What the Resume Builder promises">
-        {PROMISES.map((promise) => (
-          <li className={styles.promiseCard} key={promise.id}>
-            <span>{promise.label}</span>
-            <strong>{promise.title}</strong>
-            <p>{promise.body}</p>
-            {"href" in promise ? <a href={promise.href}>Read the refund policy</a> : null}
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
+  return <VerifiedReviews reviews={loaded ? verifiedReviews : []} className={className} />;
 }
 
 /**
  * Approved reviews from paid customers. Renders nothing at all until at least
  * one approved review exists, so the homepage never shows an empty reviews box.
  */
-export function VerifiedReviews({ reviews }: { reviews: PublicReview[] }) {
+export function VerifiedReviews({ reviews, className }: { reviews: PublicReview[]; className?: string }) {
   if (reviews.length === 0) return null;
 
   return (
-    <section className={styles.section} aria-labelledby="customer-reviews-title">
+    <section className={className ? `${styles.section} ${className}` : styles.section} aria-labelledby="customer-reviews-title">
       <h2 id="customer-reviews-title" className={styles.title}>Reviews from verified buyers</h2>
 
       <div className={styles.box}>

@@ -422,14 +422,21 @@ test("repairs a path with a pasted full site URL instead of returning 404", asyn
   assert.equal(response.headers.get("strict-transport-security"), "max-age=31536000");
 });
 
-test("homepage keeps the verified account entry and free guide signups", async () => {
+test("homepage routes to the verified account entry and keeps free guide signups", async () => {
   const html = await (await render()).text();
-  assert.match(html, /id="resume-start"/i);
+  // The hub links to the dedicated verified-account page instead of embedding it.
+  assert.equal((html.match(/id="resume-start"/gi) ?? []).length, 1);
+  assert.match(html, /href="\/resume-builder\/start"[^>]*data-location="homepage_resume_builder"/i);
   assert.match(html, /type="email"/i);
   assert.match(html, /<form\b/i);
-  assert.match(html, /Continue with email/i);
   assert.doesNotMatch(html, /name="fullName"/i);
-  assert.match(html, /ACCOUNT · STAGE 1 OF 5/i);
+  const start = await (await renderPath("/resume-builder/start")).text();
+  assert.match(start, /Continue with email/i);
+  assert.doesNotMatch(start, /name="fullName"/i);
+  // Campaign visits keep the embedded account entry.
+  const campaign = await (await renderPath("/?trade=hvac")).text();
+  assert.match(campaign, /Continue with email/i);
+  assert.match(campaign, /ACCOUNT · STAGE 1 OF 5/i);
   assert.match(html, /FREE CAREER GUIDE PREVIEW/i);
   assert.match(html, /href="\/top-10-trades"/i);
   assert.match(html, /href="\/book"/i);
@@ -442,8 +449,12 @@ test("homepage features the approved book cover and edition links without duplic
   const html = await (await render()).text();
   assert.match(html, /href="\/book"[^>]*>The Book<\/a>/i);
   assert.match(html, /optimized\/book-cover-v3\.webp/i);
-  assert.match(html, /href="\/book#availability"/i);
+  // Every edition is buyable straight from the hub; the full comparison stays on /book.
+  assert.match(html, /href="https:\/\/www\.amazon\.com\/dp\/B0HFQ2ZNJN"[^>]*data-cta="amazon-paperback"/i);
+  assert.match(html, /href="https:\/\/www\.amazon\.com\/dp\/B0HPZ2KQ1R"[^>]*data-cta="amazon-kindle"/i);
+  assert.match(html, /href="https:\/\/buy\.stripe\.com\/[^"]+"[^>]*data-cta="direct-ebook"/i);
   const book = await (await renderPath("/book")).text();
+  assert.match(book, /id="availability"/i);
   assert.match(book, /href="https:\/\/www\.amazon\.com\/dp\/B0HFQ2ZNJN"/i);
   assert.match(book, /href="https:\/\/www\.amazon\.com\/dp\/B0HPZ2KQ1R"/i);
   assert.match(book, /href="https:\/\/buy\.stripe\.com\//i);
@@ -1481,10 +1492,11 @@ test("launch sweep delivers a pending preorder once after release", async () => 
 
 test("server-renders offer placements on the hub and keeps campaigns resume-first", async () => {
   const hub = await (await render()).text();
-  for (const location of ["sticky_header", "homepage_book_hero", "homepage_book_formats", "homepage_resume_builder", "find_your_lane", "first_steps", "built_by_a_tradesman"]) {
+  for (const location of ["sticky_header", "homepage_book_hero", "homepage_resume_builder", "find_your_lane", "first_steps", "built_by_a_tradesman"]) {
     assert.match(hub, new RegExp(`data-location="${location}"`, "i"));
   }
-  for (const placement of ["homepage_book_preview", "homepage_top_10_guide", "homepage_newsletter"]) {
+  // cta-analytics reads data-cta-location as the location for these placements.
+  for (const placement of ["homepage_book_formats", "homepage_book_preview", "homepage_top_10_guide", "homepage_newsletter"]) {
     assert.match(hub, new RegExp(`data-cta-location="${placement}"`));
   }
   const html = await (await renderPath("/?trade=hvac")).text();
