@@ -3,7 +3,7 @@
 Source: public/optimized/book-hero-trades-v1.webp (the /book hero background).
 Outputs (public/optimized/atmosphere/):
   texture-*.webp         empty wall area, navy monochrome, for section texture
-  worker-<name>-*.webp   one figure each, navy monochrome, feathered alpha
+  worker-<name>-*.webp   hvac and wrench figures, navy monochrome, feathered alpha
   painter-color-*.webp   the painter + green $ in colour, feathered alpha
   hero-mobile-*.webp     portrait crop for narrow screens
 Re-run after changing the source art: python3 tools/brand/build-atmosphere.py
@@ -62,6 +62,8 @@ def save(img: Image.Image, name: str, widths, quality: int = 62) -> None:
 
 save(navy(art.crop(TEXTURE), gamma=1.1), "texture", (960,), quality=50)
 for name, box in WORKERS.items():
+    if name == "painter":
+        continue  # the painter ships in colour only (painter-color)
     save(feather(navy(art.crop(box), gamma=0.9), edge=0.4, left_open=(name == "hvac")), f"worker-{name}", (300,))
 save(feather(art.crop(WORKERS["painter"]), edge=0.55), "painter-color", (345,))
-save(art.crop(HERO_MOBILE), "hero-mobile", (480, 828), quality=58)
+save(art.crop(HERO_MOBILE), "hero-mobile", (828,), quality=58)
