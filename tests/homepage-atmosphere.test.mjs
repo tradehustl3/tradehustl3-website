@@ -60,3 +60,13 @@ test("atmosphere refresh includes phone-specific compositions and restrained ima
   assert.match(refresh, /\.guide::before/);
   assert.match(refresh, /pointer-events: none/);
 });
+
+test("book-inspired spray remains lightweight and is included across sections", () => {
+  const spray = new URL("../public/optimized/atmosphere/book-spray-specks.svg", import.meta.url);
+  assert.ok(existsSync(spray), "spray asset missing");
+  assert.ok(statSync(spray).size < 8_000, "spray should be a small static SVG");
+  const refresh = css.slice(css.indexOf("Mobile-first trade atmosphere refresh"));
+  for (const section of ["storefront", "resume", "lane", "guide", "newsletter"]) {
+    assert.match(refresh, new RegExp(`\\.${section} \\{[\\s\\S]*?book-spray-specks\\.svg`), `${section} missing spray accents`);
+  }
+});
