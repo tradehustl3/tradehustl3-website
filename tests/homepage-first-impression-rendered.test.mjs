@@ -95,7 +95,7 @@ test("Find Your Lane renders eight trade cards that each answer what, how, and w
   const html = await renderHome();
   const section = between(html, 'id="trade-guides"', 'id="outlook-title"');
   assert.match(section, /EXPLORE YOUR FUTURE/);
-  assert.match(section, /<h2 id="find-your-lane-title"[^>]*>Find your lane\.\s*<span[^>]*>Explore the trades\.<\/span><\/h2>/);
+  assert.match(section, /<h2 id="find-your-lane-title"[^>]*>Eight featured trades\.\s*<span[^>]*>Explore the work\.<\/span><\/h2>/);
   assert.match(section, /Every skill starts somewhere\./);
   assert.match(section, /You don&#x27;t need to have it all figured out\./);
   const titles = ["HVAC &amp; Refrigeration", "Electrical", "Plumbing", "Welding &amp; Fabrication", "Construction", "Facilities Maintenance", "Heavy Equipment", "General Labor"];
@@ -322,4 +322,16 @@ test("the dedicated builder entry retains the existing email-verification contro
   assert.match(html, /name="email"/);
   assert.match(html, /Continue with email/);
   assert.match(html, /noindex/);
+});
+
+
+
+test("homepage skip link reaches focusable content after navigation", async () => {
+  for (const pathname of ["/", "/?trade=hvac"]) {
+    const html = await renderHome(pathname);
+    assert.match(html, /<a[^>]*href="#main-content"[^>]*>Skip to content<\/a>/);
+    assert.match(html, /<div id="main-content" tabindex="-1">/i);
+    assert.ok(html.indexOf('</header>') < html.indexOf('id="main-content"'));
+    assert.match(html, /aria-label="TRADE HUSTL3 home"/);
+  }
 });

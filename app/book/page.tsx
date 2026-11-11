@@ -21,9 +21,9 @@ import {
 } from "./editions";
 
 const BOOK_TITLE = "TRADE HUSTL3: Built by Hustle, Backed by Trades";
-const BOOK_PAGE_TITLE = "TRADE HUSTL3 Book by Zachary Ellis (Mr. HUSTL3)";
+const BOOK_PAGE_TITLE = "TRADE HUSTL3 Book by MR. HUSTL3";
 const BOOK_DESCRIPTION =
-  "A 200-trade career guide by Zachary Ellis (Mr. HUSTL3): certifications, career paths, and a 90-Day Action Plan. Paperback, Kindle, and eBook.";
+  "A 200-trade career guide by MR. HUSTL3: certifications, career paths, and a 90-Day Action Plan. Paperback, Kindle, and eBook.";
 
 const SCHOOLS_MAILTO = `mailto:${BOOK_PARTNERSHIPS_EMAIL}?subject=${encodeURIComponent("TRADE HUSTL3 book order for our program")}`;
 
@@ -353,7 +353,7 @@ export default function BookPage() {
           <p className="book-hero-eyebrow">The Official Book</p>
           <h1>TRADE<br />HUSTL<span>3</span></h1>
           <p className="book-subtitle">Built by Hustle, Backed by Trades.</p>
-          <p className="book-byline">By Zachary Ellis <span aria-hidden="true">·</span> Mr. HUSTL3</p>
+          <p className="book-byline">By MR. HUSTL3</p>
           <div className="book-hero-proof" aria-label="Book highlights">
             <span><strong>200</strong><small>Trades</small></span>
             <span><strong>{CHAPTER_COUNT}</strong><small>Chapters</small></span>
@@ -528,7 +528,7 @@ export default function BookPage() {
           <Image
             className="author-portrait"
             src="/optimized/author-portrait-v2.webp"
-            alt="Zachary Ellis, known as Mr. HUSTL3, author of TRADE HUSTL3"
+            alt="MR. HUSTL3, author of TRADE HUSTL3"
             width={800}
             height={800}
           />
@@ -538,7 +538,7 @@ export default function BookPage() {
           <p className="section-label">/ ABOUT THE AUTHOR · MR. HUSTL3</p>
           <h2>ZACHARY<br /><span>ELLIS.</span></h2>
           <p>
-            Zachary Ellis, known as Mr. HUSTL3, is an HVAC and facilities maintenance professional with more than a decade of hands-on experience solving real problems in the field. He holds EPA 608 Universal certification, an HVAC certification, NCRR, and OSHA 10. His background includes residential and commercial systems, preventive maintenance, facilities operations, team leadership, vendor coordination, and large-scale equipment.
+            MR. HUSTL3 is an HVAC and facilities maintenance professional with more than a decade of hands-on experience solving real problems in the field. He holds EPA 608 Universal certification, an HVAC certification, NCRR, and OSHA 10. His background includes residential and commercial systems, preventive maintenance, facilities operations, team leadership, vendor coordination, and large-scale equipment.
           </p>
           <p>
             TRADE HUSTL3 was born from real work, real lessons, and a clear purpose: help the next generation enter skilled trades, earn through useful ability, and elevate into leadership, ownership, and long-term opportunity.
@@ -635,3 +635,4 @@ export default function BookPage() {
     </main>
   );
 }
+

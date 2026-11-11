@@ -34,12 +34,12 @@ export const metadata: Metadata = {
 
   authors: [
     {
-      name: "Da Maintenance Mane",
+      name: "MR. HUSTL3",
       url: SITE_URL,
     },
   ],
 
-  creator: "Da Maintenance Mane",
+  creator: "MR. HUSTL3",
   publisher: SITE_NAME,
 
   // Public pages declare their own canonical. Index/follow is the default;
@@ -129,8 +129,8 @@ const structuredData = {
     {
       "@type": "Person",
       "@id": `${SITE_URL}/#zachary-ellis`,
-      name: "Da Maintenance Mane",
-      alternateName: "Zachary Ellis",
+      name: "Zachary Ellis",
+      alternateName: "MR. HUSTL3",
       jobTitle: "Founder of TRADE HUSTL3 and HVAC/facilities maintenance professional",
       url: SITE_URL,
       sameAs: ["https://www.linkedin.com/in/zachary-ellis-a797193ab"],
@@ -218,3 +218,4 @@ export default function RootLayout({
     </html>
   );
 }
+

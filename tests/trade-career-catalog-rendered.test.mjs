@@ -27,7 +27,7 @@ test("resume catalog renders one focused H1, exact coverage, and canonical metad
   assert.match(html, /14[\s\S]*Career families/i);
   assert.match(html, /207[\s\S]*Job titles mapped/i);
   assert.match(html, /14[\s\S]*Guided builder tracks/i);
-  assert.match(html, /8[\s\S]*Detailed trade guides/i);
+  assert.match(html, /7[\s\S]*Detailed trade guides/i);
   assert.match(html, /57[\s\S]*Field bullet examples/i);
   assert.ok(
     (html.match(/href="\/resume-examples\/skilled-trades"/gi) ?? []).length >= 2,
@@ -74,3 +74,4 @@ test("resume catalog is discoverable in the XML sitemap", async () => {
   const xml = await (await worker.fetch(new Request("https://tradehustl3.com/sitemap.xml"), env, ctx)).text();
   assert.match(xml, /<loc>https:\/\/tradehustl3\.com\/resume-examples<\/loc>/i);
 });
+

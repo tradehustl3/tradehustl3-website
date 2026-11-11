@@ -22,11 +22,11 @@ export function FindYourLane() {
         <header className={styles.head}>
           <p className={styles.kicker}>TRADE HUSTL3 <span aria-hidden="true">·</span> EXPLORE YOUR FUTURE</p>
           <h2 id="find-your-lane-title" className={styles.title}>
-            Find your lane. <span className={styles.gold}>Explore the trades.</span>
+            Eight featured trades. <span className={styles.gold}>Explore the work.</span>
           </h2>
           <p className={styles.subhead}>Every skill starts somewhere.</p>
           <p className={styles.lead}>
-            You don&apos;t need to have it all figured out. Discover the trades, understand the work, and find a path that fits you.
+            You don&apos;t need to have it all figured out. Discover the trades, understand the work, and find a path that fits you. {cards.length} featured homepage trades. The Trade Career Catalog maps {CATALOG_METRICS.mappedRoles} job titles across {CATALOG_METRICS.careerFamilies} career families, with {CATALOG_METRICS.detailedGuides} detailed trade guides.
           </p>
         </header>
 
@@ -122,7 +122,7 @@ export function FindYourLane() {
             data-destination="/resume-examples"
             data-item="explore_all_trades"
           >
-            Explore all {CATALOG_METRICS.careerFamilies} trades <span aria-hidden="true">→</span>
+            Explore all {CATALOG_METRICS.careerFamilies} career families <span aria-hidden="true">→</span>
           </Link>
           <p>
             New to the trades?{" "}
@@ -141,3 +141,4 @@ export function FindYourLane() {
     </section>
   );
 }
+

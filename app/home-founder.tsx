@@ -15,7 +15,7 @@ export function BuiltByATradesman() {
     <section className={`${styles.section} ${styles.founder} ${hub.founder}`} id="built-by-a-tradesman" aria-labelledby="founder-title">
       <div className={`${styles.inner} ${styles.founderInner}`}>
         <div className={styles.founderMark}>
-          <Image className={hub.portrait} src="/optimized/author-portrait-v2.webp" alt="Zachary Ellis, founder of TRADE HUSTL3" width={800} height={800} sizes="(max-width: 720px) 72vw, 380px" />
+          <Image className={hub.portrait} src="/optimized/author-portrait-v2.webp" alt="MR. HUSTL3, founder of TRADE HUSTL3" width={800} height={800} sizes="(max-width: 720px) 72vw, 380px" />
           <p>ENTER <span aria-hidden="true">•</span> EARN <span aria-hidden="true">•</span> ELEVATE</p>
         </div>
         <div className={styles.founderCopy} id="hub-mission">
@@ -24,12 +24,12 @@ export function BuiltByATradesman() {
             Built by a tradesman. <span className={styles.gold}>Built from the field.</span>
           </h2>
           <p>
-            TRADE HUSTL3 was founded by Zachary Ellis, an HVAC and facilities maintenance professional with more than a decade of hands-on experience solving real problems in the field: residential and commercial systems, preventive maintenance, facilities operations, team leadership, vendor coordination, and large-scale equipment.
+            TRADE HUSTL3 was founded by MR. HUSTL3, an HVAC and facilities maintenance professional with more than a decade of hands-on experience solving real problems in the field: residential and commercial systems, preventive maintenance, facilities operations, team leadership, vendor coordination, and large-scale equipment.
           </p>
           <p>
             He built TRADE HUSTL3 to help young adults and career changers get into the skilled trades, earn more, and build long-term careers or businesses of their own.
           </p>
-          <ul className={styles.founderCreds} aria-label="Zachary Ellis's credentials">
+          <ul className={styles.founderCreds} aria-label="MR. HUSTL3's credentials">
             {FOUNDER_QUALIFICATIONS.map((item) => <li key={item}>{item}</li>)}
           </ul>
           <div className={styles.offerActions}>
@@ -45,3 +45,4 @@ export function BuiltByATradesman() {
     </section>
   );
 }
+
