@@ -3,9 +3,7 @@
 Source: public/optimized/book-hero-trades-v1.webp (the /book hero background).
 Outputs (public/optimized/atmosphere/):
   texture-*.webp         empty wall area, navy monochrome, for section texture
-  worker-<name>-*.webp   hvac and wrench figures, navy monochrome, feathered alpha
-  painter-color-*.webp   the painter + green $ in colour, feathered alpha
-  hero-mobile-*.webp     portrait crop for narrow screens
+  worker-<name>-*-v2.webp   trade figures, navy monochrome, feathered alpha
 Re-run after changing the source art: python3 tools/brand/build-atmosphere.py
 """
 from pathlib import Path
@@ -19,14 +17,13 @@ OUT.mkdir(parents=True, exist_ok=True)
 
 art = Image.open(SRC).convert("RGB")
 
-# Crop boxes in source pixels (1585 x 992).
+# Crop boxes in source pixels (1585 x 992), before the green paint and marks.
 WORKERS = {
-    "hvac": (0, 170, 300, 820),
+    "hvac": (0, 173, 275, 548),
     "wrench": (560, 170, 900, 760),
-    "painter": (1240, 40, 1585, 640),
+    "painter": (1280, 238, 1514, 655),
 }
 TEXTURE = (930, 0, 1230, 620)
-HERO_MOBILE = (440, 40, 1585, 992)
 
 NAVY_DARK = np.array([6, 24, 46], dtype=np.float32)
 NAVY_LIGHT = np.array([70, 128, 222], dtype=np.float32)
@@ -48,22 +45,22 @@ def feather(img: Image.Image, edge: float = 0.22, left_open: bool = False) -> Im
     rx = w if left_open else w / 2
     d = np.sqrt(((x - cx) / rx) ** 2 + ((y - h * 0.42) / (h * 0.62)) ** 2)
     alpha = np.clip((1 - d) / edge, 0, 1) ** 1.6
-    alpha_img = Image.fromarray((alpha * 255).astype(np.uint8), "L").filter(ImageFilter.GaussianBlur(6))
+    soft_alpha = Image.fromarray((alpha * 255).astype(np.uint8), "L").filter(ImageFilter.GaussianBlur(6))
+    vertical_fade = np.clip(np.minimum(y / (h * 0.12), (h - 1 - y) / (h * 0.16)), 0, 1)
+    alpha_img = Image.fromarray((np.asarray(soft_alpha) * vertical_fade).astype(np.uint8), "L")
     out = img.convert("RGBA")
     out.putalpha(alpha_img)
     return out
 
 
-def save(img: Image.Image, name: str, widths, quality: int = 62) -> None:
+def save(img: Image.Image, name: str, widths, quality: int = 62, version: str = "") -> None:
     for w in widths:
         h = round(img.height * w / img.width)
-        img.resize((w, h), Image.LANCZOS).save(OUT / f"{name}-{w}.webp", "WEBP", quality=quality, method=6)
+        img.resize((w, h), Image.LANCZOS).save(OUT / f"{name}-{w}{version}.webp", "WEBP", quality=quality, method=6)
 
 
 save(navy(art.crop(TEXTURE), gamma=1.1), "texture", (960,), quality=50)
 for name, box in WORKERS.items():
-    if name == "painter":
-        continue  # the painter ships in colour only (painter-color)
-    save(feather(navy(art.crop(box), gamma=0.9), edge=0.4, left_open=(name == "hvac")), f"worker-{name}", (300,))
-save(feather(art.crop(WORKERS["painter"]), edge=0.55), "painter-color", (345,))
-save(art.crop(HERO_MOBILE), "hero-mobile", (828,), quality=58)
+    width = 260 if name == "painter" else 300
+    worker = navy(art.crop(box), gamma=0.9)
+    save(feather(worker, edge=0.4, left_open=(name == "hvac")), f"worker-{name}", (width,), version="-v2")

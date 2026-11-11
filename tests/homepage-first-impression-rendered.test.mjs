@@ -144,10 +144,18 @@ test("the guide accurately describes the asset and the resume shows a labeled sa
   assert.ok(headline >= 0 && headline < logo && logo < audience && audience < description && description < example,
     'headline, existing logo, audience statement, supporting description, and examples stay in order');
 
+  const credentials = between(resume, 'aria-label="Examples of trade credentials for a resume"', 'Your First Job.');
+  for (const [name, detail] of [["CDL", "Class A / B"], ["EPA 608", "Universal"], ["CPO", "Pool &amp; Spa Operator"], ["AWS", "Certified Welder"], ["ASE", "Auto Service"], ["TWIC", "Card"]]) {
+    assert.ok(credentials.includes(`<strong>${name}</strong><span>${detail}</span>`), `${name} credential`);
+  }
+
   const previewEnd = resume.indexOf('</figure>');
   const cta = resume.indexOf('Start Your Free Resume Preview');
   assert.ok(previewEnd > 0 && cta > previewEnd && resume.indexOf('See your preview before you pay') > cta);
-  for (const label of ["sample-hvac-resume.webp", "Illustrative candidate", "$9.99", "PDF and editable DOCX", "Matching cover letter", "three AI-assisted corrections within seven days"]) {
+  const documents = between(resume, '<figure', '</figure>');
+  assert.match(documents, /<p>Resume<\/p>[\s\S]*sample-hvac-resume\.webp/);
+  assert.match(documents, /<p>Cover Letter<\/p>[\s\S]*sample-hvac-cover-letter\.webp/);
+  for (const label of ["Illustrative candidate", "$9.99", "PDF and editable DOCX", "Matching cover letter", "three AI-assisted corrections within seven days"]) {
     assert.ok(resume.includes(label), label);
   }
 });
