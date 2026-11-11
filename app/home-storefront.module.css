@@ -462,3 +462,99 @@ a.hubHeaderCta { background: #f3c367; color: #081e32; border-color: #f3c367; box
 .sectionHeading .lead { margin-inline: auto; }
 .newsletter > .sectionHeading { margin-bottom: 24px; }
 .guide .kicker { color: var(--hub-accent, #5ab9e6); }
+
+/*
+ * Book-inspired atmosphere. Every layer comes from the official /book hero
+ * artwork (public/optimized/book-hero-trades-v1.webp) or assets derived from
+ * it by tools/brand/build-atmosphere.py. Figures sit only in open space:
+ * desktop gutters or the gap beside the book cover, never behind copy, forms,
+ * or CTAs. Narrow screens get texture and light only, plus a cropped hero.
+ * Purely decorative backgrounds: nothing animates, so reduced motion is
+ * unaffected, and content contrast is set by the darkest overlay layer.
+ */
+.storefront, .resume, .lane, .guide, .newsletter { background-color: #071c30; background-repeat: no-repeat; }
+
+.storefront {
+  background-image:
+    radial-gradient(ellipse 38% 72% at 31% 47%, #071c30f5 0%, #071c30eb 62%, transparent 100%),
+    linear-gradient(180deg, #071c3066 0%, transparent 22%, transparent 70%, #071c30 100%),
+    radial-gradient(ellipse 22% 26% at 8% 92%, #f3a24a26, transparent 70%),
+    url("/optimized/book-hero-trades-v1.webp");
+  background-position: center, center, center, center 34%;
+  background-size: auto, auto, auto, cover;
+}
+
+.resume {
+  background-image:
+    linear-gradient(180deg, #071c30 0%, #071c30e6 18%, #071c30e6 82%, #071c30 100%),
+    url("/optimized/atmosphere/texture-960.webp");
+  background-size: auto, cover;
+}
+
+.lane {
+  background-image:
+    radial-gradient(ellipse 40% 50% at 100% 0%, #2f6fd61f, transparent 70%),
+    linear-gradient(#071c30eb, #071c30eb),
+    url("/optimized/atmosphere/texture-960.webp");
+  background-size: auto, auto, cover;
+}
+
+.guide {
+  background-image:
+    radial-gradient(ellipse 30% 55% at 12% 70%, #f3a24a1f, transparent 72%),
+    linear-gradient(#071c30ea, #071c30ea),
+    url("/optimized/atmosphere/texture-960.webp");
+  background-size: auto, auto, cover;
+}
+
+.newsletter {
+  background-image:
+    radial-gradient(ellipse 45% 70% at 92% 10%, #2f6fd62e, transparent 70%),
+    linear-gradient(#071c30e0, #071c30e0),
+    url("/optimized/atmosphere/texture-960.webp");
+  background-size: auto, auto, cover;
+}
+
+@media (min-width: 1200px) {
+  .resume {
+    background-image:
+      url("/optimized/atmosphere/worker-wrench-300.webp"),
+      linear-gradient(180deg, #071c30 0%, #071c30e6 18%, #071c30e6 82%, #071c30 100%),
+      url("/optimized/atmosphere/texture-960.webp");
+    background-position: right 3% top 150px, center, center;
+    background-size: 260px auto, auto, cover;
+  }
+}
+
+/* Career Paths and the closing form run wider than the builder column, so
+   their figures wait for gutters of about 150px (checked at 1200/1280/1360). */
+@media (min-width: 1440px) {
+  .lane {
+    background-image:
+      radial-gradient(ellipse 40% 50% at 100% 0%, #2f6fd61f, transparent 70%),
+      url("/optimized/atmosphere/worker-hvac-300.webp"),
+      linear-gradient(#071c30eb, #071c30eb),
+      url("/optimized/atmosphere/texture-960.webp");
+    background-position: center, left 0 top 0, center, center;
+    background-size: auto, 170px auto, auto, cover;
+  }
+  .newsletter {
+    background-image:
+      radial-gradient(ellipse 45% 70% at 92% 10%, #2f6fd62e, transparent 70%),
+      url("/optimized/atmosphere/painter-color-345.webp"),
+      linear-gradient(#071c30e0, #071c30e0),
+      url("/optimized/atmosphere/texture-960.webp");
+    background-position: center, right 0 top 12px, center, center;
+    background-size: auto, 240px auto, auto, cover;
+  }
+}
+
+@media (max-width: 720px) {
+  .storefront {
+    background-image:
+      linear-gradient(180deg, #071c3099 0%, #071c30b3 38%, #071c30f0 58%, #071c30 100%),
+      url("/optimized/atmosphere/hero-mobile-828.webp");
+    background-position: center, center top;
+    background-size: auto, 100% auto;
+  }
+}
