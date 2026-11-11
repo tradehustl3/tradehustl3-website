@@ -23,7 +23,7 @@ test("homepage server-renders Know Your Trade with HVAC selected and real button
   const start = html.indexOf('id="know-your-trade"');
   assert.ok(start > 0, "section present");
   assert.ok(start > html.indexOf('id="first-steps"'), "follows Your First Steps");
-  assert.ok(start < html.indexOf('id="resume-start"'), "comes before the paid tools");
+  assert.ok(start > html.indexOf('id="resume-start"'), "career discovery follows the Resume Builder");
   const section = html.slice(start, html.indexOf("</section>", start));
   for (const label of ["HVAC", "Electrical", "Plumbing", "Facilities", "Welding", "Driving", "Construction"]) {
     assert.match(section, new RegExp(`<button[^>]*aria-pressed="(true|false)"[^>]*>${label}</button>`), `${label} chip`);

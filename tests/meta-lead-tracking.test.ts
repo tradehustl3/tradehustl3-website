@@ -117,3 +117,29 @@ test("homepage navigation events carry location, destination, and item", () => {
   assert.deepEqual(calls, [["trackCustom", "select_content", parameters]]);
   assert.deepEqual(gaCalls, [["event", "select_content", parameters]]);
 });
+
+test("offer placement is recorded once per accepted request without signup fields", async () => {
+  const { calls, gaCalls } = installPixelSpy();
+  const trackMetaLead = createMetaLeadTracker("newsletter", "homepage_newsletter");
+  const options = { trackMetaLead, fetchImpl: signupResponse() as typeof fetch };
+  const payload = { email: "reader@example.com", interest: "General TRADE HUSTL3 Updates", utm_campaign: "email-looking@example.com" };
+
+  await Promise.all([submitSignup(payload, options), submitSignup(payload, options)]);
+
+  const parameters = {
+    content_name: "newsletter",
+    signup_source: "newsletter",
+    offer_id: "newsletter",
+    placement: "homepage_newsletter",
+  };
+  assert.deepEqual(gaCalls, [["event", "generate_lead", parameters]]);
+  assert.deepEqual(calls, [["track", "Lead", parameters]]);
+});
+
+test("primary CTA views remain distinct from accepted requests and purchases", () => {
+  const { calls, gaCalls } = installPixelSpy();
+  const parameters = { location: "homepage_book_hero", destination: "book_preview_form", item: "book_sample", offer_id: "book_sample", placement: "homepage_book_hero" };
+  assert.equal(trackNavigationEvent("cta_view", parameters), true);
+  assert.deepEqual(gaCalls, [["event", "cta_view", parameters]]);
+  assert.deepEqual(calls, [["trackCustom", "cta_view", parameters]]);
+});

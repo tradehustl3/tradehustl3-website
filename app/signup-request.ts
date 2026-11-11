@@ -3,6 +3,7 @@ import type { MetaLeadTracker } from "./meta-pixel";
 export type SignupPayload = {
   email: FormDataEntryValue | string | null;
   interest: FormDataEntryValue | string | null;
+  marketingConsent?: boolean;
   utm_source?: FormDataEntryValue | string | null;
   utm_medium?: FormDataEntryValue | string | null;
   utm_campaign?: FormDataEntryValue | string | null;

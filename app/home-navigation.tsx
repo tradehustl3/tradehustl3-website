@@ -3,16 +3,23 @@
 import Link from "next/link";
 import { useRef, useState } from "react";
 import styles from "./home-first-impression.module.css";
+import { ConversionCta } from "./conversion-cta";
 
-const LINKS = [
+const CAMPAIGN_LINKS = [
   ["Explore Trades", "/resume-examples"],
   ["Certifications", "/resources/certifications"],
   ["Resources", "/resources"],
   ["The Book", "/book"],
 ] as const;
 
+const HUB_LINKS = [
+  ["The Book", "/book"],
+  ["Find Your Lane", "#lane-title"],
+  ["Resources", "/resources"],
+] as const;
+
 /** One red accent follows the hovered or keyboard-focused navigation link. */
-export function HomeNavigation() {
+export function HomeNavigation({ campaign = false }: { campaign?: boolean }) {
   const group = useRef<HTMLDivElement>(null);
   const [accent, setAccent] = useState<{ x: number; y: number; width: number } | null>(null);
 
@@ -38,7 +45,7 @@ export function HomeNavigation() {
         onFocus={(event) => follow(event.target)}
         onBlur={(event) => follow(event.relatedTarget)}
       >
-        {LINKS.map(([label, href]) => <Link key={href} className={styles.navLink} href={href}>{label}</Link>)}
+        {(campaign ? CAMPAIGN_LINKS : HUB_LINKS).map(([label, href]) => <Link key={href} className={styles.navLink} href={href}>{label}</Link>)}
         <span
           className={styles.navIndicator}
           aria-hidden="true"
@@ -49,13 +56,13 @@ export function HomeNavigation() {
           }}
         />
       </div>
-      <Link
-        href="#resume-start"
-        className={styles.headerCta}
-        data-analytics-event="cta_click"
-        data-location="sticky_header"
-        data-destination="#resume-start"
-      >Build my free preview</Link>
+      {campaign ? (
+        <Link href="#resume-start" className={styles.headerCta} data-analytics-event="cta_click"
+          data-location="sticky_header" data-item="resume_builder">Build my free preview</Link>
+      ) : (
+        <ConversionCta href="#book-preview" variant="secondary" data-analytics-event="cta_click"
+          data-location="sticky_header" data-item="book_sample">Free book sample</ConversionCta>
+      )}
     </nav>
   );
 }

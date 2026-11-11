@@ -44,6 +44,26 @@ function SocialIcon({ type }: { type: (typeof socials)[number]["icon"] }) {
   return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4 19 20M19 4 5 20" /></svg>;
 }
 
+export function SocialLinks() {
+  return (
+    <nav className={styles.socials} aria-label="TRADE HUSTL3 social media links">
+      {socials.map((social) => (
+        <a
+          key={social.label}
+          href={social.href}
+          target="_blank"
+          rel="noreferrer"
+          aria-label={social.label}
+          title={social.label}
+          className={`${styles.socialIcon} ${styles[social.icon]}`}
+        >
+          <SocialIcon type={social.icon} />
+        </a>
+      ))}
+    </nav>
+  );
+}
+
 export function FooterEnhancements() {
   const pathname = usePathname();
   const [host, setHost] = useState<HTMLElement | null>(null);
@@ -51,7 +71,7 @@ export function FooterEnhancements() {
   useEffect(() => {
     if (pathname !== "/") return;
 
-    const footer = document.querySelector("footer[data-site-footer]") ?? document.querySelector("footer");
+    const footer = document.querySelector("footer[data-campaign-footer]");
     if (!footer) return;
 
     const bottomNav = footer.querySelector('nav[aria-label="Footer links"]');
@@ -77,11 +97,11 @@ export function FooterEnhancements() {
       <div className={styles.guideBlock}>
         <div>
           <span className={styles.kicker}>FREE CAREER GUIDE</span>
-          <strong>Get the free 7-page Top 10 Trades guide.</strong>
-          <p>Compare 10 skilled-trade paths for 2026–2027 and choose your next move.</p>
+          <strong>Get the free Top 10 Trades preview.</strong>
+          <p>Read the six-page 2026–2027 preview with two trade profiles.</p>
         </div>
         <Link className={styles.guideButton} href="/top-10-trades#get-guide">
-          Get the Free 7-Page Guide <span aria-hidden="true">→</span>
+          Get the Free Guide Preview <span aria-hidden="true">→</span>
         </Link>
       </div>
 
@@ -90,21 +110,7 @@ export function FooterEnhancements() {
           <span className={styles.kicker}>FOLLOW TRADE HUSTL3</span>
           <p>Stay connected for skilled-trades career, resume, and field content.</p>
         </div>
-        <nav className={styles.socials} aria-label="TRADE HUSTL3 social media links">
-          {socials.map((social) => (
-            <a
-              key={social.label}
-              href={social.href}
-              target="_blank"
-              rel="noreferrer"
-              aria-label={social.label}
-              title={social.label}
-              className={`${styles.socialIcon} ${styles[social.icon]}`}
-            >
-              <SocialIcon type={social.icon} />
-            </a>
-          ))}
-        </nav>
+        <SocialLinks />
       </div>
     </div>,
     host,
