@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { readCampaignAttribution } from "../campaign-attribution";
 import { optionalTrackingAllowed } from "../marketing-pixels";
+import { linksToResumeEmailPage } from "./email-page-link";
 
 /*
  * Resume Builder funnel milestones are reported ONLY to the first-party
@@ -180,6 +181,50 @@ export function ResumeBuilderStartAnalytics({ trigger = "mount", targetId = "res
     return () => observer.disconnect();
   }, [trigger, targetId]);
   return null;
+}
+
+/**
+ * `resume_start_click` = the visitor clicked a link to the email page
+ * (e.g. "Start Your Free Resume Preview"). Unlike `resume_builder_start`,
+ * which on the hub only means the section scrolled into view, this needs an
+ * actual click. Added Nov 11 2026 (see docs/analytics-changes.md).
+ */
+export function ResumeStartClickAnalytics() {
+  useEffect(() => {
+    function onClick(event: MouseEvent) {
+      try {
+        const anchor = (event.target as Element | null)?.closest?.("a[href]");
+        if (anchor && linksToResumeEmailPage(anchor.getAttribute("href"), window.location.href)) {
+          trackResumeFunnelEvent("resume_start_click");
+        }
+      } catch {
+        // Analytics must never block navigation to the Resume Builder.
+      }
+    }
+    document.addEventListener("click", onClick, { capture: true });
+    return () => document.removeEventListener("click", onClick, { capture: true });
+  }, []);
+  return null;
+}
+
+/**
+ * `resume_email_page_view` = the email page itself loaded, from any link.
+ * The existing `resume_builder_start` on that page is usually already spent
+ * for the session by the homepage, so it cannot show this arrival.
+ */
+export function ResumeEmailPageAnalytics() {
+  useEffect(() => {
+    trackResumeFunnelEvent("resume_email_page_view");
+  }, []);
+  return null;
+}
+
+/**
+ * `resume_email_entered` = the visitor typed (or autofilled) something into
+ * the email box. Sends no part of the address. Once per browser session.
+ */
+export function trackResumeEmailEntered(value: string): void {
+  if (value.trim()) trackResumeFunnelEvent("resume_email_entered");
 }
 
 export function ResumeIntakeAnalytics() {

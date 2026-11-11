@@ -19,7 +19,7 @@ import { KnowYourTrade } from './home-know-your-trade';
 import { knowYourTradeMyths, knowYourTradeTrades } from './home-know-your-trade-data';
 import { heroTradeFromParam } from './home-hero-trades';
 import { resolveTradeParam } from './resume-builder/trade-preselect';
-import { ResumeBuilderStartAnalytics } from './resume-builder/funnel-analytics';
+import { ResumeBuilderStartAnalytics, ResumeStartClickAnalytics } from './resume-builder/funnel-analytics';
 import './resume-builder/rb-foundation.css';
 import styles from './home-traffic-director.module.css';
 import fi from './home-first-impression.module.css';
@@ -89,6 +89,7 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
       <CtaAnalytics stickyLayout={isCampaignVisit ? "campaign" : "hub"} />
       {/* Campaign visits land on the builder itself; hub visits count only once the start section is on screen. */}
       <ResumeBuilderStartAnalytics trigger={isCampaignVisit ? 'mount' : 'visible'} />
+      <ResumeStartClickAnalytics />
       <div className={`${fi.top} ${homeDisplayFont.variable} ${homeBodyFont.variable}`}>
         <header className={fi.header}>
           <div className={fi.headerInner}>

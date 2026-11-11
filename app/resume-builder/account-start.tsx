@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useRef, useState } from "react";
-import { trackResumeFunnelEvent } from "./funnel-analytics";
+import { trackResumeEmailEntered, trackResumeFunnelEvent } from "./funnel-analytics";
 import {
   recallIntakeTrade,
   rememberIntakeTrade,
@@ -196,7 +196,8 @@ export function AccountStart() {
     <form className="rb-account-form" onSubmit={submit}>
       <div className="rb-field">
         <label htmlFor="email">Email address</label>
-        <input id="email" name="email" type="email" autoComplete="email" maxLength={254} required placeholder="you@example.com" />
+        <input id="email" name="email" type="email" autoComplete="email" maxLength={254} required placeholder="you@example.com"
+          onInput={(event) => trackResumeEmailEntered(event.currentTarget.value)} />
       </div>
       <button className="rb-button rb-button-primary rb-button-full" type="submit" disabled={submitting || checking}>
         {submitting ? "Sending secure link…" : "Continue with email"} <span>→</span>
