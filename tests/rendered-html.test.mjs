@@ -437,12 +437,16 @@ test("homepage routes to the verified account entry and keeps free guide signups
   const campaign = await (await renderPath("/?trade=hvac")).text();
   assert.match(campaign, /Continue with email/i);
   assert.match(campaign, /ACCOUNT · STAGE 1 OF 5/i);
-  assert.match(html, /FREE CAREER GUIDE PREVIEW/i);
+  assert.match(html, /id="free-guides-title"/i);
+  assert.match(html, /Top 10 Trades 2026–2027/i);
+  assert.match(html, /data-cta-location="homepage_top_10_guide"/i);
   assert.match(html, /href="\/top-10-trades"/i);
   assert.match(html, /href="\/book"/i);
-  assert.match(html, /href="\/book\/sample"/i, "free sample signup belongs below the storefront offers");
-  const resumeLinks = html.match(/href="#resume-start"/gi) ?? [];
-  assert.ok(resumeLinks.length >= 2);
+  // The book sample signup is inline on the hub; the header links to it.
+  assert.match(html, /href="#book-preview"/i);
+  assert.match(html, /id="homepage-book-email"/i);
+  // Remaining in-page builder links still land on the single #resume-start target.
+  assert.ok((html.match(/href="#resume-start"/gi) ?? []).length >= 1);
 });
 
 test("homepage features the approved book cover and edition links without duplicating the full book page", async () => {
@@ -1492,9 +1496,12 @@ test("launch sweep delivers a pending preorder once after release", async () => 
 
 test("server-renders offer placements on the hub and keeps campaigns resume-first", async () => {
   const hub = await (await render()).text();
-  for (const location of ["sticky_header", "homepage_book_hero", "homepage_resume_builder", "find_your_lane", "first_steps", "built_by_a_tradesman"]) {
+  for (const location of ["sticky_header", "homepage_book_hero", "homepage_resume_builder", "find_your_lane", "first_steps"]) {
     assert.match(hub, new RegExp(`data-location="${location}"`, "i"));
   }
+  // The founder section left the hub; its anchor stays so existing links resolve.
+  assert.doesNotMatch(hub, /data-location="built_by_a_tradesman"/i);
+  assert.equal((hub.match(/id="built-by-a-tradesman"/g) ?? []).length, 1);
   // cta-analytics reads data-cta-location as the location for these placements.
   for (const placement of ["homepage_book_formats", "homepage_book_preview", "homepage_top_10_guide", "homepage_newsletter"]) {
     assert.match(hub, new RegExp(`data-cta-location="${placement}"`));
