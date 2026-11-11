@@ -3,6 +3,8 @@ import test from "node:test";
 
 import { handleResumeBuilderRoute } from "../worker/resume-builder";
 import { sqliteD1 } from "./helpers/sqlite-d1";
+import { GA4_FUNNEL_EVENTS } from "../worker/ga4-measurement-protocol";
+import { linksToResumeEmailPage } from "../app/resume-builder/email-page-link";
 
 // 6-digit sign-in code (Oct 29 2026). The emailed link keeps working; the code
 // lets a visitor finish on the page they started from. Runs against the real
@@ -245,4 +247,51 @@ test("the A01 snapshot reports sign-in steps separately and leaves its counts un
   assert.deepEqual(Object.keys(payload.counts), ["starts", "intakeStarted", "intakeCompleted", "previewsGenerated", "checkoutStarted", "verifiedPurchases"]);
   assert.equal(payload.counts.starts, 1);
   assert.deepEqual(payload.signInSteps, { codeOrLinkRequested: 1, linkOpened: 0, signedIn: 1 });
+});
+
+// Entry steps on the way to the email box (Nov 11 2026)
+
+test("entry steps are stored first-party with no metadata and are not forwarded to GA4", async (t) => {
+  const { sqlite, route } = setup(t);
+  for (const name of ["resume_start_click", "resume_email_page_view", "resume_email_entered"]) {
+    assert.equal((await postEvent(route, name, { email: "someone@example.com" }))?.status, 201);
+    assert.equal(GA4_FUNNEL_EVENTS.has(name), false, `${name} stays first-party`);
+  }
+  const rows = sqlite.prepare("SELECT event_name, metadata FROM funnel_events ORDER BY rowid").all() as Array<{ event_name: string; metadata: string | null }>;
+  assert.deepEqual(rows.map((row) => row.event_name), ["resume_start_click", "resume_email_page_view", "resume_email_entered"]);
+  assert.ok(rows.every((row) => row.metadata === null), "non-allowlisted metadata such as an email is dropped");
+  assert.doesNotMatch(JSON.stringify(rows), /@/);
+});
+
+test("the A01 snapshot reports entry steps separately and leaves counts and signInSteps unchanged", async (t) => {
+  const { DB, route } = setup(t);
+  await postEvent(route, "resume_builder_start");
+  await postEvent(route, "resume_builder_start");
+  await postEvent(route, "resume_start_click");
+  await postEvent(route, "resume_email_page_view");
+  await postEvent(route, "resume_email_entered");
+  await postEvent(route, "resume_auth_requested");
+  const secret = "agent1-test-secret-abcdefghijklmnopqrstuvwxyz-123456";
+  const response = await handleResumeBuilderRoute(
+    new Request(`${ORIGIN}/api/resume-builder/internal/agent1/funnel-snapshot?window=24h`, { headers: { Authorization: `Bearer ${secret}` } }),
+    { DB, AGENT1_FUNNEL_SECRET: secret },
+  );
+  const payload = await response!.json() as { counts: Record<string, number>; entrySteps: Record<string, number>; signInSteps: Record<string, number> };
+  assert.deepEqual(Object.keys(payload.counts), ["starts", "intakeStarted", "intakeCompleted", "previewsGenerated", "checkoutStarted", "verifiedPurchases"]);
+  assert.equal(payload.counts.starts, 2);
+  assert.deepEqual(payload.entrySteps, { startClicked: 1, emailPageViewed: 1, emailEntered: 1 });
+  assert.deepEqual(payload.signInSteps, { codeOrLinkRequested: 1, linkOpened: 0, signedIn: 0 });
+});
+
+test("only same-site links to the email page count as a start click", () => {
+  const base = "https://tradehustl3.com/";
+  assert.equal(linksToResumeEmailPage("/resume-builder/start", base), true);
+  assert.equal(linksToResumeEmailPage("/resume-builder/start/", base), true);
+  assert.equal(linksToResumeEmailPage("/resume-builder/start?trade=hvac", base), true);
+  assert.equal(linksToResumeEmailPage("https://tradehustl3.com/resume-builder/start", base), true);
+  assert.equal(linksToResumeEmailPage("#resume-start", base), false);
+  assert.equal(linksToResumeEmailPage("/resume-builder/intake", base), false);
+  assert.equal(linksToResumeEmailPage("/resume-builder/starter", base), false);
+  assert.equal(linksToResumeEmailPage("https://evil.example/resume-builder/start", base), false);
+  assert.equal(linksToResumeEmailPage(null, base), false);
 });

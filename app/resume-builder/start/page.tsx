@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { AccountStart } from '../account-start';
 import { FlowSteps } from '../flow-steps';
 import { ResumeBuilderHeader } from '../resume-builder-header';
-import { ResumeBuilderStartAnalytics } from '../funnel-analytics';
+import { ResumeBuilderStartAnalytics, ResumeEmailPageAnalytics } from '../funnel-analytics';
 
 export const metadata: Metadata = {
   title: 'Start your free resume preview',
@@ -14,6 +14,7 @@ export default function ResumeStartPage() {
   return (
     <main className="rb-page rb-flow-page">
       <ResumeBuilderStartAnalytics />
+      <ResumeEmailPageAnalytics />
       <ResumeBuilderHeader />
       <FlowSteps current={1} />
       <section className="rb-centered-stage" aria-labelledby="account-entry-title">

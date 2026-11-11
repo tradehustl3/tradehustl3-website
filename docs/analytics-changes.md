@@ -3,6 +3,37 @@
 Record every change to what a tracked event means, so reports never compare
 periods with different definitions as if they were the same.
 
+## 2026-11-11 — entry steps between a start and the email box are tracked
+
+**Before:** on the hub homepage, `resume_builder_start` fires when the
+"Start Your Free Resume Preview" area (`#resume-start`) is at least 40% on
+screen. Since the 2026-11-10 restructure that section sits high on the page, so
+most hub visitors trigger a start just by scrolling. Nothing recorded whether
+anyone then clicked through to the email page (`/resume-builder/start`) or
+typed in the email box. The start page's own `resume_builder_start` is usually
+already used up for the session by the homepage, so it could not show the
+arrival either.
+
+**After:** three new first-party events, each once per browser session, with
+no email address or other identifier in metadata:
+
+| Event | Fires when | GA4 |
+|---|---|---|
+| `resume_start_click` | a link to `/resume-builder/start` on the homepage is clicked | not forwarded |
+| `resume_email_page_view` | `/resume-builder/start` loads, from any link | not forwarded |
+| `resume_email_entered` | the first character is typed or autofilled into the email box (start page or campaign homepage) | not forwarded |
+
+Submitting the email is still `resume_auth_requested`.
+
+The A01 funnel snapshot reports these under a new `entrySteps` object
+(`startClicked`, `emailPageViewed`, `emailEntered`), separate from `counts` and
+`signInSteps`, whose keys are unchanged.
+
+**Reporting impact:** `resume_builder_start` keeps its current meaning; do not
+read it as intent on the hub. Use `entrySteps.startClicked` as the real
+hub-to-builder click. There is no earlier data for these steps; treat
+2026-11-11 (the deploy date) as their start.
+
 ## 2026-11-10 — Hub homepage restructured around trade discovery
 
 **Before:** the hub homepage (no `?trade=`) ran storefront → story → stage band →

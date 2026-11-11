@@ -1045,6 +1045,9 @@ async function getAgent1FunnelSnapshot(
        SUM(CASE WHEN event_name = 'resume_intake_complete' THEN 1 ELSE 0 END) AS intake_completed,
        SUM(CASE WHEN event_name = 'resume_preview_generated' THEN 1 ELSE 0 END) AS previews_generated,
        SUM(CASE WHEN event_name = 'begin_checkout' THEN 1 ELSE 0 END) AS checkout_started,
+       SUM(CASE WHEN event_name = 'resume_start_click' THEN 1 ELSE 0 END) AS start_clicked,
+       SUM(CASE WHEN event_name = 'resume_email_page_view' THEN 1 ELSE 0 END) AS email_page_viewed,
+       SUM(CASE WHEN event_name = 'resume_email_entered' THEN 1 ELSE 0 END) AS email_entered,
        SUM(CASE WHEN event_name = 'resume_auth_requested' THEN 1 ELSE 0 END) AS auth_requested,
        SUM(CASE WHEN event_name = 'resume_auth_link_opened' THEN 1 ELSE 0 END) AS auth_link_opened,
        SUM(CASE WHEN event_name = 'sign_up' THEN 1 ELSE 0 END) AS signed_in
@@ -1059,6 +1062,9 @@ async function getAgent1FunnelSnapshot(
       intake_completed: number | null;
       previews_generated: number | null;
       checkout_started: number | null;
+      start_clicked: number | null;
+      email_page_viewed: number | null;
+      email_entered: number | null;
       auth_requested: number | null;
       auth_link_opened: number | null;
       signed_in: number | null;
@@ -1138,6 +1144,14 @@ async function getAgent1FunnelSnapshot(
       previewsGenerated,
       checkoutStarted,
       verifiedPurchases,
+    },
+
+    // Entry steps between `starts` and `signInSteps`, added Nov 11 2026.
+    // Separate from `counts` and `signInSteps` so both keep their fixed keys.
+    entrySteps: {
+      startClicked: Number(behavioral?.start_clicked ?? 0),
+      emailPageViewed: Number(behavioral?.email_page_viewed ?? 0),
+      emailEntered: Number(behavioral?.email_entered ?? 0),
     },
 
     // Sign-in steps between `starts` and `intakeStarted`. Kept out of `counts`
@@ -4053,6 +4067,11 @@ async function serveProtectedPreview(resume: ResumeRecord): Promise<Response> {
 
 const FUNNEL_EVENT_NAMES = new Set([
   "resume_builder_start",
+  // Entry steps on the way to the email box (added Nov 11 2026). On the hub,
+  // `resume_builder_start` only means the section scrolled into view.
+  "resume_start_click",
+  "resume_email_page_view",
+  "resume_email_entered",
   // Sign-in steps between the email box and the intake (added Oct 29 2026).
   // Before this, nothing between a start and an intake was recorded.
   "resume_auth_requested",
