@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 350" fill="none" aria-hidden="true">
+<defs><linearGradient id="sil" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#5e91b5"/><stop offset="1" stop-color="#183c5c"/></linearGradient><linearGradient id="fade" x1="0" y1="0" x2="0" y2="1"><stop stop-color="white"/><stop offset="1" stop-color="black"/></linearGradient><mask id="soft"><rect width="320" height="350" fill="url(#fade)"/></mask></defs>
+<g mask="url(#soft)" stroke="#7299b5" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+<!-- Female mechanic shown in a competent working pose, with hair tied back and a wrench -->
+<path d="M88 88c-13-10-14-42 1-58 15-17 45-16 57 1 11 17 6 44-7 57l-14 14-29-3Z" fill="#1b415f"/>
+<path d="M142 39c23 6 32 23 30 42-9-5-18-4-25-1z" fill="#1b415f"/>
+<path d="M100 52c4-15 27-21 40-13 13 9 14 27 5 42-6 12-18 21-29 16-12-5-22-26-16-45Z" fill="url(#sil)"/>
+<path d="M104 99c-26 7-41 27-43 55l-7 70 39 13 7-63 23 45 29 67 36-13-23-80-6-47c-4-23-23-41-55-47Z" fill="url(#sil)"/>
+<path d="m154 168 33-36 41-18 9 17-37 29-30 52Z" fill="#315c7b"/>
+<path d="m228 114 32-22" stroke="#dfad61" stroke-width="9"/>
+<path d="m253 83 13 11m-13-11 10-18m-10 18-18-10" stroke="#dfad61" stroke-width="7"/>
+<path d="m84 237-8 72 41 8 11-69m12 5 16 70 42-7-17-71" fill="#163952"/>
+<path d="m74 312-5 17 56 3-5-14m31 3-4 15 62-2-10-19" fill="#0c2a43"/>
+<path d="M207 180h76l22 23-9 61H195l-5-45Z" fill="#183d59" opacity=".72"/>
+<path d="M215 215h71m-60 22h50" stroke="#8bb1c6" stroke-width="4" opacity=".5"/>
+<path d="m98 135 22 16-20 13" stroke="#e1ad61" stroke-width="3" opacity=".75"/>
+</g></svg>
