@@ -22,10 +22,13 @@ const PORT = 9300 + Math.floor(Math.random() * 500);
 const chrome = spawn(process.env.CHROME_BIN || "google-chrome", [
   "--headless=new", "--no-sandbox", "--disable-gpu", "--hide-scrollbars",
   `--remote-debugging-port=${PORT}`, "--user-data-dir=/tmp/visual-snapshot-chrome", "about:blank",
-], { stdio: "ignore" });
+], { stdio: ["ignore", "ignore", "inherit"] });
+let chromeExit = null;
+chrome.on("exit", (code) => { chromeExit = code; });
 
 async function target() {
-  for (let i = 0; i < 50; i += 1) {
+  for (let i = 0; i < 150; i += 1) {
+    if (chromeExit !== null) throw new Error(`Chrome exited with code ${chromeExit}`);
     try {
       const list = await (await fetch(`http://127.0.0.1:${PORT}/json/list`)).json();
       const page = list.find((t) => t.type === "page");
