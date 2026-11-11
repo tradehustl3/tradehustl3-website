@@ -89,9 +89,9 @@ test("public brand identity and checkout reassurance stay consistent", () => {
   const book = read("app/book/page.tsx");
   const tradeLanding = read("app/resume-builder/trade-landing.tsx");
 
-  assert.match(layout, /creator: "Da Maintenance Mane"/);
-  assert.match(layout, /name: "Da Maintenance Mane"/);
-  assert.match(layout, /alternateName: "Zachary Ellis"/);
+  assert.match(layout, /creator: "MR. HUSTL3"/);
+  assert.match(layout, /name: "Zachary Ellis"/);
+  assert.match(layout, /alternateName: "MR. HUSTL3"/);
   assert.match(layout, /"@type": "WebApplication"/);
   assert.match(layout, /price: "9\.99"/);
 
@@ -117,3 +117,4 @@ test("brand links point LinkedIn at the TRADE HUSTL3 company page", async () => 
   assert.ok(org.includes(company) && !org.includes(personal), "Organization sameAs uses the company page");
   assert.ok(person.includes(personal), "Person keeps the founder's personal profile");
 });
+

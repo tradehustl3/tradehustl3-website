@@ -11,7 +11,7 @@ export function HomeStorefront() {
           <h1 className={styles.bookTitle} id="storefront-heading">TRADE HUSTL3</h1>
           <p className={styles.bookAuthor}>BY MR. HUSTL3</p>
           <h2 className={styles.bookMessage}>A Story From the Trades. A Message for the Next Generation.</h2>
-          <p className={styles.slogan}>BUILT BY HUSTL3. BACKED BY TRADE.</p>
+          <p className={styles.slogan}>BUILT BY HUSTL3. BACKED BY TRADES.</p>
           <HomeBookPreview />
         </div>
         <div className={styles.coverFrame}>
@@ -22,3 +22,4 @@ export function HomeStorefront() {
     </section>
   );
 }
+

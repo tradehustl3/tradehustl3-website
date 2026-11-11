@@ -306,7 +306,7 @@ export async function createResumeDocx(resume: GeneratedResume, theme: ResumeThe
     },
     sections: [{
       properties: {
-        page: { margin: { top: margin, right: margin, bottom: margin, left: margin } },
+        page: { size: { width: PDF_WIDTH * 20, height: PDF_HEIGHT * 20 }, margin: { top: margin, right: margin, bottom: margin, left: margin } },
       },
       children,
     }],
@@ -878,3 +878,4 @@ export async function createResumePdf(resume: GeneratedResume, watermarked = fal
 
   return document.save();
 }
+

@@ -133,7 +133,7 @@ export async function createCoverLetterDocx(
       },
     },
     sections: [{
-      properties: { page: { margin: { top: 1008, right: 1008, bottom: 1008, left: 1008 } } },
+      properties: { page: { size: { width: PDF_WIDTH * 20, height: PDF_HEIGHT * 20 }, margin: { top: 1008, right: 1008, bottom: 1008, left: 1008 } } },
       children,
     }],
   });
@@ -182,7 +182,8 @@ function writeLines(
 ): void {
   const font = options.font ?? writer.regular;
   const size = options.size ?? 10.8;
-  const lineHeight = options.lineHeight ?? 14.2;
+  // A large name must reserve its own line height before contact details.
+  const lineHeight = Math.max(options.lineHeight ?? 14.2, size * 1.3);
   const after = options.after ?? 8;
   const lines = wrapText(text, font, size, PDF_WIDTH - PDF_MARGIN * 2);
   ensureSpace(writer, Math.max(1, lines.length) * lineHeight + after);

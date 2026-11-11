@@ -15,6 +15,7 @@ if (!baseUrl || !outDir || pages.length === 0) {
 
 const VIEWPORTS = [
   { name: "desktop", width: 1440, height: 900, deviceScaleFactor: 1, mobile: false },
+  { name: "tablet", width: 768, height: 1024, deviceScaleFactor: 1, mobile: false },
   { name: "mobile", width: 390, height: 844, deviceScaleFactor: 2, mobile: true },
 ];
 const PORT = 9300 + Math.floor(Math.random() * 500);
@@ -88,6 +89,28 @@ try {
         awaitPromise: true,
       });
       await sleep(800);
+      // Preserve inspectable evidence at each requested width, even when the
+      // reviewer cannot connect an interactive browser to the build.
+      const diagnostics = await send("Runtime.evaluate", {
+        returnByValue: true,
+        expression: `(() => {
+          const skip = document.querySelector('a[href="#main-content"]');
+          if (skip) { skip.focus(); skip.click(); }
+          const skipReachedContent = skip ? document.activeElement?.id === 'main-content' : null;
+          document.activeElement?.blur(); scrollTo(0, 0);
+          const footer = document.querySelector('footer[data-site-footer]');
+          return {
+            viewport: { width: innerWidth, height: innerHeight },
+            documentWidth: document.documentElement.scrollWidth,
+            horizontalOverflow: document.documentElement.scrollWidth > innerWidth,
+            skipReachedContent,
+            footerFont: footer ? getComputedStyle(footer).fontFamily : null,
+            loadedFonts: [...document.fonts].filter(font => font.status === 'loaded').map(font => font.family),
+          };
+        })()`,
+      });
+      await writeFile(join(outDir, `${page.replace(/\.html$/, "")}-${viewport.name}.json`),
+        JSON.stringify(diagnostics.result.value, null, 2) + "\n");
       const { cssContentSize } = await send("Page.getLayoutMetrics");
       const height = Math.min(Math.ceil(cssContentSize.height), 16000);
       const { data } = await send("Page.captureScreenshot", {
@@ -96,6 +119,12 @@ try {
       });
       const file = join(outDir, `${page.replace(/\.html$/, "")}-${viewport.name}.png`);
       await writeFile(file, Buffer.from(data, "base64"));
+      // A smaller review copy remains easy to inspect through GitHub's file API.
+      const preview = await send("Page.captureScreenshot", {
+        format: "jpeg", quality: 72, captureBeyondViewport: true,
+        clip: { x: 0, y: 0, width: viewport.width, height, scale: 1 },
+      });
+      await writeFile(file.replace(/\.png$/, ".jpg"), Buffer.from(preview.data, "base64"));
       console.log(`${file} (${viewport.width}x${height})`);
     }
   }
@@ -103,3 +132,4 @@ try {
   socket.close();
   chrome.kill();
 }
+

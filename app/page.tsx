@@ -85,12 +85,13 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
   const isCampaignVisit = campaignTrack !== null;
 
   return (
-    <main className={`${styles.page} ${isCampaignVisit ? "" : hubStyles.hubPage}`}>
+    <main className={`${styles.page} ${homeDisplayFont.variable} ${homeBodyFont.variable} ${isCampaignVisit ? "" : hubStyles.hubPage}`}>
+      <a className={styles.skipLink} href="#main-content">Skip to content</a>
       <CtaAnalytics stickyLayout={isCampaignVisit ? "campaign" : "hub"} />
       {/* Campaign visits land on the builder itself; hub visits count only once the start section is on screen. */}
       <ResumeBuilderStartAnalytics trigger={isCampaignVisit ? 'mount' : 'visible'} />
       <ResumeStartClickAnalytics />
-      <div className={`${fi.top} ${homeDisplayFont.variable} ${homeBodyFont.variable}`}>
+      <div className={fi.top}>
         <header className={fi.header}>
           <div className={fi.headerInner}>
             <Link className={fi.brand} href="#top" aria-label="TRADE HUSTL3 home">
@@ -100,11 +101,13 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
           </div>
         </header>
 
+        <div id="main-content" tabIndex={-1}>
         {isCampaignVisit ? (
           <ResumeFirstTop initialTradeId={initialTrade?.id ?? null} campaignTrack={initialTrade ? null : campaignTrack} />
         ) : (
           <HubHome />
         )}
+        </div>
       </div>
 
       {isCampaignVisit ? <ResumeFirstBody /> : null}
@@ -139,3 +142,4 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
     </main>
   );
 }
+

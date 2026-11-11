@@ -244,11 +244,11 @@ test("server-renders the official book page, cover, portrait, and current editio
   assert.equal(response.status, 200);
   const html = await response.text();
 
-  assert.match(html, /<title>TRADE HUSTL3 Book by Zachary Ellis \(Mr\. HUSTL3\)<\/title>/i);
+  assert.match(html, /<title>TRADE HUSTL3 Book by MR\. HUSTL3<\/title>/i);
   assert.match(html, /<link rel="canonical" href="https:\/\/tradehustl3\.com\/book"/i);
   assert.match(html, /optimized\/book-cover-v3\.webp/i);
   assert.match(html, /optimized\/author-portrait-v2\.webp/i);
-  assert.match(html.replace(/<[^>]+>/g, ""), /By Zachary Ellis · Mr\. HUSTL3/);
+  assert.match(html.replace(/<[^>]+>/g, ""), /By MR\. HUSTL3/);
   assert.match(html, /ZACHARY[\s\S]*ELLIS\./);
   assert.equal(html.includes("Da Maintenance Mane is an HVAC"), false);
   // Author credentials are exactly the ones the author has confirmed, and the
@@ -335,7 +335,7 @@ test("book hero follows the approved mockup and keeps its figures tied to verifi
   assert.match(hero, /<p class="book-hero-eyebrow">The Official Book<\/p>/);
   assert.match(hero, /<h1>TRADE<br\/>HUSTL<span>3<\/span><\/h1>/);
   assert.match(hero, /Built by Hustle, Backed by Trades\./);
-  assert.match(hero, /By Zachary Ellis <span aria-hidden="true">·<\/span> Mr\. HUSTL3/);
+  assert.match(hero, /By MR\. HUSTL3/);
   // Proof row: 200 trades (Appendix A), the computed chapter count, the 90-Day Action Plan chapter.
   assert.match(hero, /<strong>200<\/strong><small>Trades<\/small>/);
   assert.match(hero, /<strong>21<\/strong><small>Chapters<\/small>/);
@@ -365,7 +365,7 @@ test("book sample reader matches the final 486-page interior", async () => {
   assert.match(text, /1\. What a Skilled Trade Really Is<\/span><b>5<\/b>/);
   assert.match(text, /THE TOOLS ARE NOT THE TRADE/);
   // Check the book content only: the site-wide <head> author tags still use the
-  // public "Da Maintenance Mane" persona by design, and that is not book text.
+  // legal founder identity remains in structured metadata, separate from book text.
   const main = text.match(/<main[\s\S]*?<\/main>/)?.[0] ?? "";
   assert.ok(main.length > 0, "sample reader renders a <main> element");
   assert.doesNotMatch(main, /Maintenance Man\b|Da Maintenance Mane|KNOW THE LANDSCAPE|more than 200 skilled trades/i);
@@ -1602,3 +1602,4 @@ test("uses the official navy, red, and gold palette", async () => {
   assert.match(css, /background:\s*var\(--red\)/i);
   assert.match(css, /color:var\(--gold\)|border[^;]*var\(--gold\)/i);
 });
+

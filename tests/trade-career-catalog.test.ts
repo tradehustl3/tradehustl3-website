@@ -17,7 +17,8 @@ test("catalog publishes fourteen unique career families and 207 unique job title
 test("every catalog family is a live, round-trippable guided builder track", () => {
   assert.equal(TRADE_TRACKS.length, 14);
   assert.equal(CATALOG_METRICS.guidedTracks, 14);
-  assert.equal(CATALOG_METRICS.detailedGuides, 8);
+  assert.equal(CATALOG_METRICS.detailedGuides, 7);
+  assert.equal(CATALOG_METRICS.tradeLandingPages, 8);
 
   for (const family of TRADE_CAREER_FAMILIES) {
     assert.ok(TRADE_TRACKS.includes(family.builderTrack), `${family.name} is not a builder track`);
@@ -84,3 +85,4 @@ test("worker allowlist and generation prompt cover every public builder track", 
   for (const track of TRADE_TRACKS) assert.ok(worker.includes(`"${track}"`), `worker missing ${track}`);
   assert.match(worker, /one of fourteen supported trade tracks/i);
 });
+
