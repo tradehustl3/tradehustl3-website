@@ -558,3 +558,222 @@ a.hubHeaderCta { background: #f3c367; color: #081e32; border-color: #f3c367; box
     background-size: auto, 100% auto;
   }
 }
+
+
+/*
+ * Mobile-first trade atmosphere refresh.
+ * Art is decorative and deliberately restrained: clean navy space, soft
+ * cinematic illumination, isolated masonry haze, and recognisable trade cues.
+ * The two hero figures are existing official-book derivatives; the middle
+ * wrench worker remains in the Resume Builder area only.
+ */
+.storefront, .resume, .lane, .guide, .newsletter {
+  isolation: isolate;
+  position: relative;
+  overflow: clip;
+}
+.storefront {
+  background-color: #0b243c;
+  background-image:
+    radial-gradient(ellipse 55% 75% at 50% 28%, #174b7275, transparent 88%),
+    linear-gradient(180deg, #0b243ce6 0%, #102c46b8 40%, #071c30 100%);
+}
+.storefront::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: .29;
+  background:
+    url("/optimized/atmosphere/worker-hvac-300.webp") left 2% bottom 8% / 190px auto no-repeat,
+    url("/optimized/atmosphere/painter-color-345.webp") right 2% center / 210px auto no-repeat;
+  filter: saturate(.8);
+}
+.storefront::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+  width: 210px;
+  height: 160px;
+  right: 4%;
+  bottom: 0;
+  opacity: .10;
+  background:
+    linear-gradient(110deg, transparent, #6da4c533, transparent),
+    repeating-linear-gradient(0deg, transparent 0 27px, #95b5c5 28px 29px),
+    repeating-linear-gradient(90deg, transparent 0 67px, #95b5c5 68px 69px);
+  mask-image: radial-gradient(ellipse at right bottom, black, transparent 77%);
+}
+.storefront > *, .resume > *, .lane > *, .guide > *, .newsletter > * {
+  position: relative;
+  z-index: 1;
+}
+.resume {
+  background-color: #102b45;
+  background-image:
+    radial-gradient(ellipse 56% 44% at 90% 75%, #2670a12b, transparent 85%),
+    linear-gradient(180deg, #071c30 0%, #102b45 32%, #0b2339 80%, #091f34 100%);
+}
+.resume::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    url("/optimized/atmosphere/worker-wrench-300.webp") left 1% top 17% / 145px auto no-repeat,
+    url("/optimized/atmosphere/concrete-foundation.svg") right 1% bottom 1% / min(32vw, 385px) auto no-repeat;
+  opacity: .29;
+}
+.resume::after {
+  content: "";
+  position: absolute;
+  right: 7%;
+  bottom: 0;
+  height: 44px;
+  width: 130px;
+  pointer-events: none;
+  opacity: .16;
+  background: linear-gradient(180deg, #b0ccdc, transparent);
+  mask-image: linear-gradient(90deg, transparent, black 40%, transparent);
+}
+.lane {
+  background-color: #0a2339;
+  background-image:
+    radial-gradient(ellipse 65% 36% at 15% 5%, #3278b12c, transparent 86%),
+    linear-gradient(180deg, #091f34, #102a43 45%, #081d30);
+}
+.lane::before {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  top: 0;
+  right: 1%;
+  width: min(20vw, 230px);
+  height: 260px;
+  opacity: .13;
+  background: url("/optimized/atmosphere/worker-hvac-300.webp") center top / contain no-repeat;
+}
+.lane .sectionHeading .kicker::after,
+.guide .kicker::after {
+  content: "";
+  display: block;
+  flex: 0 1 78px;
+  height: 1px;
+  background: linear-gradient(90deg, #f3c367a8, transparent);
+}
+.lane .sectionHeading .kicker::before,
+.guide .kicker::before {
+  flex: 0 1 78px;
+  width: auto;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #f3c367a8);
+}
+.lane .sectionHeading .kicker, .guide .kicker {
+  color: #d3eaff;
+  letter-spacing: .16em;
+}
+.guide {
+  background-color: #10283f;
+  background-image:
+    radial-gradient(ellipse 55% 55% at 93% 24%, #c38c4314, transparent 76%),
+    linear-gradient(160deg, #0a2035, #15334c 50%, #092035);
+}
+.guide::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: url("/optimized/atmosphere/crane-blueprint.svg") right 2% top 13% / min(26vw, 270px) auto no-repeat;
+  opacity: .22;
+}
+.guide .kicker {
+  display: flex;
+  justify-content: center;
+  text-align: center;
+  gap: 12px;
+}
+.newsletter {
+  background-color: #10283f;
+  background-image:
+    radial-gradient(ellipse 35% 45% at 92% 16%, #3c78b124, transparent 83%),
+    linear-gradient(180deg, #081e32, #10283f 54%, #081e32);
+}
+.newsletter::before {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  opacity: .15;
+  background: url("/optimized/atmosphere/painter-color-345.webp") right 2% bottom 10% / 210px auto no-repeat;
+}
+@media (max-width: 1100px) {
+  .storefront::before {
+    opacity: .23;
+    background-position: left -34px bottom 4%, right -32px center;
+    background-size: 140px auto, 155px auto;
+  }
+  .resume::before {
+    opacity: .20;
+    background-position: left -38px top 14%, right -40px bottom 0;
+    background-size: 125px auto, 250px auto;
+  }
+  .lane::before { opacity: .09; width: 150px; }
+  .guide::before { opacity: .15; background-size: 180px auto; }
+}
+@media (max-width: 720px) {
+  .storefront {
+    background-image:
+      radial-gradient(ellipse 90% 47% at 50% 25%, #32678b4a, transparent 90%),
+      linear-gradient(180deg, #102b46 0%, #0d2942 50%, #071c30 100%);
+  }
+  .storefront::before {
+    opacity: .21;
+    background:
+      url("/optimized/atmosphere/worker-hvac-300.webp") left -36px top 38% / 120px auto no-repeat,
+      url("/optimized/atmosphere/painter-color-345.webp") right -42px top 34% / 125px auto no-repeat;
+  }
+  .storefront::after { width: 120px; height: 100px; opacity: .06; }
+  .resume {
+    background-image:
+      radial-gradient(ellipse 85% 32% at 80% 85%, #367ea529, transparent 86%),
+      linear-gradient(180deg, #071c30, #102b45 50%, #091f34);
+  }
+  .resume::before {
+    opacity: .23;
+    background:
+      url("/optimized/atmosphere/worker-wrench-300.webp") right -49px top 6% / 120px auto no-repeat,
+      url("/optimized/atmosphere/concrete-foundation.svg") right -42px bottom 1% / 175px auto no-repeat;
+  }
+  .resume::after { height: 24px; right: 4%; width: 75px; }
+  .lane::before {
+    top: 2px;
+    right: -52px;
+    height: 190px;
+    width: 130px;
+    opacity: .11;
+  }
+  .lane .sectionHeading .kicker::before,
+  .lane .sectionHeading .kicker::after,
+  .guide .kicker::before,
+  .guide .kicker::after { flex-basis: 23px; }
+  .lane .sectionHeading .kicker,
+  .guide .kicker { letter-spacing: .08em; gap: 7px; font-size: .68rem; }
+  .guide::before {
+    opacity: .17;
+    background-position: right -45px top 13px;
+    background-size: 140px auto;
+  }
+  .newsletter::before {
+    opacity: .12;
+    background-position: right -50px top 7%;
+    background-size: 145px auto;
+  }
+}
+@media (max-width: 380px) {
+  .storefront::before { opacity: .15; }
+  .resume::before { opacity: .16; }
+  .guide::before { opacity: .12; }
+}
