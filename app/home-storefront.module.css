@@ -575,8 +575,11 @@ a.hubHeaderCta { background: #f3c367; color: #081e32; border-color: #f3c367; box
 .storefront {
   background-color: #0b243c;
   background-image:
+    url("/optimized/atmosphere/book-spray-specks.svg"),
     radial-gradient(ellipse 55% 75% at 50% 28%, #174b7275, transparent 88%),
-    linear-gradient(180deg, #0b243ce6 0%, #102c46b8 40%, #071c30 100%);
+    linear-gradient(180deg, #0b243ce6 0%, #102c46b8 40%, #071c30 100%); 
+    background-size: 420px auto, auto, auto;
+    background-position: right -72px top 9%, center, center;
 }
 .storefront::before {
   content: "";
@@ -611,8 +614,11 @@ a.hubHeaderCta { background: #f3c367; color: #081e32; border-color: #f3c367; box
 .resume {
   background-color: #102b45;
   background-image:
+    url("/optimized/atmosphere/book-spray-specks.svg"),
     radial-gradient(ellipse 56% 44% at 90% 75%, #2670a12b, transparent 85%),
-    linear-gradient(180deg, #071c30 0%, #102b45 32%, #0b2339 80%, #091f34 100%);
+    linear-gradient(180deg, #071c30 0%, #102b45 32%, #0b2339 80%, #091f34 100%); 
+    background-size: 420px auto, auto, auto;
+    background-position: left -90px top 25%, center, center;
 }
 .resume::before {
   content: "";
@@ -640,8 +646,11 @@ a.hubHeaderCta { background: #f3c367; color: #081e32; border-color: #f3c367; box
 .lane {
   background-color: #0a2339;
   background-image:
+    url("/optimized/atmosphere/book-spray-specks.svg"),
     radial-gradient(ellipse 65% 36% at 15% 5%, #3278b12c, transparent 86%),
-    linear-gradient(180deg, #091f34, #102a43 45%, #081d30);
+    linear-gradient(180deg, #091f34, #102a43 45%, #081d30); 
+    background-size: 420px auto, auto, auto;
+    background-position: right -90px top 30%, center, center;
 }
 .lane::before {
   content: "";
@@ -676,8 +685,11 @@ a.hubHeaderCta { background: #f3c367; color: #081e32; border-color: #f3c367; box
 .guide {
   background-color: #10283f;
   background-image:
+    url("/optimized/atmosphere/book-spray-specks.svg"),
     radial-gradient(ellipse 55% 55% at 93% 24%, #c38c4314, transparent 76%),
-    linear-gradient(160deg, #0a2035, #15334c 50%, #092035);
+    linear-gradient(160deg, #0a2035, #15334c 50%, #092035); 
+    background-size: 420px auto, auto, auto;
+    background-position: left -100px bottom 18%, center, center;
 }
 .guide::before {
   content: "";
@@ -697,8 +709,11 @@ a.hubHeaderCta { background: #f3c367; color: #081e32; border-color: #f3c367; box
 .newsletter {
   background-color: #10283f;
   background-image:
+    url("/optimized/atmosphere/book-spray-specks.svg"),
     radial-gradient(ellipse 35% 45% at 92% 16%, #3c78b124, transparent 83%),
-    linear-gradient(180deg, #081e32, #10283f 54%, #081e32);
+    linear-gradient(180deg, #081e32, #10283f 54%, #081e32); 
+    background-size: 420px auto, auto, auto;
+    background-position: right -75px top 35%, center, center;
 }
 .newsletter::before {
   content: "";
@@ -726,8 +741,11 @@ a.hubHeaderCta { background: #f3c367; color: #081e32; border-color: #f3c367; box
 @media (max-width: 720px) {
   .storefront {
     background-image:
+    url("/optimized/atmosphere/book-spray-specks.svg"),
       radial-gradient(ellipse 90% 47% at 50% 25%, #32678b4a, transparent 90%),
-      linear-gradient(180deg, #102b46 0%, #0d2942 50%, #071c30 100%);
+      linear-gradient(180deg, #102b46 0%, #0d2942 50%, #071c30 100%); 
+    background-size: 250px auto, auto, auto;
+    background-position: right -72px top 9%, center, center;
   }
   .storefront::before {
     opacity: .21;
@@ -738,8 +756,11 @@ a.hubHeaderCta { background: #f3c367; color: #081e32; border-color: #f3c367; box
   .storefront::after { width: 120px; height: 100px; opacity: .06; }
   .resume {
     background-image:
+    url("/optimized/atmosphere/book-spray-specks.svg"),
       radial-gradient(ellipse 85% 32% at 80% 85%, #367ea529, transparent 86%),
-      linear-gradient(180deg, #071c30, #102b45 50%, #091f34);
+      linear-gradient(180deg, #071c30, #102b45 50%, #091f34); 
+    background-size: 250px auto, auto, auto;
+    background-position: left -90px top 25%, center, center;
   }
   .resume::before {
     opacity: .23;
