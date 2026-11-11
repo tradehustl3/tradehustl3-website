@@ -29,21 +29,27 @@ The new regression tests generate real PDF/DOCX files across all three themes an
 
 ## Verification status
 
-Results are being finalized on this branch. The initial local test command could not build until dependencies and source assets were recovered through the offline npm cache and connected GitHub tools. The bundled Node 24 runtime is used for final checks.
+Application commit `a2b527d0cc4781c0f978c1a13b507e150ecac059` passed the existing GitHub Test job (job `130781467120`): dependency installation, production dependency audit, lint, type checking, `npm test` (build plus all 87 test files), and worker-size check. The follow-up commit `1962424cf923853c0edc43c734595f52a9464fc5` changes only visual verification tooling; its workflows were still queued at the final status check.
 
 ### Passed
 
-- Lint and TypeScript checking after dependency recovery.
-- Real document generation, rendered visual inspection, embedded-PDF-font inspection, and the document regression test file.
-- Source review of the shared book-sample browser flow: requests return the `/book/sample/read` reader link, and book-sample success links use the same browsing context. Existing signed PDF links remain supported.
+- The complete existing GitHub application test pipeline, including the font self-hosting assertion that could not pass in the offline local build.
+- Local final build, lint, TypeScript check, and worker-size check (2,450,129 compressed bytes, below the 3 MiB free-plan limit).
+- Real document generation and rendered visual inspection: two PDFs and two DOCX files, one page each. Seven new document regression cases pass, covering all six cover-letter theme/version combinations and legacy resume page dimensions.
+- Final local rendered-page reruns: 54 main rendered/API checks, five seven-trade example checks, the shared-preview check, catalog source/rendered checks, and updated brand hardening checks pass. The homepage first-impression file passes 19 of 20 individual cases locally, including the skip target, book-first layout, approved artwork, and sample labels.
+- Existing safe mocked-provider tests cover signup consent, resource delivery responses and email payloads, conversion-event payloads, payment/webhook handling, and consent/approval-gated reviews. No real customer or payment data was used.
+- Source and rendered/API checks confirm that book-sample signup and delivery email share `/book/sample/read`, and old signed PDF links remain valid. The browser-opening context remains consistent.
+- The visual tooling now requests desktop 1440px, tablet 768px, and phone 390px screenshots plus JSON diagnostics for horizontal overflow, loaded fonts, computed footer font, and skip-link focus. Syntax and lint checks pass.
 
-### Failed or pending
+### Failed local checks and resolved failures
 
-- Full-suite results are pending final build and test completion. Early wording assertions were updated to the approved author brand and clarified heading.
+- An initial full local run reported 81/87 test files passing. Five initially failing files pass after final-build/focused reruns; the remaining local failure is the homepage font self-hosting assertion. Blocked font downloads make the local build emit Google Fonts fallback links. The same assertion passes in GitHub CI. It was not weakened or skipped.
+- Earlier missing-dependency/build failures were resolved through the offline npm cache, source/asset recovery, and bundled Node 24 runtime. They are not counted as product failures.
+- No application test failure remains in the completed GitHub job. Browser/provider evidence below is still incomplete.
 
 ### Unverified
 
-- Desktop, tablet, and phone browser screenshots; keyboard behavior in an actual browser; computed footer font; responsive card/spacing/background rendering. Browser automation host is unavailable.
+- Desktop, tablet, and phone screenshot inspection; keyboard behavior in an actual browser; computed footer font; responsive card/spacing/background rendering. The interactive browser host is unavailable. The initial visual snapshot job completed its build and page rendering but remained in artifact upload with no downloadable artifact; the tablet/diagnostics follow-up was queued. No responsive pass is claimed.
 - Production tag network requests, opt-out changes, conversion-event receipt in analytics dashboards, and actual email inbox delivery. Local tests use synthetic data and mocked providers.
 - Official ownership/current branding of non-GitHub social profiles. Existing social destinations were not changed.
 - Live catalog/certification/reader HTTP checks: the web reader could retrieve the production homepage and privacy text, but returned access errors for these secondary pages. Local rendered routes and anchor tests are the available evidence.
