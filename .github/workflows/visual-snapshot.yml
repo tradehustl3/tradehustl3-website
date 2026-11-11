@@ -1,0 +1,35 @@
+name: Visual snapshot
+
+# Builds the site and uploads rendered pages plus their static assets, so
+# visual changes can be screenshotted and reviewed before merge. Cloudflare
+# builds for pull requests do not publish a preview URL.
+permissions:
+  contents: read
+
+on:
+  pull_request:
+    paths: ["app/**", "public/**", "tools/visual/**", ".github/workflows/visual-snapshot.yml"]
+  workflow_dispatch:
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      # PRs into main already run the full Test workflow; stacked PRs do not,
+      # so run the full suite here for them (npm test includes the build).
+      - if: github.base_ref != 'main'
+        run: npm run lint && npm run typecheck && npm test
+      - if: github.base_ref == 'main'
+        run: npm run build
+      - run: node tools/visual/render-snapshot.mjs visual-snapshot / /book
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: visual-snapshot
+          path: visual-snapshot
+          retention-days: 14
