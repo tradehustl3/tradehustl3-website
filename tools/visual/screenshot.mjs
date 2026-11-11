@@ -75,6 +75,18 @@ try {
       await send("Page.navigate", { url: new URL(page, baseUrl).href });
       await loaded;
       await send("Runtime.evaluate", { expression: "document.fonts.ready", awaitPromise: true });
+      // Full-page captures never scroll, so lazy images would stay blank.
+      await send("Runtime.evaluate", {
+        expression: `Promise.all([...document.images].map((img) => { img.loading = "eager";
+          return img.complete ? null : new Promise((r) => { img.onload = img.onerror = r; setTimeout(r, 5000); }); }))`,
+        awaitPromise: true,
+      });
+      // Scroll through once so off-screen images are decoded and painted.
+      await send("Runtime.evaluate", {
+        expression: `(async () => { for (let y = 0; y < document.body.scrollHeight; y += innerHeight) {
+          scrollTo(0, y); await new Promise((r) => setTimeout(r, 120)); } scrollTo(0, 0); })()`,
+        awaitPromise: true,
+      });
       await sleep(800);
       const { cssContentSize } = await send("Page.getLayoutMetrics");
       const height = Math.min(Math.ceil(cssContentSize.height), 16000);
