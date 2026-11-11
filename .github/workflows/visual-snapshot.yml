@@ -1,0 +1,76 @@
+name: Visual snapshot
+
+# Builds the site and uploads rendered pages plus their static assets, so
+# visual changes can be screenshotted and reviewed before merge. Cloudflare
+# builds for pull requests do not publish a preview URL.
+permissions:
+  contents: read
+
+on:
+  pull_request:
+    paths: ["app/**", "public/**", "tools/visual/**", ".github/workflows/visual-snapshot.yml"]
+  workflow_dispatch:
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      # PRs into main already run the full Test workflow; stacked PRs do not,
+      # so run the full suite here for them (npm test includes the build).
+      - if: github.base_ref != 'main'
+        run: npm run lint && npm run typecheck && npm test
+      - if: github.base_ref == 'main'
+        run: npm run build
+      - run: node tools/visual/render-snapshot.mjs visual-snapshot / /book
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: visual-snapshot
+          path: visual-snapshot
+          retention-days: 14
+
+  # Screenshots the rendered pages and force-pushes them (plus the HTML/CSS
+  # needed to reopen them) to a review-only branch, so they can be viewed on
+  # GitHub from any device. Runs no project code, so it alone gets write access.
+  publish:
+    needs: snapshot
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          sparse-checkout: tools/visual
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: visual-snapshot
+          path: visual-snapshot
+      - name: Screenshot
+        run: |
+          (cd visual-snapshot && python3 -m http.server 8765 >/dev/null 2>&1 &)
+          sleep 2
+          node tools/visual/screenshot.mjs http://127.0.0.1:8765/ review/screenshots index.html book.html
+      - name: Publish to review branch
+        env:
+          BRANCH: visual-review/${{ github.head_ref }}
+          SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          mkdir -p review/bundle/_next/static
+          cp visual-snapshot/*.html review/bundle/
+          for dir in css _vinext_fonts; do
+            [ -d "visual-snapshot/_next/static/$dir" ] && cp -r "visual-snapshot/_next/static/$dir" review/bundle/_next/static/
+          done
+          printf 'Visual review for %s\nScreenshots: screenshots/\n' "$SHA" > review/README.md
+          cd review
+          git init -q -b review
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -q -m "Visual review for $SHA"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" "review:refs/heads/$BRANCH"
