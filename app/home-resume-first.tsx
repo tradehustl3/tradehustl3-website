@@ -206,7 +206,7 @@ export function ResumeFirstBody() {
         <div>
           <p className={styles.eyebrow}>FREE CAREER GUIDE</p>
           <h2 id="guide-title">Still figuring out your next move?</h2>
-          <p>Get the free <strong>Top 10 Trades for 2026–2027</strong> guide and compare skilled-trade paths, opportunity, and practical next steps.</p>
+          <p>Get the free six-page <strong>Top 10 Trades for 2026–2027</strong> guide preview with two trade profiles and practical next steps.</p>
         </div>
         <AnalyticsLink href="/top-10-trades" location="guide_signup" event="select_content" item="top_10_trades" className={styles.secondaryButton}>Get the Free Guide <span aria-hidden="true">→</span></AnalyticsLink>
       </section>

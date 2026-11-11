@@ -394,7 +394,7 @@ async function sendTopTradesDeliveryEmail(env: Env, email: string, sampleUrl: st
           <div style="max-width:620px;margin:auto">
             <p style="color:#d6a52a;font-weight:700;letter-spacing:2px">ENTER. EARN. ELEVATE.</p>
             <h1 style="margin:16px 0;color:#ffffff">Your free Top 10 Trades guide is ready.</h1>
-            <p style="font-size:16px;line-height:1.6;color:#c5ced5">Open the seven-page 2026-2027 preview (cover included) for trade profiles, national pay context, the guide's source standard, and practical next steps.</p>
+            <p style="font-size:16px;line-height:1.6;color:#c5ced5">Open the six-page 2026-2027 preview (cover included) for power-line and HVAC profiles, national pay context, the guide's source standard, and practical next steps.</p>
             <p style="margin:28px 0"><a href="${sampleUrl}" style="display:inline-block;background:#d71920;color:#ffffff;padding:16px 22px;text-decoration:none;font-weight:700">OPEN THE FREE GUIDE</a></p>
             <p style="color:#d6a52a;font-weight:700">BUILT BY HUSTL3. BACKED BY TRADES.</p>
           </div>
@@ -403,7 +403,7 @@ async function sendTopTradesDeliveryEmail(env: Env, email: string, sampleUrl: st
       textContent: [
         "Your free Top 10 Trades guide is ready.",
         "",
-        "Open the seven-page 2026-2027 preview (cover included) for trade profiles, national pay context, the guide's source standard, and practical next steps:",
+        "Open the six-page 2026-2027 preview (cover included) for power-line and HVAC profiles, national pay context, the guide's source standard, and practical next steps:",
         sampleUrl,
         "",
         "BUILT BY HUSTL3. BACKED BY TRADES.",
@@ -639,33 +639,36 @@ async function subscribe(request: Request, env: Env): Promise<Response> {
          status = 'active'`,
     ).bind(email, interest, source).run();
 
-    const confirmationRequired = doubleOptInTemplateId(env) !== null;
+    const marketingRequested = body.marketingConsent !== false;
+    const confirmationRequired = marketingRequested && doubleOptInTemplateId(env) !== null;
     const confirmNote = confirmationRequired
-      ? " Check your inbox and tap Confirm to join the TRADE HUSTL3 list."
+      ? " To join TRADE HUSTL3 updates, use the separate confirmation email."
       : "";
 
-    try {
-      await syncBrevoContact(env, {
-        email,
-        interest,
-        source,
-        utmSource: trackingValue(body.utm_source),
-        utmMedium: trackingValue(body.utm_medium),
-        utmCampaign: trackingValue(body.utm_campaign),
-        doubleOptIn: true,
-      });
-    } catch (error) {
-      console.error(operationalEvent("auth_email", "subscriber_brevo_sync_deferred", "warning", {
-        error: deliveryError(error),
-      }));
-      await queueLeadDelivery(env, email, "brevo_contact", {
-        interest,
-        source,
-        utmSource: trackingValue(body.utm_source),
-        utmMedium: trackingValue(body.utm_medium),
-        utmCampaign: trackingValue(body.utm_campaign),
-        doubleOptIn: true,
-      }, error);
+    if (marketingRequested) {
+      try {
+        await syncBrevoContact(env, {
+          email,
+          interest,
+          source,
+          utmSource: trackingValue(body.utm_source),
+          utmMedium: trackingValue(body.utm_medium),
+          utmCampaign: trackingValue(body.utm_campaign),
+          doubleOptIn: true,
+        });
+      } catch (error) {
+        console.error(operationalEvent("auth_email", "subscriber_brevo_sync_deferred", "warning", {
+          error: deliveryError(error),
+        }));
+        await queueLeadDelivery(env, email, "brevo_contact", {
+          interest,
+          source,
+          utmSource: trackingValue(body.utm_source),
+          utmMedium: trackingValue(body.utm_medium),
+          utmCampaign: trackingValue(body.utm_campaign),
+          doubleOptIn: true,
+        }, error);
+      }
     }
 
     if (interest === "Top 10 Trades" || interest === "The TRADE HUSTL3 Book") {
@@ -689,10 +692,10 @@ async function subscribe(request: Request, env: Env): Promise<Response> {
         ? "free 2026-2027 trade guide preview"
         : "free 2026-2027 Top 10 Trades guide";
       const message = emailDelivered
-        ? `You're in. Your ${guideName} is ready, and a copy is on its way to your inbox.`
+        ? `Your ${guideName} is ready, and a download link is on its way to your inbox.`
         : emailQueued
-          ? `You're in. Your ${guideName} is ready below. Email delivery is delayed, so we queued it for another attempt.`
-          : `You're in. Your ${guideName} is ready below, but we could not email the copy. Please use the download link.`;
+          ? `Your ${guideName} is ready below. Email delivery is delayed, so we queued it for another attempt.`
+          : `Your ${guideName} is ready below, but we could not email the download link. Please use the download link.`;
 
       return Response.json(
         { ok: true, message: `${message}${confirmNote}`, sampleUrl: FREE_SAMPLE_ROUTE, emailDelivered, emailQueued },
@@ -725,10 +728,10 @@ async function subscribe(request: Request, env: Env): Promise<Response> {
         {
           ok: true,
           message: `${emailDelivered
-            ? "You're in. Your free 7-page TRADE HUSTL3 book sample is ready to download, and a copy is on its way to your inbox."
+            ? "Your free 7-page TRADE HUSTL3 book sample is ready to download, and a download link is on its way to your inbox."
             : emailQueued
               ? "Your free 7-page book sample is ready below. Email delivery is delayed, so we queued it for another attempt."
-              : "Your free 7-page book sample is ready below, but we could not email the copy. Please use the download link."}${confirmNote}`,
+              : "Your free 7-page book sample is ready below, but we could not email the download link. Please use the download link."}${confirmNote}`,
           sampleUrl: BOOK_SAMPLE_ROUTE,
           emailDelivered,
           emailQueued,

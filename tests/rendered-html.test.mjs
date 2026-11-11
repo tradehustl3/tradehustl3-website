@@ -93,7 +93,7 @@ test("server-renders the corrected TRADE HUSTL3 brand and metadata", async () =>
 
 test("campaign homepage server-renders Resume Builder credibility and audience content", async () => {
   const hub = await (await render()).text();
-  assert.match(hub, /optimized\/resume-builder-logo-header\.webp/i, "hub shows the Resume Builder badge");
+  assert.match(hub, /sample-hvac-resume\.webp/i, "hub shows a labeled Resume Builder sample");
   const html = await (await renderPath("/?trade=hvac")).text();
   assert.match(html, /Built around the way skilled-trades people actually work/i);
   assert.match(html, /Shaped by 10\+ years of HVAC and facilities work\./i);
@@ -266,9 +266,8 @@ test("server-renders the official book page, cover, portrait, and current editio
   assert.match(html, /directory of 200 skilled trades/i);
   assert.doesNotMatch(html, /200\+|more than 200 skilled trades/i);
   assert.match(html, /"datePublished":"2026-09-15"/i);
-  assert.match(html, /Get the Free Guide/i);
-  assert.match(html, /UNLOCK THE FREE GUIDE/i);
-  assert.match(html, /EMAIL TO RECEIVE THE FREE GUIDE/i);
+  assert.match(html, /Get the free guide preview/i);
+  assert.match(html, /data-cta-location="book_page_guide"/i);
   assert.doesNotMatch(html, /href="\/trade-hustl3-free-sample\.pdf/i);
   assert.match(html, /GUIDE PREVIEW/i);
   assert.match(html, /verified power-line and HVAC profiles/i);
@@ -306,9 +305,8 @@ test("book page roadmap uses the printed part titles, offers both free previews,
   assert.match(text, /Email me the 7-page sample/);
   assert.match(text, /data-cta-location="book-page-sample"/);
   assert.match(text, /href="#book-sample"[^>]*data-cta-location="book-hero"[^>]*>Read 7 Pages Free/);
-  assert.match(text, /EMAIL TO RECEIVE THE FREE GUIDE/i);
-  assert.match(text, /<form class="resource-form"/);
-  assert.match(text, /<form class="signup sample-signup"/);
+  assert.match(text, /six-page preview/i);
+  assert.equal((text.match(/<form class="resource-form"/g) ?? []).length, 2);
 
   // FAQ answers come from verified edition data and the eBook policy.
   assert.match(text, /id="faq"/);
@@ -432,26 +430,23 @@ test("homepage keeps the verified account entry and free guide signups", async (
   assert.match(html, /Continue with email/i);
   assert.doesNotMatch(html, /name="fullName"/i);
   assert.match(html, /ACCOUNT · STAGE 1 OF 5/i);
-  assert.match(html, /FREE TRADE HUSTL3 GUIDES/i);
+  assert.match(html, /FREE CAREER GUIDE PREVIEW/i);
   assert.match(html, /href="\/top-10-trades"/i);
   assert.match(html, /href="\/book"/i);
   assert.match(html, /href="\/book\/sample"/i, "free sample signup belongs below the storefront offers");
   const resumeLinks = html.match(/href="#resume-start"/gi) ?? [];
-  assert.ok(resumeLinks.length >= 5);
+  assert.ok(resumeLinks.length >= 2);
 });
 
 test("homepage features the approved book cover and edition links without duplicating the full book page", async () => {
   const html = await (await render()).text();
   assert.match(html, /href="\/book"[^>]*>The Book<\/a>/i);
   assert.match(html, /optimized\/book-cover-v3\.webp/i);
-  assert.match(html, /href="https:\/\/www\.amazon\.com\/dp\/B0HFQ2ZNJN"/i);
-  assert.match(html, /href="https:\/\/www\.amazon\.com\/dp\/B0HPZ2KQ1R"/i);
-  assert.match(html, /Kindle \$(?:<!-- -->)?9\.99/i);
-  assert.match(html, /Paperback \$(?:<!-- -->)?24\.99/i);
-  assert.doesNotMatch(html, /FREE BOOK SAMPLE/i);
-  assert.doesNotMatch(html, /BOOK &amp; MISSION/i);
-  assert.doesNotMatch(html, /optimized\/zachary-ellis\.webp/i);
-  assert.doesNotMatch(html, /BUILT IN THE FIELD/i);
+  assert.match(html, /href="\/book#availability"/i);
+  const book = await (await renderPath("/book")).text();
+  assert.match(book, /href="https:\/\/www\.amazon\.com\/dp\/B0HFQ2ZNJN"/i);
+  assert.match(book, /href="https:\/\/www\.amazon\.com\/dp\/B0HPZ2KQ1R"/i);
+  assert.match(book, /href="https:\/\/buy\.stripe\.com\//i);
 });
 
 test("campaign homepage leads with preview-before-payment proof and the included cover letter before free resources", async () => {
@@ -1071,7 +1066,8 @@ test("book page leads with the book sample and folds the guide preview below it"
   assert.match(sample, /<details class="sample-guide-alt">/);
   assert.doesNotMatch(sample, /<details class="sample-guide-alt" open/);
   // The guide keeps its existing signup contract (interest "The TRADE HUSTL3 Book").
-  assert.match(sample, /<form class="signup sample-signup"/);
+  assert.match(sample, /<form class="resource-form"/);
+  assert.match(sample, /data-cta-location="book_page_guide"/);
   // The ISBN moved out of the shopper-facing facts strip.
   const facts = html.slice(html.indexOf('class="book-facts"'), html.indexOf('id="sample"'));
   assert.doesNotMatch(facts, /ISBN/);
@@ -1483,10 +1479,13 @@ test("launch sweep delivers a pending preorder once after release", async () => 
   assert.equal(calls.filter((call) => /SET launch_emailed_at = CURRENT_TIMESTAMP/i.test(call.sql)).length, 1);
 });
 
-test("server-renders the focused homepage paths without book promotion", async () => {
+test("server-renders offer placements on the hub and keeps campaigns resume-first", async () => {
   const hub = await (await render()).text();
-  for (const location of ["sticky_header", "find_your_lane", "first_steps", "opportunity_resume", "opportunity_book", "built_by_a_tradesman"]) {
+  for (const location of ["sticky_header", "homepage_book_hero", "homepage_book_formats", "homepage_resume_builder", "find_your_lane", "first_steps", "built_by_a_tradesman"]) {
     assert.match(hub, new RegExp(`data-location="${location}"`, "i"));
+  }
+  for (const placement of ["homepage_book_preview", "homepage_top_10_guide", "homepage_newsletter"]) {
+    assert.match(hub, new RegExp(`data-cta-location="${placement}"`));
   }
   const html = await (await renderPath("/?trade=hvac")).text();
   assert.doesNotMatch(html, /TRADE HUSTL3 Gear/i);

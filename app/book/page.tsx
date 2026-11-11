@@ -4,7 +4,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { SocialLinks } from "../social-links";
 import { SITE_NAME, SITE_URL } from "../site";
-import { SignupForm } from "../signup-form";
 import { ResourceForm } from "../resource-form";
 import LaunchPurchaseButton from "./launch-purchase-button";
 import { ProgramInquiryForm } from "./program-inquiry-form";
@@ -402,19 +401,19 @@ export default function BookPage() {
             <p className="sample-card-kicker">Free book sample · 7 pages</p>
             <h3 id="book-sample-card-title">Read the opening of the book.</h3>
             <p>
-              Get the first seven pages of <em>TRADE HUSTL3: Built by Hustle, Backed by Trades</em>: the cover, the full table of contents, and the opening of Chapter 1. We&apos;ll email you the PDF link.
+              Get the first seven pages of <em>TRADE HUSTL3: Built by Hustle, Backed by Trades</em>: the cover, the full table of contents, and the opening of Chapter 1. Open it here after submitting your email. We&apos;ll also send the link to your inbox.
             </p>
           </div>
           <div className="sample-card-action">
             <ResourceForm
               resourceName="free 7-page TRADE HUSTL3 book sample"
               buttonLabel="Email me the 7-page sample"
-              includeFirstName={false}
               ctaId="book-sample"
               ctaLocation="book-page-sample"
               metaLeadContentName="book_sample"
               signupInterest="Book 7-Page Sample"
-              successLinkLabel="Download my 7-page sample (PDF)"
+              successLinkLabel="Open the 7-page PDF"
+              readerHref="/book/sample/read"
             />
             <small className="sample-consent">No purchase required. By requesting the sample, you agree to receive TRADE HUSTL3 book and career updates. Unsubscribe anytime.</small>
           </div>
@@ -428,9 +427,11 @@ export default function BookPage() {
           </summary>
           <div className="sample-guide-alt-body">
             <p>
-              Enter your email to unlock the seven-page preview of <em>TRADE HUSTL3: 10 High-Opportunity Trades — 2026-2027 Edition</em> (cover included). It includes the guide&apos;s source standard, verified power-line and HVAC profiles, national pay context, and practical next steps.
+              Enter your email to unlock the six-page preview of <em>TRADE HUSTL3: 10 High-Opportunity Trades — 2026-2027 Edition</em> (cover included). It includes the guide&apos;s source standard, verified power-line and HVAC profiles, national pay context, and practical next steps.
             </p>
-            <SignupForm mode="sample" />
+            <ResourceForm resourceName="Top 10 Trades guide preview" buttonLabel="Get the free guide preview"
+              ctaId="top-10-trades" ctaLocation="book_page_guide" metaLeadContentName="top_10_trades"
+              signupInterest="The TRADE HUSTL3 Book" successLinkLabel="Open the guide PDF" />
             <small className="sample-consent">By unlocking the free guide, you agree to receive TRADE HUSTL3 book and career updates. Unsubscribe anytime.</small>
           </div>
         </details>

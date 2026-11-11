@@ -64,47 +64,31 @@ test("a ?trade= landing server-renders that trade, so nothing swaps after hydrat
   assert.match(other.match(/<a\b[^>]*data-hero-cta[^>]*>/)?.[0] ?? "", /href="\/\?trade=general-labor#resume-start"/);
 });
 
-test("homepage header leads with the TRADE HUSTL3 brand, four hub links, and one CTA", async () => {
-  const html = await renderHome();
-  const header = between(html, "<header", "</header>");
+test("homepage header promotes the book preview while campaign navigation stays resume-first", async () => {
+  const header = between(await renderHome(), "<header", "</header>");
   assert.match(header, /aria-label="TRADE HUSTL3 home"/);
   assert.match(header, /optimized\/th3-logo-header\.webp/);
-  assert.match(header, /href="\/resume-examples"[^>]*>Explore Trades</);
-  assert.match(header, /href="\/resources\/certifications"[^>]*>Certifications</);
-  assert.match(header, /href="\/resources"[^>]*>Resources</);
   assert.match(header, /href="\/book"[^>]*>The Book</);
-  assert.equal((header.match(/Build my free preview/g) ?? []).length, 1);
-  assert.match(header, /data-location="sticky_header"/);
+  assert.match(header, /href="#lane-title"[^>]*>Find Your Lane</);
+  assert.match(header, /href="\/resources"[^>]*>Resources</);
+  assert.match(header, /href="#book-preview"[^>]*data-item="book_sample"[^>]*>Free book sample/);
+
+  const campaign = between(await renderHome("/?trade=hvac"), "<header", "</header>");
+  assert.match(campaign, /href="#resume-start"[^>]*>Build my free preview/);
 });
 
-test("default homepage follows the approved hub order: discover, first steps, free guides, paid tools, founder", async () => {
+test("the hub homepage has the five approved sections in order", async () => {
   const html = await renderHome();
   assert.equal((html.match(/<h1\b/g) ?? []).length, 1);
-  // The gold accent span is presentational; the h1's full text must stay exactly the approved headline.
-  assert.match(html, /<h1 id="storefront-heading"[^>]*>Build your career\.\s*(?:<!-- -->)?\s*<span[^>]*>Own your future\.<\/span><\/h1>/);
-  assert.match(html, /<h2 id="hub-title"[^>]*>Your future is built,\s*(?:<!-- -->)?\s*<span[^>]*>not handed to you\.<\/span><\/h2>/);
-  assert.ok(html.indexOf("Skilled-Trades Resume Builder") < html.indexOf("TRADE HUSTL3 — The Book"), "resume offer precedes book offer");
-  const order = [
-    'id="storefront-heading"',
-    'id="hub-title"',
-    'id="start-here"',
-    'id="find-your-lane-title"',
-    'id="outlook-title"',
-    'id="first-steps-title"',
-    'id="know-your-trade"',
-    'id="free-guides-title"',
-    'id="opportunity-title"',
-    'aria-label="What the Resume Builder promises"',
-    'id="resume-start"',
-    'id="founder-title"',
-  ].map((marker) => html.indexOf(marker));
-  order.forEach((index, i) => assert.ok(index > (order[i - 1] ?? -1), `hub section ${i} out of order`));
-  assert.match(html, /<button[^>]*aria-pressed="true"[^>]*data-item="student"/);
-  assert.doesNotMatch(html, /Coming soon/);
-  // The resume-first sales sections stay on campaign visits only.
-  for (const gone of ['id="resume-hero"', "Jobsite truths. If you know, you know.", "Three steps. Preview before you pay.", "Real coverage. Clear numbers.", 'id="included-cover-letter"', "READY WHEN YOU ARE"]) {
-    assert.equal(html.includes(gone), false, `hub still renders ${gone}`);
+  assert.match(html, /<h1[^>]*id="storefront-heading"[^>]*>TRADE HUSTL3<\/h1>/);
+  const order = ["storefront-heading", "opportunity-title", "lane-title", "free-guides-title", "movement-title"]
+    .map((id) => html.indexOf(`id="${id}"`));
+  order.forEach((index, i) => assert.ok(index > (order[i - 1] ?? -1), `hub section ${i + 1} out of order`));
+  for (const id of ["top", "hub-mission", "start-here", "trade-guides", "first-steps", "know-your-trade", "free-guides", "opportunity", "resume-start", "built-by-a-tradesman"]) {
+    assert.equal((html.match(new RegExp(`id="${id}"`, "g")) ?? []).length, 1, `preserve #${id}`);
   }
+  assert.match(html, /<button[^>]*aria-pressed="true"[^>]*data-item="student"/);
+  assert.doesNotMatch(html, /id="hub-title"|id="resume-hero"|READY WHEN YOU ARE/);
 });
 
 test("Find Your Lane renders eight trade cards that each answer what, how, and which credentials", async () => {
@@ -131,53 +115,53 @@ test("Find Your Lane renders eight trade cards that each answer what, how, and w
   assert.doesNotMatch(section, /guarantee|get hired|\$\d|per hour|salary/i, "no pay figures or outcome promises in trade discovery");
 });
 
-test("first steps, free guides, paid tools, and the founder story render with real destinations", async () => {
+test("the guide accurately describes the asset and the resume shows a labeled sample and entitlements", async () => {
   const html = await renderHome();
   const steps = between(html, 'id="first-steps"', 'id="know-your-trade"');
   assert.match(steps, /href="https:\/\/www\.apprenticeship\.gov\/apprenticeship-job-finder"/);
-  assert.match(steps, /href="https:\/\/www\.apprenticeship\.gov\/registered-apprenticeship"/);
   assert.match(steps, /href="https:\/\/www\.careeronestop\.org\/Toolkit\/Training\/find-licenses\.aspx"/);
   for (const slug of ["osha-outreach-10-30", "epa-608", "forklift-operator", "cdl"]) assert.match(steps, new RegExp(`href="/resources/certifications#${slug}"`));
-  assert.match(steps, /OSHA 10-Hour and 30-Hour Outreach Training[\s\S]*?Training card/);
 
-  const guides = between(html, 'id="free-guides"', 'id="opportunity"');
-  assert.equal((guides.match(/<form\b/g) ?? []).length, 2, "two email signups");
-  assert.equal((guides.match(/type="email"/g) ?? []).length, 2);
-  assert.match(guides, /Top 10 Trades for 2026–2027/);
-  assert.match(guides, /Read the first 7 pages of TRADE HUSTL3/);
-  assert.match(guides, /data-cta-location="homepage_free_guides"/);
+  const guide = between(html, 'id="free-guides"', 'id="join-the-movement"');
+  assert.equal((guide.match(/<form\b/g) ?? []).length, 1);
+  assert.match(guide, /six-page preview features two profiles, power-line work and HVAC/);
+  assert.match(guide, /data-cta-location="homepage_top_10_guide"/);
+  assert.match(guide, /This request delivers the resource only/);
 
-  const opportunity = between(html, 'id="opportunity"', 'id="resume-start"');
-  assert.match(opportunity, /data-location="opportunity_resume"[^>]*>Build my free preview|href="#resume-start"[^>]*data-location="opportunity_resume"/);
-  assert.match(opportunity, /href="https:\/\/www\.amazon\.com\/dp\/B0HFQ2ZNJN"/);
-  assert.match(opportunity, /href="https:\/\/www\.amazon\.com\/dp\/B0HPZ2KQ1R"/);
-  assert.match(opportunity, /Never invents a license, cert, employer, or number\./);
+  const resume = between(html, 'id="opportunity"', 'aria-labelledby="lane-title"');
+  assert.match(resume, /resume-builder-logo-header\.webp/);
+  assert.match(resume, /href="\/resume-builder\/start"[^>]*data-location="homepage_resume_builder"/);
+  assert.match(resume, /See your preview before you pay · \$9\.99 one-time to unlock/);
+  assert.doesNotMatch(resume, /<form\b|Account · stage|SKILLED-TRADES RESUME BUILDER|Your Skills Deserve|Start My Free Resume Preview/);
+  assert.match(resume, /Your Experience Matters\./);
+  assert.match(resume, /Make Sure It Shows\./);
+  assert.match(resume, /Example output/);
+  const headline = resume.indexOf('Your Experience Matters.');
+  const logo = resume.indexOf('id="opportunity-title"');
+  const audience = resume.indexOf('Your First Job. Your Next Opportunity. Your Move Into Leadership.');
+  const description = resume.indexOf('Whatever stage you’re in, your skills deserve to be represented.');
+  const example = resume.indexOf('<figure');
+  assert.ok(headline >= 0 && headline < logo && logo < audience && audience < description && description < example,
+    'headline, existing logo, audience statement, supporting description, and examples stay in order');
 
-  const founder = html.slice(html.indexOf('id="built-by-a-tradesman"'), html.indexOf("<footer"));
-  assert.match(founder, /Zachary Ellis/);
-  for (const credential of ["EPA 608 Universal certification", "HVAC certification", "NCRR", "OSHA 10-Hour training"]) assert.ok(founder.includes(credential), credential);
-  assert.doesNotMatch(founder, /author-portrait|zachary-ellis\.webp/, "no founder photo on the homepage");
-  assert.doesNotMatch(founder, /OSHA 10 certif/i);
+  const previewEnd = resume.indexOf('</figure>');
+  const cta = resume.indexOf('Start Your Free Resume Preview');
+  assert.ok(previewEnd > 0 && cta > previewEnd && resume.indexOf('See your preview before you pay') > cta);
+  for (const label of ["sample-hvac-resume.webp", "Illustrative candidate", "$9.99", "PDF and editable DOCX", "Matching cover letter", "three AI-assisted corrections within seven days"]) {
+    assert.ok(resume.includes(label), label);
+  }
 });
 
-test("hub story follows ENTER, EARN, ELEVATE with real paths and sourced guides", async () => {
+test("the closing mission and subscription preserve community links", async () => {
   const html = await renderHome();
-  const story = between(html, 'id="hub-mission"', 'id="start-here"');
-  assert.match(story, /THE TRADE HUSTL3 STORY/);
-  assert.match(story, /You might be in school, starting your first job, changing careers, or already working\s+in the field\./);
-  assert.match(story, /real trade\s+information, practical career tools, and a clearer path to your next move\./);
-  const pillars = ["ENTER", "EARN", "ELEVATE"].map((word) => story.indexOf('>' + word + '</span>'));
-  pillars.forEach((index, i) => assert.ok(index > (pillars[i - 1] ?? -1), 'story pillar order'));
-  assert.match(story, /href="\/resume-examples"/);
-  assert.match(story, /href="\/resources\/certifications"/);
-  assert.match(story, /href="#resume-start"/);
-  assert.match(story, /href="\/resources\/certifications#epa-608"/);
-  assert.match(story, /href="\/resources\/certifications#osha-outreach-10-30"/);
-  assert.match(story, /href="\/resources\/certifications#cdl"/);
-  assert.match(story, /href="\/resources\/certifications#forklift-operator"/);
-  assert.match(story, /data-location="hub_story"/);
-  assert.match(story, /credentials linked to sources/);
-  assert.doesNotMatch(story, /guaranteed income|guaranteed job|AI.generated workers/i);
+  assert.doesNotMatch(html, /id="founder-title"|author-portrait-v2/);
+  assert.match(html, /We’re building a stronger future/);
+  const newsletter = between(html, 'id="join-the-movement"', "<footer");
+  assert.equal((newsletter.match(/<form\b/g) ?? []).length, 1);
+  assert.match(newsletter, /data-cta-location="homepage_newsletter"/);
+  for (const label of ["Facebook", "Instagram", "TikTok", "YouTube", "LinkedIn", "X", "GitHub"]) {
+    assert.ok(newsletter.includes(`aria-label="${label}"`), `${label} link`);
+  }
 });
 
 test("trade stage band replaces the old start-here and tools sections with five real paths", async () => {
@@ -200,7 +184,7 @@ test("campaign visits (?trade=) keep the resume-first layout without the hub sec
   const html = await renderHome("/?trade=plumbing");
   assert.equal((html.match(/<h1\b/g) ?? []).length, 1);
   assert.match(html, /<h1 id="hero-title"/);
-  assert.doesNotMatch(html, /id="hub-title"/);
+  assert.doesNotMatch(html, /id="storefront-heading"|id="movement-title"/);
   assert.doesNotMatch(html, /id="start-here"/);
   assert.match(html, /id="resume-start"/);
 });
@@ -264,7 +248,7 @@ test("with no approved reviews the reviews section is absent, not an empty box",
 
 test("duplicate promises and the purchase strip are gone; the refund promise stays", async () => {
   const html = await renderHome();
-  const promises = between(html, 'aria-label="What the Resume Builder promises"', "</ul>");
+  const promises = between(html, 'id="opportunity"', 'aria-labelledby="lane-title"');
   assert.doesNotMatch(promises, /See it first|Nothing made up|Your facts only/);
   assert.match(promises, /Delivered or refunded/);
   assert.match(promises, /href="\/resume-builder\/refund-policy"/);
@@ -280,10 +264,12 @@ test("no hard-coded testimonial names or portraits reach the homepage", async ()
   assert.doesNotMatch(html, /CUSTOMER STORY/i);
 });
 
-test("the new homepage sections add no corrections wording", async () => {
+test("correction entitlement appears with the builder offer", async () => {
   const html = await renderHome();
-  const firstImpression = between(html, "<header", 'aria-label="What the Resume Builder promises"');
-  assert.doesNotMatch(firstImpression, /correction/i);
+  const bookAndGuide = between(html, 'id="top"', 'id="opportunity"');
+  const builder = between(html, 'id="opportunity"', 'aria-labelledby="lane-title"');
+  assert.doesNotMatch(bookAndGuide, /correction/i);
+  assert.match(builder, /Up to three AI-assisted corrections within seven days/);
 });
 
 test("homepage fonts are self-hosted, with no runtime Google Fonts request", async () => {
@@ -296,7 +282,7 @@ test("homepage fonts are self-hosted, with no runtime Google Fonts request", asy
 test("campaign visits for trades without a quick-pick card keep the resume-first layout and the trade", async () => {
   for (const [slug, word] of [["commercial-driving-transportation", "commercial driver"], ["heavy-equipment-operator", "heavy equipment"], ["general-labor", "general labor"]]) {
     const html = await renderHome(`/?trade=${slug}`);
-    assert.doesNotMatch(html, /id="hub-title"/, `${slug}: hub hidden on campaign visit`);
+    assert.doesNotMatch(html, /id="storefront-heading"/, `${slug}: hub hidden on campaign visit`);
     assert.match(html, new RegExp(`<h1 id="hero-title"[^>]*>Build a <span[^>]*>${word}</span> resume`), `${slug}: headline names the trade`);
     const cta = html.match(/<a\b[^>]*data-hero-cta[^>]*>/)?.[0] ?? "";
     assert.match(cta, /href="\/\?trade=[a-z0-9-]+#resume-start"/, `${slug}: CTA keeps the trade`);
@@ -304,33 +290,28 @@ test("campaign visits for trades without a quick-pick card keep the resume-first
   }
 });
 
-test("homepage industrial storefront uses real brand assets, clear offers, proof, trade links and free signup paths", async () => {
+test("the book hero features the approved cover, preview and format selection", async () => {
   const html = await renderHome();
-  const storefront = between(html, 'id="top"', 'id="hub-mission"');
-
-  assert.equal((html.match(/<h1\b/g) ?? []).length, 1, "one accessible primary headline");
-  assert.match(storefront, /Build your career\./);
-  assert.match(storefront, /Own your future\./);
-  assert.match(storefront, /Built for the people who build, maintain, repair, and move America\./);
-  assert.match(storefront, /optimized\/resume-builder-logo-header\.webp/);
+  const storefront = between(html, 'id="top"', 'id="opportunity"');
   assert.match(storefront, /optimized\/book-cover-v3\.webp/);
-  assert.match(storefront, /sample-hvac-resume\.webp/);
+  assert.match(storefront, /THE BOOK/);
+  assert.match(storefront, /BY MR\. HUSTL3/);
+  assert.match(storefront, /A Story From the Trades\. A Message for the Next Generation\./);
+  assert.match(storefront, /Get Your 7 FREE Pages/);
+  assert.match(storefront, /id="homepage-book-email"[^>]*hidden/);
+  assert.doesNotMatch(storefront, /Read 7 Pages FREE|Explore the Book|More Than a Book/);
+  for (const cta of ["amazon-paperback", "amazon-kindle", "direct-ebook"]) assert.match(storefront, new RegExp(`data-cta="${cta}"`));
+  assert.match(storefront, /data-cta-location="homepage_book_preview"/);
+  assert.equal((storefront.match(/<form\b/g) ?? []).length, 1);
+  assert.doesNotMatch(storefront, /name="firstName"|name="careerInterest"|pre-order|coming soon/i);
+});
 
-  assert.ok(storefront.indexOf('data-product="resume-builder"') < storefront.indexOf('data-product="the-book"'));
-  assert.match(storefront, /No subscription/i);
-  assert.match(storefront, /10\+ years in HVAC and facilities maintenance/);
-  assert.match(storefront, /data-location="homepage_storefront_resume"/);
-  assert.match(storefront, /href="#resume-start"/);
-  assert.match(storefront, /data-location="homepage_storefront_book"/);
-  assert.match(storefront, /href="https:\/\/www\.amazon\.com\/dp\/B0HFQ2ZNJN"/);
-  assert.match(storefront, /href="https:\/\/www\.amazon\.com\/dp\/B0HPZ2KQ1R"/);
-
-  for (const href of ["/resume-builder/hvac", "/resume-builder/electrician", "/resume-builder/plumbing",
-    "/resume-builder/welding-fabrication", "/resume-builder/construction-carpentry",
-    "/resume-builder/facilities-maintenance", "/resume-builder/heavy-equipment-operator",
-    "/resources", "/top-10-trades", "/book/sample"]) {
-    assert.ok(storefront.includes(`href="${href}"`), `verified destination ${href}`);
-  }
-  assert.ok(storefront.indexOf('data-location="homepage_storefront_book"') < storefront.indexOf('href="/top-10-trades"'), "products before free guides");
-  assert.doesNotMatch(storefront, /AI-generated workers|pre-order|coming soon/i);
+test("the dedicated builder entry retains the existing email-verification controls", async () => {
+  const html = await renderHome('/resume-builder/start');
+  assert.match(html, /Start your free resume preview/);
+  assert.match(html, /aria-label="Resume Builder progress"/);
+  assert.match(html, /<form\b[^>]*class="rb-account-form"/);
+  assert.match(html, /name="email"/);
+  assert.match(html, /Continue with email/);
+  assert.match(html, /noindex/);
 });

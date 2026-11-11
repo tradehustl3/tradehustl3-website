@@ -169,7 +169,7 @@ export function ResumeBuilderStartAnalytics({ trigger = "mount", targetId = "res
     if (!target || typeof IntersectionObserver === "undefined") return;
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries.some((entry) => entry.isIntersecting)) {
+        if (entries.some((entry) => entry.isIntersecting && entry.intersectionRatio >= 0.4)) {
           fire();
           observer.disconnect();
         }

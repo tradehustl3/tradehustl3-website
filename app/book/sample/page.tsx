@@ -91,17 +91,17 @@ export default function BookSamplePage() {
           </p>
 
           <div className={styles.formCard} id="get-sample">
-            <p className={styles.formKicker}>Send the sample to your inbox</p>
+            <p className={styles.formKicker}>Read online or open the PDF</p>
             <h2>Get the 7 pages free.</h2>
             <ResourceForm
               resourceName="free 7-page TRADE HUSTL3 book sample"
               buttonLabel="Email me the 7-page sample"
-              includeFirstName={false}
               ctaId="book-sample"
               ctaLocation="book-sample-campaign"
               metaLeadContentName="book_sample"
               signupInterest="Book 7-Page Sample"
-              successLinkLabel="Download my 7-page sample (PDF)"
+              successLinkLabel="Open the 7-page PDF"
+              readerHref="/book/sample/read"
             />
             <p className={styles.consent}>
               No purchase required. By requesting the sample, you agree to receive TRADE HUSTL3 book and career updates. Unsubscribe anytime.
@@ -113,9 +113,9 @@ export default function BookSamplePage() {
       <section className={styles.finish}>
         <div>
           <p className={styles.eyebrow}>WHAT HAPPENS NEXT</p>
-          <h2>CHECK YOUR EMAIL. THEN START READING.</h2>
+          <h2>START READING RIGHT AWAY.</h2>
           <p>
-            After you submit your email, you&rsquo;ll get a direct link to download the seven-page sample PDF, plus a browser reading option. The sample itself is no longer displayed on this campaign landing page.
+            After you submit your email, open the PDF or read in your browser. We&rsquo;ll also email the links. Confirm separately by email to join book and career updates.
           </p>
         </div>
         <Link className={styles.primaryButton} href="/book" data-cta="the-book" data-cta-location="book-sample-landing">

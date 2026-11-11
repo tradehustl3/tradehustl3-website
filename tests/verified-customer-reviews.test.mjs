@@ -20,7 +20,7 @@ function publicReviewsHandler(worker) {
 }
 
 test("no hard-coded testimonials or their portraits remain", () => {
-  const sources = ["app/page.tsx", "app/customer-reviews.tsx", "app/home-traffic-director.module.css", "app/customer-reviews.module.css"].map(read).join("\n");
+  const sources = ["app/page.tsx", "app/home-opportunity.tsx", "app/customer-reviews.tsx", "app/home-traffic-director.module.css", "app/customer-reviews.module.css"].map(read).join("\n");
   for (const name of TESTIMONIAL_NAMES) {
     assert.equal(sources.includes(name), false, `${name} is still hard-coded`);
   }
@@ -32,9 +32,11 @@ test("no hard-coded testimonials or their portraits remain", () => {
 
 test("homepage reviews come only from the verified paid-customer review API", () => {
   const page = read("app/page.tsx");
+  const offer = read("app/home-opportunity.tsx");
   const reviews = read("app/customer-reviews.tsx");
-  assert.equal(page.match(/<CustomerReviews \/>/g)?.length, 1);
-  assert.ok(page.indexOf("<CustomerReviews />") < page.indexOf("<ResumeStartSection />"), "customer proof appears before the start form");
+  assert.match(page, /<TurnSkillsIntoOpportunity \/>/);
+  assert.equal(offer.match(/<CustomerReviews \/>/g)?.length, 1, "the builder section includes verified customer proof");
+  assert.match(offer, /<ResumeStartSection compact \/>/);
   const campaign = read("app/home-resume-first.tsx");
   assert.equal(campaign.match(/<CustomerReviews \/>/g)?.length, 1);
   assert.match(reviews, /\/api\/resume-builder\/reviews\/public/);
@@ -46,7 +48,7 @@ test("homepage reviews come only from the verified paid-customer review API", ()
 });
 
 test("homepage customer proof avoids unsupported aggregate claims", () => {
-  for (const path of ["app/page.tsx", "app/customer-reviews.tsx", "app/layout.tsx"]) {
+  for (const path of ["app/page.tsx", "app/home-opportunity.tsx", "app/customer-reviews.tsx", "app/layout.tsx"]) {
     const source = read(path);
     assert.doesNotMatch(source, /500\+/);
     assert.doesNotMatch(source, /tradespeople helped/i);

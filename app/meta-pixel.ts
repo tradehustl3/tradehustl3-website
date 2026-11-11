@@ -1,11 +1,11 @@
-export type MetaLeadContentName = "top_10_trades" | "book_sample";
+export type MetaLeadContentName = "newsletter" | "top_10_trades" | "book_sample";
 export type MetaViewContentName = MetaLeadContentName | "book_sample_reader";
-type AnalyticsEventName = "generate_lead" | "form_start" | "cta_click" | "select_content";
+type AnalyticsEventName = "generate_lead" | "form_start" | "cta_click" | "select_content" | "resource_open" | "cta_view";
 
 type MetaPixelWindow = Window & {
   fbq?: (
     command: "track" | "trackCustom",
-    eventName: "Lead" | "ViewContent" | "form_start" | "cta_click" | "select_content",
+    eventName: "Lead" | "ViewContent" | Exclude<AnalyticsEventName, "generate_lead">,
     parameters: Record<string, string>,
   ) => void;
   gtag?: (command: "event", eventName: string, parameters?: Record<string, string>) => void;
@@ -57,17 +57,17 @@ function safelyTrack(eventName: AnalyticsEventName, parameters: Record<string, s
 }
 
 export function trackNavigationEvent(
-  eventName: "cta_click" | "select_content",
+  eventName: "cta_click" | "select_content" | "resource_open" | "cta_view",
   parameters: { location: string; destination: string; item?: string } & Record<string, string | undefined>,
 ): boolean {
   return safelyTrack(eventName, Object.fromEntries(Object.entries(parameters).filter((entry): entry is [string, string] => typeof entry[1] === "string")));
 }
 
-export function createFormStartTracker(contentName: MetaLeadContentName): () => boolean {
+export function createFormStartTracker(contentName: MetaLeadContentName, placement?: string): () => boolean {
   let hasTracked = false;
   return () => {
     if (hasTracked) return false;
-    const tracked = safelyTrack("form_start", { content_name: contentName, signup_source: contentName });
+    const tracked = safelyTrack("form_start", { content_name: contentName, signup_source: contentName, ...(placement ? { offer_id: contentName, placement } : {}) });
     if (tracked) hasTracked = true;
     return tracked;
   };
@@ -79,12 +79,12 @@ export function createFormStartTracker(contentName: MetaLeadContentName): () => 
  * concurrent responses, retries, and rerenders safe without coupling the
  * forms to Meta's global API.
  */
-export function createMetaLeadTracker(contentName: MetaLeadContentName): MetaLeadTracker {
+export function createMetaLeadTracker(contentName: MetaLeadContentName, placement?: string): MetaLeadTracker {
   let hasTracked = false;
 
   return () => {
     if (hasTracked) return false;
-    const tracked = safelyTrack("generate_lead", { content_name: contentName, signup_source: contentName }, "Lead");
+    const tracked = safelyTrack("generate_lead", { content_name: contentName, signup_source: contentName, ...(placement ? { offer_id: contentName, placement } : {}) }, "Lead");
     if (tracked) hasTracked = true;
     return tracked;
   };

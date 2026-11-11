@@ -9,7 +9,7 @@ import { BrandLockup } from '../brand-lockup';
 
 const PAGE_TITLE = 'Free Top 10 Trades Guide for 2026–2027 | TRADE HUSTL3';
 const PAGE_DESCRIPTION =
-  'Get the free TRADE HUSTL3 7-page guide to 10 high-opportunity skilled trades for 2026–2027, then turn your target trade into a stronger job-ready resume.';
+  'Get the free six-page preview of the TRADE HUSTL3 Top 10 Trades 2026–2027 guide, featuring power-line and HVAC profiles.';
 
 export const metadata: Metadata = {
   title: PAGE_TITLE,
@@ -56,7 +56,7 @@ const structuredData = {
   about: {
     '@type': 'CreativeWork',
     name: 'TRADE HUSTL3: 10 High-Opportunity Trades — 2026–2027 Edition',
-    description: 'A free seven-page skilled-trades career guide from TRADE HUSTL3.',
+    description: 'A free six-page skilled-trades guide preview with two trade profiles.',
   },
 };
 
@@ -95,22 +95,21 @@ export default function TopTenTradesPage() {
             <span> TRADE PATH.</span>
           </h1>
           <p className={styles.lede}>
-            Get the free <strong>TRADE HUSTL3: 10 High-Opportunity Trades — 2026–2027 Edition</strong> and use it to compare skilled-trades paths, understand where opportunity is building, and choose a direction worth pursuing.
+            Get the free <strong>TRADE HUSTL3: 10 High-Opportunity Trades — 2026–2027 Edition</strong> as a free six-page preview with two trade profiles, power-line work and HVAC, plus national pay context and practical next steps.
           </p>
 
           <div className={styles.formCard} id="get-guide">
-            <p className={styles.formKicker}>Send the guide to your inbox</p>
+            <p className={styles.formKicker}>Open the PDF after signup</p>
             <h2>Get the free PDF.</h2>
             <ResourceForm
               resourceName="Top 10 Trades 2026–2027 guide"
-              buttonLabel="Email me the free guide"
-              includeInterest
+              buttonLabel="Get the free guide preview"
               ctaId="top-10-trades"
               ctaLocation="top-10-campaign-page"
               metaLeadContentName="top_10_trades"
             />
             <p className={styles.consent}>
-              No purchase required. By requesting the guide, you agree to receive TRADE HUSTL3 career and product updates. Unsubscribe anytime.
+              No purchase required. Open the PDF after submitting. We’ll also email the link. Confirm separately by email to join career and product updates. Unsubscribe anytime.
             </p>
           </div>
         </div>

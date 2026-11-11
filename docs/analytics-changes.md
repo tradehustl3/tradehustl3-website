@@ -102,3 +102,9 @@ start-to-intake rate after this release. Do not compare start counts or
 start-based conversion rates across 2026-10-21 without noting this change.
 Overall hub traffic is available from GA4 page views (for visitors who allow
 optional tracking).
+
+## Book-led homepage redesign
+
+The hub homepage labels book preview, Top 10 Trades preview, Resume Builder, and newsletter interactions with an offer and placement. Resource forms emit `generate_lead` once per accepted request during the form instance. Acceptance can precede email delivery or Brevo confirmation. The `resource_open` event measures a click on the PDF or browser reader, using a fixed destination label. Form event payloads contain no email address, signup fields, or resource tokens.
+
+The hub's Resume Builder entry moved higher on the page. Its existing `resume_builder_start` event now explicitly checks for at least 40% visibility. Compare hub start rates across this change with the placement and threshold in mind. The campaign page continues to record the builder entry on mount. Amazon and direct eBook CTA clicks remain separate from verified purchases.
