@@ -42,8 +42,7 @@ export function HomeBookPreview() {
       <div id="homepage-book-email" ref={formArea} hidden={!open} className={styles.form}>
         <p className={styles.bookPreviewDescription}>Read the table of contents and the start of Chapter 1 in the free seven-page preview.</p>
         <ResourceForm resourceName="7-page book preview" buttonLabel="Get Your 7 FREE Pages" conversion marketingConsent={false}
-          ctaId="book-sample" ctaLocation="homepage_book_preview" metaLeadContentName="book_sample"
-          successLinkLabel="Open the 7-page PDF" readerHref="/book/sample/read" />
+          ctaId="book-sample" ctaLocation="homepage_book_preview" metaLeadContentName="book_sample" />
         <p className={styles.finePrint}>Open your sample after submission. We’ll also email the link. To receive optional marketing updates, use Join the Movement below.</p>
       </div>
       <div className={styles.bookFormats} aria-label="Buy the book">

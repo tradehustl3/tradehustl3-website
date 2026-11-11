@@ -12,6 +12,7 @@ import { malformedUrlTarget } from "./malformed-url";
 import { withPublicAssetCache } from "./public-asset-cache";
 import { handleProgramInquiry } from "./book-program-inquiry";
 import { PROGRAM_INQUIRY_ROUTE } from "../app/book/program-inquiry-options";
+import { BOOK_SAMPLE_OPEN_LABEL, BOOK_SAMPLE_READER_PATH } from "../app/book/sample-links";
 import { bookSenderEmail } from "./sender-addresses";
 
 interface Env extends ResumeBuilderEnv, EbookStripeEnv {
@@ -29,7 +30,7 @@ interface Env extends ResumeBuilderEnv, EbookStripeEnv {
   BREVO_DOI_TEMPLATE_ID?: string;
   /** Dedicated HMAC secret for guide sample links. */
   SAMPLE_TOKEN_SECRET?: string;
-  /** Dedicated HMAC secret for the gated 7-page book-sample link. */
+  /** Verifies previously issued book-sample PDF links. */
   BOOK_SAMPLE_TOKEN_SECRET?: string;
   IMAGES: {
     input(stream: ReadableStream): {
@@ -68,9 +69,7 @@ function signupSourceForInterest(interest: string): string {
 const FREE_SAMPLE_PUBLIC_PATH = "/trade-hustl3-free-sample.pdf";
 const FREE_SAMPLE_ROUTE = "/api/free-sample";
 const SAMPLE_COOKIE_NAME = "tradehustl3_sample_access";
-// The 7-page book sample is a separate lead magnet from the Top 10 Trades guide:
-// its own page, its own gated PDF, its own route, and — critically — its own
-// cookie and token namespace so neither credential can unlock the other.
+// Preserve access from previously issued book-sample PDF links and cookies.
 const BOOK_SAMPLE_ROUTE = "/api/book-sample";
 const BOOK_SAMPLE_COOKIE_NAME = "tradehustl3_book_sample_access";
 const BOOK_SAMPLE_PAGE = "/book/sample";
@@ -219,19 +218,6 @@ async function isValidSampleToken(token: string, secret: string): Promise<boolea
   }
 }
 
-/**
- * Book-sample link signing — deliberately separate from the guide token
- * functions above. The guide's tokens are 3-part (`expires.fingerprint.sig`)
- * and are already sitting in customers' inboxes, so that format is frozen.
- * A book-sample token is 4-part with the literal "book_sample" folded into the
- * signed payload: the guide verifier rejects it (extra segment, non-hex
- * fingerprint slot) and this verifier rejects a guide token (missing the
- * "book_sample" segment). Distinct cookie names complete the isolation.
- */
-function bookSampleTokenSecret(env: Env): string {
-  return env.BOOK_SAMPLE_TOKEN_SECRET?.trim() || "";
-}
-
 // Promise.any settles on the first *fulfilled* check, including a `false` from
 // the wrong secret, so a valid token could be rejected depending on timing.
 async function verifiedByAnySecret(
@@ -250,15 +236,7 @@ function sampleTokenSecrets(env: Env): string[] {
   return [env.SAMPLE_TOKEN_SECRET?.trim(), env.BREVO_API_KEY?.trim()].filter((secret): secret is string => Boolean(secret));
 }
 
-async function createBookSampleToken(email: string, secret: string): Promise<string> {
-  const emailDigest = new Uint8Array(await crypto.subtle.digest("SHA-256", encoder.encode(email)));
-  const fingerprint = Array.from(emailDigest.slice(0, 12), (byte) => byte.toString(16).padStart(2, "0")).join("");
-  const expires = Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7;
-  const payload = `${expires}.book_sample.${fingerprint}`;
-  const signature = await crypto.subtle.sign("HMAC", await sampleSigningKey(secret), encoder.encode(payload));
-  return `${payload}.${toBase64Url(signature)}`;
-}
-
+// The signed book_sample segment keeps old book links distinct from guide links.
 async function isValidBookSampleToken(token: string, secret: string): Promise<boolean> {
   const [expiresValue, resource, fingerprint, signatureValue, ...rest] = token.split(".");
   const expires = Number(expiresValue);
@@ -414,11 +392,11 @@ async function sendTopTradesDeliveryEmail(env: Env, email: string, sampleUrl: st
   if (!response.ok) throw new Error(`Brevo guide delivery failed with status ${response.status}.`);
 }
 
-async function sendBookSampleDeliveryEmail(env: Env, email: string, downloadUrl: string): Promise<void> {
+async function sendBookSampleDeliveryEmail(env: Env, email: string): Promise<void> {
   const apiKey = env.BREVO_API_KEY?.trim();
   if (!apiKey) throw new Error("Brevo book-sample delivery is not configured.");
 
-  const readerUrl = `${SITE_URL}/book/sample/read`;
+  const readerUrl = `${SITE_URL}${BOOK_SAMPLE_READER_PATH}`;
   const response = await fetch("https://api.brevo.com/v3/smtp/email", {
     method: "POST",
     headers: {
@@ -439,8 +417,7 @@ async function sendBookSampleDeliveryEmail(env: Env, email: string, downloadUrl:
             <p style="color:#d6a52a;font-weight:700;letter-spacing:2px">BUILT BY HUSTL3. BACKED BY TRADES.</p>
             <h1 style="margin:16px 0;color:#ffffff">Your 7-page book sample is ready.</h1>
             <p style="font-size:16px;line-height:1.6;color:#c5ced5">This is the free seven-page sample of TRADE HUSTL3 &mdash; the cover, opening pages, table of contents, and the beginning of Chapter 1.</p>
-            <p style="margin:28px 0"><a href="${downloadUrl}" style="display:inline-block;background:#d71920;color:#ffffff;padding:16px 22px;text-decoration:none;font-weight:700">DOWNLOAD THE 7-PAGE SAMPLE (PDF)</a></p>
-            <p style="font-size:14px;line-height:1.6;color:#9fb0bd">Prefer to read in your browser? <a href="${readerUrl}" style="color:#d6a52a;font-weight:700">Open the online reader</a>.</p>
+            <p style="margin:28px 0"><a href="${readerUrl}" style="display:inline-block;background:#d71920;color:#ffffff;padding:16px 22px;text-decoration:none;font-weight:700">${BOOK_SAMPLE_OPEN_LABEL}</a></p>
             <p style="color:#d6a52a;font-weight:700">ENTER. EARN. ELEVATE.</p>
           </div>
         </div>`,
@@ -449,8 +426,7 @@ async function sendBookSampleDeliveryEmail(env: Env, email: string, downloadUrl:
         "",
         "This is the free seven-page sample of TRADE HUSTL3: the cover, opening pages, table of contents, and the beginning of Chapter 1.",
         "",
-        `Download the 7-page sample (PDF): ${downloadUrl}`,
-        `Prefer to read in your browser? ${readerUrl}`,
+        `${BOOK_SAMPLE_OPEN_LABEL}: ${readerUrl}`,
         "",
         "ENTER. EARN. ELEVATE.",
       ].join("\n"),
@@ -525,10 +501,7 @@ async function performLeadDelivery(env: Env, job: LeadDeliveryJob): Promise<void
     await sendTopTradesDeliveryEmail(env, job.email, `${SITE_URL}${FREE_SAMPLE_ROUTE}?token=${encodeURIComponent(token)}`);
     return;
   }
-  const secret = bookSampleTokenSecret(env);
-  if (!secret) throw new Error("Book sample delivery is not configured.");
-  const token = await createBookSampleToken(job.email, secret);
-  await sendBookSampleDeliveryEmail(env, job.email, `${SITE_URL}${BOOK_SAMPLE_ROUTE}?token=${encodeURIComponent(token)}`);
+  await sendBookSampleDeliveryEmail(env, job.email);
 }
 
 export async function runLeadDeliveryRetries(env: Env): Promise<void> {
@@ -709,14 +682,10 @@ async function subscribe(request: Request, env: Env): Promise<Response> {
     }
 
     if (interest === "Book 7-Page Sample") {
-      const secret = bookSampleTokenSecret(env);
-      if (!secret) throw new Error("Book sample delivery is not configured.");
-      const token = await createBookSampleToken(email, secret);
-      const downloadUrl = `${SITE_URL}${BOOK_SAMPLE_ROUTE}?token=${encodeURIComponent(token)}`;
       let emailDelivered = true;
       let emailQueued = false;
       try {
-        await sendBookSampleDeliveryEmail(env, email, downloadUrl);
+        await sendBookSampleDeliveryEmail(env, email);
       } catch (error) {
         emailDelivered = false;
         console.error(operationalEvent("auth_email", "book_sample_email_failed", "warning", {
@@ -724,25 +693,17 @@ async function subscribe(request: Request, env: Env): Promise<Response> {
         }));
         emailQueued = await queueLeadDelivery(env, email, "book_sample_email", {}, error);
       }
-      return Response.json(
-        {
-          ok: true,
-          message: `${emailDelivered
-            ? "Your free 7-page TRADE HUSTL3 book sample is ready to download, and a download link is on its way to your inbox."
-            : emailQueued
-              ? "Your free 7-page book sample is ready below. Email delivery is delayed, so we queued it for another attempt."
-              : "Your free 7-page book sample is ready below, but we could not email the download link. Please use the download link."}${confirmNote}`,
-          sampleUrl: BOOK_SAMPLE_ROUTE,
-          emailDelivered,
-          emailQueued,
-        },
-        {
-          headers: {
-            "Cache-Control": "no-store",
-            "Set-Cookie": `${BOOK_SAMPLE_COOKIE_NAME}=${encodeURIComponent(token)}; Max-Age=604800; Path=/; HttpOnly; Secure; SameSite=Lax`,
-          },
-        },
-      );
+      return jsonResponse({
+        ok: true,
+        message: `${emailDelivered
+          ? "Your free 7-page book sample is ready below. We also emailed you the link."
+          : emailQueued
+            ? "Your free 7-page book sample is ready below. Email delivery is delayed, so we’ll try again."
+            : "Your free 7-page book sample is ready below. Please use this link while email delivery is unavailable."}${confirmNote}`,
+        sampleUrl: BOOK_SAMPLE_READER_PATH,
+        emailDelivered,
+        emailQueued,
+      });
     }
 
     return jsonResponse({

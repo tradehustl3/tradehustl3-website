@@ -148,8 +148,8 @@ const audiences = [
 /**
  * Single source for the book's structure. Part and chapter titles match the
  * printed table of contents of the final 486-page interior (Nov 3, 2026), which
- * is page 2 of worker/assets/trade-hustl3-seven-page-book-sample.pdf. The Roadmap
- * summaries and hero chapter count both use this list.
+ * is also used in the seven-page sample reader. The Roadmap summaries and
+ * hero chapter count both use this list.
  */
 const chapterParts = [
   {
@@ -412,8 +412,6 @@ export default function BookPage() {
               ctaLocation="book-page-sample"
               metaLeadContentName="book_sample"
               signupInterest="Book 7-Page Sample"
-              successLinkLabel="Open the 7-page PDF"
-              readerHref="/book/sample/read"
             />
             <small className="sample-consent">No purchase required. By requesting the sample, you agree to receive TRADE HUSTL3 book and career updates. Unsubscribe anytime.</small>
           </div>

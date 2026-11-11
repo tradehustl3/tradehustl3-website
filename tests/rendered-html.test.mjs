@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createHmac } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
@@ -779,7 +780,7 @@ test("direct sample access is sent back to the signup gate", async () => {
   assert.equal(response.headers.get("location"), "https://tradehustl3.com/book#sample");
 });
 
-test("book sample signup delivers a gated 7-page PDF with its own cookie and source", async () => {
+test("book sample signup and its delivery email share one reader link", async () => {
   const worker = await loadWorker();
   const brevoCalls = [];
   const dbCalls = [];
@@ -805,7 +806,7 @@ test("book sample signup delivers a gated 7-page PDF with its own cookie and sou
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: "Reader@Example.com", interest: "Book 7-Page Sample" }),
       }),
-      { DB, BREVO_API_KEY: "test-brevo-key", BREVO_LIST_ID: "3", BOOK_SAMPLE_TOKEN_SECRET: "book-token-secret" },
+      { DB, BREVO_API_KEY: "test-brevo-key", BREVO_LIST_ID: "3" },
       { waitUntil() {}, passThroughOnException() {} },
     );
   } finally {
@@ -815,19 +816,32 @@ test("book sample signup delivers a gated 7-page PDF with its own cookie and sou
   assert.equal(res.status, 200);
   const body = await res.json();
   assert.equal(body.ok, true);
-  assert.equal(body.sampleUrl, "/api/book-sample");
-  assert.match(res.headers.get("set-cookie") ?? "", /tradehustl3_book_sample_access=\d+\.book_sample\.[a-f0-9]{24}\./);
-  assert.doesNotMatch(res.headers.get("set-cookie") ?? "", /=granted/);
+  assert.equal(body.sampleUrl, "/book/sample/read");
+  assert.doesNotMatch(body.message, /download|pdf/i);
+  assert.equal(res.headers.get("set-cookie"), null);
 
   assert.deepEqual(dbCalls[0].values, ["reader@example.com", "Book 7-Page Sample", "book_sample"]);
   assert.equal(brevoCalls[0].input, "https://api.brevo.com/v3/contacts");
   assert.equal(brevoCalls[0].body.attributes.SIGNUP_SOURCE, "book_sample");
 
-  const emailHtml = brevoCalls[1].body.htmlContent;
-  assert.match(emailHtml, /https:\/\/tradehustl3\.com\/api\/book-sample\?token=/);
-  assert.match(emailHtml, /DOWNLOAD THE 7-PAGE SAMPLE \(PDF\)/i);
+  const { htmlContent, textContent } = brevoCalls[1].body;
+  const readerUrl = new URL(body.sampleUrl, "https://tradehustl3.com").href;
+  assert.deepEqual([...htmlContent.matchAll(/href="([^"]+)"/g)].map(match => match[1]), [readerUrl]);
+  assert.match(htmlContent, />Open the 7-page book sample<\/a>/);
+  assert.deepEqual(textContent.match(/https:\/\/\S+/g), [readerUrl]);
+  assert.doesNotMatch(htmlContent + textContent, /download|pdf/i);
+});
 
-  const token = emailHtml.match(/\/api\/book-sample\?token=([^"]+)/)[1];
+function legacyBookSampleToken(secret) {
+  const expires = Math.floor(Date.now() / 1000) + 3600;
+  const payload = `${expires}.book_sample.${"0".repeat(24)}`;
+  const signature = createHmac("sha256", secret).update(payload).digest("base64url");
+  return `${payload}.${signature}`;
+}
+
+test("previously issued book sample download links still serve the same PDF", async () => {
+  const worker = await loadWorker();
+  const token = legacyBookSampleToken("book-token-secret");
   const pdf = await worker.fetch(
     new Request(`https://tradehustl3.com/api/book-sample?token=${token}`),
     { BREVO_API_KEY: "test-brevo-key", BOOK_SAMPLE_TOKEN_SECRET: "book-token-secret" },
@@ -838,7 +852,8 @@ test("book sample signup delivers a gated 7-page PDF with its own cookie and sou
   assert.match(pdf.headers.get("content-disposition") ?? "", /TRADE-HUSTL3-7-Page-Book-Sample\.pdf/);
   assert.match(pdf.headers.get("cache-control") ?? "", /no-store/);
   assert.match(pdf.headers.get("x-robots-tag") ?? "", /noindex/i);
-  assert.match(await pdf.text(), /^%PDF-/);
+  const sample = await readFile(new URL("../worker/assets/trade-hustl3-seven-page-book-sample.pdf", import.meta.url));
+  assert.deepEqual(Buffer.from(await pdf.arrayBuffer()), sample);
 });
 
 // The dedicated secret's check is delayed so the legacy secret's `false` settles
@@ -864,7 +879,7 @@ async function withSlowFirstVerify(run) {
   }
 }
 
-async function signupEmailToken(worker, interest, env, route) {
+async function signupGuideEmailToken(worker, env) {
   const emails = [];
   const originalFetch = globalThis.fetch;
   globalThis.fetch = async (input, init) => {
@@ -884,7 +899,7 @@ async function signupEmailToken(worker, interest, env, route) {
       new Request("https://tradehustl3.com/api/subscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: "reader@example.com", interest }),
+        body: JSON.stringify({ email: "reader@example.com", interest: "Top 10 Trades" }),
       }),
       { DB, BREVO_LIST_ID: "3", ...env },
       { waitUntil() {}, passThroughOnException() {} },
@@ -894,19 +909,21 @@ async function signupEmailToken(worker, interest, env, route) {
     globalThis.fetch = originalFetch;
   }
   const html = emails.find((body) => typeof body.htmlContent === "string")?.htmlContent ?? "";
-  const match = html.match(new RegExp(`/api/${route}\\?token=([^"&]+)`));
-  assert.ok(match, `signup email links to /api/${route}`);
+  const match = html.match(/\/api\/free-sample\?token=([^"&]+)/);
+  assert.ok(match, "signup email links to /api/free-sample");
   return match[1];
 }
 
-for (const [route, interest, secretName] of [
-  ["free-sample", "The TRADE HUSTL3 Book", "SAMPLE_TOKEN_SECRET"],
-  ["book-sample", "Book 7-Page Sample", "BOOK_SAMPLE_TOKEN_SECRET"],
+for (const [route, secretName] of [
+  ["free-sample", "SAMPLE_TOKEN_SECRET"],
+  ["book-sample", "BOOK_SAMPLE_TOKEN_SECRET"],
 ]) {
   test(`/api/${route} accepts a valid link even when the legacy secret's check settles first`, async () => {
     const worker = await loadWorker();
     const env = { BREVO_API_KEY: "test-brevo-key", [secretName]: "dedicated-token-secret" };
-    const token = await signupEmailToken(worker, interest, env, route);
+    const token = route === "book-sample"
+      ? legacyBookSampleToken(env[secretName])
+      : await signupGuideEmailToken(worker, env);
     const response = await withSlowFirstVerify(() => worker.fetch(
       new Request(`https://tradehustl3.com/api/${route}?token=${token}`),
       env,
