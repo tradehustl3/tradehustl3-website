@@ -249,13 +249,26 @@ jobs:
         run: |
           set -euo pipefail
           source "$RUNNER_TEMP/smoke-fetch.sh"
+          # The hub links to the dedicated account entry instead of embedding it
+          # (homepage conversion redesign, PR #274); campaign visits still embed it.
           smoke_fetch "$CUSTOM_ORIGIN/" /tmp/custom-home.html 9 5 \
             --header 'Cache-Control: no-cache'
-          grep -Fq 'Continue with email' /tmp/custom-home.html
-          if grep -Fq 'Create account &amp; continue' /tmp/custom-home.html; then
-            echo 'Custom domain is serving the old Resume Builder account screen.'
+          if ! grep -Fq 'href="/resume-builder/start"' /tmp/custom-home.html; then
+            echo '::error::Live homepage does not link to the Resume Builder account entry.'
             exit 1
           fi
+          for page in resume-builder/start '?trade=hvac'; do
+            smoke_fetch "$CUSTOM_ORIGIN/$page" /tmp/custom-account.html 9 5 \
+              --header 'Cache-Control: no-cache'
+            if ! grep -Fq 'Continue with email' /tmp/custom-account.html; then
+              echo "::error::/$page is missing the verified-account entry."
+              exit 1
+            fi
+            if grep -Fq 'Create account &amp; continue' /tmp/custom-account.html; then
+              echo "::error::/$page is serving the old Resume Builder account screen."
+              exit 1
+            fi
+          done
 
           smoke_fetch "$CUSTOM_ORIGIN/resume-builder/intake" /tmp/custom-intake.html 9 5 \
             --header 'Cache-Control: no-cache'
