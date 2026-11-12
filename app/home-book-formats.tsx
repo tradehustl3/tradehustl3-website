@@ -44,20 +44,21 @@ export function HomeBookFormats() {
       links.forEach((link, index) => {
         const [portX, portY] = MANIFOLD_PORTS[index];
         const button = link.getBoundingClientRect();
-        const style = getComputedStyle(link);
-        const socket = Number.parseFloat(style.getPropertyValue('--hose-socket')) / 100;
-        const color = style.getPropertyValue('--format-accent').trim();
+        const color = getComputedStyle(link).getPropertyValue('--format-accent').trim();
         const startX = figure.left + figure.width * portX - bounds.left;
         const startY = figure.top + figure.height * portY - bounds.top;
-        const endX = button.left + button.width * socket - bounds.left;
+        const endX = button.left + button.width / 2 - bounds.left;
         const endY = button.bottom + 3 - bounds.top;
         const lowY = Math.min(bounds.height - 8, startY + 23 + 10 * index);
-        const turn = Math.min(38, Math.max(8, (endX - startX) * .35));
+        // A nearby button needs room for its hose to pass beside the gauge before turning up.
+        const riseX = Math.max(endX, figure.right + 12 - bounds.left);
+        const riseY = endY + (riseX > endX ? 24 : 12);
+        const turn = Math.min(38, Math.max(8, (riseX - startX) * .35));
 
         context.beginPath();
         context.moveTo(startX, startY);
-        context.bezierCurveTo(startX, lowY, endX - turn, lowY, endX, endY + 12);
-        context.quadraticCurveTo(endX, endY + 6, endX, endY);
+        context.bezierCurveTo(startX, lowY, riseX - turn, lowY, riseX, riseY);
+        context.bezierCurveTo(riseX, endY + 9, endX, endY + 9, endX, endY);
         context.strokeStyle = '#020914';
         context.lineWidth = 5.4;
         context.stroke();

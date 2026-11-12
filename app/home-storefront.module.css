@@ -397,7 +397,6 @@ a.hubHeaderCta { background: #f3c367; color: #081e32; border-color: #f3c367; box
 .bookPreviewDescription { margin: 0 0 14px; color: #dbe4eb; line-height: 1.5; }
 .bookFormatDisplay { position: relative; margin-top: 14px; }
 .bookFormats {
-  --hose-socket: 62%;
   position: relative;
   z-index: 1;
   display: flex;
@@ -428,7 +427,7 @@ a.hubHeaderCta { background: #f3c367; color: #081e32; border-color: #f3c367; box
   content: "";
   position: absolute;
   top: 100%;
-  left: var(--hose-socket);
+  left: 50%;
   width: 9px;
   height: 7px;
   transform: translateX(-50%);
@@ -487,7 +486,6 @@ a.hubHeaderCta { background: #f3c367; color: #081e32; border-color: #f3c367; box
     margin-inline: auto;
   }
   .bookFormats a { min-width: 0; padding-inline: 5px; font-size: clamp(.76rem, 3.3vw, .94rem); }
-  .paperback { --hose-socket: 88%; }
 }
 @media (max-width: 380px) {
   .kneelingHvac { height: calc(100% - 34px); }
