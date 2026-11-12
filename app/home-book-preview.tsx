@@ -1,16 +1,10 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { AMAZON_PAPERBACK, AMAZON_KINDLE, DIRECT_EBOOK } from './book/editions';
 import { ResourceForm } from './resource-form';
 import { ConversionCta } from './conversion-cta';
+import { HomeBookFormats } from './home-book-formats';
 import styles from './home-storefront.module.css';
-
-const FORMATS = [
-  ['Paperback', AMAZON_PAPERBACK.url, 'amazon-paperback', styles.paperback],
-  ['Kindle', AMAZON_KINDLE.url, 'amazon-kindle', styles.kindle],
-  ['Direct PDF', DIRECT_EBOOK.url, 'direct-ebook', styles.directPdf],
-] as const;
 
 /** One homepage preview action; the existing resource form owns fulfillment. */
 export function HomeBookPreview() {
@@ -51,12 +45,7 @@ export function HomeBookPreview() {
           ctaId="book-sample" ctaLocation="homepage_book_preview" metaLeadContentName="book_sample" />
         <p className={styles.finePrint}>Open your sample after submission. We’ll also email the link. To receive optional marketing updates, use Join the Movement below.</p>
       </div>
-      <div className={styles.bookFormats} role="group" aria-label="Buy the book">
-        {FORMATS.map(([label, href, cta, className]) => (
-          <ConversionCta key={cta} variant="format" className={className} href={href} rel="noopener"
-            data-cta={cta} data-item={cta} data-cta-location="homepage_book_formats">{label}</ConversionCta>
-        ))}
-      </div>
+      <HomeBookFormats />
     </div>
   );
 }
