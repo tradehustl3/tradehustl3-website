@@ -13,6 +13,9 @@ const FORMATS = [
 ] as const;
 
 // Fitting tips on the worker image, normalized to the trimmed image bounds.
+// The tech reads the gauge face, so the viewer sees the case back: a standard
+// blue/yellow/red manifold appears red, yellow, blue from left to right.
+// Keep FORMATS in that order so each hose matches the port it leaves.
 const MANIFOLD_PORTS = [[.813, .453], [.854, .452], [.896, .452]] as const;
 
 export function HomeBookFormats() {

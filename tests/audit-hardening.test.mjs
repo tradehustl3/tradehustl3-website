@@ -96,6 +96,9 @@ test("public brand identity and checkout reassurance stay consistent", () => {
   assert.match(layout, /price: "9\.99"/);
 
   assert.match(book, /BUILT BY HUSTL3\. BACKED BY TRADES\./);
+  const storefront = read("app/home-storefront.tsx");
+  assert.match(storefront, /BUILT BY HUSTL3\. BACKED BY TRADES\./, "the homepage book section uses the official slogan");
+  assert.doesNotMatch(storefront, /BACKED BY TRADE\./);
   assert.doesNotMatch(book, /href="\/#join"/, "the homepage has no #join section");
   assert.match(book, /Secure checkout powered by Stripe/i);
 
