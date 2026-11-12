@@ -118,9 +118,13 @@
   display: inline-flex;
   align-items: center;
   min-height: 44px;
-  color: var(--nav-gold);
+  color: var(--nav-link-accent, var(--nav-gold));
   transition: color 160ms ease;
 }
+
+.hubNav .navLink[href="/book"] { --nav-link-accent: var(--paperback-accent); }
+.hubNav .navLink[href="#lane-title"] { --nav-link-accent: var(--kindle-accent); }
+.hubNav .navLink[href="/resources"] { --nav-link-accent: var(--direct-pdf-accent); }
 
 .navLink:hover,
 .navLink:focus-visible {
@@ -132,7 +136,7 @@
   position: absolute;
   inset: auto 0 1px;
   height: 3px;
-  background: #EF383C;
+  background: var(--nav-link-accent, #EF383C);
   transform: scaleX(0);
   transform-origin: left;
   transition: transform 180ms ease;

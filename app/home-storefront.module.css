@@ -436,9 +436,9 @@ a.hubHeaderCta { background: #f3c367; color: #081e32; border-color: #f3c367; box
   box-shadow: 0 1px 3px #020914, 0 0 4px color-mix(in srgb, var(--format-accent) 45%, transparent);
   pointer-events: none;
 }
-.paperback { --format-accent: #ff6469; }
-.kindle { --format-accent: #ffd05c; }
-.directPdf { --format-accent: #55d8ff; }
+.paperback { --format-accent: var(--paperback-accent); }
+.kindle { --format-accent: var(--kindle-accent); }
+.directPdf { --format-accent: var(--direct-pdf-accent); }
 
 .hvacRig {
   position: absolute;
@@ -452,9 +452,10 @@ a.hubHeaderCta { background: #f3c367; color: #081e32; border-color: #f3c367; box
   bottom: 18px;
   width: auto;
   height: calc(100% - 22px);
-  filter: grayscale(1) contrast(.55) sepia(1) hue-rotate(176deg) saturate(7) brightness(.45) blur(.45px);
-  mask-image: linear-gradient(#000 56%, #0008);
-  opacity: .82;
+  filter: grayscale(1) contrast(.8) sepia(1) hue-rotate(176deg) saturate(6.6) brightness(.61)
+    drop-shadow(0 0 2px #4a9dff6b);
+  mask-image: linear-gradient(#000 63%, #000b);
+  opacity: .86;
 }
 .hvacHoses {
   position: absolute;
@@ -523,6 +524,9 @@ a.hubHeaderCta { background: #f3c367; color: #081e32; border-color: #f3c367; box
 
 /* Shared chapter introductions and thin brand-gold transitions on the hub. */
 .hubPage {
+  --paperback-accent: #ff6469;
+  --kindle-accent: #ffd05c;
+  --direct-pdf-accent: #55d8ff;
   --hub-divider: #f3c36770;
   --hub-accent: #5ab9e6;
 }
@@ -636,7 +640,7 @@ a.hubHeaderCta { background: #f3c367; color: #081e32; border-color: #f3c367; box
   z-index: 1;
 }
 
-.storefront::after, .resume::before, .resume::after, .lane::before, .newsletter::before {
+.storefront::before, .storefront::after, .resume::before, .resume::after, .lane::before, .newsletter::before {
   content: "";
   position: absolute;
   pointer-events: none;
@@ -659,18 +663,28 @@ a.hubHeaderCta { background: #f3c367; color: #081e32; border-color: #f3c367; box
   background: var(--book-hero-art) 74% top / 380% 125% no-repeat #021633;
 }
 
-.storefront::after {
-  /* Small chips in the epoxy floor sit over the original amber reflection. */
+.storefront::before, .storefront::after {
   inset: auto 0 0;
   height: clamp(156px, 18vw, 270px);
   z-index: -1;
-  background:
-    radial-gradient(ellipse 1.6px .8px at 13px 9px, #d9dfdeaa 65%, transparent) 0 0 / 49px 25px repeat,
-    radial-gradient(ellipse .9px 1.4px at 29px 18px, #65c9c9a8 65%, transparent) 0 0 / 59px 33px repeat,
-    radial-gradient(ellipse 1.35px .8px at 18px 15px, #e49871a6 65%, transparent) 0 0 / 61px 39px repeat,
-    radial-gradient(ellipse 1.2px .75px at 11px 22px, #dfbd6aaa 65%, transparent) 0 0 / 53px 43px repeat,
-    var(--book-hero-art) center bottom / 100% 470% no-repeat;
   mask-image: linear-gradient(transparent, #000 32%);
+}
+
+.storefront::before {
+  /* Tint the book artwork's floor reflection blue beneath the HVAC worker. */
+  background:
+    radial-gradient(ellipse 42% 80% at 11% 45%, #061a35a6, transparent 80%),
+    linear-gradient(#14479c, #14479c),
+    var(--book-hero-art) center bottom / 100% 470% no-repeat;
+  background-blend-mode: normal, color, normal;
+}
+
+.storefront::after {
+  background:
+    radial-gradient(ellipse 1.55px .85px at 13px 9px, #f4f9ffd1 65%, transparent) 0 0 / 49px 31px repeat,
+    radial-gradient(ellipse 1.1px 1.45px at 29px 18px, #6bdc79bc 65%, transparent) 0 0 / 47px 27px repeat,
+    radial-gradient(ellipse 1.6px .85px at 18px 15px, #ff6469b0 65%, transparent) 0 0 / 65px 41px repeat,
+    radial-gradient(ellipse 1.35px .85px at 11px 22px, #ffd05cba 65%, transparent) 0 0 / 53px 29px repeat;
 }
 
 /* The two pipes share the book section's edges so the bend scales with the layout. */
@@ -857,7 +871,7 @@ a.hubHeaderCta { background: #f3c367; color: #081e32; border-color: #f3c367; box
 
 @media (forced-colors: active) {
   .storefront { --hvac-floor-space: 0px; }
-  .storefront::after, .storefront > .pexFrame, .hvacRig, .bookFormats a::after { display: none; }
+  .storefront::before, .storefront::after, .storefront > .pexFrame, .hvacRig, .bookFormats a::after { display: none; }
   .storefront .bookTitle {
     background: none;
     color: CanvasText;
