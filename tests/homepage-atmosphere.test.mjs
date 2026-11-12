@@ -9,8 +9,9 @@ test("homepage backgrounds reuse the book page artwork and local trade photograp
   const bookCss = readFileSync(new URL("../app/page-shell.css", import.meta.url), "utf8");
   const bookArt = bookCss.match(/url\("(\/optimized\/book-hero-[^"]+)"\)/)?.[1];
   assert.ok(bookArt && css.includes(`url("${bookArt}")`), "the homepage should use the book page backdrop");
-  const urls = new Set([...css.matchAll(/url\("\/optimized\/atmosphere\/([^"]+)"\)/g)].map((match) => match[1]));
-  for (const name of ["worker-digital-hvac.webp", "worker-pex-valve.webp", "worker-painter-260-v2.webp", "masonry-760.webp", "concrete-mixer-500.webp", "power-lines-1080.webp"]) {
+  const formats = readFileSync(new URL("../app/home-book-formats.tsx", import.meta.url), "utf8");
+  const urls = new Set([...(css + formats).matchAll(/"\/optimized\/atmosphere\/([^"]+)"/g)].map((match) => match[1]));
+  for (const name of ["worker-kneeling-hvac.webp", "worker-pex-valve.webp", "worker-painter-260-v2.webp", "masonry-760.webp", "concrete-mixer-500.webp", "power-lines-1080.webp"]) {
     assert.ok(urls.has(name), `${name} is unused`);
   }
   for (const name of urls) assert.ok(existsSync(new URL(name, assetDir)), `${name} is missing`);

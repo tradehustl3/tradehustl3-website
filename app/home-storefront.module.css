@@ -27,6 +27,7 @@
 }
 
 .hero {
+  --hero-start: clamp(70px, 10vw, 175px);
   width: min(100%, 1740px);
   margin-inline: auto;
   display: grid;
@@ -34,7 +35,7 @@
   align-items: center;
   gap: clamp(22px, 3.5vw, 62px);
   padding: clamp(34px, 4vw, 70px) clamp(84px, 19vw, 330px)
-    clamp(42px, 4.7vw, 82px) clamp(70px, 10vw, 175px);
+    clamp(42px, 4.7vw, 82px) var(--hero-start);
 }
 
 .hero h1, .split h2, .preview h2, .laneIntro h2 {
@@ -394,14 +395,18 @@ a.hubHeaderCta { background: #f3c367; color: #081e32; border-color: #f3c367; box
 .bookPreview > button:hover { background: #ffe184; }
 .bookPreview > .form { margin-inline: auto; text-align: left; }
 .bookPreviewDescription { margin: 0 0 14px; color: #dbe4eb; line-height: 1.5; }
+.bookFormatDisplay { position: relative; margin-top: 14px; }
 .bookFormats {
+  --hose-socket: 62%;
+  position: relative;
+  z-index: 1;
   display: flex;
   justify-content: center;
   flex-wrap: wrap;
   gap: clamp(7px, 1vw, 15px);
-  margin-top: 14px;
 }
 .bookFormats a {
+  position: relative;
   gap: 5px;
   min-width: clamp(76px, 8.2vw, 124px);
   min-height: 44px;
@@ -419,19 +424,57 @@ a.hubHeaderCta { background: #f3c367; color: #081e32; border-color: #f3c367; box
 }
 .bookFormats a > [aria-hidden="true"] { display: none; }
 .bookFormats a:hover { color: #fff; }
+.bookFormats a::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: var(--hose-socket);
+  width: 9px;
+  height: 7px;
+  transform: translateX(-50%);
+  border-radius: 1px 1px 3px 3px;
+  background: linear-gradient(90deg, #553a22, #efcf8e 42%, #97703a 76%, #49321f);
+  box-shadow: 0 1px 3px #020914, 0 0 4px color-mix(in srgb, var(--format-accent) 45%, transparent);
+  pointer-events: none;
+}
 .paperback { --format-accent: #ff6469; }
 .kindle { --format-accent: #ffd05c; }
 .directPdf { --format-accent: #55d8ff; }
 
+.hvacRig {
+  position: absolute;
+  inset: 100% 0 auto calc(10px - var(--hero-start));
+  height: var(--hvac-rig-height);
+  pointer-events: none;
+}
+.kneelingHvac {
+  position: absolute;
+  left: 0;
+  bottom: 18px;
+  width: auto;
+  height: calc(100% - 22px);
+  opacity: .86;
+}
+.hvacHoses {
+  position: absolute;
+  inset: -5px 0 0;
+  width: 100%;
+  height: calc(100% + 5px);
+}
+
 @media (max-width: 1100px) {
-  .hero { padding-inline: clamp(36px, 9vw, 106px) clamp(64px, 14vw, 155px); }
+  .hero {
+    --hero-start: clamp(36px, 9vw, 106px);
+    padding-inline: var(--hero-start) clamp(64px, 14vw, 155px);
+  }
   .coverFrame { width: min(100%, 25vw); }
 }
 @media (max-width: 720px) {
   .hero {
+    --hero-start: clamp(23px, 7vw, 48px);
     grid-template-columns: minmax(0, 1fr);
     gap: 19px;
-    padding: 23px clamp(23px, 7vw, 48px) 34px;
+    padding: 23px var(--hero-start) 34px;
   }
   .coverFrame { grid-row: 1; width: min(46vw, 205px); }
   .storefront .bookTitle { font-size: clamp(2.45rem, 10.8vw, 4.5rem); }
@@ -444,6 +487,10 @@ a.hubHeaderCta { background: #f3c367; color: #081e32; border-color: #f3c367; box
     margin-inline: auto;
   }
   .bookFormats a { min-width: 0; padding-inline: 5px; font-size: clamp(.76rem, 3.3vw, .94rem); }
+  .paperback { --hose-socket: 88%; }
+}
+@media (max-width: 380px) {
+  .kneelingHvac { height: calc(100% - 34px); }
 }
 
 /* Section 2 only: one centered product presentation, with account entry off-page. */
@@ -589,7 +636,7 @@ a.hubHeaderCta { background: #f3c367; color: #081e32; border-color: #f3c367; box
   z-index: 1;
 }
 
-.storefront::before, .storefront::after, .resume::before, .resume::after, .lane::before, .newsletter::before {
+.storefront::after, .resume::before, .resume::after, .lane::before, .newsletter::before {
   content: "";
   position: absolute;
   pointer-events: none;
@@ -597,6 +644,8 @@ a.hubHeaderCta { background: #f3c367; color: #081e32; border-color: #f3c367; box
 
 .storefront {
   --book-hero-art: url("/optimized/book-hero-trades-v1.webp");
+  --hvac-rig-height: clamp(134px, 13vw, 192px);
+  --hvac-floor-space: clamp(56px, 4.25vw, 70px);
   --pex-edge: clamp(10px, 2.3vw, 40px);
   --pex-gap: clamp(9px, 1.55vw, 26px);
   --pex-width: clamp(4px, .48vw, 8px);
@@ -605,27 +654,23 @@ a.hubHeaderCta { background: #f3c367; color: #081e32; border-color: #f3c367; box
   --pex-bottom: clamp(9px, 1.6vw, 28px);
   --pex-lever: clamp(17px, 2.55vw, 45px);
   --pex-valve-top: clamp(155px, 14.8vw, 260px);
-  padding-bottom: var(--pex-band);
+  padding-bottom: calc(var(--pex-band) + var(--hvac-floor-space));
   /* Use the clear wall between the center and right figures in the /book artwork. */
   background: var(--book-hero-art) 74% top / 380% 125% no-repeat #021633;
 }
 
 .storefront::after {
-  /* Blend in the original floor and amber reflection from the bottom of the same artwork. */
+  /* Small chips in the epoxy floor sit over the original amber reflection. */
   inset: auto 0 0;
-  height: clamp(122px, 15vw, 224px);
+  height: clamp(156px, 18vw, 270px);
   z-index: -1;
-  background: var(--book-hero-art) center bottom / 100% 470% no-repeat;
+  background:
+    radial-gradient(ellipse 1.6px .8px at 13px 9px, #d9dfdeaa 65%, transparent) 0 0 / 49px 25px repeat,
+    radial-gradient(ellipse .9px 1.4px at 29px 18px, #65c9c9a8 65%, transparent) 0 0 / 59px 33px repeat,
+    radial-gradient(ellipse 1.35px .8px at 18px 15px, #e49871a6 65%, transparent) 0 0 / 61px 39px repeat,
+    radial-gradient(ellipse 1.2px .75px at 11px 22px, #dfbd6aaa 65%, transparent) 0 0 / 53px 43px repeat,
+    var(--book-hero-art) center bottom / 100% 470% no-repeat;
   mask-image: linear-gradient(transparent, #000 32%);
-}
-
-.storefront::before {
-  top: clamp(154px, 14vw, 245px);
-  left: max(2%, calc(50% - 850px));
-  width: clamp(122px, 14vw, 246px);
-  aspect-ratio: 246 / 360;
-  background: url("/optimized/atmosphere/worker-digital-hvac.webp") center / contain no-repeat;
-  opacity: .88;
 }
 
 /* The two pipes share the book section's edges so the bend scales with the layout. */
@@ -785,16 +830,10 @@ a.hubHeaderCta { background: #f3c367; color: #081e32; border-color: #f3c367; box
   opacity: .58;
 }
 
-@media (max-width: 1100px) {
-  .storefront::before {
-    left: clamp(-26px, 6vw - 72px, 0px);
-    width: clamp(108px, 13vw, 144px);
-    opacity: .66;
-  }
-}
-
 @media (max-width: 720px) {
   .storefront {
+    --hvac-rig-height: 146px;
+    --hvac-floor-space: 78px;
     --pex-edge: 9px;
     --pex-gap: 9px;
     --pex-width: 4px;
@@ -803,7 +842,6 @@ a.hubHeaderCta { background: #f3c367; color: #081e32; border-color: #f3c367; box
     --pex-lever: clamp(13px, 3.8vw, 24px);
     --pex-valve-top: clamp(115px, 37vw, 216px);
   }
-  .storefront::before { top: clamp(78px, 26vw, 156px); left: -8px; width: clamp(83px, 27vw, 166px); opacity: .66; }
   .pexFrame::after { width: clamp(76px, 24vw, 151px); opacity: .66; }
 
   .resumeProduct .resumeProductStory { margin-bottom: 20px; }
@@ -818,7 +856,8 @@ a.hubHeaderCta { background: #f3c367; color: #081e32; border-color: #f3c367; box
 }
 
 @media (forced-colors: active) {
-  .storefront::before, .storefront::after, .storefront > .pexFrame { display: none; }
+  .storefront { --hvac-floor-space: 0px; }
+  .storefront::after, .storefront > .pexFrame, .hvacRig, .bookFormats a::after { display: none; }
   .storefront .bookTitle {
     background: none;
     color: CanvasText;
