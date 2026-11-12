@@ -34,10 +34,10 @@
 
 .header:has(.hubNav) {
   background:
-    linear-gradient(90deg, #78bbff68, #b9dfff3d 42%, transparent 90%) top / 100% 1px no-repeat,
-    repeating-linear-gradient(118deg, #b9dfff0a 0 1px, transparent 1px 6px),
-    linear-gradient(118deg, transparent 27%, #9fd2ff0c 42%, #9fd2ff20 48%, transparent 64%),
-    radial-gradient(ellipse 23rem 9rem at 13% 0%, #3d8ed366, transparent 80%),
+    linear-gradient(90deg, #78bbff4a, #b9dfff2b 42%, transparent 90%) top / 100% 1px no-repeat,
+    repeating-linear-gradient(118deg, #b9dfff05 0 1px, transparent 1px 6px),
+    linear-gradient(118deg, transparent 27%, #9fd2ff08 42%, #9fd2ff14 48%, transparent 64%),
+    radial-gradient(ellipse 23rem 9rem at 13% 0%, #3d8ed350, transparent 80%),
     linear-gradient(180deg, #142e51, #0c2040);
 }
 
