@@ -304,7 +304,7 @@ test("the book hero features the approved cover, preview and format selection", 
   assert.match(storefront, /optimized\/book-cover-v3\.webp/);
   assert.match(storefront, /THE BOOK/);
   assert.match(storefront, /BY MR\. HUSTL3/);
-  assert.match(storefront, /A Story From the Trades\. A Message for the Next Generation\./);
+  assert.match(storefront.replace(/<[^>]*>/g, ""), /A Story From the Trades\. A Message for the Next Generation\./);
   assert.match(storefront, /Get Your 7 FREE Pages/);
   assert.match(storefront, /id="homepage-book-email"[^>]*hidden/);
   assert.doesNotMatch(storefront, /Read 7 Pages FREE|Explore the Book|More Than a Book/);

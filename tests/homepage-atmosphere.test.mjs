@@ -7,7 +7,7 @@ const assetDir = new URL("../public/optimized/atmosphere/", import.meta.url);
 
 test("homepage backgrounds use local book workers, masonry, and jobsite photography", () => {
   const urls = new Set([...css.matchAll(/url\("\/optimized\/atmosphere\/([^"]+)"\)/g)].map((match) => match[1]));
-  for (const name of ["worker-hvac-300-v2.webp", "worker-wrench-300-v2.webp", "worker-painter-260-v2.webp", "masonry-760.webp", "concrete-mixer-500.webp", "power-lines-1080.webp"]) {
+  for (const name of ["worker-digital-hvac.webp", "worker-pex-valve.webp", "book-paint.webp", "worker-painter-260-v2.webp", "masonry-760.webp", "concrete-mixer-500.webp", "power-lines-1080.webp"]) {
     assert.ok(urls.has(name), `${name} is unused`);
   }
   for (const name of urls) assert.ok(existsSync(new URL(name, assetDir)), `${name} is missing`);

@@ -6,6 +6,12 @@ import { ResourceForm } from './resource-form';
 import { ConversionCta } from './conversion-cta';
 import styles from './home-storefront.module.css';
 
+const FORMATS = [
+  ['Paperback', AMAZON_PAPERBACK.url, 'amazon-paperback', styles.paperback],
+  ['Kindle', AMAZON_KINDLE.url, 'amazon-kindle', styles.kindle],
+  ['Direct PDF', DIRECT_EBOOK.url, 'direct-ebook', styles.directPdf],
+] as const;
+
 /** One homepage preview action; the existing resource form owns fulfillment. */
 export function HomeBookPreview() {
   const [open, setOpen] = useState(false);
@@ -45,12 +51,10 @@ export function HomeBookPreview() {
           ctaId="book-sample" ctaLocation="homepage_book_preview" metaLeadContentName="book_sample" />
         <p className={styles.finePrint}>Open your sample after submission. We’ll also email the link. To receive optional marketing updates, use Join the Movement below.</p>
       </div>
-      <div className={styles.bookFormats} aria-label="Buy the book">
-        {[["Paperback", AMAZON_PAPERBACK.url, "amazon-paperback"], ["Kindle", AMAZON_KINDLE.url, "amazon-kindle"], ["Direct PDF", DIRECT_EBOOK.url, "direct-ebook"]].map(([label, href, cta], index) => (
-          <span key={cta}>
-            {index > 0 && <span className={styles.formatDivider} aria-hidden="true">|</span>}
-            <ConversionCta variant="format" href={href} rel="noopener" data-cta={cta} data-item={cta} data-cta-location="homepage_book_formats">{label}</ConversionCta>
-          </span>
+      <div className={styles.bookFormats} role="group" aria-label="Buy the book">
+        {FORMATS.map(([label, href, cta, className]) => (
+          <ConversionCta key={cta} variant="format" className={className} href={href} rel="noopener"
+            data-cta={cta} data-item={cta} data-cta-location="homepage_book_formats">{label}</ConversionCta>
         ))}
       </div>
     </div>
