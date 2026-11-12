@@ -87,20 +87,8 @@
 .hero .lead, .newsletter .lead { color: #dbe4eb; }
 
 .coverFrame {
-  position: relative;
-  isolation: isolate;
   justify-self: center;
   width: min(100%, clamp(210px, 21vw, 350px));
-}
-
-.coverFrame::before {
-  content: "";
-  position: absolute;
-  inset: -11% -25% -13% -72%;
-  z-index: -1;
-  pointer-events: none;
-  background: url("/optimized/atmosphere/book-paint.webp") center / 100% 100% no-repeat;
-  opacity: .2;
 }
 
 .cover {
@@ -601,13 +589,14 @@ a.hubHeaderCta { background: #f3c367; color: #081e32; border-color: #f3c367; box
   z-index: 1;
 }
 
-.storefront::before, .resume::before, .resume::after, .lane::before, .newsletter::before {
+.storefront::before, .storefront::after, .resume::before, .resume::after, .lane::before, .newsletter::before {
   content: "";
   position: absolute;
   pointer-events: none;
 }
 
 .storefront {
+  --book-hero-art: url("/optimized/book-hero-trades-v1.webp");
   --pex-edge: clamp(10px, 2.3vw, 40px);
   --pex-gap: clamp(9px, 1.55vw, 26px);
   --pex-width: clamp(4px, .48vw, 8px);
@@ -617,16 +606,17 @@ a.hubHeaderCta { background: #f3c367; color: #081e32; border-color: #f3c367; box
   --pex-lever: clamp(17px, 2.55vw, 45px);
   --pex-valve-top: clamp(155px, 14.8vw, 260px);
   padding-bottom: var(--pex-band);
-  background:
-    radial-gradient(circle at 5% 17%, #ffd06436 0 1px, transparent 2px),
-    radial-gradient(circle at 18% 9%, #ffd0642e 0 1px, transparent 2px),
-    radial-gradient(circle at 15% 81%, #ffd06430 0 1px, transparent 2px),
-    radial-gradient(circle at 40% 83%, #ffd06431 0 1px, transparent 2px),
-    radial-gradient(circle at 87% 13%, #ffd06434 0 1px, transparent 2px),
-    radial-gradient(circle at 92% 74%, #ffd06436 0 1px, transparent 2px),
-    radial-gradient(ellipse at 62% 40%, #123e8888, transparent 67%),
-    linear-gradient(110deg, #04132fe8, #071d4be0 60%, #04132ff0),
-    url("/optimized/atmosphere/texture-960.webp") center 36% / cover #07192f;
+  /* Use the clear wall between the center and right figures in the /book artwork. */
+  background: var(--book-hero-art) 74% top / 380% 125% no-repeat #021633;
+}
+
+.storefront::after {
+  /* Blend in the original floor and amber reflection from the bottom of the same artwork. */
+  inset: auto 0 0;
+  height: clamp(122px, 15vw, 224px);
+  z-index: -1;
+  background: var(--book-hero-art) center bottom / 100% 470% no-repeat;
+  mask-image: linear-gradient(transparent, #000 32%);
 }
 
 .storefront::before {
@@ -644,14 +634,6 @@ a.hubHeaderCta { background: #f3c367; color: #081e32; border-color: #f3c367; box
   inset: 0;
   z-index: 0;
   pointer-events: none;
-}
-.pexFrame::before {
-  content: "";
-  position: absolute;
-  inset: auto 0 0;
-  height: var(--pex-band);
-  border-top: 1px solid #75a2d037;
-  background: linear-gradient(#06152f, #030e21);
 }
 .pexFrame::after {
   content: "";
@@ -836,7 +818,7 @@ a.hubHeaderCta { background: #f3c367; color: #081e32; border-color: #f3c367; box
 }
 
 @media (forced-colors: active) {
-  .storefront::before, .storefront > .pexFrame, .coverFrame::before { display: none; }
+  .storefront::before, .storefront::after, .storefront > .pexFrame { display: none; }
   .storefront .bookTitle {
     background: none;
     color: CanvasText;
