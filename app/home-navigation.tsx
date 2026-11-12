@@ -35,7 +35,7 @@ export function HomeNavigation({ campaign = false }: { campaign?: boolean }) {
   }
 
   return (
-    <nav className={styles.nav} aria-label="Primary navigation">
+    <nav className={campaign ? styles.nav : `${styles.nav} ${styles.hubNav}`} aria-label="Primary navigation">
       <div
         className={styles.navLinks}
         ref={group}
@@ -60,7 +60,7 @@ export function HomeNavigation({ campaign = false }: { campaign?: boolean }) {
         <Link href="#resume-start" className={styles.headerCta} data-analytics-event="cta_click"
           data-location="sticky_header" data-item="resume_builder">Build my free preview</Link>
       ) : (
-        <ConversionCta href="#book-preview" variant="secondary" data-analytics-event="cta_click"
+        <ConversionCta href="#book-preview" variant="secondary" className={styles.hubSampleLink} data-analytics-event="cta_click"
           data-location="sticky_header" data-item="book_sample">Free book sample</ConversionCta>
       )}
     </nav>

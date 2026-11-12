@@ -80,6 +80,9 @@
   font-weight: 600;
 }
 
+.nav .hubSampleLink { color: #ff686b; }
+.hubSampleLink > [aria-hidden="true"] { color: #f1c357; }
+
 .navLinks {
   position: relative;
   display: flex;
@@ -655,6 +658,31 @@
   .navLinks { width: 100%; justify-content: space-between; gap: 0 10px; }
   .navLink { font-size: 14px; }
   .headerCta { justify-content: center; min-height: 44px; }
+
+  .headerInner:has(.hubNav) {
+    position: relative;
+    justify-content: flex-start;
+    gap: 0;
+    padding: 8px 14px 2px;
+  }
+  .headerInner:has(.hubNav) .brand > span { padding: 4px 8px 5px; }
+  .headerInner:has(.hubNav) .brand img { height: 34px; }
+  .headerInner:has(.hubNav) .brand span span { font-size: .55rem; }
+  .hubNav .navLinks {
+    flex-wrap: nowrap;
+    justify-content: space-evenly;
+    gap: 6px;
+  }
+  .hubNav .navLink { font-size: clamp(.8rem, 3.45vw, .92rem); }
+  .hubNav .hubSampleLink {
+    position: absolute;
+    inset: 11px 14px auto auto;
+    width: auto;
+    min-height: 44px;
+    padding: 8px 11px;
+    font-size: .85rem;
+    white-space: nowrap;
+  }
 
   .heroLead {
     font-size: 17px;
