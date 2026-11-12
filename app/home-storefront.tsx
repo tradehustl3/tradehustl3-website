@@ -20,7 +20,7 @@ export function HomeStorefront() {
             <span>A Message for the</span>{' '}
             <strong>Next Generation.</strong>
           </h2>
-          <p className={styles.slogan}>BUILT BY HUSTL3. BACKED BY TRADE.</p>
+          <p className={styles.slogan}>BUILT BY HUSTL3. BACKED BY TRADES.</p>
           <HomeBookPreview />
         </div>
         <div className={styles.coverFrame}>
