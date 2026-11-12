@@ -452,7 +452,9 @@ a.hubHeaderCta { background: #f3c367; color: #081e32; border-color: #f3c367; box
   bottom: 18px;
   width: auto;
   height: calc(100% - 22px);
-  opacity: .86;
+  filter: grayscale(1) contrast(.55) sepia(1) hue-rotate(176deg) saturate(7) brightness(.45) blur(.45px);
+  mask-image: linear-gradient(#000 56%, #0008);
+  opacity: .82;
 }
 .hvacHoses {
   position: absolute;
