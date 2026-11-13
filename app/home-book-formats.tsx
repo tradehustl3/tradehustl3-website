@@ -60,8 +60,13 @@ export function HomeBookFormats() {
 
         context.beginPath();
         context.moveTo(startX, startY);
-        context.bezierCurveTo(startX, lowY, riseX - turn, lowY, riseX, riseY);
-        context.bezierCurveTo(riseX, endY + 9, endX, endY + 9, endX, endY);
+        if (index === 0) {
+          const verticalLead = (startY - endY) / 3;
+          context.bezierCurveTo(startX, startY - verticalLead, endX, endY + verticalLead, endX, endY);
+        } else {
+          context.bezierCurveTo(startX, lowY, riseX - turn, lowY, riseX, riseY);
+          context.bezierCurveTo(riseX, endY + 9, endX, endY + 9, endX, endY);
+        }
         context.strokeStyle = '#020914';
         context.lineWidth = 5.4;
         context.stroke();

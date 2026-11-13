@@ -455,7 +455,7 @@ a.hubHeaderCta { background: #f3c367; color: #081e32; border-color: #f3c367; box
   filter: grayscale(1) contrast(.8) sepia(1) hue-rotate(176deg) saturate(6.6) brightness(.61)
     drop-shadow(0 0 2px #4a9dff6b);
   mask-image: linear-gradient(#000 63%, #000b);
-  opacity: .86;
+  opacity: .77;
 }
 .hvacHoses {
   position: absolute;
@@ -698,12 +698,12 @@ a.hubHeaderCta { background: #f3c367; color: #081e32; border-color: #f3c367; box
   content: "";
   position: absolute;
   top: var(--pex-valve-top);
-  right: calc(var(--pex-edge) + var(--pex-gap) + var(--pex-width) + var(--pex-lever) - 5px);
-  width: clamp(112px, 12.7vw, 223px);
-  aspect-ratio: 223 / 390;
-  transform: translateY(-35.4%);
-  background: url("/optimized/atmosphere/worker-pex-valve.webp") center / contain no-repeat;
-  opacity: .88;
+  right: calc(var(--pex-edge) + var(--pex-gap) + var(--pex-width) + var(--pex-lever) - 7px);
+  width: clamp(68px, 10vw, 172px);
+  aspect-ratio: 218 / 560;
+  transform: translateY(-24%);
+  background: url("/optimized/atmosphere/book-plumber-standing.webp") center / contain no-repeat;
+  opacity: .79;
 }
 .pexPipe {
   position: absolute;
@@ -722,16 +722,49 @@ a.hubHeaderCta { background: #f3c367; color: #081e32; border-color: #f3c367; box
   border-width: 0 1.5px 1.5px 0;
   border-bottom-right-radius: calc(var(--pipe-radius) - var(--pex-width) * .37);
 }
-.pexPipe::after {
-  content: "";
+.bookWoman {
   position: absolute;
-  top: clamp(24px, 4vw, 70px);
-  right: calc(-1 * var(--pex-width) - 2px);
-  width: calc(var(--pex-width) + 4px);
-  height: clamp(5px, .72vw, 12px);
-  border-radius: 2px;
-  background: linear-gradient(180deg, #8c98a4, #eef5fc 46%, #5c6976);
-  box-shadow: 0 1px 2px #030817b0;
+  top: var(--pex-valve-top);
+  left: clamp(12px, 2.1vw, 36px);
+  width: clamp(68px, 10.8vw, 185px);
+  aspect-ratio: 236 / 560;
+  transform: translateY(-24%);
+  background: url("/optimized/atmosphere/book-tradeswoman.webp") center / contain no-repeat;
+  opacity: .79;
+}
+.pexVerticalClips, .pexHorizontalClips {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.pexVerticalClips {
+  flex-direction: column;
+  top: clamp(34px, 5.3vw, 86px);
+  bottom: calc(var(--pex-bottom) + var(--pex-radius) + 14px);
+  right: calc(var(--pex-edge) - 3px);
+  width: calc(var(--pex-gap) + var(--pex-width) + 6px);
+}
+.pexHorizontalClips {
+  bottom: calc(var(--pex-bottom) - 3px);
+  left: 21%;
+  right: 29%;
+  height: calc(var(--pex-gap) + var(--pex-width) + 6px);
+}
+.pexVerticalClips i, .pexHorizontalClips i {
+  border-radius: 3px;
+  background: linear-gradient(var(--clip-angle), #637483, #e5edf4 45%, #778693);
+  box-shadow: 0 1px 3px #030817b0;
+}
+.pexVerticalClips i {
+  --clip-angle: 180deg;
+  width: 100%;
+  height: clamp(5px, .72vw, 10px);
+}
+.pexHorizontalClips i {
+  --clip-angle: 90deg;
+  width: clamp(5px, .72vw, 10px);
+  height: 100%;
 }
 .pexHot {
   --pipe-right: calc(var(--pex-edge) + var(--pex-gap));
@@ -779,11 +812,10 @@ a.hubHeaderCta { background: #f3c367; color: #081e32; border-color: #f3c367; box
     linear-gradient(180deg, #07192f, #0b2544 75%, #06172c);
 }
 
-/* Dark Brick Wall by Dimitrios Savva and Dario Barresi (CC0), polyhaven.com/a/dark_brick_wall. */
 .resume::before {
   inset: 0 0 auto;
   height: min(520px, 75%);
-  background: url("/optimized/atmosphere/masonry-760.webp") center top / 670px auto repeat-x;
+  background: repeating-linear-gradient(135deg, #80b7ee0a 0 1px, transparent 1px 4px);
   mask-image: linear-gradient(180deg, #000 5%, #000b 50%, transparent);
   opacity: .65;
 }
@@ -856,11 +888,11 @@ a.hubHeaderCta { background: #f3c367; color: #081e32; border-color: #f3c367; box
     --pex-lever: clamp(13px, 3.8vw, 24px);
     --pex-valve-top: clamp(115px, 37vw, 216px);
   }
-  .pexFrame::after { width: clamp(76px, 24vw, 151px); opacity: .66; }
+  .pexFrame::after { width: clamp(51px, 17vw, 106px); }
+  .bookWoman { width: clamp(58px, 19vw, 116px); }
 
   .resumeProduct .resumeProductStory { margin-bottom: 20px; }
   .resume.resumeProduct { padding-bottom: clamp(70px, 18vw, 96px); }
-  .resume::before { background-size: 520px auto; }
   .resume::after { right: -6px; }
   .lane::before { height: 450px; background-position: center, 57% 28%; }
   .lane .sectionHeading .kicker::before, .lane .sectionHeading .kicker::after,

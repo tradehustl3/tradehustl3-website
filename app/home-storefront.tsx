@@ -8,7 +8,10 @@ export function HomeStorefront() {
       <div className={styles.pexFrame} aria-hidden="true">
         <span className={`${styles.pexPipe} ${styles.pexHot}`} />
         <span className={`${styles.pexPipe} ${styles.pexCold}`} />
+        <span className={styles.bookWoman} />
         <span className={styles.pexValve} />
+        <div className={styles.pexVerticalClips}><i /><i /><i /><i /></div>
+        <div className={styles.pexHorizontalClips}><i /><i /></div>
       </div>
       <div className={styles.hero}>
         <div className={styles.bookCopy}>
