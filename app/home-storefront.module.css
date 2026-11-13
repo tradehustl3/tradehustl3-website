@@ -452,10 +452,10 @@ a.hubHeaderCta { background: #f3c367; color: #081e32; border-color: #f3c367; box
   bottom: 18px;
   width: auto;
   height: calc(100% - 22px);
-  filter: grayscale(1) contrast(.8) sepia(1) hue-rotate(176deg) saturate(6.6) brightness(.61)
-    drop-shadow(0 0 2px #4a9dff6b);
-  mask-image: linear-gradient(#000 63%, #000b);
-  opacity: .77;
+  /* Keep the full pose and gauge in the same navy palette as the standing workers. */
+  filter: grayscale(1) contrast(1.17) sepia(1) hue-rotate(176deg) saturate(4.5) brightness(.72)
+    drop-shadow(0 0 1px #2673be66);
+  opacity: var(--book-worker-opacity);
 }
 .hvacHoses {
   position: absolute;
@@ -647,6 +647,7 @@ a.hubHeaderCta { background: #f3c367; color: #081e32; border-color: #f3c367; box
 }
 
 .storefront {
+  --book-worker-opacity: .79;
   --book-hero-art: url("/optimized/book-hero-trades-v1.webp");
   --hvac-rig-height: clamp(134px, 13vw, 192px);
   --hvac-floor-space: clamp(56px, 4.25vw, 70px);
@@ -703,7 +704,7 @@ a.hubHeaderCta { background: #f3c367; color: #081e32; border-color: #f3c367; box
   aspect-ratio: 218 / 560;
   transform: translateY(-24%);
   background: url("/optimized/atmosphere/book-plumber-standing.webp") center / contain no-repeat;
-  opacity: .79;
+  opacity: var(--book-worker-opacity);
 }
 .pexPipe {
   position: absolute;
@@ -730,7 +731,7 @@ a.hubHeaderCta { background: #f3c367; color: #081e32; border-color: #f3c367; box
   aspect-ratio: 236 / 560;
   transform: translateY(-24%);
   background: url("/optimized/atmosphere/book-tradeswoman.webp") center / contain no-repeat;
-  opacity: .79;
+  opacity: var(--book-worker-opacity);
 }
 .pexVerticalClips, .pexHorizontalClips {
   position: absolute;
