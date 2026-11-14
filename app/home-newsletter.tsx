@@ -5,6 +5,7 @@ import styles from './home-storefront.module.css';
 export function HomeNewsletter() {
   return (
     <section className={`${styles.newsletter} ${styles.goldDivider}`} id="join-the-movement" aria-labelledby="movement-title">
+      <span className={styles.painterMoney} aria-hidden="true">$</span>
       <span id="built-by-a-tradesman" />
       <span id="hub-mission" />
       <div className={styles.sectionHeading}>

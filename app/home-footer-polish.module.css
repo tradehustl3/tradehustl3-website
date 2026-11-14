@@ -1,0 +1,47 @@
+.footerPolish {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  grid-template-columns: minmax(180px, .8fr) minmax(230px, 1fr) minmax(280px, 1.5fr);
+  align-items: start;
+  gap: clamp(20px, 3vw, 48px);
+  padding: 56px clamp(22px, 5vw, 76px) 65px;
+  overflow: hidden;
+  border-top: 2px solid rgba(103, 185, 232, .5);
+  background:
+    radial-gradient(ellipse at 0% 5%, rgba(28, 116, 180, .28), transparent 48%),
+    radial-gradient(ellipse at 100% 100%, rgba(184, 40, 55, .16), transparent 40%),
+    linear-gradient(180deg, #0a233a, #04111d);
+}
+.footerPolish::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 8px;
+  background: linear-gradient(90deg, #4ac9fd, #f5c45d 45%, #e62e35 80%, #a9ed4b);
+  box-shadow: 0 -5px 25px rgba(71, 164, 229, .35);
+}
+.footerPolish > * { min-width: 0; }
+.footerPolish p { margin: 0; color: #cad8e5; font-size: .88rem; line-height: 1.8; overflow-wrap: anywhere; }
+.footerPolish p a { color: #eec779; text-decoration: underline; text-underline-offset: 3px; }
+.footerPolish > nav { display: flex; flex-wrap: wrap; gap: 4px 18px; align-content: start; }
+.footerPolish > nav a { display: inline-flex; align-items: center; min-height: 44px; color: #e4edf5; font-size: .82rem; font-weight: 750; }
+.footerPolish > nav a:hover, .footerPolish > nav a:focus-visible { color: #f7cb68; text-decoration: underline; text-underline-offset: 4px; }
+.footerPolish :focus-visible { outline: 3px solid #f7cb68; outline-offset: 3px; }
+
+@media (max-width: 900px) {
+  .footerPolish { grid-template-columns: 1fr 1fr; }
+  .footerPolish > nav { grid-column: 1 / -1; }
+}
+@media (max-width: 600px) {
+  .footerPolish { grid-template-columns: minmax(0, 1fr); gap: 18px; padding: 36px 20px 48px; }
+  .footerPolish > nav { grid-column: auto; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2px 12px; padding-top: 14px; border-top: 1px solid rgba(171, 206, 229, .22); }
+  .footerPolish > nav a { padding: 6px 0; min-height: 44px; font-size: .83rem; line-height: 1.25; }
+  .footerPolish p { font-size: .84rem; }
+}
+@media (max-width: 340px) {
+  .footerPolish > nav { grid-template-columns: minmax(0, 1fr); }
+}
