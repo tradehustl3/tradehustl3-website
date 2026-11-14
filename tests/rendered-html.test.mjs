@@ -89,6 +89,7 @@ test("server-renders the corrected TRADE HUSTL3 brand and metadata", async () =>
   assert.match(html, /favicon\.svg/i);
   assert.match(html, /alt="TRADE HUSTL3 logo"/i);
   assert.match(html, /BUILT BY HUSTL3\. BACKED BY TRADES\./);
+  assert.doesNotMatch(html, /BACKED BY TRADE\./, "no retired slogan anywhere on the page");
   assert.match(html, /Skilled-Trades[\s\S]*Resume Builder/i);
 });
 
