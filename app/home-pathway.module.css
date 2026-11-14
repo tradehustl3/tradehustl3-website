@@ -178,11 +178,11 @@
   border-radius: 8px;
   background: rgba(23, 119, 213, .1);
 }
-.laneCreds a { color: #fff; font-weight: 800; font-size: .84rem; text-decoration: none; }
+.laneCreds a { display: inline-flex; align-items: center; min-height: 24px; color: #fff; font-weight: 800; font-size: .84rem; text-decoration: none; }
 .laneCreds a:hover { color: var(--gold); text-decoration: underline; }
 .laneCreds small { color: #9fb4c6; font-size: .68rem; }
 .laneSource { margin: auto 0 12px; color: #8597a7; font-size: .72rem; line-height: 1.4; }
-.laneSource a { color: #b9c9d6; }
+.laneSource a { display: inline-flex; align-items: center; min-height: 24px; color: #b9c9d6; }
 .laneActions { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .laneExplore {
   display: inline-flex;
@@ -198,7 +198,7 @@
   letter-spacing: .03em;
   box-shadow: 0 8px 18px rgba(215, 25, 32, .3);
 }
-.laneSecondary { color: #c8d6e2; font-size: .8rem; font-weight: 700; text-decoration: underline; text-underline-offset: 4px; }
+.laneSecondary { display: inline-flex; align-items: center; min-height: 24px; color: #c8d6e2; font-size: .8rem; font-weight: 700; text-decoration: underline; text-underline-offset: 4px; }
 .laneSecondary:hover { color: var(--gold); }
 .laneFooter { display: grid; justify-items: center; gap: 14px; margin-top: clamp(28px, 3.6vw, 44px); text-align: center; }
 .laneFooter p { margin: 0; color: #c8d6e2; }

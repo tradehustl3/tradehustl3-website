@@ -164,8 +164,11 @@ test("the closing mission and subscription preserve community links", async () =
   const newsletter = between(html, 'id="join-the-movement"', "<footer");
   assert.equal((newsletter.match(/<form\b/g) ?? []).length, 1);
   assert.match(newsletter, /data-cta-location="homepage_newsletter"/);
-  for (const label of ["Facebook", "Instagram", "TikTok", "YouTube", "LinkedIn", "X", "GitHub"]) {
+  for (const label of ["Facebook", "Instagram", "TikTok", "YouTube", "LinkedIn"]) {
     assert.ok(newsletter.includes(`aria-label="${label}"`), `${label} link`);
+  }
+  for (const label of ["X", "GitHub"]) {
+    assert.ok(!newsletter.includes(`aria-label="${label}"`), `${label} link removed`);
   }
 });
 
