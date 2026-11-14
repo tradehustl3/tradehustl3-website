@@ -926,10 +926,19 @@ a.hubHeaderCta { background: #f3c367; color: #081e32; border-color: #f3c367; box
   border-top: 2px solid #d5a35b;
   border-bottom: 3px solid #388ab7;
   background:
-    linear-gradient(180deg, #091b30c8, #10283caa 48%, #0d213271 100%),
-    url('/optimized/footer-mural/painter-sunset-desktop.webp?v=309b') center bottom / cover no-repeat #10263b;
+    linear-gradient(90deg, #122a417d, #10263a91 48%, #162a408c),
+    linear-gradient(180deg, #091b30a8, #10283cb3 48%, #0d21327d 100%),
+    url('/optimized/footer-mural/painter-silhouette-desktop.webp?v=311a') center bottom / cover no-repeat #10263b;
 }
 .newsletter::before { display: none; }
+.newsletter::after {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  background: #102b431c;
+  pointer-events: none;
+}
 .newsletter .sectionHeading h2 { color: #fff; text-shadow: 0 4px 22px #020b18; }
 .newsletter .sectionHeading .kicker { color: #ffcb73; }
 .newsletter .lead, .newsletter .finePrint,
@@ -939,17 +948,97 @@ a.hubHeaderCta { background: #f3c367; color: #081e32; border-color: #f3c367; box
 .newsletter .split { grid-template-columns: minmax(0, 1.12fr) minmax(0, .88fr); padding-right: clamp(95px, 11vw, 175px); }
 .newsletter .form { max-width: 470px; }
 
+/* The signup is the final invitation: trade color, strong hierarchy, clear controls. */
+.newsletter .sectionHeading .kicker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(8px, 1.5vw, 18px);
+  width: 100%;
+}
+.newsletter .sectionHeading .kicker::before,
+.newsletter .sectionHeading .kicker::after {
+  content: "";
+  display: block;
+  flex: 0 1 100px;
+  height: 3px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, #d83140, #f79b47 55%, #56a9e1);
+  box-shadow: 0 0 13px #ef6b4b80;
+}
+.newsletter .sectionHeading .kicker::after { transform: scaleX(-1); }
+.newsletter .sectionHeading .kicker span {
+  color: #f67c5b;
+  background: linear-gradient(100deg, #ff5564 4%, #ffad67 50%, #73c5f2 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 2px 9px #050d1bd9);
+}
+.newsletter .sectionHeading h2 {
+  font-size: clamp(2.6rem, 5.9vw, 5.7rem);
+  line-height: 1.02;
+  letter-spacing: -.025em;
+  -webkit-text-stroke: .5px #ffffffc4;
+  text-shadow: 0 2px 0 #344d64, 0 5px 0 #102439, 0 12px 22px #010712ed, 0 0 28px #e7525045;
+}
+.newsletter :global(nav[aria-label="TRADE HUSTL3 social media links"]) { gap: 14px; }
+.newsletter :global(nav[aria-label="TRADE HUSTL3 social media links"] a) {
+  border: 2px solid #ffffffb8;
+  box-shadow: 0 0 0 3px #102b46c4, 0 9px 22px #000b20a8, 0 0 15px #ec58475e;
+  transition: transform .18s ease, filter .18s ease, box-shadow .18s ease;
+}
+.newsletter :global(nav[aria-label="TRADE HUSTL3 social media links"] a:hover) {
+  transform: translateY(-4px) scale(1.07);
+  filter: saturate(1.2) brightness(1.12);
+  box-shadow: 0 0 0 3px #f1655ab5, 0 13px 28px #000b20ba;
+}
+.newsletter .form {
+  position: relative;
+  overflow: hidden;
+  padding: clamp(16px, 2vw, 25px);
+  border: 2px solid transparent;
+  background: linear-gradient(#071c32eb, #0b2944ec) padding-box,
+    linear-gradient(125deg, #ed4550 0%, #ffa44e 33%, #5faee8 78%, #d44858 100%) border-box;
+  box-shadow: 0 18px 44px #010a19bd, 0 0 30px #cf4e5254;
+}
+.newsletter .form::before {
+  content: "";
+  display: block;
+  position: absolute;
+  inset: 0 0 auto;
+  height: 5px;
+  background: linear-gradient(90deg, #de3546, #f5a24a, #4fabe3);
+}
+.newsletter .form :global(.field-row input) {
+  min-height: 54px;
+  border: 2px solid #88bde5;
+  border-radius: 8px;
+  box-shadow: 0 0 0 3px #d94d4d25;
+}
+.newsletter .form :global(.field-row input:focus-visible) { outline-color: #ff995f; }
+.newsletter .form :global(.button.form-button) {
+  border: 1px solid #ffb45f;
+  box-shadow: 0 5px 0 #87542a, 0 11px 22px #000b1d8c;
+  font-weight: 900;
+}
+
 @media (max-width: 720px) {
   .newsletter.newsletter {
     margin-top: -12px;
     padding-bottom: 235px;
     background:
-      linear-gradient(180deg, #101f30f5 0%, #14293de9 52%, #14293dba 65%, transparent 100%),
-      url('/optimized/footer-mural/painter-sunset-mobile.webp?v=309b') center bottom / auto 235px no-repeat #10263b;
+      linear-gradient(180deg, #101f30f5 0%, #14293de9 52%, #14293dbd 65%, #10263b55 100%),
+      url('/optimized/footer-mural/painter-silhouette-mobile.webp?v=311a') center bottom / auto 235px no-repeat #10263b;
   }
   .newsletter .split { grid-template-columns: 1fr; padding-right: var(--hub-gutter); }
   .newsletter .split > div:first-child { padding: 8px; }
   .newsletter .form { max-width: none; padding: 15px; }
+  .newsletter .sectionHeading .kicker { gap: 8px; font-size: .72rem; letter-spacing: .08em; }
+  .newsletter .sectionHeading .kicker::before,
+  .newsletter .sectionHeading .kicker::after { flex-basis: 32px; height: 2px; }
+  .newsletter .sectionHeading h2 { font-size: clamp(2.25rem, 10.1vw, 4rem); }
+  .newsletter :global(nav[aria-label="TRADE HUSTL3 social media links"]) { gap: 10px; }
 }
 
 @media (max-width: 720px) {
