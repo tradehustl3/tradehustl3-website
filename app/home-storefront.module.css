@@ -794,7 +794,16 @@ a.hubHeaderCta { background: #f3c367; color: #081e32; border-color: #f3c367; box
 }
 
 .lane {
-  background: linear-gradient(180deg, #0c2544, #081b32 65%, #06182c);
+  color: #18354b;
+  background: linear-gradient(180deg, #fff, #edf3f6 32%, #e6edf2);
+}
+
+.lane .discovery {
+  padding-inline: 16px;
+  border: 1px solid #647d91;
+  border-radius: 8px;
+  background: #0c2544;
+  color: #fff;
 }
 
 /* High voltage transmission tower and lines. Auburn WA by Ron Clausen (CC0), Wikimedia Commons. */
@@ -805,6 +814,7 @@ a.hubHeaderCta { background: #f3c367; color: #081e32; border-color: #f3c367; box
     radial-gradient(ellipse at 50% 36%, #081b31df, #081b3155 64%, transparent),
     url("/optimized/atmosphere/power-lines-1080.webp") center 36% / cover no-repeat;
   mask-image: linear-gradient(180deg, #000 30%, #000d 62%, transparent);
+  opacity: .08;
 }
 
 .lane .sectionHeading .kicker::after, .guide .kicker::after,

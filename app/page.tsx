@@ -51,9 +51,7 @@ function HubHome() {
       <TurnSkillsIntoOpportunity />
       <section className={`${hubStyles.lane} ${hubStyles.goldDivider}`} aria-labelledby="lane-title">
         <div className={`${hubStyles.laneIntro} ${hubStyles.sectionHeading}`}>
-          <p className={hubStyles.kicker}>CAREER PATHS</p>
-          <h2 id="lane-title">Find Your Lane</h2>
-          <p className={hubStyles.lead}>Where will your skills take you next? In school, switching careers, working in the field, or leading a crew—start where you are.</p>
+          <h2 id="lane-title">Choose Your Path</h2>
         </div>
         <HubStages />
         <details className={hubStyles.discovery} name="trade-discovery">
@@ -61,7 +59,7 @@ function HubHome() {
           <FindYourLane />
           <HubOutlook />
         </details>
-        <details className={hubStyles.discovery} name="trade-discovery">
+        <details id="trade-training" className={hubStyles.discovery} name="trade-discovery">
           <summary>Find training, apprenticeships &amp; credentials</summary>
           <FirstSteps />
           <KnowYourTrade trades={knowYourTradeTrades()} myths={knowYourTradeMyths()} />

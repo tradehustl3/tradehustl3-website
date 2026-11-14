@@ -73,7 +73,10 @@ export function HubStagePicker({ stages, organization }: { stages: readonly HubS
     <section className={styles.band} id="start-here" aria-labelledby="stage-title">
       <div className={styles.inner}>
         <div className={styles.bar}>
-          <h2 id="stage-title" className={styles.label}>Where are you in your trade?</h2>
+          <div className={styles.prompt}>
+            <h2 id="stage-title" className={styles.label}>Where are you in your trade journey?</h2>
+            <p>Pick where you are today to see your next step.</p>
+          </div>
           <div className={styles.tiles} role="group" aria-label="Choose where you are">
             {stages.map((option) => (
               <button
@@ -101,16 +104,19 @@ export function HubStagePicker({ stages, organization }: { stages: readonly HubS
             <p>{stage.copy}</p>
           </div>
           <ol className={styles.steps}>
-            {stage.steps.map((step, index) => (
+            {stage.steps.map((step) => (
               <li key={step.title}>
                 <Link
                   href={step.href}
+                  onClick={step.href === "#trade-training" ? () => {
+                    const training = document.getElementById("trade-training");
+                    if (training instanceof HTMLDetailsElement) training.open = true;
+                  } : undefined}
                   data-analytics-event="select_content"
                   data-location={`hub_stage_${stage.id}`}
                   data-destination={step.href}
                   data-item={step.title}
                 >
-                  <span className={styles.stepNumber} aria-hidden="true">0{index + 1}</span>
                   <strong>{step.title}</strong>
                   <small>{step.sub}</small>
                 </Link>
