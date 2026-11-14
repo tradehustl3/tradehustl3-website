@@ -11,6 +11,7 @@ import { HubStages } from './home-hub-stages';
 import { FindYourLane } from './home-find-your-lane';
 import { FirstSteps } from './home-first-steps';
 import { HomeNewsletter } from './home-newsletter';
+import footerPolish from './home-footer-polish.module.css';
 import hubStyles from './home-storefront.module.css';
 import { FreeGuides } from './home-free-guides';
 import { TurnSkillsIntoOpportunity } from './home-opportunity';
@@ -107,9 +108,9 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
 
       {isCampaignVisit ? <ResumeFirstBody /> : null}
 
-      <footer className={styles.footer} data-site-footer data-campaign-footer={isCampaignVisit || undefined}>
+      <footer className={`${styles.footer} ${footerPolish.footerPolish}`} data-site-footer data-campaign-footer={isCampaignVisit || undefined}>
         <div className={styles.footerBrand}><Image className={styles.footerMark} src="/optimized/th3-logo-header.webp" alt="TRADE HUSTL3 logo" width={248} height={160} /><strong>TRADE HUSTL3 LLC</strong></div>
-        <p>BUILT BY HUSTL3. BACKED BY TRADES.<br />TRADE HUSTL3 LLC · Atlanta, Georgia · <a href="mailto:support@tradehustl3.com">support@tradehustl3.com</a></p>
+        <p>BUILT BY HUSTL3. BACKED BY TRADE.<br />TRADE HUSTL3 LLC · Atlanta, Georgia · <a href="mailto:support@tradehustl3.com">support@tradehustl3.com</a></p>
         <nav aria-label="Footer links">
           <Link href="#resume-start">Resume Builder</Link>
           <Link href="/resources">Resource Center</Link>
