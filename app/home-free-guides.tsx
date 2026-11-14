@@ -21,7 +21,6 @@ export function FreeGuides() {
             <p className={styles.finePrint}>Access the six-page preview after successful submission. We’ll also send the link by email. This request delivers the resource only. Use Join the Movement below for optional marketing updates.</p>
           </div>
           <Link className={styles.textLink} href="/resources" data-analytics-event="cta_click" data-location="homepage_top_10_guide" data-item="top_10_trades">Explore the complete Resource Center <span aria-hidden="true">→</span></Link>
-          <div className={styles.guidePainter} aria-hidden="true" />
         </div>
       </div>
     </section>

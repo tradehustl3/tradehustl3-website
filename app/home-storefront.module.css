@@ -858,70 +858,21 @@ a.hubHeaderCta { background: #f3c367; color: #081e32; border-color: #f3c367; box
 .lane .sectionHeading .kicker, .guide .kicker { color: #d3eaff; letter-spacing: .16em; }
 
 .guide {
+  color: var(--hub-ink);
   background:
-    radial-gradient(ellipse 70% 20% at 50% 0%, #d84b3c85, transparent 95%),
-    radial-gradient(ellipse 28% 55% at 0% 45%, #bf2b4354, transparent 95%),
-    radial-gradient(ellipse 34% 50% at 100% 64%, #f19a3947, transparent 95%),
-    radial-gradient(ellipse at 23% 38%, #1a4a8266, transparent 60%),
-    linear-gradient(180deg, #112e4fba, #07192f 36%, #081d35),
-    url("/optimized/atmosphere/texture-960.webp") center 38% / cover #07192f;
-  border-top: 2px solid #df6857;
-  box-shadow: inset 0 15px 28px #e14e4333;
+    radial-gradient(ellipse 48% clamp(92px, 16vw, 185px) at left bottom, #b9d6ef, transparent),
+    radial-gradient(ellipse 45% clamp(92px, 16vw, 185px) at right bottom, #f3c4c8, transparent),
+    #fff;
+  border-top: 2px solid var(--hub-divider);
+  border-bottom: 1px solid var(--hub-divider);
 }
 
-/* Oversized painted-money silhouettes suggest trade earning potential without
-   implying any specific wages or guaranteed financial outcome. */
-.guide::before {
-  content: "$      $";
-  position: absolute;
-  z-index: 0;
-  inset: 12% -7% auto;
-  height: 80%;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  white-space: pre;
-  pointer-events: none;
-  font: 900 clamp(165px, 25vw, 410px)/1 Impact, "Arial Black", sans-serif;
-  letter-spacing: -.08em;
-  color: transparent;
-  -webkit-text-stroke: clamp(2px, .36vw, 5px) #baff57b8;
-  background: linear-gradient(168deg, #d4ff69c7, #a4f73fc9 46%, #80d532a6 78%, #d1ff6ac0);
-  background-clip: text;
-  opacity: .33;
-  transform: rotate(-6deg);
-  filter: drop-shadow(0 0 26px #eb53594d);
-}
-.guide::after {
-  content: "";
-  position: absolute;
-  z-index: 0;
-  inset: 0;
-  pointer-events: none;
-  background:
-    url('/optimized/atmosphere/guide-crane-silhouette.svg') left 12% bottom 5% / clamp(180px, 30vw, 380px) auto no-repeat,
-    linear-gradient(#f26a46a6, #b82345b0 76%, transparent) left 2.2% top 0 / 5px 57% no-repeat,
-    linear-gradient(#eb984f9c, #c62a44a0 72%, transparent) left 3.2% top 0 / 2px 38% no-repeat,
-    linear-gradient(#f27c53a0, #b52246a6 65%, transparent) right 2.3% top 0 / 5px 69% no-repeat,
-    linear-gradient(#f2ac5e9c, #c12d48a6 70%, transparent) right 3.4% top 0 / 2px 49% no-repeat,
-    radial-gradient(circle, #f87f5d9c 0 3px, transparent 5px) 3% 73% / 42px 61px no-repeat,
-    radial-gradient(circle, #e84b63a6 0 4px, transparent 6px) 96% 78% / 53px 77px no-repeat,
-    repeating-linear-gradient(180deg, #ef79554a 0 5px, transparent 5px 26px) left 2.2% top 49% / 5px 26% no-repeat,
-    repeating-linear-gradient(180deg, #f49f594a 0 8px, transparent 8px 34px) right 2.3% top 60% / 5px 24% no-repeat;
-  opacity: .8;
-}
-.guide .split { z-index: 1; }
-.guide .kicker { justify-content: center; text-align: center; gap: 12px; color: #ffc779; text-shadow: 0 0 15px #de5b4870; }
-.guide .kicker::before, .guide .kicker::after { background: linear-gradient(90deg, transparent, #e65a4e, #f7b55c); height: 2px; }
-.guide .split h2 { text-shadow: 0 3px 20px #021020, 0 0 25px #d9484a35; }
-.guidePainter {
-  width: min(100%, 440px);
-  height: clamp(150px, 20vw, 225px);
-  margin: 18px auto -42px;
-  background: url('/optimized/atmosphere/guide-painter-money.svg') center bottom / contain no-repeat;
-  filter: drop-shadow(0 0 18px #8fdd4b4a);
-  pointer-events: none;
-}
+.guide .kicker { color: #9f2733; }
+.guide .split h2 { color: var(--hub-ink); }
+.guide .lead, .guide .finePrint, .guide .form :global(.field-row label) { color: #374a59; }
+.guide .textLink { color: #9f2733; }
+.guide .form :global(.form-status) { color: #293e50 !important; }
+.guide .form :global(.form-status.is-error) { color: #8b171b !important; }
 
 .newsletter {
   background: radial-gradient(ellipse at 80% 15%, #103b74, transparent 67%) #07192f;
@@ -956,9 +907,6 @@ a.hubHeaderCta { background: #f3c367; color: #081e32; border-color: #f3c367; box
   .lane .sectionHeading .kicker::before, .lane .sectionHeading .kicker::after,
   .guide .kicker::before, .guide .kicker::after { flex-basis: 23px; }
   .lane .sectionHeading .kicker, .guide .kicker { letter-spacing: .08em; gap: 7px; font-size: .68rem; }
-  .guide::before { inset: 13% -16% auto; font-size: clamp(125px, 36vw, 230px); opacity: .18; }
-  .guide::after { opacity: .42; }
-  .guidePainter { width: min(95%, 350px); height: 165px; margin-bottom: -26px; }
   .newsletter::before { background-position: left -20px top 0; }
 }
 
