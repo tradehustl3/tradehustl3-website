@@ -885,8 +885,8 @@ a.hubHeaderCta { background: #f3c367; color: #081e32; border-color: #f3c367; box
   font: 900 clamp(165px, 25vw, 410px)/1 Impact, "Arial Black", sans-serif;
   letter-spacing: -.08em;
   color: transparent;
-  -webkit-text-stroke: clamp(2px, .36vw, 5px) #ed76528a;
-  background: linear-gradient(168deg, #e74460a6, #ffa04b8c 46%, #57a6e083 78%, #e84954a6);
+  -webkit-text-stroke: clamp(2px, .36vw, 5px) #baff57b8;
+  background: linear-gradient(168deg, #d4ff69c7, #a4f73fc9 46%, #80d532a6 78%, #d1ff6ac0);
   background-clip: text;
   opacity: .33;
   transform: rotate(-6deg);
@@ -899,6 +899,7 @@ a.hubHeaderCta { background: #f3c367; color: #081e32; border-color: #f3c367; box
   inset: 0;
   pointer-events: none;
   background:
+    url('/optimized/atmosphere/guide-crane-silhouette.svg') left 12% bottom 5% / clamp(180px, 30vw, 380px) auto no-repeat,
     linear-gradient(#f26a46a6, #b82345b0 76%, transparent) left 2.2% top 0 / 5px 57% no-repeat,
     linear-gradient(#eb984f9c, #c62a44a0 72%, transparent) left 3.2% top 0 / 2px 38% no-repeat,
     linear-gradient(#f27c53a0, #b52246a6 65%, transparent) right 2.3% top 0 / 5px 69% no-repeat,
@@ -913,6 +914,14 @@ a.hubHeaderCta { background: #f3c367; color: #081e32; border-color: #f3c367; box
 .guide .kicker { justify-content: center; text-align: center; gap: 12px; color: #ffc779; text-shadow: 0 0 15px #de5b4870; }
 .guide .kicker::before, .guide .kicker::after { background: linear-gradient(90deg, transparent, #e65a4e, #f7b55c); height: 2px; }
 .guide .split h2 { text-shadow: 0 3px 20px #021020, 0 0 25px #d9484a35; }
+.guidePainter {
+  width: min(100%, 440px);
+  height: clamp(150px, 20vw, 225px);
+  margin: 18px auto -42px;
+  background: url('/optimized/atmosphere/guide-painter-money.svg') center bottom / contain no-repeat;
+  filter: drop-shadow(0 0 18px #8fdd4b4a);
+  pointer-events: none;
+}
 
 .newsletter {
   background: radial-gradient(ellipse at 80% 15%, #103b74, transparent 67%) #07192f;
@@ -949,6 +958,7 @@ a.hubHeaderCta { background: #f3c367; color: #081e32; border-color: #f3c367; box
   .lane .sectionHeading .kicker, .guide .kicker { letter-spacing: .08em; gap: 7px; font-size: .68rem; }
   .guide::before { inset: 13% -16% auto; font-size: clamp(125px, 36vw, 230px); opacity: .18; }
   .guide::after { opacity: .42; }
+  .guidePainter { width: min(95%, 350px); height: 165px; margin-bottom: -26px; }
   .newsletter::before { background-position: left -20px top 0; }
 }
 
