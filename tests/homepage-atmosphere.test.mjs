@@ -23,13 +23,13 @@ test("homepage backgrounds stay lightweight", () => {
   assert.ok(bytes < 150_000, `atmosphere assets are ${bytes} bytes`);
 });
 
-test("industrial footer mural has separate desktop and phone transfer budgets", () => {
+test("warm industrial footer mural has separate desktop and phone transfer budgets", () => {
   const muralDir = new URL("../public/optimized/footer-mural/", import.meta.url);
-  const desktop = new URL("painter-desktop.webp", muralDir);
-  const mobile = new URL("painter-mobile.webp", muralDir);
+  const desktop = new URL("painter-sunset-desktop.webp", muralDir);
+  const mobile = new URL("painter-sunset-mobile.webp", muralDir);
   assert.ok(existsSync(desktop) && existsSync(mobile), "both mural sizes must exist");
   assert.ok(statSync(desktop).size < 115_000, "desktop mural should stay under 115 KB");
   assert.ok(statSync(mobile).size < 55_000, "phone mural should stay under 55 KB");
-  assert.match(css, /footer-mural\/painter-desktop\.webp/);
-  assert.match(css, /footer-mural\/painter-mobile\.webp/);
+  assert.match(css, /footer-mural\/painter-sunset-desktop\.webp/);
+  assert.match(css, /footer-mural\/painter-sunset-mobile\.webp/);
 });
