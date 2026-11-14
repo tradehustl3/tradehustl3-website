@@ -859,8 +859,12 @@ a.hubHeaderCta { background: #f3c367; color: #081e32; border-color: #f3c367; box
 
 .guide {
   color: var(--hub-ink);
-  background: #fff;
+  background:
+    radial-gradient(ellipse 48% clamp(92px, 16vw, 185px) at left bottom, #b9d6ef, transparent),
+    radial-gradient(ellipse 45% clamp(92px, 16vw, 185px) at right bottom, #f3c4c8, transparent),
+    #fff;
   border-top: 2px solid var(--hub-divider);
+  border-bottom: 1px solid var(--hub-divider);
 }
 
 .guide .kicker { color: #9f2733; }
