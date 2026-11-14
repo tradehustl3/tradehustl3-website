@@ -36,8 +36,10 @@ section.resumeLight::after { display: none; }
 .originalHeadline { color:#17394f;font-size:clamp(2rem,3.6vw,3.4rem); }
 .originalHeadline span { color:#af303b; }
 .logo { filter:drop-shadow(0 6px 10px #16334a35); }
-.benefitLine { color:#2b5068; }
-.story { color:#395466; }
+/* Prefixed with section.resumeLight so the dark-theme colors in home-storefront.module.css
+   cannot win when that stylesheet loads later (same fix as the white background). */
+section.resumeLight .benefitLine { color:#2b5068; }
+section.resumeLight .story { color:#395466; }
 .intro { max-width:920px;text-align:left;margin:38px auto 38px; }
 .kicker { color:#a9303d;letter-spacing:.17em;text-transform:uppercase;font-size:.75rem;font-weight:900;margin:0 0 12px; }
 .intro h3 { margin:0 0 18px;font:800 clamp(2.6rem,5.6vw,5.35rem)/1.06 var(--font-home-display),"Arial Narrow",sans-serif;text-transform:uppercase;letter-spacing:.01em;text-wrap:balance; }
@@ -71,8 +73,10 @@ section.resumeLight::after { display: none; }
 .action { margin-top:30px; }
 .action :global(a) { background:#b72d3d !important;border-color:#b72d3d !important;color:#fff !important;box-shadow:0 7px 22px #b72d3d39; }
 .action :global(a:hover) { background:#932331 !important; }
-.price { color:#9f2b37; }
-.details { color:#37566a; }
+section.resumeLight .price { color:#9f2b37; }
+section.resumeLight .details { color:#37566a; }
+section.resumeLight .links a { color:#8e2531; }
+section.resumeLight .links a:hover { color:#b72d3d; }
 .resumeLight :global(a:not([class])) { color:#a3333e; }
 @media(max-width:850px) { .productGrid{grid-template-columns:1fr}.questionPanel{max-width:620px;width:100%;margin:auto}.handshake{top:1050px;opacity:.08} }
 @media(max-width:720px) { section.resumeLight::before{opacity:.08;background-position:left -110px top 12%,right -95px top 38%}.resumeGraphic{right:-30px;top:230px;width:125px;opacity:.15}.handshake{display:none}.handoff{padding:32px 14px 26px}.handoff p{letter-spacing:.075em}.intro{margin:30px auto}.intro h3{font-size:clamp(2.1rem,9vw,3.35rem)}.content{padding-bottom:45px}.sampleStage{outline-offset:3px}.graduateStage{min-height:170px;margin-top:32px;padding:0 2px}.graduateStage img{height:170px;width:37%}.graduateStage strong{width:28%;top:39%;font-size:clamp(.55rem,2vw,.78rem);letter-spacing:.05em}.questions{padding-left:9px}.questions li{min-height:48px;padding:9px;font-size:.9rem}.questionPanel h3{font-size:clamp(1.85rem,7.4vw,2.6rem)} }
