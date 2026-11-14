@@ -8,7 +8,7 @@ export function HomeNewsletter() {
       <span id="built-by-a-tradesman" />
       <span id="hub-mission" />
       <div className={styles.sectionHeading}>
-        <p className={styles.kicker}>TRADE HUSTL3 UPDATES</p>
+        <p className={styles.kicker}><span>TRADE HUSTL3 UPDATES</span></p>
         <h2 id="movement-title">Join the Movement.</h2>
       </div>
       <div className={styles.split}>
