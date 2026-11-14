@@ -894,9 +894,36 @@ a.hubHeaderCta { background: #f3c367; color: #081e32; border-color: #f3c367; box
 
 .newsletter::before {
   inset: 0;
-  background: url("/optimized/atmosphere/worker-painter-260-v2.webp") left max(0px, calc(50% - 720px)) bottom / clamp(135px, 21vw, 284px) auto no-repeat;
-  opacity: .58;
+  background: url("/optimized/atmosphere/worker-painter-260-v2.webp") left max(0px, calc(50% - 690px)) bottom / clamp(190px, 21vw, 300px) auto no-repeat;
+  opacity: .88;
+  filter: drop-shadow(0 0 14px rgba(95, 185, 240, .48));
 }
+
+/* The sprayer's lime-green dollar sign is decorative, never part of the signup copy. */
+.newsletter .painterMoney {
+  position: absolute;
+  z-index: 0;
+  left: max(180px, calc(50% - 525px));
+  bottom: 170px;
+  color: #b9f43b;
+  font: 900 clamp(3rem, 5vw, 5.5rem)/1 var(--font-home-display), Impact, sans-serif;
+  transform: rotate(-14deg);
+  text-shadow: 0 0 9px #a4ec5188, 0 0 26px #8bd72d60;
+  pointer-events: none;
+}
+.newsletter .painterMoney::before {
+  content: "· ·  · ·";
+  position: absolute;
+  right: 80%;
+  bottom: 23%;
+  width: 110px;
+  color: #b9f43b;
+  font-size: .5em;
+  letter-spacing: .11em;
+  transform: rotate(12deg);
+  text-shadow: 0 0 10px #b9f43b;
+}
+.newsletter .sectionHeading, .newsletter .split { position: relative; z-index: 1; }
 
 @media (max-width: 720px) {
   .storefront {
@@ -921,7 +948,23 @@ a.hubHeaderCta { background: #f3c367; color: #081e32; border-color: #f3c367; box
   .lane .sectionHeading .kicker::before, .lane .sectionHeading .kicker::after,
   .guide .kicker::before, .guide .kicker::after { flex-basis: 23px; }
   .lane .sectionHeading .kicker, .guide .kicker { letter-spacing: .08em; gap: 7px; font-size: .68rem; }
-  .newsletter::before { background-position: left -20px top 0; }
+  .newsletter { padding-bottom: 195px; }
+  .newsletter::before {
+    background-position: left 8px bottom;
+    background-size: auto 225px;
+    opacity: .92;
+    mask-image: linear-gradient(180deg, transparent 0%, #000 20%);
+  }
+  .newsletter .painterMoney { left: 145px; bottom: 100px; font-size: 3.7rem; }
+  .newsletter .painterMoney::before { width: 70px; }
+  .newsletter .split { max-width: 100%; }
+  .newsletter .split > div { min-width: 0; }
+}
+
+@media (max-width: 380px) {
+  .newsletter { padding-bottom: 175px; }
+  .newsletter::before { background-size: auto 200px; }
+  .newsletter .painterMoney { left: 125px; bottom: 90px; font-size: 3.2rem; }
 }
 
 @media (forced-colors: active) {
