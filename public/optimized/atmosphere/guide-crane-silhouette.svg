@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 600" fill="none" stroke="#7eb2cc" stroke-linecap="square" stroke-linejoin="miter">
+  <!-- Single-color industrial crane silhouette; decorative, with no lettering. -->
+  <g stroke-width="13">
+    <path d="M180 570V95M228 570V95M168 92H245M156 570H253"/>
+    <path d="M205 83V36M96 89H484M96 89L205 36L484 89M205 36L420 89"/>
+    <path d="M95 88L205 119L288 88L370 119L450 88" stroke-width="7"/>
+    <path d="M180 145L228 194L180 242L228 290L180 338L228 386L180 434L228 482L180 530L228 570" stroke-width="8"/>
+    <path d="M228 145L180 194L228 242L180 290L228 338L180 386L228 434L180 482L228 530L180 570" stroke-width="8"/>
+    <path d="M455 95V330M444 330H466M455 330V354" stroke-width="5"/>
+    <path d="M444 354Q440 375 456 378Q471 378 472 362" stroke-width="9"/>
+    <path d="M122 87L83 180M83 180H120" stroke-width="7"/>
+  </g>
+  <g fill="#7eb2cc" stroke="none" opacity=".88">
+    <path d="M146 565H261V586H146zM188 93H219V121H188zM168 126H241V139H168z"/>
+    <path d="M14 587V470H104V587zM84 587V422H145V587zM275 587V495H343V587z" opacity=".37"/>
+  </g>
+</svg>
