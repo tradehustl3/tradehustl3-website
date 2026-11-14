@@ -28,7 +28,7 @@ const ROLES = CATALOG_METRICS.mappedRoles;
 export const HUB_STAGES: readonly HubStage[] = [
   {
     id: "student",
-    label: "Student",
+    label: "In School",
     sublabel: "Exploring a career",
     icon: "student",
     headline: "Find the trade that fits you",
@@ -41,20 +41,20 @@ export const HUB_STAGES: readonly HubStage[] = [
   },
   {
     id: "new",
-    label: "New to Trades",
+    label: "New to the Trades",
     sublabel: "Get started",
     icon: "new",
     headline: "Get ready for your first trade job",
     copy: "Learn which credentials your trade asks for, see real trade resume examples, and put together a resume you can send.",
     steps: [
-      { title: "Check your credentials", sub: "Required vs. employer-preferred", href: "/resources/certifications" },
+      { title: "Find training and apprenticeships", sub: "Get started in a trade", href: "#trade-training" },
       { title: "See trade resume examples", sub: "Seven detailed examples", href: "/resume-examples/skilled-trades" },
       { title: "Build your resume", sub: "Free preview", href: "#resume-start" },
     ],
   },
   {
     id: "working",
-    label: "In the Trade",
+    label: "Already in the Field",
     sublabel: "Build skills",
     icon: "working",
     headline: "Build on the work you already do",
@@ -67,7 +67,7 @@ export const HUB_STAGES: readonly HubStage[] = [
   },
   {
     id: "leading",
-    label: "Supervisor / Lead",
+    label: "Ready to Lead",
     sublabel: "Take the next step",
     icon: "leading",
     headline: "Step up to lead or supervisor",
@@ -80,7 +80,7 @@ export const HUB_STAGES: readonly HubStage[] = [
   },
   {
     id: "changer",
-    label: "Career Changer",
+    label: "Changing Careers",
     sublabel: "Start a new path",
     icon: "changer",
     headline: "Bring your experience into the trades",

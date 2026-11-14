@@ -172,8 +172,9 @@ test("the closing mission and subscription preserve community links", async () =
 test("trade stage band replaces the old start-here and tools sections with five real paths", async () => {
   const html = await renderHome();
   const band = between(html, 'id="start-here"', 'data-item="group_access"');
-  assert.match(band, /<h2 id="stage-title"[^>]*>Where are you in your trade\?<\/h2>/);
-  const labels = ["Student", "New to Trades", "In the Trade", "Supervisor / Lead", "Career Changer"];
+  assert.match(band, /<h2 id="stage-title"[^>]*>Where are you in your trade journey\?<\/h2>/);
+  assert.match(html, /id="lane-title"[^>]*>Choose Your Path<\/h2>/);
+  const labels = ["In School", "New to the Trades", "Already in the Field", "Ready to Lead", "Changing Careers"];
   const positions = labels.map((label) => band.indexOf(`<strong>${label}</strong>`));
   positions.forEach((index, i) => assert.ok(index > (positions[i - 1] ?? -1), `persona order: ${labels[i]}`));
   assert.equal((band.match(/data-location="hub_stage_picker"/g) ?? []).length, 5);
