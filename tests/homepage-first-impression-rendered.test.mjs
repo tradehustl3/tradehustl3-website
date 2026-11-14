@@ -144,10 +144,7 @@ test("the guide accurately describes the asset and the resume shows a labeled sa
   assert.ok(headline >= 0 && headline < logo && logo < audience && audience < description && description < example,
     'headline, existing logo, audience statement, supporting description, and examples stay in order');
 
-  const credentials = between(resume, 'aria-label="Examples of trade credentials for a resume"', 'Your First Job.');
-  for (const [name, detail] of [["CDL", "Class A / B"], ["EPA 608", "Universal"], ["CPO", "Pool &amp; Spa Operator"], ["AWS", "Certified Welder"], ["ASE", "Auto Service"], ["TWIC", "Card"]]) {
-    assert.ok(credentials.includes(`<strong>${name}</strong><span>${detail}</span>`), `${name} credential`);
-  }
+  assert.doesNotMatch(resume, /aria-label="Examples of trade credentials for a resume"/);
 
   const previewEnd = resume.indexOf('</figure>');
   const cta = resume.indexOf('Start Your Free Resume Preview');

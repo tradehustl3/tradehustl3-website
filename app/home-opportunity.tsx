@@ -4,30 +4,14 @@ import { VerifiedCustomerReviews } from './customer-reviews';
 import { ResumePreviewCta } from './home-resume-preview-cta';
 import styles from './home-storefront.module.css';
 
-const credentialExamples = [
-  ['CDL', 'Class A / B'],
-  ['EPA 608', 'Universal'],
-  ['CPO', 'Pool & Spa Operator'],
-  ['AWS', 'Certified Welder'],
-  ['ASE', 'Auto Service'],
-  ['TWIC', 'Card'],
-] as const;
-
 export function TurnSkillsIntoOpportunity() {
   return (
     <section className={`${styles.resume} ${styles.resumeProduct} ${styles.goldDivider}`} id="opportunity" aria-label="TRADE HUSTL3 Resume Builder">
       <div className={styles.resumeProductInner}>
         <h2 className={styles.resumeProductHeadline}>Your Experience Matters. <span>Make Sure It Shows.</span></h2>
-        <div className={styles.resumeCredentialDisplay}>
-          <Image id="opportunity-title" className={styles.resumeProductLogo}
-            src="/optimized/resume-builder-logo-header.webp" alt="TRADE HUSTL3 Resume Builder"
-            width={500} height={410} sizes="(max-width: 720px) 112px, 174px" />
-          <ul className={styles.resumeCredentials} aria-label="Examples of trade credentials for a resume">
-            {credentialExamples.map(([name, detail]) => (
-              <li key={name}><strong>{name}</strong><span>{detail}</span></li>
-            ))}
-          </ul>
-        </div>
+        <Image id="opportunity-title" className={styles.resumeProductLogo}
+          src="/optimized/resume-builder-logo-header.webp" alt="TRADE HUSTL3 Resume Builder"
+          width={500} height={410} sizes="(max-width: 430px) 112px, (max-width: 669px) 26vw, 174px" />
         <p className={styles.resumeProductBenefit}>Your First Job. Your Next Opportunity. Your Move Into Leadership.</p>
         <p className={styles.resumeProductStory}>Whatever stage you’re in, your skills deserve to be represented. From school to a new trade or years in the field, organize your real training, certifications, skills, and work experience into a professional resume and cover letter.</p>
         <figure className={styles.resumeExample}>
