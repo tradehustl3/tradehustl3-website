@@ -919,6 +919,34 @@ a.hubHeaderCta { background: #f3c367; color: #081e32; border-color: #f3c367; box
 }
 .newsletter .sectionHeading, .newsletter .split { position: relative; z-index: 1; }
 
+/* Approved painter mural: one coherent artwork, no separate clip-art roadway. */
+.newsletter.newsletter {
+  color: #fff;
+  border-top: 2px solid #3978a6;
+  border-bottom: 3px solid #388ab7;
+  background:
+    linear-gradient(180deg, #06192fcf, #071c30c5 49%, #071c3066 100%),
+    url('/optimized/atmosphere/footer-industrial-painter.webp') center bottom / cover no-repeat #06172a;
+}
+.newsletter::before { display: none; }
+.newsletter .sectionHeading h2 { color: #fff; text-shadow: 0 4px 22px #020b18; }
+.newsletter .sectionHeading .kicker { color: #ffcb73; }
+.newsletter .lead, .newsletter .finePrint,
+.newsletter .form :global(.field-row label), .newsletter .form :global(.form-status) { color: #f1f6fd !important; }
+.newsletter .split > div:first-child { padding: 12px 16px; border-radius: 12px; background: #061b3094; }
+.newsletter .form { border: 1px solid #6fa7d7a1; border-radius: 14px; background: #071d34df; box-shadow: 0 18px 44px #010a19bd; }
+
+@media (max-width: 720px) {
+  .newsletter.newsletter {
+    padding-bottom: 235px;
+    background:
+      linear-gradient(180deg, #06192ff5 0%, #06192ff1 52%, #06192fce 65%, transparent 100%),
+      url('/optimized/atmosphere/footer-industrial-painter.webp') center bottom / auto 235px no-repeat #06172a;
+  }
+  .newsletter .split > div:first-child { padding: 8px; }
+  .newsletter .form { padding: 15px; }
+}
+
 @media (max-width: 720px) {
   .storefront {
     --hvac-rig-height: 146px;
