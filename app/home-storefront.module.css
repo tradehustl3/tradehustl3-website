@@ -928,7 +928,7 @@ a.hubHeaderCta { background: #f3c367; color: #081e32; border-color: #f3c367; box
   background:
     linear-gradient(90deg, #122a417d, #10263a91 48%, #162a408c),
     linear-gradient(180deg, #091b30a8, #10283cb3 48%, #0d21327d 100%),
-    url('/optimized/footer-mural/painter-silhouette-desktop.webp?v=311a') center bottom / cover no-repeat #10263b;
+    url('/optimized/footer-mural/painter-sprayer-desktop.webp?v=312a') center bottom / cover no-repeat #10263b;
 }
 .newsletter::before { display: none; }
 .newsletter::after {
@@ -1029,7 +1029,7 @@ a.hubHeaderCta { background: #f3c367; color: #081e32; border-color: #f3c367; box
     padding-bottom: 235px;
     background:
       linear-gradient(180deg, #101f30f5 0%, #14293de9 52%, #14293dbd 65%, #10263b55 100%),
-      url('/optimized/footer-mural/painter-silhouette-mobile.webp?v=311a') center bottom / auto 235px no-repeat #10263b;
+      url('/optimized/footer-mural/painter-sprayer-mobile.webp?v=312a') center bottom / auto 235px no-repeat #10263b;
   }
   .newsletter .split { grid-template-columns: 1fr; padding-right: var(--hub-gutter); }
   .newsletter .split > div:first-child { padding: 8px; }
