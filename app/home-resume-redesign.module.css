@@ -1,17 +1,36 @@
 section.resumeLight {
   color: #1b3548;
-  background: #fff;
+  /* Book-blue -> open white workspace -> steel-blue lead-in to Choose Your Path. */
+  background:
+    radial-gradient(ellipse 48% 25% at 5% 37%, #3f91cc24, transparent 95%),
+    radial-gradient(ellipse 42% 23% at 96% 54%, #c53b4820, transparent 95%),
+    radial-gradient(ellipse 65% 30% at 50% 90%, #478cc338, transparent 90%),
+    linear-gradient(180deg, #103966 0%, #3773a3 3%, #d6e9f5 9%, #fff 19%, #fff 51%, #f4f9fc 65%, #d4e8f5 80%, #a7cbe4 100%);
   border-top: 0 !important;
   padding-top: 0 !important;
+  isolation: isolate;
 }
-section.resumeLight::before, section.resumeLight::after { display: none; }
-.handoff { position:relative;z-index:2;padding:43px 20px 35px;text-align:center;background:#fff; }
+/* Soft trade silhouettes live behind the content, never on top of the resume. */
+section.resumeLight::before {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  inset: 8% 0 18%;
+  pointer-events: none;
+  background:
+    url('/optimized/atmosphere/book-plumber-standing.webp') left -70px top 10% / clamp(170px, 25vw, 340px) auto no-repeat,
+    url('/optimized/atmosphere/book-tradeswoman.webp') right -55px top 36% / clamp(145px, 21vw, 290px) auto no-repeat;
+  opacity: .13;
+  mask-image: linear-gradient(180deg, transparent, #000 16%, #000 76%, transparent);
+}
+section.resumeLight::after { display: none; }
+.handoff { position:relative;z-index:2;padding:43px 20px 35px;text-align:center;background:transparent; }
 .handoff::before { content:"";position:absolute;inset:0 0 auto;height:3px;background:linear-gradient(90deg,transparent,#d83a42 20%,#eabd5e 50%,#4299c8 82%,transparent);box-shadow:0 0 15px #edb75b70; }
 .handoff p { width:fit-content;margin:0 auto 8px;font-size:clamp(.75rem,1.5vw,1rem);letter-spacing:.16em;text-transform:uppercase;font-weight:900;background:linear-gradient(90deg,#a72737,#e66c2c,#d5a02b);background-clip:text;color:transparent; }
 .handoff strong { display:block;color:#193a50;font:800 clamp(1.25rem,2.6vw,2rem)/1.14 var(--font-home-display),"Arial Narrow",sans-serif;text-transform:uppercase;letter-spacing:.035em; }
 .handoff strong span { color:#b72e3a; }
 .atmosphere { position:absolute !important;z-index:0 !important;pointer-events:none;object-fit:contain; }
-.resumeGraphic { width:clamp(155px,21vw,270px);height:auto;right:3%;top:225px;opacity:.23; }
+.resumeGraphic { width:clamp(155px,21vw,270px);height:auto;right:3%;top:225px;opacity:.29; }
 .handshake { width:clamp(330px,42vw,620px);height:auto;right:-70px;top:850px;opacity:.12;mask-image:linear-gradient(90deg,transparent,#000 25%,#000 70%,transparent); }
 .content { position:relative;z-index:2;padding-top:15px;padding-bottom:64px; }
 .originalHeadline { color:#17394f;font-size:clamp(2rem,3.6vw,3.4rem); }
@@ -56,5 +75,5 @@ section.resumeLight::before, section.resumeLight::after { display: none; }
 .details { color:#37566a; }
 .resumeLight :global(a:not([class])) { color:#a3333e; }
 @media(max-width:850px) { .productGrid{grid-template-columns:1fr}.questionPanel{max-width:620px;width:100%;margin:auto}.handshake{top:1050px;opacity:.08} }
-@media(max-width:720px) { .resumeGraphic{right:-30px;top:230px;width:125px;opacity:.11}.handshake{display:none}.handoff{padding:32px 14px 26px}.handoff p{letter-spacing:.075em}.intro{margin:30px auto}.intro h3{font-size:clamp(2.1rem,9vw,3.35rem)}.content{padding-bottom:45px}.sampleStage{outline-offset:3px}.graduateStage{min-height:170px;margin-top:32px;padding:0 2px}.graduateStage img{height:170px;width:37%}.graduateStage strong{width:28%;top:39%;font-size:clamp(.55rem,2vw,.78rem);letter-spacing:.05em}.questions{padding-left:9px}.questions li{min-height:48px;padding:9px;font-size:.9rem}.questionPanel h3{font-size:clamp(1.85rem,7.4vw,2.6rem)} }
+@media(max-width:720px) { section.resumeLight::before{opacity:.08;background-position:left -110px top 12%,right -95px top 38%}.resumeGraphic{right:-30px;top:230px;width:125px;opacity:.15}.handshake{display:none}.handoff{padding:32px 14px 26px}.handoff p{letter-spacing:.075em}.intro{margin:30px auto}.intro h3{font-size:clamp(2.1rem,9vw,3.35rem)}.content{padding-bottom:45px}.sampleStage{outline-offset:3px}.graduateStage{min-height:170px;margin-top:32px;padding:0 2px}.graduateStage img{height:170px;width:37%}.graduateStage strong{width:28%;top:39%;font-size:clamp(.55rem,2vw,.78rem);letter-spacing:.05em}.questions{padding-left:9px}.questions li{min-height:48px;padding:9px;font-size:.9rem}.questionPanel h3{font-size:clamp(1.85rem,7.4vw,2.6rem)} }
 @media(max-width:380px) { .graduateStage{min-height:142px}.graduateStage img{height:142px}.graduateStage strong{font-size:.54rem}.intro h3{font-size:2rem}.sampleStage{padding:10px} }
