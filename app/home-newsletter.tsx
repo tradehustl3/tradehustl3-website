@@ -23,7 +23,6 @@ export function HomeNewsletter() {
           <p className={styles.finePrint}>By subscribing, you agree to receive TRADE HUSTL3 updates. Unsubscribe anytime.</p>
         </div>
       </div>
-      <div className={styles.roadScene} role="img" aria-label="Silhouette of a painter spraying a lime-green dollar sign, a concrete mixer truck on a road, and a traffic flagger holding a stop sign" />
     </section>
   );
 }

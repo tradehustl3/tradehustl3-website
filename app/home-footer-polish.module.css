@@ -45,3 +45,22 @@
 @media (max-width: 340px) {
   .footerPolish > nav { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* Final white chapter after the industrial newsletter mural. */
+.footerPolish.footerPolish {
+  border-top: 0;
+  color: #173c59;
+  background:
+    radial-gradient(ellipse 45% 100% at 0% 50%, #74b9e94a, transparent 96%),
+    radial-gradient(ellipse 42% 100% at 100% 62%, #e75b6b31, transparent 96%),
+    linear-gradient(180deg, #e5f1fb, #fff 34%, #f7fbff);
+}
+.footerPolish.footerPolish p { color: #365670; }
+.footerPolish.footerPolish > div:first-child,
+.footerPolish.footerPolish > div:first-child strong { color: #173c59; }
+.footerPolish.footerPolish p a,
+.footerPolish.footerPolish > nav a { color: #154466; }
+.footerPolish.footerPolish > nav a:hover,
+.footerPolish.footerPolish > nav a:focus-visible { color: #b52e43; }
+.footerPolish.footerPolish > nav { border-color: #bfd9e9; }
+.footerPolish.footerPolish::after { z-index: 0; height: 5px; box-shadow: 0 -4px 15px #2c81b94d; }
