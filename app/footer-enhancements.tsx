@@ -12,8 +12,6 @@ const socials = [
   { label: "TikTok", href: "https://www.tiktok.com/@da.maintenance.ma5", icon: "tiktok" },
   { label: "YouTube", href: "https://www.youtube.com/@tradehustl3", icon: "youtube" },
   { label: "LinkedIn", href: "https://www.linkedin.com/company/trade-hustl3-llc/", icon: "linkedin" },
-  { label: "X", href: "https://x.com/maintenancmt1k", icon: "x" },
-  { label: "GitHub", href: "https://github.com/tradehustl3", icon: "github" },
 ] as const;
 
 function SocialIcon({ type }: { type: (typeof socials)[number]["icon"] }) {
@@ -37,9 +35,6 @@ function SocialIcon({ type }: { type: (typeof socials)[number]["icon"] }) {
   }
   if (type === "tiktok") {
     return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4c.7 2 2.1 3.3 4 3.7v3.2a9 9 0 0 1-4-1.3v5.2a5.1 5.1 0 1 1-4.4-5V13a2 2 0 1 0 1.4 1.9V4Z" className={styles.fillDot} /></svg>;
-  }
-  if (type === "github") {
-    return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 0 0-2.8 17.5c.4.1.5-.2.5-.4v-1.7c-2.3.5-2.8-1-2.8-1-.4-1-.9-1.3-.9-1.3-.8-.5.1-.5.1-.5.8.1 1.3.9 1.3.9.8 1.3 2 1 2.5.8.1-.6.3-1 .6-1.3-1.8-.2-3.7-.9-3.7-4 0-.9.3-1.6.8-2.2-.1-.2-.4-1 .1-2.1 0 0 .7-.2 2.3.8a8 8 0 0 1 4.2-.6c.7 0 1.4.1 2.1.3 1.6-1 2.3-.8 2.3-.8.5 1.1.2 1.9.1 2.1.5.6.8 1.3.8 2.2 0 3.1-1.9 3.8-3.7 4 .3.3.6.8.6 1.6v2.3c0 .2.1.5.5.4A9 9 0 0 0 12 3Z" className={styles.fillDot} /></svg>;
   }
   return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4 19 20M19 4 5 20" /></svg>;
 }

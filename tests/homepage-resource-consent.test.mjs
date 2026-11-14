@@ -51,3 +51,25 @@ for (const template of [undefined, '18']) {
     }
   });
 }
+
+test('subscribe validation errors name the real problem', async () => {
+  const worker = (await import('../dist/server/index.js')).default;
+  const env = { DB };
+  const post = (body) => worker.fetch(new Request('https://tradehustl3.com/api/subscribe', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+  }), env, ctx);
+
+  for (const email of ['a@b', 'not-an-email', '']) {
+    const response = await post({ email, interest: 'Book 7-Page Sample' });
+    assert.equal(response.status, 400);
+    const { message } = await response.json();
+    assert.match(message, /valid email address/i);
+    assert.doesNotMatch(message, /interest/i, 'visitors never see an interest field');
+  }
+
+  const stale = await post({ email: 'resource@example.test', interest: 'Not A Real Interest' });
+  assert.equal(stale.status, 400);
+  const { message } = await stale.json();
+  assert.match(message, /refresh the page/i);
+  assert.doesNotMatch(message, /interest/i);
+});

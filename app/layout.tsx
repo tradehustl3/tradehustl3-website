@@ -119,10 +119,8 @@ const structuredData = {
         "https://www.facebook.com/profile.php?id=61593457675674",
         "https://www.instagram.com/tradehustl3/",
         "https://www.youtube.com/@tradehustl3",
-        "https://x.com/maintenancmt1k",
         "https://www.linkedin.com/company/trade-hustl3-llc/",
         "https://www.tiktok.com/@da.maintenance.ma5",
-        "https://github.com/tradehustl3",
       ],
     },
 
