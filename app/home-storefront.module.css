@@ -862,13 +862,27 @@ a.hubHeaderCta { background: #f3c367; color: #081e32; border-color: #f3c367; box
   background:
     radial-gradient(ellipse 48% clamp(92px, 16vw, 185px) at left bottom, #b9d6ef, transparent),
     radial-gradient(ellipse 45% clamp(92px, 16vw, 185px) at right bottom, #f3c4c8, transparent),
-    #fff;
+    linear-gradient(180deg, #b7cfe5 0, #e5eff8 clamp(28px, 5vw, 72px), #fff clamp(92px, 15vw, 180px));
   border-top: 2px solid var(--hub-divider);
   border-bottom: 1px solid var(--hub-divider);
 }
 
 .guide .kicker { color: #9f2733; }
-.guide .split h2 { color: var(--hub-ink); }
+.guide .split h2 {
+  color: var(--hub-ink);
+  font-size: clamp(2.25rem, 5vw, 4.75rem);
+  line-height: .98;
+  text-wrap: balance;
+}
+.guide .split h2 span { display: block; color: #a92936; }
+.guide .split h2::after {
+  content: "";
+  display: block;
+  width: 72px;
+  height: 3px;
+  margin-top: 16px;
+  background: linear-gradient(90deg, #a92936, #e5b04e);
+}
 .guide .lead, .guide .finePrint, .guide .form :global(.field-row label) { color: #374a59; }
 .guide .textLink { color: #9f2733; }
 .guide .form :global(.form-status) { color: #293e50 !important; }
