@@ -803,6 +803,16 @@ a.hubHeaderCta { background: #f3c367; color: #081e32; border-color: #f3c367; box
   color: #f6fbff;
   text-shadow: 0 4px 24px #030b17, 0 0 24px #438bdd6b;
 }
+.lane .laneIntro h2::after {
+  content: "";
+  display: block;
+  width: clamp(110px, 20vw, 240px);
+  height: 5px;
+  margin: 17px auto 0;
+  border-radius: 100px;
+  background: linear-gradient(90deg, #4c9bdb, #f14b58 32%, #bd263c 70%, #4c9bdb);
+  box-shadow: 0 0 22px #ee364d95;
+}
 
 .lane::after {
   content: "";
