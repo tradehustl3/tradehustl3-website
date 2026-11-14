@@ -925,6 +925,31 @@ a.hubHeaderCta { background: #f3c367; color: #081e32; border-color: #f3c367; box
 }
 .newsletter .sectionHeading, .newsletter .split { position: relative; z-index: 1; }
 
+/* The approved industrial painting scene replaces the disconnected floating
+   dollar sign. Keep all live form controls above the art, not baked into it. */
+.newsletter {
+  background:
+    linear-gradient(180deg, #061a30dc 0%, #071c30cb 42%, #071c3078 100%),
+    url('/optimized/atmosphere/footer-industrial-painter.webp') center bottom / cover no-repeat #06172a;
+  border-bottom: 3px solid #4d9cce;
+}
+.newsletter::before { display: none; }
+.newsletter .painterMoney { display: none; }
+.newsletter .split > div:first-child { padding: 15px 18px; border-radius: 14px; background: #06192c90; backdrop-filter: blur(3px); }
+.newsletter .form { padding: clamp(16px, 2.5vw, 24px); border: 1px solid #7a9cbf90; border-radius: 14px; background: #061c32d6; box-shadow: 0 15px 40px #010c1ec9; }
+.newsletter .form :global(label), .newsletter .finePrint { color: #f2f7ff; }
+
+@media (max-width: 720px) {
+  .newsletter.newsletter {
+    padding-bottom: 230px;
+    background:
+      linear-gradient(180deg, #06192ff0 0%, #06192fec 50%, #06192fc9 63%, #06192f08 100%),
+      url('/optimized/atmosphere/footer-industrial-painter.webp') center bottom / auto 240px no-repeat #06172a;
+  }
+  .newsletter .split > div:first-child { padding: 10px 8px; }
+  .newsletter .form { padding: 15px; }
+}
+
 @media (max-width: 720px) {
   .storefront {
     --hvac-rig-height: 146px;
