@@ -927,7 +927,7 @@ a.hubHeaderCta { background: #f3c367; color: #081e32; border-color: #f3c367; box
   border-bottom: 3px solid #388ab7;
   background:
     linear-gradient(180deg, #091b30c8, #10283caa 48%, #0d213271 100%),
-    url('/optimized/footer-mural/painter-sunset-desktop.webp') center bottom / cover no-repeat #10263b;
+    url('/optimized/footer-mural/painter-sunset-desktop.webp?v=309b') center bottom / cover no-repeat #10263b;
 }
 .newsletter::before { display: none; }
 .newsletter .sectionHeading h2 { color: #fff; text-shadow: 0 4px 22px #020b18; }
@@ -945,7 +945,7 @@ a.hubHeaderCta { background: #f3c367; color: #081e32; border-color: #f3c367; box
     padding-bottom: 235px;
     background:
       linear-gradient(180deg, #101f30f5 0%, #14293de9 52%, #14293dba 65%, transparent 100%),
-      url('/optimized/footer-mural/painter-sunset-mobile.webp') center bottom / auto 235px no-repeat #10263b;
+      url('/optimized/footer-mural/painter-sunset-mobile.webp?v=309b') center bottom / auto 235px no-repeat #10263b;
   }
   .newsletter .split { grid-template-columns: 1fr; padding-right: var(--hub-gutter); }
   .newsletter .split > div:first-child { padding: 8px; }
