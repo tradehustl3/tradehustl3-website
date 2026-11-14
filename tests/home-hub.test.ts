@@ -28,7 +28,7 @@ test("hub stage copy uses the catalog's real counts", () => {
 test("hub stages match the approved persona band and make no outcome promises", () => {
   assert.deepEqual(
     HUB_STAGES.map((stage) => stage.label),
-    ["Student", "New to Trades", "In the Trade", "Supervisor / Lead", "Career Changer"],
+    ["In School", "New to the Trades", "Already in the Field", "Ready to Lead", "Changing Careers"],
   );
   for (const stage of HUB_STAGES) assert.ok(stage.sublabel.length > 0, stage.id);
   const copy = HUB_STAGES.flatMap((stage) => [stage.headline, stage.copy, ...stage.steps.map((s) => `${s.title} ${s.sub}`)]).join(" ");
