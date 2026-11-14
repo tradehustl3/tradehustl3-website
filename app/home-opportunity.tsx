@@ -76,7 +76,7 @@ export function TurnSkillsIntoOpportunity() {
         </div>
         <p className={`${styles.resumeProductDetails} ${design.details}`}>Free watermarked preview. PDF and editable DOCX downloads after unlock.<br />Matching cover letter. Up to three AI-assisted corrections within seven days.</p>
         <VerifiedCustomerReviews className={styles.resumeProductReviews} />
-        <div className={styles.resumeProductLinks}>
+        <div className={`${styles.resumeProductLinks} ${design.links}`}>
           <Link className={styles.textLink} href="/resume-examples/skilled-trades" data-analytics-event="cta_click" data-location="homepage_resume_builder" data-item="resume_examples">See more resume examples</Link>
           <Link className={styles.textLink} href="/resume-builder/refund-policy">Delivered or refunded · purchase protection</Link>
         </div>
