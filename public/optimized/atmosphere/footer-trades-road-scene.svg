@@ -11,6 +11,7 @@
   <path d="M0 250Q220 244 480 250T960 249" fill="none" stroke="#315c77" stroke-width="4"/>
   <path d="M62 277h93m54 0h93m54 0h93m54 0h93m54 0h93m54 0h93m54 0h48" stroke="#e7c665" stroke-width="4" stroke-linecap="round" opacity=".85"/>
   <!-- Painter, with hose, respirator and recognizable hand-held spray gun. -->
+  <g transform="translate(-8 -25) scale(1.12)">
   <g fill="#17374c" stroke="#4b91b7" stroke-width="3" stroke-linejoin="round">
     <path d="M81 240l7-67 20-32 39-4 23 26 5 79-34 2-3-53-8 2-8 51Z"/>
     <path d="M104 246l-2 34h26l7-40m8 2 7 38h27l-6-42" fill="#102b3e"/>
@@ -29,9 +30,13 @@
     <circle cx="317" cy="98" r="3"/><circle cx="328" cy="122" r="4"/><circle cx="343" cy="108" r="2"/>
     <circle cx="358" cy="128" r="2.5"/><circle cx="345" cy="143" r="3"/><circle cx="380" cy="105" r="2"/>
   </g>
-  <text x="351" y="115" font-family="Impact,Arial Black,sans-serif" font-size="84" font-weight="900" transform="rotate(-11 351 115)" fill="#a9ed39" opacity=".28" filter="url(#sprayGlow)">$</text>
-  <text x="351" y="115" font-family="Impact,Arial Black,sans-serif" font-size="84" font-weight="900" transform="rotate(-11 351 115)" fill="#9edc32">$</text>
+  <g transform="rotate(-11 377 96)" fill="none" stroke="#9edc32" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M396 72C382 57 357 63 357 81c0 17 38 11 38 31 0 19-31 25-44 7M375 52v88" stroke-width="13" opacity=".25" filter="url(#sprayGlow)"/>
+    <path d="M396 72C382 57 357 63 357 81c0 17 38 11 38 31 0 19-31 25-44 7M375 52v88" stroke-width="10"/>
+  </g>
+  </g>
   <!-- Construction mixer truck: distinct drum, chassis, six wheels and cab. -->
+  <g transform="translate(-44 -21) scale(1.08)">
   <g stroke="#376b89" stroke-width="3" stroke-linejoin="round">
     <path d="M452 202h297v35H445v-22Z" fill="#102b3e"/>
     <path d="M465 194l22-68 115-11 61 68-20 22-159 3Z" fill="url(#steel)"/>
@@ -45,7 +50,9 @@
     <circle cx="557" cy="237" r="27" fill="#102637"/><circle cx="557" cy="237" r="12" fill="#6b9eb7"/>
     <circle cx="709" cy="237" r="27" fill="#102637"/><circle cx="709" cy="237" r="12" fill="#6b9eb7"/>
   </g>
+  </g>
   <!-- Road crew flagger holding a readable STOP paddle. -->
+  <g transform="translate(-149 -28) scale(1.18)">
   <g stroke="#376b89" stroke-width="3" stroke-linejoin="round">
     <path d="M837 150l-20 21-15 58 17 4 24-46 6 57h23l5-60 9 60h24l-13-81-26-24Z" fill="#14364b"/>
     <circle cx="859" cy="116" r="20" fill="#15394f"/>
@@ -57,4 +64,5 @@
     <path d="M769 42h34l13 13v30l-13 13h-34l-13-13V55Z" fill="#a6333b" stroke="#e38c88" stroke-width="3"/>
   </g>
   <text x="786" y="76" fill="#fff" font-family="Arial,sans-serif" font-size="14" font-weight="900" text-anchor="middle">STOP</text>
+  </g>
 </svg>
