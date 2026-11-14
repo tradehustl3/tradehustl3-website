@@ -5,7 +5,6 @@ import styles from './home-storefront.module.css';
 export function HomeNewsletter() {
   return (
     <section className={`${styles.newsletter} ${styles.goldDivider}`} id="join-the-movement" aria-labelledby="movement-title">
-      <span className={styles.painterMoney} aria-hidden="true">$</span>
       <span id="built-by-a-tradesman" />
       <span id="hub-mission" />
       <div className={styles.sectionHeading}>
@@ -24,6 +23,7 @@ export function HomeNewsletter() {
           <p className={styles.finePrint}>By subscribing, you agree to receive TRADE HUSTL3 updates. Unsubscribe anytime.</p>
         </div>
       </div>
+      <div className={styles.roadScene} role="img" aria-label="Silhouette of a painter spraying a lime-green dollar sign, a concrete mixer truck on a road, and a traffic flagger holding a stop sign" />
     </section>
   );
 }
