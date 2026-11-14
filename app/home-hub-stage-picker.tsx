@@ -75,7 +75,7 @@ export function HubStagePicker({ stages, organization }: { stages: readonly HubS
         <div className={styles.bar}>
           <div className={styles.prompt}>
             <h2 id="stage-title" className={styles.label}>Where are you in your trade journey?</h2>
-            <p>Pick where you are today to see your next step.</p>
+            <p>Select a path to see the training, credentials, or career tools that can move you forward.</p>
           </div>
           <div className={styles.tiles} role="group" aria-label="Choose where you are">
             {stages.map((option) => (

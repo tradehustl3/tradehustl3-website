@@ -794,8 +794,26 @@ a.hubHeaderCta { background: #f3c367; color: #081e32; border-color: #f3c367; box
 }
 
 .lane {
-  color: #18354b;
-  background: linear-gradient(180deg, #fff, #edf3f6 32%, #e6edf2);
+  color: #f6fbff;
+  background: radial-gradient(ellipse at 50% 12%, #174977, #071a32 72%);
+}
+
+.lane .laneIntro h2 {
+  font-size: clamp(2.8rem, 7vw, 6.5rem);
+  color: #f6fbff;
+  text-shadow: 0 4px 24px #030b17, 0 0 24px #438bdd6b;
+}
+
+.lane::after {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: clamp(275px, 45vw, 590px);
+  z-index: 0;
+  pointer-events: none;
+  background: url("/career-path/choose-path-workers.webp") center top / cover no-repeat;
+  mask-image: linear-gradient(#000 55%, transparent);
+  opacity: .84;
 }
 
 .lane .discovery {
@@ -866,6 +884,7 @@ a.hubHeaderCta { background: #f3c367; color: #081e32; border-color: #f3c367; box
   .resumeProduct .resumeProductStory { margin-bottom: 20px; }
   .resume.resumeProduct { padding-bottom: clamp(70px, 18vw, 96px); }
   .resume::after { right: -6px; }
+  .lane::after { background-size: 100% auto; }
   .lane::before { height: 450px; background-position: center, 57% 28%; }
   .lane .sectionHeading .kicker::before, .lane .sectionHeading .kicker::after,
   .guide .kicker::before, .guide .kicker::after { flex-basis: 23px; }
