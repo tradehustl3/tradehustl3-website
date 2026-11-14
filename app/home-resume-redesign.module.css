@@ -1,12 +1,11 @@
 .resumeLight {
   color: #1b3548;
-  background: radial-gradient(ellipse at 85% 17%, #d8404b22, transparent 39%), radial-gradient(ellipse at 8% 62%, #4c99bc25, transparent 46%), linear-gradient(165deg, #f5f8fa, #e5eff5 38%, #fbfcfc 73%, #e8f0f5);
+  background: #fff;
   border-top: 0 !important;
   padding-top: 0 !important;
 }
-.resumeLight::before { background: repeating-linear-gradient(90deg,#4d8dab12 0 1px,transparent 1px 65px),repeating-linear-gradient(0deg,#4d8dab0b 0 1px,transparent 1px 65px);opacity:.48;mask-image:linear-gradient(180deg,transparent,#000 25%,transparent 85%);height:100%; }
-.resumeLight::after { display: none; }
-.handoff { position:relative;z-index:2;padding:43px 20px 35px;text-align:center;background:linear-gradient(180deg,#071c30 0%,#57829d 27%,#dce8ef 72%,#f5f8fa 100%); }
+.resumeLight::before, .resumeLight::after { display: none; }
+.handoff { position:relative;z-index:2;padding:43px 20px 35px;text-align:center;background:linear-gradient(180deg,#071c30 0%,#dce8ef 19%,#fff 55%); }
 .handoff::before { content:"";position:absolute;inset:0 0 auto;height:3px;background:linear-gradient(90deg,transparent,#d83a42 20%,#eabd5e 50%,#4299c8 82%,transparent);box-shadow:0 0 15px #edb75b70; }
 .handoff p { width:fit-content;margin:0 auto 8px;font-size:clamp(.75rem,1.5vw,1rem);letter-spacing:.16em;text-transform:uppercase;font-weight:900;background:linear-gradient(90deg,#a72737,#e66c2c,#d5a02b);background-clip:text;color:transparent; }
 .handoff strong { display:block;color:#193a50;font:800 clamp(1.25rem,2.6vw,2rem)/1.14 var(--font-home-display),"Arial Narrow",sans-serif;text-transform:uppercase;letter-spacing:.035em; }
