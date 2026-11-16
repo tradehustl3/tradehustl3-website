@@ -384,6 +384,14 @@ test("book sample reader matches the final 486-page interior", async () => {
   assert.match(main, /directory of 200 skilled trades/);
 });
 
+test("book sample page numbers reset the site-wide footer bar", async () => {
+  const css = await readFile(new URL("../app/book/sample/page.module.css", import.meta.url), "utf8");
+  const rule = css.match(/\.bookPage footer \{[^}]*\}/)?.[0] ?? "";
+  assert.match(rule, /background: none;/);
+  assert.match(rule, /min-height: 0;/);
+  assert.match(rule, /padding: 0;/);
+});
+
 test("book hero keeps the approved three-tradespeople artwork without extra silhouettes", async () => {
   const html = (await (await renderPath("/book")).text()).replace(/<!-- -->/g, "");
   assert.doesNotMatch(html, /book-hero-scene|hero-spray-left|hero-spray-right/);
