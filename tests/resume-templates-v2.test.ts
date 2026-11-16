@@ -3,11 +3,12 @@ import test from 'node:test';
 import JSZip from 'jszip';
 import { getDocument, OPS } from 'pdfjs-dist/legacy/build/pdf.mjs';
 import { createResumeDocx, createResumePdf } from '../worker/resume-documents';
-import { FONTS, TEXT_SIZES, SPACINGS, ACCENTS, BODY_SIZES, FONT_FAMILIES, defaultStyle, validStylePatch, type TemplateKey } from '../worker/resume-templates';
+import { FONTS, TEXT_SIZES, SPACINGS, ACCENTS, BODY_SIZES, FONT_FAMILIES, TEMPLATE_KEYS, defaultStyle, validStylePatch, type CareerTrack } from '../worker/resume-templates';
 import { sampleResume } from '../docs/pr186/sample-resume';
 import { readFileSync } from 'node:fs';
 import { DatabaseSync } from 'node:sqlite';
-const themes: TemplateKey[] = ['plain', 'navy', 'lead'];
+// The three track-bearing templates; Premier and Blueprint: resume-templates-design-only.test.ts.
+const themes: CareerTrack[] = ['plain', 'navy', 'lead'];
 async function parse(bytes: Uint8Array) {
   const task = getDocument({ data: Uint8Array.from(bytes), isEvalSupported: false });
   const pdf = await task.promise;
@@ -85,7 +86,7 @@ test('actual PDF structures distinguish mockups: centered header, solid top bar,
 });
 
 test('section headings extract as whole words at every template and text size (ATS)', async () => {
-  for (const theme of themes) for (const textSize of TEXT_SIZES) {
+  for (const theme of TEMPLATE_KEYS) for (const textSize of TEXT_SIZES) {
     const style = { ...defaultStyle(theme), textSize };
     const { pdf, task } = await parse(await createResumePdf(sampleResume, false, theme, 'plain', style));
     try {

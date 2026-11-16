@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { CorrectionWindowNote } from "./correction-window";
+import { isCareerTrack } from "../../../worker/resume-templates";
 
 type CoverLetterState = {
   included: boolean;
@@ -38,7 +39,9 @@ export function CoverLetterPanel({
   // The appearance the customer chose to keep their current wording for. The banner
   // stays hidden for that appearance and returns only if they pick another one.
   const [keptWordingFor, setKeptWordingFor] = useState<string | null>(null);
+  // Only a track-bearing look can be a rewrite target; design-only looks keep the wording.
   const showTrackBanner = coverLetter.generated
+    && isCareerTrack(theme)
     && Boolean(coverLetter.generationTrack)
     && coverLetter.generationTrack !== theme
     && keptWordingFor !== theme;

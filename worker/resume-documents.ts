@@ -1,5 +1,5 @@
 import { renderPdfV2, renderDocxV2 } from './resume-layout-v2';
-import type { ResumeStyle } from './resume-templates';
+import { defaultStyle, isCareerTrack, type CareerTrack, type ResumeStyle, type TemplateKey } from './resume-templates';
 import {
   AlignmentType,
   BorderStyle,
@@ -60,10 +60,12 @@ export type GeneratedResume = {
   additionalInformation: string[];
 };
 
-// Three production resume systems share one verified content object.
+// Production resume systems share one verified content object.
 // Persisted "plain" and "navy" values remain backward compatible:
 // plain = Field Pro, navy = Modern Trade, lead = Lead / Supervisor.
-export type ResumeTheme = "plain" | "navy" | "lead";
+// These three are also the career tracks; design-only templates (Premier,
+// Blueprint) are TemplateKey values and render only through the v2 layout.
+export type ResumeTheme = CareerTrack;
 
 const TRACK_HEADINGS = {
   summary: { plain: "PROFESSIONAL SUMMARY", navy: "PROFESSIONAL PROFILE", lead: "LEADERSHIP PROFILE" },
@@ -172,8 +174,9 @@ function headerParagraphs(resume: GeneratedResume, contactLine: string, theme: R
   ];
 }
 
-export async function createResumeDocx(resume: GeneratedResume, theme: ResumeTheme = "plain", generationTrack: ResumeTheme = theme, style?: ResumeStyle): Promise<Uint8Array> {
+export async function createResumeDocx(resume: GeneratedResume, theme: TemplateKey = "plain", generationTrack: ResumeTheme = isCareerTrack(theme) ? theme : "plain", style?: ResumeStyle): Promise<Uint8Array> {
   if (style?.templateVersion === 2) return renderDocxV2(resume, theme, style, generationTrack);
+  if (!isCareerTrack(theme)) return renderDocxV2(resume, theme, defaultStyle(theme), generationTrack);
   const contactLine = [
     clean(resume.basics.location),
     clean(resume.basics.phone),
@@ -745,8 +748,9 @@ function writeJob(writer: PdfWriter, job: ResumeExperience, jobIndex: number): v
   writer.y -= writer.layout.jobAfter;
 }
 
-export async function createResumePdf(resume: GeneratedResume, watermarked = false, theme: ResumeTheme = "plain", generationTrack: ResumeTheme = theme, style?: ResumeStyle): Promise<Uint8Array> {
+export async function createResumePdf(resume: GeneratedResume, watermarked = false, theme: TemplateKey = "plain", generationTrack: ResumeTheme = isCareerTrack(theme) ? theme : "plain", style?: ResumeStyle): Promise<Uint8Array> {
   if (style?.templateVersion === 2) return renderPdfV2(resume, theme, style, watermarked, generationTrack);
+  if (!isCareerTrack(theme)) return renderPdfV2(resume, theme, defaultStyle(theme), watermarked, generationTrack);
   const document = await PDFDocument.create();
   document.registerFontkit(fontkit);
   const baseLayout = theme === "navy" ? MODERN_PDF_LAYOUT : theme === "lead" ? LEAD_PDF_LAYOUT : STANDARD_PDF_LAYOUT;
