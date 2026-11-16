@@ -560,6 +560,9 @@ h2.rb-section-title { margin: 0 0 4px; font-size: 20px; }
 .rb-blueprint-lead { border-top: 6px solid var(--rb-navy); }
 .rb-blueprint-lead i:first-child { width: 68%; background: var(--rb-navy); }
 .rb-blueprint-lead b { height: 3px; background: var(--rb-navy); }
+.rb-blueprint-premier b { height: 4px; border-top: 2px solid var(--rb-text); border-bottom: 1px solid var(--rb-text); background: none; }
+.rb-blueprint-blueprint i:first-child { width: auto; height: 48px; margin: -6% -4% 4%; border-radius: 2px; background: var(--rb-navy); }
+.rb-blueprint-blueprint b { height: 10px; border-left: 3px solid var(--rb-navy); background: #e2e8f0; }
 
 .rb-theme-label { display: block; margin: 20px 0 10px; color: var(--rb-text); font-size: 15px; font-weight: 700; }
 .rb-theme-picker { display: grid; gap: 10px; }

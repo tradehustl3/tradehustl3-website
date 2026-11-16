@@ -1,5 +1,5 @@
 import { withCustomerScope } from './resume-presentation-content';
-import { storedStyle } from './resume-templates';
+import { isCareerTrack, isTemplateKey, normalizeTemplate, storedStyle, trackForTemplate, type TemplateKey } from './resume-templates';
 import { customizeResume } from './resume-customization';
 import { handleSmokeSession, SMOKE_SESSION_PATH } from './resume-smoke-session';
 import { errorKind } from "./resume-safe-log";
@@ -567,12 +567,13 @@ async function reconcileImportedExtraction(
   });
 }
 
+/** A career track: the wording track for a package rewrite. */
 function isResumeTheme(theme: unknown): theme is ResumeTheme {
-  return theme === "plain" || theme === "navy" || theme === "lead";
+  return isCareerTrack(theme);
 }
 
-function themeOnlyBody(body: Record<string, unknown> | null): body is { theme: ResumeTheme } {
-  return Boolean(body && Object.keys(body).length === 1 && isResumeTheme(body.theme));
+function themeOnlyBody(body: Record<string, unknown> | null): body is { theme: TemplateKey } {
+  return Boolean(body && Object.keys(body).length === 1 && isTemplateKey(body.theme));
 }
 
 async function sha256Hex(bytes: Uint8Array): Promise<string> {
@@ -612,15 +613,16 @@ async function rerenderResumeTheme(
   env: ResumeBuilderEnv,
   dependencies: ResumeBuilderDependencies,
   resumeId: string,
-  theme: ResumeTheme,
+  theme: TemplateKey,
 ): Promise<void> {
   const record = await env.DB.prepare(
     "SELECT user_id, generated_json, intake_json, generation_track, theme, font, text_size, spacing, accent, template_version FROM resumes WHERE resume_id = ? AND deleted_at IS NULL LIMIT 1",
-  ).bind(resumeId).first<{ user_id: string; generated_json: string | null; intake_json?: string; generation_track?: ResumeTheme; theme: ResumeTheme; font?: string; text_size?: string; spacing?: string; accent?: string; template_version?: number }>();
+  ).bind(resumeId).first<{ user_id: string; generated_json: string | null; intake_json?: string; generation_track?: ResumeTheme; theme: string; font?: string; text_size?: string; spacing?: string; accent?: string; template_version?: number }>();
   if (!record?.generated_json) return;
   if (!env.BOOKS) throw new Error("Resume file storage is unavailable.");
 
   const generated = withCustomerScope(JSON.parse(record.generated_json) as GeneratedResume, record.intake_json);
+  const track = isCareerTrack(record.generation_track) ? record.generation_track : trackForTemplate(record.theme, null);
   const generationId = crypto.randomUUID();
   const newObjectKeys = (["docx", "pdf", "preview"] as const).map((format) => {
     const extension = format === "docx" ? "docx" : "pdf";
@@ -634,9 +636,9 @@ async function rerenderResumeTheme(
 
   try {
     const [docx, pdf, preview] = await Promise.all([
-      (dependencies.createDocx ?? createResumeDocx)(generated, theme, record.generation_track ?? record.theme, storedStyle(record, theme)),
-      (dependencies.createPdf ?? createResumePdf)(generated, false, theme, record.generation_track ?? record.theme, storedStyle(record, theme)),
-      (dependencies.createPdf ?? createResumePdf)(generated, true, theme, record.generation_track ?? record.theme, storedStyle(record, theme)),
+      (dependencies.createDocx ?? createResumeDocx)(generated, theme, track, storedStyle(record, theme)),
+      (dependencies.createPdf ?? createResumePdf)(generated, false, theme, track, storedStyle(record, theme)),
+      (dependencies.createPdf ?? createResumePdf)(generated, true, theme, track, storedStyle(record, theme)),
     ]);
     const fileStatements = await Promise.all([
       storeThemeFile(env, record.user_id, resumeId, generationId, "docx", docx),
@@ -759,7 +761,7 @@ async function rollbackPackageTrackRewrite(
       "SELECT theme FROM resumes WHERE resume_id = ? AND deleted_at IS NULL LIMIT 1",
     ).bind(resumeId).first<{ theme: string }>();
     const currentTheme = current?.theme;
-    await rerenderResumeTheme(env, dependencies, resumeId, isResumeTheme(currentTheme) ? currentTheme : "plain");
+    await rerenderResumeTheme(env, dependencies, resumeId, normalizeTemplate(currentTheme));
     return true;
   } catch (error) {
     console.error("Package career-track rollback (files) failed", errorKind(error));
@@ -1062,7 +1064,7 @@ export async function handleResumeBuilderRoute(
     if (blocked) return blocked;
   }
 
-  let previousTheme: ResumeTheme | null = null;
+  let previousTheme: TemplateKey | null = null;
   let hadGeneratedResume = false;
   if (themeChange && resumePathMatch) {
     const probe = await handleBaseResumeBuilderRoute(
@@ -1076,7 +1078,7 @@ export async function handleResumeBuilderRoute(
     const resumeValue = probePayload?.resume;
     if (!resumeValue || typeof resumeValue !== "object" || Array.isArray(resumeValue)) return probe;
     const resume = resumeValue as Record<string, unknown>;
-    previousTheme = isResumeTheme(resume.theme) ? resume.theme : "plain";
+    previousTheme = normalizeTemplate(resume.theme);
     hadGeneratedResume = typeof resume.previewUrl === "string" && resume.previewUrl.length > 0;
   }
 
@@ -1166,7 +1168,7 @@ export async function handleResumeBuilderRoute(
         ? coverLetterRefreshed
           ? "Style updated. Your resume and matching cover letter files were refreshed without using an AI run."
           : "Resume style updated. Your preview, PDF, and DOCX were refreshed without using an AI run."
-        : "Resume system selected. Choose Field Pro, Modern Trade, or Lead / Supervisor before your first build.",
+        : "Resume style selected. You can change it any time before or after your first build.",
     });
   }
 

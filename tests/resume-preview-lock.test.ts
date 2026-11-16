@@ -5,12 +5,11 @@ import JSZip from "jszip";
 import { createResumeDocx, createResumePdf, type GeneratedResume } from "../worker/resume-documents";
 import { createCoverLetterPdf, type GeneratedCoverLetter } from "../worker/cover-letter-documents";
 import { lockedBulletCount, readableBulletKeys } from "../worker/resume-preview-lock";
-import { defaultStyle, type TemplateKey } from "../worker/resume-templates";
+import { CAREER_TRACKS, TEMPLATE_KEYS, defaultStyle, trackForTemplate } from "../worker/resume-templates";
 import { handleResumeBuilderRoute } from "../worker/resume-builder";
 import { sampleResume } from "../docs/pr186/sample-resume";
 import { sqliteD1, seedSession, TEST_SESSION } from "./helpers/sqlite-d1";
 
-const themes: TemplateKey[] = ["plain", "navy", "lead"];
 
 // Distinctive words from sampleResume. Readable: the first two bullets of the
 // first job. Locked: every later bullet.
@@ -50,13 +49,15 @@ test("the readable budget never shows more than half of the bullets", () => {
 });
 
 for (const version of [1, 2] as const) {
-  for (const theme of themes) {
+  // Design-only looks exist only in v2, so they are covered by the v2 pass.
+  for (const theme of version === 1 ? CAREER_TRACKS : TEMPLATE_KEYS) {
     test(`v${version} ${theme}: locked preview text never reaches the PDF, and layout matches the paid file`, async () => {
       const style = version === 2 ? defaultStyle(theme) : undefined;
+      const track = trackForTemplate(theme, null);
       const resume: GeneratedResume = { ...sampleResume, additionalInformation: ["Bilingual English and Spanish"] };
       const [clean, preview] = await Promise.all([
-        createResumePdf(resume, false, theme, theme, style),
-        createResumePdf(resume, true, theme, theme, style),
+        createResumePdf(resume, false, theme, track, style),
+        createResumePdf(resume, true, theme, track, style),
       ]);
       const paid = await pdfText(clean);
       const locked = await pdfText(preview);

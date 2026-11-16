@@ -3,13 +3,14 @@
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { CoverLetterPanel } from "./cover-letter-panel";
 import { StyleControls } from "./style-controls";
-import { defaultStyle, type ResumeStyle } from "../../../worker/resume-templates";
+import { defaultStyle, isCareerTrack, type CareerTrack, type ResumeStyle, type TemplateKey } from "../../../worker/resume-templates";
 import { ProtectedPdfPreview } from "./protected-pdf-preview";
 import { generationFailureIntakeUrl, intakeReturnUrl } from "../return-urls";
 import { analyticsCheckoutContext } from "../funnel-analytics";
 import { CorrectionWindowNote } from "./correction-window";
 
-type ResumeTheme = "plain" | "navy" | "lead";
+/** The writing track. Only the first three looks carry one. */
+type ResumeTheme = CareerTrack;
 type PreviewTab = "resume" | "cover-letter";
 type MessageTone = "info" | "success" | "error";
 
@@ -18,7 +19,7 @@ type Resume = {
   trade: string;
   title: string;
   status: string;
-  theme: ResumeTheme;
+  theme: TemplateKey;
   style?: ResumeStyle;
   generationTrack: ResumeTheme;
   paid: boolean;
@@ -82,9 +83,9 @@ function LockIcon() {
   );
 }
 
-// Persisted keys stay backward compatible while customers see the three
-// production TRADE HUSTL3 resume systems.
-const THEME_OPTIONS: { value: ResumeTheme; label: string; tagline: string; note: string }[] = [
+// Persisted keys stay backward compatible. The first three looks also set the
+// career track (wording); Premier and Blueprint change the design only.
+const THEME_OPTIONS: { value: TemplateKey; label: string; tagline: string; note: string }[] = [
   {
     value: "plain",
     label: "Field Pro",
@@ -102,6 +103,18 @@ const THEME_OPTIONS: { value: ResumeTheme; label: string; tagline: string; note:
     label: "Lead / Supervisor",
     tagline: "Built to lead the work.",
     note: "Leadership-first structure for foremen, leads, supervisors, facilities leaders, and senior tradespeople moving up.",
+  },
+  {
+    value: "premier",
+    label: "Premier",
+    tagline: "Refined. Understated. Senior.",
+    note: "Design only — keeps your wording. Experience-first with a double-rule header and a clean skills line.",
+  },
+  {
+    value: "blueprint",
+    label: "Blueprint",
+    tagline: "Bold header. Credentials up front.",
+    note: "Design only — keeps your wording. A solid header panel, banded section headings, and each credential on its own line.",
   },
 ];
 
@@ -248,7 +261,7 @@ export function ResumeReview() {
     if (await runGeneration(correction)) formElement.reset();
   }
 
-  async function updateTheme(theme: ResumeTheme): Promise<boolean> {
+  async function updateTheme(theme: TemplateKey): Promise<boolean> {
     if (!resumeId || !resume || resume.theme === theme || themeSaving || styleSaving) return false;
     const previous = resume.theme;
     setThemeSaving(true);
@@ -305,15 +318,21 @@ export function ResumeReview() {
     }
   }
 
-  function themeLabel(value: ResumeTheme): string {
+  function themeLabel(value: TemplateKey): string {
     return THEME_OPTIONS.find((option) => option.value === value)?.label ?? "this style";
   }
 
   // Picking a style always changes the look right away unless a paid customer can
   // actually choose a rewrite: then a visible choice asks how to handle the wording.
-  async function chooseStyle(value: ResumeTheme) {
+  async function chooseStyle(value: TemplateKey) {
     if (!resume || value === resume.theme) { setPendingTrack(null); return; }
     const generated = resume.status === "ready";
+    if (!isCareerTrack(value)) {
+      // Design-only looks never change the wording, so there is nothing to ask.
+      setPendingTrack(null);
+      if (await updateTheme(value) && generated) notify(`Look switched to ${themeLabel(value)} for free. Your wording stays written for ${themeLabel(resume.generationTrack)}.`, "success");
+      return;
+    }
     const differsFromWriting = generated && value !== resume.generationTrack;
     if (differsFromWriting && resume.paid && resume.correctionsRemaining > 0) {
       setPendingTrack(value);

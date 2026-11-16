@@ -3,12 +3,12 @@ import { performance } from 'node:perf_hooks';
 import { sampleResume } from '../../docs/pr186/sample-resume';
 import { createResumePdf, createResumeDocx } from '../../worker/resume-documents';
 import { createCoverLetterPdf, createCoverLetterDocx } from '../../worker/cover-letter-documents';
-import { defaultStyle, type TemplateKey } from '../../worker/resume-templates';
+import { TEMPLATE_KEYS, defaultStyle, trackForTemplate } from '../../worker/resume-templates';
 await mkdir('docs/pr186/samples', { recursive: true });
 const timings: Record<string, number> = {};
-for (const theme of ['plain', 'navy', 'lead'] as TemplateKey[]) {
-  const style = defaultStyle(theme), start = performance.now();
-  const [pdf, docx] = await Promise.all([createResumePdf(sampleResume, false, theme, theme, style), createResumeDocx(sampleResume, theme, theme, style)]);
+for (const theme of TEMPLATE_KEYS) {
+  const style = defaultStyle(theme), track = trackForTemplate(theme, null), start = performance.now();
+  const [pdf, docx] = await Promise.all([createResumePdf(sampleResume, false, theme, track, style), createResumeDocx(sampleResume, theme, track, style)]);
   timings[theme] = Math.round(performance.now() - start);
   await writeFile(`docs/pr186/samples/${theme}.pdf`, pdf);
   await writeFile(`docs/pr186/samples/${theme}.docx`, docx);
