@@ -69,7 +69,9 @@ jobs:
           for dir in css _vinext_fonts; do
             [ -d "visual-snapshot/_next/static/$dir" ] && cp -r "visual-snapshot/_next/static/$dir" review/bundle/_next/static/
           done
-          printf 'Visual review for %s\nScreenshots: screenshots/\n' "$SHA" > review/README.md
+          # Resume style samples (real fonts), reviewable and copyable into public/resume-templates.
+          [ -d visual-snapshot/resume-template-samples ] && cp -r visual-snapshot/resume-template-samples review/
+          printf 'Visual review for %s\nScreenshots: screenshots/\nResume style samples: resume-template-samples/\n' "$SHA" > review/README.md
           cd review
           git init -q -b review
           git config user.name "github-actions[bot]"

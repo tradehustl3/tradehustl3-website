@@ -162,7 +162,8 @@ test('Blueprint draws a header panel with contact at the right, a credential str
     assert.deepEqual(pixel(2, 2), [255, 255, 255], 'page corner outside the panel');
     assert.deepEqual(pixel(60, 40), [255, 255, 255], 'nothing above the top margin');
     assert.deepEqual(pixel(25, 60), [32, 61, 96], 'Navy panel reaches past the text margin');
-    assert.deepEqual(pixel(300, 140), [233, 236, 239], 'tinted credential strip');
+    // Beside the credential label, past the last box, at the label's own height.
+    assert.deepEqual(pixel(556, Math.round(792 - label.y - 3)), [233, 236, 239], 'tinted credential strip');
   } finally { await task.destroy(); }
   const xml = await (await JSZip.loadAsync(await createResumeDocx(sampleResume, 'blueprint', 'plain', defaultStyle('blueprint')))).file('word/document.xml')!.async('string');
   assert.match(xml, /<w:shd [^>]*w:fill="203D60"/, 'DOCX solid panel shading');
