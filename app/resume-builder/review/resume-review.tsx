@@ -1,15 +1,16 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
+import { FormEvent, useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { CoverLetterPanel } from "./cover-letter-panel";
 import { StyleControls } from "./style-controls";
-import { defaultStyle, isCareerTrack, type CareerTrack, type ResumeStyle, type TemplateKey } from "../../../worker/resume-templates";
+import { StyleCarousel } from "./style-carousel";
+import { CAREER_TRACKS, TEMPLATE_LABELS, TRACK_LABELS, defaultStyle, pickerTemplatesFor, type CareerTrack, type ResumeStyle, type TemplateKey } from "../../../worker/resume-templates";
 import { ProtectedPdfPreview } from "./protected-pdf-preview";
 import { generationFailureIntakeUrl, intakeReturnUrl } from "../return-urls";
 import { analyticsCheckoutContext } from "../funnel-analytics";
 import { CorrectionWindowNote } from "./correction-window";
 
-/** The writing track. Only the first three looks carry one. */
+/** The writing focus (career track). It is chosen separately from the look. */
 type ResumeTheme = CareerTrack;
 type PreviewTab = "resume" | "cover-letter";
 type MessageTone = "info" | "success" | "error";
@@ -83,40 +84,10 @@ function LockIcon() {
   );
 }
 
-// Persisted keys stay backward compatible. The first three looks also set the
-// career track (wording); Premier and Blueprint change the design only.
-const THEME_OPTIONS: { value: TemplateKey; label: string; tagline: string; note: string }[] = [
-  {
-    value: "plain",
-    label: "Field Pro",
-    tagline: "Built for the work.",
-    note: "Hands-on, direct, and ATS-safe. Technical skills, credentials, equipment, and field experience stay easy to scan.",
-  },
-  {
-    value: "navy",
-    label: "Modern Trade",
-    tagline: "Technical. Clean. Professional.",
-    note: "A sharper commercial look with stronger hierarchy, more white space, and polished technical positioning.",
-  },
-  {
-    value: "lead",
-    label: "Lead / Supervisor",
-    tagline: "Built to lead the work.",
-    note: "Leadership-first structure for foremen, leads, supervisors, facilities leaders, and senior tradespeople moving up.",
-  },
-  {
-    value: "premier",
-    label: "Premier",
-    tagline: "Refined. Understated. Senior.",
-    note: "Design only — keeps your wording. Experience-first with a double-rule header and a clean skills line.",
-  },
-  {
-    value: "blueprint",
-    label: "Blueprint",
-    tagline: "Bold header. Credentials up front.",
-    note: "Design only — keeps your wording. A solid header panel, banded section headings, and each credential on its own line.",
-  },
-];
+// Looks and writing focus are separate choices. The carousel offers the looks
+// (labels live in worker/resume-templates.ts, including the retired Modern Trade
+// and Lead / Supervisor looks that existing resumes may still use); the writing
+// focus below steers wording only and never changes the layout.
 
 type GenerationFailure = {
   code?: string;
@@ -145,6 +116,8 @@ export function ResumeReview() {
   const [retryGeneration, setRetryGeneration] = useState(false);
   const [intakeNotice, setIntakeNotice] = useState<GenerationFailure | null>(null);
   const [pendingTrack, setPendingTrack] = useState<ResumeTheme | null>(null);
+  // Writing focus picked before the first build; null keeps the saved one.
+  const [firstBuildFocus, setFirstBuildFocus] = useState<ResumeTheme | null>(null);
   const trackChoiceRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
     if (pendingTrack) trackChoiceRef.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
@@ -218,7 +191,8 @@ export function ResumeReview() {
         method: "POST",
         credentials: "same-origin",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(generationTrack ? { generationTrack } : correctionRequest ? { correctionRequest } : {}),
+        // `writingTrack` only applies to a first build; the server ignores it afterwards.
+        body: JSON.stringify(generationTrack ? { generationTrack } : correctionRequest ? { correctionRequest } : firstBuildFocus ? { writingTrack: firstBuildFocus } : {}),
       });
       const result = await response.json() as GenerationFailure & { sourceRecovery?: boolean };
       if (!response.ok) {
@@ -319,72 +293,79 @@ export function ResumeReview() {
   }
 
   function themeLabel(value: TemplateKey): string {
-    return THEME_OPTIONS.find((option) => option.value === value)?.label ?? "this style";
+    return TEMPLATE_LABELS[value]?.label ?? "this style";
   }
 
-  // Picking a style always changes the look right away unless a paid customer can
-  // actually choose a rewrite: then a visible choice asks how to handle the wording.
-  async function chooseStyle(value: TemplateKey) {
-    if (!resume || value === resume.theme) { setPendingTrack(null); return; }
+  function focusLabel(value: ResumeTheme): string {
+    return TRACK_LABELS[value].label;
+  }
+
+  // Picking a look only ever changes the look: it is free, uses no correction and
+  // never rewrites the wording. Resolves false when the look could not be saved.
+  async function chooseStyle(value: TemplateKey): Promise<boolean> {
+    if (!resume) return false;
+    if (value === resume.theme) return true;
     const generated = resume.status === "ready";
-    if (!isCareerTrack(value)) {
-      // Design-only looks never change the wording, so there is nothing to ask.
-      setPendingTrack(null);
-      if (await updateTheme(value) && generated) notify(`Look switched to ${themeLabel(value)} for free. Your wording stays written for ${themeLabel(resume.generationTrack)}.`, "success");
-      return;
-    }
-    const differsFromWriting = generated && value !== resume.generationTrack;
-    if (differsFromWriting && resume.paid && resume.correctionsRemaining > 0) {
-      setPendingTrack(value);
-      return;
-    }
-    setPendingTrack(null);
     const switched = await updateTheme(value);
-    if (switched && differsFromWriting) {
-      notify(resume.paid
-        ? `Look switched to ${themeLabel(value)} for free. Your wording stays written for ${themeLabel(resume.generationTrack)} because all three corrections have been used.`
-        : `Look switched to ${themeLabel(value)} for free. Your wording stays written for ${themeLabel(resume.generationTrack)}. After you unlock the package, you can rewrite it for ${themeLabel(value)} with one correction.`, "success");
-    }
+    if (switched && generated) notify(`Look switched to ${themeLabel(value)} for free. Your wording did not change.`, "success");
+    return switched;
   }
 
-  function renderThemePicker() {
+  function renderStyleCarousel(preview?: ReactNode) {
     if (!resume) return null;
     return (
+      <StyleCarousel looks={pickerTemplatesFor(resume.theme)} current={resume.theme} busy={themeSaving || styleSaving} disabled={working} onPick={chooseStyle}>
+        {preview}
+      </StyleCarousel>
+    );
+  }
+
+  // The writing focus steers wording only. Before the first build it is free to
+  // change; afterwards a change is a package rewrite that uses one correction.
+  function renderWritingFocus() {
+    if (!resume) return null;
+    const generated = resume.status === "ready";
+    const active = generated ? resume.generationTrack : firstBuildFocus ?? resume.generationTrack;
+    const canRewrite = generated && resume.paid && resume.correctionsRemaining > 0;
+    const locked = generated && !canRewrite;
+    return (
       <>
-      <div className="rb-theme-picker" role="radiogroup" aria-label="Resume system">
-        {THEME_OPTIONS.map((option) => {
-          const selected = resume.theme === option.value;
+      <div className="rb-focus-picker" role="radiogroup" aria-label="Writing focus">
+        {CAREER_TRACKS.map((track) => {
+          const selected = active === track;
           return (
             <button
               type="button"
-              key={option.value}
+              key={track}
               role="radio"
               aria-checked={selected}
-              className={`rb-trade-card${selected ? " rb-trade-card-on" : ""}${pendingTrack === option.value ? " rb-trade-card-pending" : ""}`}
-              disabled={themeSaving || styleSaving || working}
-              onClick={() => void chooseStyle(option.value)}
+              className={`rb-focus-option${selected ? " rb-focus-option-on" : ""}${pendingTrack === track ? " rb-focus-option-pending" : ""}`}
+              disabled={working || themeSaving || styleSaving || (locked && !selected)}
+              onClick={() => {
+                if (!generated) { setFirstBuildFocus(track); return; }
+                setPendingTrack(track === resume.generationTrack ? null : track);
+              }}
             >
-              <span className={`rb-theme-preview rb-theme-preview-${option.value}`} aria-hidden="true">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={`/resume-templates/${option.value}.png`} alt="" />
-              </span>
-              <span className="rb-trade-card-name">{option.label}</span>
-              <span className="rb-theme-tagline">{option.tagline}</span>
-              <span className="rb-trade-card-note">{option.note}</span>
+              <strong>{focusLabel(track)}</strong>
+              <span>{TRACK_LABELS[track].note}</span>
             </button>
           );
         })}
       </div>
-      {pendingTrack ? (
+      {locked ? (
+        <small className="rb-theme-note">{resume.paid
+          ? `Your wording stays written for ${focusLabel(resume.generationTrack)} because all three corrections have been used.`
+          : `Your wording is written for ${focusLabel(resume.generationTrack)}. After you unlock the package, you can rewrite it for another focus with one correction.`}</small>
+      ) : null}
+      {pendingTrack && canRewrite ? (
         <div className="rb-track-choice" ref={trackChoiceRef} role="group" aria-labelledby="track-choice-title" aria-live="polite">
-          <p className="rb-kicker">Switching to {themeLabel(pendingTrack)}</p>
-          <h3 id="track-choice-title">How should your wording change?</h3>
-          <p>Your resume was written for <strong>{themeLabel(resume.generationTrack)}</strong>. Keep that wording with the new look for free, or have HUSTL3 BOT rewrite your resume and matching cover letter for <strong>{themeLabel(pendingTrack)}</strong> using only your verified facts.</p>
+          <p className="rb-kicker">Switching to {focusLabel(pendingTrack)}</p>
+          <h3 id="track-choice-title">Rewrite your wording?</h3>
+          <p>Your resume was written for <strong>{focusLabel(resume.generationTrack)}</strong>. HUSTL3 BOT can rewrite your resume and matching cover letter for <strong>{focusLabel(pendingTrack)}</strong> using only your verified facts. Your look stays the same.</p>
           <div className="rb-track-choice-actions">
-            <button className="rb-button rb-button-primary" type="button" disabled={working || themeSaving || styleSaving} onClick={async () => { const track = pendingTrack; if (await runGeneration(undefined, track)) { await updateTheme(track); setPendingTrack(null); } }}>Rewrite for {themeLabel(pendingTrack)} <span aria-hidden="true">· 1 correction</span></button>
-            <button className="rb-button rb-button-secondary-dark" type="button" disabled={working || themeSaving || styleSaving} onClick={async () => { const track = pendingTrack; setPendingTrack(null); await updateTheme(track); }}>Keep my wording <span aria-hidden="true">· free</span></button>
+            <button className="rb-button rb-button-primary" type="button" disabled={working || themeSaving || styleSaving} onClick={async () => { const track = pendingTrack; if (await runGeneration(undefined, track)) setPendingTrack(null); }}>Rewrite for {focusLabel(pendingTrack)} <span aria-hidden="true">· 1 correction</span></button>
+            <button className="rb-button rb-button-secondary-dark" type="button" disabled={working || themeSaving || styleSaving} onClick={() => setPendingTrack(null)}>Keep my wording <span aria-hidden="true">· free</span></button>
           </div>
-          <button className="rb-track-choice-cancel" type="button" disabled={working || themeSaving || styleSaving} onClick={() => setPendingTrack(null)}>Cancel</button>
           <small>{resume.correctionsRemaining} of 3 shared corrections remaining. A rewrite uses exactly one and updates your resume and matching cover letter together.</small>
         </div>
       ) : null}
@@ -497,12 +478,12 @@ export function ResumeReview() {
       {!hasDraft ? (
         <section className="rb-first-build">
           <div className="rb-doc-frame">
-            <div className={`rb-blueprint rb-blueprint-${resume.theme}`} aria-hidden="true"><i /><i /><b /><i /><i /><i /><i /><b /><i /><i /><i /><i /><i /><b /><i /><i /><i /></div>
-            <small>{THEME_OPTIONS.find((option) => option.value === resume.theme)?.label} layout · your watermarked preview is built next</small>
+            {renderStyleCarousel()}
+            <small>{themeLabel(resume.theme)} layout · your watermarked preview is built next</small>
           </div>
-          <div><p className="rb-kicker">Preview before you pay</p><h2>Choose your resume system. Then build.</h2><p>Pick how you want employers to read your experience. HUSTL3 BOT uses the selected writing profile on the first build while staying locked to the facts you provided—no invented licenses, employers, duties, or results.</p>
-          <span className="rb-theme-label">Choose your resume system</span>
-          {renderThemePicker()}
+          <div><p className="rb-kicker">Preview before you pay</p><h2>Pick your look. Then build.</h2><p>Swipe through the styles on the left and stop on the one you like. Switching styles is always free. HUSTL3 BOT writes your resume from the facts you provided—no invented licenses, employers, duties, or results.</p>
+          <span className="rb-theme-label">Writing focus</span>
+          {renderWritingFocus()}
           <button className="rb-button rb-button-primary" type="button" disabled={working} onClick={() => void runGeneration()}>{working ? "Building your resume…" : "Build my watermarked preview"} <span aria-hidden="true">→</span></button>
           {renderNotice()}</div>
         </section>
@@ -531,7 +512,9 @@ export function ResumeReview() {
             {activePreview === "resume" ? (
               <>
                 <div className="rb-preview-toolbar"><div><span className="rb-status-dot" />{resume.paid ? "Clean paid resume" : "Protected watermarked preview"}</div><small>{resume.paid ? "Watermark removed · clean files below" : "Gray lines unlock after purchase"}</small></div>
-                <ProtectedPdfPreview key={`${resume.previewUrl}-${resume.runsUsed}-${resume.paid}-${resume.theme}-${previewRevision}`} src={resumePreviewSrc} title={resume.paid ? "Clean paid resume" : "Watermarked resume preview with locked lines"} />
+                {renderStyleCarousel(
+                  <ProtectedPdfPreview key={`${resume.previewUrl}-${resume.runsUsed}-${resume.paid}-${resume.theme}-${previewRevision}`} src={resumePreviewSrc} title={resume.paid ? "Clean paid resume" : "Watermarked resume preview with locked lines"} />,
+                )}
                 {!resume.paid ? renderLockNote(lockedBullets > 0
                   ? `${lockedBullets} of your experience bullet${lockedBullets === 1 ? " is" : "s are"} locked in this preview.`
                   : "This preview is watermarked.") : null}
@@ -556,10 +539,13 @@ export function ResumeReview() {
 
           <aside className="rb-review-sidebar">
             <div className="rb-review-status"><p className="rb-kicker">{resume.paid ? "Review + refine" : "Preview before you pay"}</p><h2>{resume.paid ? "Make it sound like you." : "Review the whole package."}</h2><p className="rb-review-desc">{resume.paid ? "Check names, dates, certifications, job duties, contact information, and your included matching cover letter before downloading." : "Your resume is ready. The preview shows your header, summary, skills, credentials and first highlights; gray bars mark the lines that unlock after purchase. Build the included cover-letter preview, then pay once to unlock every line and the clean PDF + Word files."}</p>
-              <span className="rb-theme-label">Resume system</span>
-              {renderThemePicker()}
-              <StyleControls key={`${resume.theme}-${JSON.stringify(resume.style)}`} resumeId={resumeId} style={resume.style ?? defaultStyle(resume.theme)} disabled={working || themeSaving} onBusy={setStyleSaving} onSaved={async () => { await load(resumeId); setPreviewRevision(value => value + 1); }} />
-              <small className="rb-theme-note">Your first build uses the selected system&apos;s writing profile and layout. Switching the look later is always free. After you unlock the package, you can also rewrite the wording for a new system with one correction.</small>
+              <span className="rb-theme-label">Writing focus</span>
+              {renderWritingFocus()}
+              <details className="rb-adjust">
+                <summary>Adjust font, size &amp; color</summary>
+                <StyleControls key={`${resume.theme}-${JSON.stringify(resume.style)}`} resumeId={resumeId} style={resume.style ?? defaultStyle(resume.theme)} disabled={working || themeSaving} onBusy={setStyleSaving} onSaved={async () => { await load(resumeId); setPreviewRevision(value => value + 1); }} />
+              </details>
+              <small className="rb-theme-note">Swipe the preview to change the look. Switching the look is always free and never changes your wording.</small>
             </div>
 
 
@@ -568,7 +554,7 @@ export function ResumeReview() {
                 resumeId={resumeId}
                 coverLetter={coverLetter}
                 paid={resume.paid}
-                theme={resume.theme}
+                track={resume.generationTrack}
                 onRefresh={async () => { await load(resumeId); setActivePreview("cover-letter"); }}
                 onMessage={notify}
               />

@@ -1,6 +1,6 @@
 import { withCustomerScope } from './resume-presentation-content';
 import { agentReportWindow } from './agent-report-window';
-import { storedStyle, defaultStyle, isCareerTrack, isTemplateKey, normalizeTemplate, normalizeTrack, trackForTemplate, type TemplateKey } from './resume-templates';
+import { storedStyle, defaultStyle, firstBuildTrack, isCareerTrack, isTemplateKey, normalizeTemplate, normalizeTrack, trackForTemplate, type TemplateKey } from './resume-templates';
 import { errorKind } from "./resume-safe-log";
 import { operationalEvent } from "./operations-monitoring";
 import { notifyResumeRecovery, type RecoveryContext } from "./resume-recovery";
@@ -3697,6 +3697,12 @@ async function generateResume(
     return json({ ok: false, message: "Choose a valid career track." }, 400);
   }
   const rewriteTrack = requestedTrack === undefined ? null : normalizeTrack(requestedTrack);
+  // The look no longer carries the writing focus, so a first build may name it.
+  // It is ignored once a resume exists: changing the track then is a paid rewrite.
+  const requestedFirstTrack = body?.writingTrack;
+  if (requestedFirstTrack !== undefined && !isCareerTrack(requestedFirstTrack)) {
+    return json({ ok: false, message: "Choose a valid career track." }, 400);
+  }
   const correctionRequest = rewriteTrack
     ? "Rewrite the resume for the selected career track. Reframe only supported experience; preserve all verified facts and never invent leadership responsibilities."
     : cleanText(body?.correctionRequest, 2_000) || null;
@@ -3719,9 +3725,10 @@ async function generateResume(
   }
 
   // Change the in-memory writing profile only; persist it after successful generation.
-  // A first generation takes its track from a track-bearing template; with a
-  // design-only template it keeps the stored track (Field Pro when none).
-  const generationTrack = rewriteTrack ?? (resume.generated_json ? resumeTrack(resume) : trackForTemplate(resume.theme, resume.generation_track));
+  // A first generation uses the writing focus the customer chose. Without one it
+  // takes its track from a track-bearing template; with a design-only template it
+  // keeps the stored track (Field Pro when none).
+  const generationTrack = rewriteTrack ?? (resume.generated_json ? resumeTrack(resume) : firstBuildTrack(requestedFirstTrack, resume.theme, resume.generation_track));
   resume.generation_track = generationTrack;
 
   const configuredGlobalLimit = Number.parseInt(env.RESUME_AI_DAILY_ATTEMPT_LIMIT ?? "", 10);

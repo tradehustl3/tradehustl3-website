@@ -39,11 +39,40 @@ export function skillColumnsThatFit(skills: readonly string[], preferred: number
   for (let count = preferred; count > 1; count--) if (longest <= skillCharsPerColumn(count, bodyPt)) return count;
   return 1;
 }
-type Block = { kind: 'heading' | 'text' | 'grid' | 'job' | 'education'; text?: string; bold?: boolean; italic?: boolean; accent?: boolean; muted?: boolean; right?: string; columns?: string[][]; labels?: string[]; bullet?: boolean; keepNext?: boolean; locked?: boolean };
+/** Clear space under a solid heading band, so the first line does not touch it. */
+const BAND_GAP = 3;
+/** Average date-character width as a share of the font size (the timeline estimate). */
+const TIMELINE_CHAR_EM = 0.56;
+/** Widest left date column the Technical look allows before dates return to the right margin. */
+const TIMELINE_MAX = 150;
+/**
+ * Technical look: width in points of the left date column, or 0 when there are no
+ * dates or one is too long to sit in a column. Estimated from character counts, not
+ * font metrics, so the PDF and the DOCX always make the same choice.
+ */
+export function timelineGutter(resume: GeneratedResume, bodyPt: number): number {
+  const dates = [
+    ...resume.experience.map(job => [job.startDate, job.endDate].map(clean).filter(Boolean).join(' – ')),
+    ...resume.education.map(ed => clean(ed.year)),
+  ];
+  const longest = Math.max(0, ...dates.map(date => date.length));
+  if (!longest) return 0;
+  const width = Math.ceil(longest * bodyPt * TIMELINE_CHAR_EM) + 12;
+  return width <= TIMELINE_MAX ? width : 0;
+}
+/**
+ * `indent` moves a block right by that many points; `gutter` is text (a date) set in
+ * that indent on the block's first line; `lead` is a bold label that starts the line.
+ */
+type Block = { kind: 'heading' | 'text' | 'grid' | 'job' | 'education'; text?: string; bold?: boolean; italic?: boolean; accent?: boolean; muted?: boolean; right?: string; columns?: string[][]; labels?: string[]; bullet?: boolean; keepNext?: boolean; locked?: boolean; indent?: number; gutter?: string; lead?: string };
 // `lock` is only passed for the unpaid watermarked PDF; DOCX and paid files never lock.
 function blocksForResume(resume: GeneratedResume, theme: TemplateKey, track: CareerTrack, bodyPt: number, lock?: ResumePreviewLock): Block[] {
   const blocks: Block[] = [], headings = TRACK_HEADINGS[track];
   const heading = (text: string) => blocks.push({ kind: 'heading', text, keepNext: true });
+  // Technical only: dates sit in a left column and the job text is indented beside them.
+  const timeline = theme === 'technical' ? timelineGutter(resume, bodyPt) : 0;
+  const dated = (date: string): Pick<Block, 'right' | 'gutter' | 'indent'> => timeline ? { gutter: date, indent: timeline } : { right: date };
+  const beside: Pick<Block, 'indent'> = timeline ? { indent: timeline } : {};
   for (const section of RESUME_TEMPLATES[theme].sections) {
     switch (section) {
       case 'summary': if (clean(resume.summary)) { heading(headings.summary); blocks.push({ kind: 'text', text: resume.summary }); } break;
@@ -56,7 +85,14 @@ function blocksForResume(resume: GeneratedResume, theme: TemplateKey, track: Car
           blocks.push({ kind: 'text', text: skills.map(clean).join(' · ') });
           break;
         }
-        const grouped = theme === 'navy' ? skillGroups(skills) : null;
+        const grouped = theme === 'navy' || theme === 'technical' ? skillGroups(skills) : null;
+        if (grouped && RESUME_TEMPLATES[theme].skills === 'matrix') {
+          // One labelled row per group of source skills: no columns for an ATS to interleave.
+          grouped.columns.forEach((column, index) => {
+            if (column.length) blocks.push({ kind: 'text', lead: grouped.labels[index], text: column.map(clean).join(' · ') });
+          });
+          break;
+        }
         if (grouped) {
           if (skillColumnsThatFit(skills, grouped.columns.length, bodyPt) === grouped.columns.length) {
             blocks.push({ kind: 'grid', columns: grouped.columns, labels: grouped.labels });
@@ -84,17 +120,17 @@ function blocksForResume(resume: GeneratedResume, theme: TemplateKey, track: Car
       case 'experience': if (resume.experience.length) {
         heading(track === 'lead' ? 'PROFESSIONAL EXPERIENCE' : 'WORK EXPERIENCE');
         resume.experience.forEach((job, jobIndex) => {
-          blocks.push({ kind: 'job', text: job.jobTitle, bold: true, right: [job.startDate, job.endDate].map(clean).filter(Boolean).join(' – '), keepNext: true });
+          blocks.push({ kind: 'job', text: job.jobTitle, bold: true, ...dated([job.startDate, job.endDate].map(clean).filter(Boolean).join(' – ')), keepNext: true });
           const org = [job.employer, job.location].map(clean).filter(Boolean).join(' — ');
-          if (org) blocks.push({ kind: 'text', text: org, bold: theme === 'lead', italic: theme === 'plain', accent: theme === 'lead' || theme === 'blueprint', muted: theme === 'premier', keepNext: job.bullets.length > 0 });
+          if (org) blocks.push({ kind: 'text', text: org, bold: theme === 'lead', italic: theme === 'plain', accent: theme === 'lead' || theme === 'blueprint', muted: theme === 'premier' || theme === 'technical', keepNext: job.bullets.length > 0, ...beside });
           // No inferred scope, duties, or numbers are introduced by presentation.
           if (theme === 'lead' && clean(job.scope)) blocks.push({ kind: 'text', text: `Scope: ${clean(job.scope)}`, italic: true, keepNext: job.bullets.length > 0 });
-          job.bullets.forEach((item, bulletIndex) => blocks.push({ kind: 'text', text: item, bullet: true, locked: lock?.bulletLocked(jobIndex, bulletIndex) }));
+          job.bullets.forEach((item, bulletIndex) => blocks.push({ kind: 'text', text: item, bullet: true, locked: lock?.bulletLocked(jobIndex, bulletIndex), ...beside }));
         });
       } break;
       case 'education': if (resume.education.length) {
         heading('EDUCATION & TRAINING');
-        for (const ed of resume.education) blocks.push({ kind: 'education', text: [ed.credential, ed.institution, ed.location].map(clean).filter(Boolean).join(' — '), right: ed.year });
+        for (const ed of resume.education) blocks.push({ kind: 'education', text: [ed.credential, ed.institution, ed.location].map(clean).filter(Boolean).join(' — '), ...(clean(ed.year) ? dated(clean(ed.year)) : beside) });
       } break;
       case 'additional': if (resume.additionalInformation.length) {
         heading(headings.additional);
@@ -112,15 +148,17 @@ function blocksForLetter(letter: GeneratedCoverLetter, locked = false): Block[] 
     ...[letter.closing, letter.basics.fullName].flatMap(text),
   ];
 }
-function wrap(text: string, font: PDFFont, size: number, width: number): string[] {
+function wrap(text: string, font: PDFFont, size: number, width: number, firstWidth = width): string[] {
   const lines: string[] = []; let line = '';
+  // Only the first line can be narrower (it follows a bold label).
+  const limit = () => lines.length ? width : firstWidth;
   for (const word of clean(text).split(' ').filter(Boolean)) {
     const next = line ? `${line} ${word}` : word;
-    if (font.widthOfTextAtSize(next, size) <= width) { line = next; continue; }
+    if (font.widthOfTextAtSize(next, size) <= limit()) { line = next; continue; }
     if (line) { lines.push(line); line = ''; }
     // Split unusually long unbroken strings rather than clipping them.
     for (const char of word) {
-      if (line && font.widthOfTextAtSize(line + char, size) > width) { lines.push(line); line = ''; }
+      if (line && font.widthOfTextAtSize(line + char, size) > limit()) { lines.push(line); line = ''; }
       line += char;
     }
   }
@@ -130,7 +168,7 @@ function wrap(text: string, font: PDFFont, size: number, width: number): string[
 /** Date / year text at the right of a job or education line. */
 function rightStyle(theme: TemplateKey): { bold: boolean; tone: 'ink' | 'accent' | 'muted' } {
   if (theme === 'blueprint') return { bold: true, tone: 'accent' };
-  if (theme === 'premier') return { bold: false, tone: 'muted' };
+  if (theme === 'premier' || theme === 'technical') return { bold: false, tone: 'muted' };
   return { bold: theme === 'lead', tone: 'ink' };
 }
 export async function renderPdfV2(input: GeneratedResume | GeneratedCoverLetter, theme: TemplateKey, style: ResumeStyle, watermarked: boolean, track: CareerTrack = 'plain', letter = false): Promise<Uint8Array> {
@@ -169,7 +207,7 @@ export async function renderPdfV2(input: GeneratedResume | GeneratedCoverLetter,
     ? [[name, bold, 24, black, 0], [clean(title).toUpperCase(), bold, 11, accent, 0.8], [contact({ ...basics, targetTitle: title }), regular, size, muted, 0]]
     : panel
       ? [[name, bold, 24, white, 0], [title, bold, 12, white, 0], [contact({ ...basics, targetTitle: title }), regular, size, white, 0]]
-      : [[name, bold, 24, theme === 'lead' ? accent : black, centered ? 1.3 : 0], [title, theme === 'plain' ? regular : bold, 12, theme === 'navy' ? accent : black, 0], [contact({ ...basics, targetTitle: title }), regular, size, black, 0]];
+      : [[name, bold, 24, theme === 'lead' ? accent : black, centered ? 1.3 : 0], [title, theme === 'plain' ? regular : bold, 12, theme === 'navy' || theme === 'technical' ? accent : black, 0], [contact({ ...basics, targetTitle: title }), regular, size, black, 0]];
   const headerLines = headerRows.map(([text, font, pointSize, c, tracking]) => ({ lines: wrap(text, font, pointSize, WIDTH - 2 * MARGIN - tracking * text.length), font, pointSize, c, tracking }));
   if (panel) {
     // Solid header panel, drawn first so the white text sits on top of it.
@@ -192,22 +230,38 @@ export async function renderPdfV2(input: GeneratedResume | GeneratedCoverLetter,
     y -= 2.6; page.drawLine({ start: { x: MARGIN, y }, end: { x: WIDTH - MARGIN, y }, thickness: 0.6, color: accent });
     y -= 12;
   } else if (panel) y -= PANEL_PAD + 16;
-  else y -= 9;
+  else if (headerStyle === 'heavy-rule') {
+    // One heavy ink rule under the header, matching Word's 2 pt paragraph border.
+    y -= 6; page.drawLine({ start: { x: MARGIN, y }, end: { x: WIDTH - MARGIN, y }, thickness: 2, color: black });
+    y -= 10;
+  } else y -= 9;
 
   const width = WIDTH - MARGIN * 2;
+  /** Shared by measuring and drawing, so page breaks always match what is drawn. */
+  const textLayout = (b: Block) => {
+    const font = b.bold ? bold : b.italic ? italic : regular;
+    const right = rightStyle(theme), rightFont = right.bold ? bold : regular;
+    const rightWidth = b.right ? rightFont.widthOfTextAtSize(clean(b.right), size) + 18 : 0;
+    const indent = b.indent ?? 0, inset = indent + (b.bullet ? 14 : 0);
+    const leadText = b.lead ? `${clean(b.lead)}: ` : '';
+    const leadWidth = leadText ? bold.widthOfTextAtSize(leadText, size) : 0;
+    const available = width - inset - rightWidth;
+    const lines = wrap(b.text ?? '', font, size, available, available - leadWidth);
+    // A date wider than its column wraps inside it instead of running into the text.
+    const gutterLines = b.gutter && indent ? wrap(b.gutter, regular, size, indent - 8) : [];
+    return { font, right, rightFont, rightWidth, indent, inset, leadText, leadWidth, lines, gutterLines };
+  };
   const heights = (b: Block, space: number): number => {
     const lh = size * (1 + 0.28 * space);
-    if (b.kind === 'heading') return size * 1.12 + 13 * space;
+    if (b.kind === 'heading') return size * 1.12 + 13 * space + (RESUME_TEMPLATES[theme].headings === 'solid-band' ? BAND_GAP : 0);
     if (b.kind === 'grid') {
       const cols = b.columns!; const cw = width / cols.length;
       let h = b.labels ? lh + 3 : 0;
       for (let row = 0; row < Math.max(...cols.map(c => c.length)); row++) h += Math.max(...cols.map(c => Math.max(1, wrap(c[row] ?? '', regular, size, cw - 12).length))) * lh + 2 * space;
       return h + 3 * space;
     }
-    const font = b.bold ? bold : b.italic ? italic : regular;
-    const rightFont = rightStyle(theme).bold ? bold : regular;
-    const rightWidth = b.right ? rightFont.widthOfTextAtSize(clean(b.right), size) + 18 : 0;
-    return Math.max(1, wrap(b.text ?? '', font, size, width - (b.bullet ? 14 : 0) - rightWidth).length) * lh + (letter ? 9 : b.kind === 'job' ? 7 : 2) * space;
+    const { lines, gutterLines } = textLayout(b);
+    return Math.max(1, lines.length, gutterLines.length) * lh + (letter ? 9 : b.kind === 'job' ? 7 : 2) * space;
   };
   // Tighten gaps, never font size, before choosing a clean second page.
   const total = blocks.reduce((sum, b) => sum + heights(b, factor), 0);
@@ -233,8 +287,10 @@ export async function renderPdfV2(input: GeneratedResume | GeneratedCoverLetter,
         page.drawRectangle({ x: MARGIN - PANEL_PAD + 3, y: baseline - 3.5, width: WIDTH - 2 * MARGIN + 2 * PANEL_PAD - 3, height: headingSize + 6, color: rgb(r, g, bl) });
         page.drawRectangle({ x: MARGIN - PANEL_PAD, y: baseline - 3.5, width: 3, height: headingSize + 6, color: accent });
       }
+      // Solid accent band with white text, matching Word's shaded paragraph.
+      if (headingStyle === 'solid-band') page.drawRectangle({ x: MARGIN - PANEL_PAD, y: baseline - 3.5, width: WIDTH - 2 * MARGIN + 2 * PANEL_PAD, height: headingSize + 6, color: accent });
       page.pushOperators(beginText(), setCharacterSpacing(tracking), endText());
-      draw(b.text!, MARGIN, baseline, bold, headingSize, theme === 'navy' || headingStyle === 'banded' || headingStyle === 'leader-rule' ? accent : black);
+      draw(b.text!, MARGIN, baseline, bold, headingSize, headingStyle === 'solid-band' ? white : theme === 'navy' || headingStyle === 'banded' || headingStyle === 'leader-rule' ? accent : black);
       page.pushOperators(beginText(), setCharacterSpacing(0), endText());
       if (headingStyle === 'leader-rule') {
         // Hairline from the end of the heading to the margin, like Word's tab leader.
@@ -242,7 +298,8 @@ export async function renderPdfV2(input: GeneratedResume | GeneratedCoverLetter,
         if (end < WIDTH - MARGIN) page.drawLine({ start: { x: end, y: baseline + 1 }, end: { x: WIDTH - MARGIN, y: baseline + 1 }, thickness: 0.6, color: accent });
       }
       y -= headingSize + 4 * space;
-      if (headingStyle !== 'banded' && headingStyle !== 'leader-rule') page.drawLine({ start: { x: MARGIN, y }, end: { x: headingStyle === 'short-underline' ? MARGIN + 30 : WIDTH - MARGIN, y }, thickness: theme === 'lead' ? 1.3 : 0.8, color: theme === 'plain' ? black : accent });
+      if (headingStyle === 'solid-band') y -= BAND_GAP;
+      if (headingStyle !== 'banded' && headingStyle !== 'leader-rule' && headingStyle !== 'solid-band') page.drawLine({ start: { x: MARGIN, y }, end: { x: headingStyle === 'short-underline' ? MARGIN + 30 : WIDTH - MARGIN, y }, thickness: theme === 'lead' ? 1.3 : 0.8, color: theme === 'plain' ? black : accent });
       y -= 2 * space;
     } else if (b.kind === 'grid') {
       const cols = b.columns!, cw = width / cols.length;
@@ -256,17 +313,18 @@ export async function renderPdfV2(input: GeneratedResume | GeneratedCoverLetter,
       }
       y -= 3 * space;
     } else {
-      const font = b.bold ? bold : b.italic ? italic : regular;
+      const { font, right, rightFont, rightWidth, indent, inset, leadText, leadWidth, lines, gutterLines } = textLayout(b);
       if (b.kind === 'job') y -= 5 * space;
-      const right = rightStyle(theme), rightFont = right.bold ? bold : regular;
-      const rightWidth = b.right ? rightFont.widthOfTextAtSize(clean(b.right), size) + 18 : 0;
-      const lines = wrap(b.text ?? '', font, size, width - (b.bullet ? 14 : 0) - rightWidth);
       const rightY = y - size;
-      for (let i = 0; i < lines.length; i++) {
+      for (let i = 0; i < Math.max(lines.length, gutterLines.length); i++) {
         ensure(lh);
-        if (b.bullet && i === 0) draw('•', MARGIN + 2, y - size, regular, size);
-        if (b.locked) drawLockedLine(page, lines[i], { x: MARGIN + (b.bullet ? 14 : 0), baseline: y - size, font, size });
-        else draw(lines[i], MARGIN + (b.bullet ? 14 : 0), y - size, font, size, b.accent ? accent : b.muted ? muted : black);
+        if (gutterLines[i]) draw(gutterLines[i], MARGIN, y - size, regular, size, muted);
+        if (b.bullet && i === 0) draw('•', MARGIN + indent + 2, y - size, regular, size);
+        if (i === 0 && leadText) draw(leadText, MARGIN + inset, y - size, bold, size);
+        const x = MARGIN + inset + (i === 0 ? leadWidth : 0);
+        if (lines[i] === undefined) { /* only the date column continues on this line */ }
+        else if (b.locked) drawLockedLine(page, lines[i], { x, baseline: y - size, font, size });
+        else draw(lines[i], x, y - size, font, size, b.accent ? accent : b.muted ? muted : black);
         if (i === 0 && b.right) draw(clean(b.right), WIDTH - MARGIN - rightWidth + 18, rightY, rightFont, size, tone(right.tone));
         y -= lh;
       }
@@ -312,8 +370,8 @@ export async function renderDocxV2(input: GeneratedResume | GeneratedCoverLetter
   } else {
     if (theme === 'navy') children.push(new Paragraph({ border: { top: border(accent, 48) }, spacing: { after: 160 }, children: [] }));
     children.push(new Paragraph({ alignment, shading: shade, spacing: { after: 30 }, children: [run(theme === 'plain' ? input.basics.fullName.toUpperCase() : input.basics.fullName, { bold: true, size: 48, characterSpacing: theme === 'plain' ? 26 : undefined, color: theme === 'lead' ? accent : '111111' })] }),
-      new Paragraph({ alignment, shading: shade, spacing: { after: 30 }, children: [run(title, { size: 24, bold: theme !== 'plain', color: theme === 'navy' ? accent : '111111' })] }),
-      new Paragraph({ alignment, shading: shade, border: theme === 'navy' ? undefined : { bottom: border(accent, theme === 'lead' ? 16 : 8) }, spacing: { after: 140 }, children: [run(contactText)] }));
+      new Paragraph({ alignment, shading: shade, spacing: { after: 30 }, children: [run(title, { size: 24, bold: theme !== 'plain', color: theme === 'navy' || theme === 'technical' ? accent : '111111' })] }),
+      new Paragraph({ alignment, shading: shade, border: theme === 'navy' ? undefined : { bottom: theme === 'technical' ? border('111111', 16) : border(accent, theme === 'lead' ? 16 : 8) }, spacing: { after: 140 }, children: [run(contactText)] }));
   }
   const headingStyle = RESUME_TEMPLATES[theme].headings;
   // Ink dates keep the document default colour, so existing templates' DOCX is unchanged.
@@ -325,6 +383,13 @@ export async function renderDocxV2(input: GeneratedResume | GeneratedCoverLetter
         // Heading then a tab whose underscore leader rules out to the margin.
         children.push(new Paragraph({ keepNext: true, keepLines: true, tabStops: [{ type: TabStopType.RIGHT, position: usableTwips, leader: LeaderType.UNDERSCORE }],
           spacing: { before: 200 * space, after: 80 * space }, children: [headingRun(b.text!), new TextRun({ text: '\t', font, size: Math.round(size * 1.12), color: accent })] }));
+        continue;
+      }
+      if (headingStyle === 'solid-band') {
+        // The accent-coloured side borders carry the band out to the same edge as the PDF.
+        const edge = { color: accent, size: 4, style: BorderStyle.SINGLE, space: PANEL_PAD };
+        children.push(new Paragraph({ keepNext: true, keepLines: true, shading: { fill: accent }, border: { left: edge, right: edge },
+          spacing: { before: 200 * space, after: 80 * space }, children: [run(b.text!, { bold: true, size: Math.round(size * 1.12), color: 'FFFFFF', characterSpacing: 12 })] }));
         continue;
       }
       if (headingStyle === 'banded') {
@@ -355,10 +420,24 @@ export async function renderDocxV2(input: GeneratedResume | GeneratedCoverLetter
         for (let i = 0; i < Math.max(...lines.map(l => l.length)); i++) children.push(new Paragraph({ keepLines: true, tabStops: tabs, spacing: { after: 25 * space }, children: lines.map((ls, col) => new TextRun({ text: `${col ? '\t' : ''}${ls[i] ? (!b.labels && i === 0 ? '• ' : '') + ls[i] : ''}`, font, size })) }));
       }
     } else {
+      // Timeline blocks: the date hangs in the left column and a tab starts the text at
+      // the indent. No table, so the document stays one linear, ATS-readable flow.
+      const indentTwips = Math.round((b.indent ?? 0) * 20);
+      const hangingDate = Boolean(b.gutter && indentTwips);
+      const indent = b.bullet && indentTwips ? { left: indentTwips + 280, hanging: 240 }
+        : hangingDate ? { left: indentTwips, hanging: indentTwips }
+          : indentTwips ? { left: indentTwips } : undefined;
+      const tabStops = hangingDate ? [{ type: TabStopType.LEFT, position: indentTwips }]
+        : b.right ? [{ type: TabStopType.RIGHT, position: usableTwips }] : undefined;
       children.push(new Paragraph({ keepNext: b.keepNext, keepLines: true, numbering: b.bullet ? { reference: 'resume-bullets', level: 0 } : undefined,
-        tabStops: b.right ? [{ type: TabStopType.RIGHT, position: usableTwips }] : undefined,
+        tabStops, indent,
         spacing: { before: b.kind === 'job' ? 100 * space : 0, after: (letter ? 170 : 40) * space, line: Math.round(240 * (1 + 0.15 * space)) },
-        children: [run(b.text!, { bold: b.bold, italics: b.italic, color: b.accent ? accent : b.muted ? MUTED_HEX : '111111' }), ...(b.right ? [new TextRun({ text: `\t${clean(b.right)}`, font, size, bold: right.bold, color: right.tone === 'ink' ? undefined : rightColor })] : [])] }));
+        children: [
+          ...(hangingDate ? [new TextRun({ text: `${clean(b.gutter)}\t`, font, size, color: MUTED_HEX })] : []),
+          ...(b.lead ? [new TextRun({ text: `${clean(b.lead)}: `, font, size, bold: true })] : []),
+          run(b.text!, { bold: b.bold, italics: b.italic, color: b.accent ? accent : b.muted ? MUTED_HEX : '111111' }),
+          ...(b.right ? [new TextRun({ text: `\t${clean(b.right)}`, font, size, bold: right.bold, color: right.tone === 'ink' ? undefined : rightColor })] : []),
+        ] }));
     }
   }
   return new Uint8Array(await Packer.toBuffer(new Document({ numbering: { config: [{ reference: 'resume-bullets', levels: [{ level: 0, format: LevelFormat.BULLET, text: '•', alignment: AlignmentType.LEFT, style: { run: { font, size }, paragraph: { indent: { left: 280, hanging: 240 } } } }] }] }, styles: { default: { document: { run: { font, size, color: '111111' } } } }, sections: [{ properties: { page: { size: { width: WIDTH * 20, height: HEIGHT * 20 }, margin: { top: MARGIN * 20, right: MARGIN * 20, bottom: MARGIN * 20, left: MARGIN * 20 } } }, children }] })));
