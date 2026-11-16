@@ -77,7 +77,9 @@ test('actual PDF structures distinguish mockups: centered header, solid top bar,
       if (theme === 'plain') assert.deepEqual(pixel(2, 2), [255, 255, 255]);
       const skills = items.filter(item => sampleResume.skills.some(skill => item.str.includes(skill)));
       const xs = new Set(skills.map(item => Math.round(item.transform[4])));
-      assert.equal(xs.size, theme === 'navy' ? 2 : 3, 'actual skill columns');
+      // Field Pro lists skills as labelled lines rather than columns.
+      if (theme === 'plain') assert.ok(items.some(item => item.str.trim() === 'Service work:'), 'Field Pro labelled skill lines');
+      else assert.equal(xs.size, theme === 'navy' ? 2 : 3, 'actual skill columns');
       const text = items.map(item => item.str).join(' ');
       const compact = text.replace(/\s/g, '');
       assert.ok(compact.indexOf(theme === 'lead' ? 'CREDENTIALS' : 'CERTIFICATIONS') < compact.indexOf(theme === 'lead' ? 'PROFESSIONALEXPERIENCE' : 'WORKEXPERIENCE'));
@@ -93,7 +95,9 @@ test('section headings extract as whole words at every template and text size (A
       let text = '';
       for (let i = 1; i <= pdf.numPages; i++) text += ' ' + (await (await pdf.getPage(i)).getTextContent()).items.map(item => 'str' in item ? item.str : '').join(' ');
       text = text.replace(/\s+/g, ' ');
-      for (const heading of ['PROFESSIONAL SUMMARY', 'CORE SKILLS', 'WORK EXPERIENCE']) {
+      // Executive labels sections with standard names; Sidebar's skills sit in its rail.
+      const expected = theme === 'premier' ? ['SUMMARY', 'EXPERIENCE', 'SKILLS'] : theme === 'sidebar' ? ['PROFESSIONAL SUMMARY', 'WORK EXPERIENCE', 'SERVICE WORK'] : ['PROFESSIONAL SUMMARY', 'CORE SKILLS', 'WORK EXPERIENCE'];
+      for (const heading of expected) {
         assert.ok(text.includes(heading), `${theme}/${textSize}: "${heading}" not extracted as words`);
       }
       assert.doesNotMatch(text, /P R O F E S S I O N A L/, `${theme}/${textSize}: letter-spaced heading`);

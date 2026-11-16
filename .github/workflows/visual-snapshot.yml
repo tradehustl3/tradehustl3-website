@@ -28,6 +28,9 @@ jobs:
       - if: github.base_ref == 'main'
         run: npm run build
       - run: node tools/visual/render-snapshot.mjs visual-snapshot / /book
+      # Resume style samples rendered with the real bundled fonts, so a change to a
+      # look can be reviewed (and the carousel's sample images refreshed) from the artifact.
+      - run: npx tsx tools/visual/render-template-thumbnails.ts visual-snapshot/resume-template-samples
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: visual-snapshot

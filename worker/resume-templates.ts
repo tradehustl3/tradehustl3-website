@@ -14,11 +14,11 @@ export type ResumeStyle = {
 export const CAREER_TRACKS = ['plain', 'navy', 'lead'] as const;
 export type CareerTrack = typeof CAREER_TRACKS[number];
 /**
- * Visual templates control presentation only. `premier`, `blueprint` and
- * `technical` are design-only: choosing one never changes the career track or
- * the wording.
+ * Visual templates control presentation only. `premier`, `blueprint`,
+ * `technical` and `sidebar` are design-only: choosing one never changes the career
+ * track or the wording.
  */
-export const TEMPLATE_KEYS = ['plain', 'navy', 'lead', 'premier', 'blueprint', 'technical'] as const;
+export const TEMPLATE_KEYS = ['plain', 'navy', 'lead', 'premier', 'blueprint', 'technical', 'sidebar'] as const;
 export type TemplateKey = typeof TEMPLATE_KEYS[number];
 /**
  * Looks offered in the review-page style carousel, in display order. `navy` and
@@ -26,11 +26,12 @@ export type TemplateKey = typeof TEMPLATE_KEYS[number];
  * before; they are simply no longer offered to pick. The stored `premier` key is
  * shown to customers as "Executive".
  */
-export const PICKER_TEMPLATES = ['plain', 'blueprint', 'premier', 'technical'] as const satisfies readonly TemplateKey[];
+export const PICKER_TEMPLATES = ['plain', 'blueprint', 'premier', 'sidebar', 'technical'] as const satisfies readonly TemplateKey[];
 export const TEMPLATE_LABELS: Record<TemplateKey, { label: string; tagline: string }> = {
   plain: { label: 'Field Pro', tagline: 'Classic single column. Straight to the work.' },
   blueprint: { label: 'Blueprint', tagline: 'Bold header panel. Credentials up front.' },
   premier: { label: 'Executive', tagline: 'Quiet and senior. Experience first.' },
+  sidebar: { label: 'Sidebar', tagline: 'Contact, credentials and skills in a side rail.' },
   technical: { label: 'Technical', tagline: 'Spec-sheet layout with a date timeline.' },
   navy: { label: 'Modern Trade', tagline: 'Your current look. No longer offered for new picks.' },
   lead: { label: 'Lead / Supervisor', tagline: 'Your current look. No longer offered for new picks.' },
@@ -77,16 +78,25 @@ export const FONT_FAMILIES = { Classic: { pdf: 'Arimo', docx: 'Arial' }, Modern:
 export const BODY_SIZES = { Small: 10, Standard: 10.5, Large: 11 } as const;
 export const SPACE_FACTORS = { Compact: 0.85, Standard: 1, Spacious: 1.18 } as const;
 export const RESUME_TEMPLATES = {
-  plain: { name: 'Field Pro', header: 'centered', headings: 'ruled', skills: 'grid', skillsColumns: 3, sections: ['summary', 'skills', 'certifications', 'experience', 'education', 'additional'], defaults: { font: 'Classic', accent: 'Navy' } },
+  // Classic single column: centered capital name, ruled headings, credentials on one
+  // line, and skills as labelled lines.
+  plain: { name: 'Field Pro', header: 'centered', headings: 'ruled', skills: 'matrix', skillsColumns: 3, sections: ['summary', 'certifications', 'skills', 'experience', 'education', 'additional'], defaults: { font: 'Classic', accent: 'Navy' } },
   navy: { name: 'Modern Trade', header: 'top-bar', headings: 'short-underline', skills: 'grid', skillsColumns: 2, sections: ['summary', 'certifications', 'skills', 'experience', 'education', 'additional'], defaults: { font: 'Modern', accent: 'Red' } },
   lead: { name: 'Lead / Supervisor', header: 'tinted-band', headings: 'accent-rule', skills: 'grid', skillsColumns: 3, sections: ['summary', 'certifications', 'skills', 'experience', 'education', 'additional'], defaults: { font: 'Traditional', accent: 'Navy' } },
-  // Design-only looks. Experience-first with an inline skills line, and a
-  // credential-forward layout with a solid header panel and banded headings.
-  premier: { name: 'Premier', header: 'double-rule', headings: 'leader-rule', skills: 'inline', skillsColumns: 1, sections: ['summary', 'experience', 'skills', 'certifications', 'education', 'additional'], defaults: { font: 'Traditional', accent: 'Charcoal' } },
-  blueprint: { name: 'Blueprint', header: 'solid-panel', headings: 'banded', skills: 'grid', skillsColumns: 2, sections: ['summary', 'certifications', 'skills', 'experience', 'education', 'additional'], defaults: { font: 'Modern', accent: 'Navy' } },
+  // Design-only looks.
+  // Executive (stored as `premier`): contact at the right of the name, a double rule,
+  // standard section labels in a left column, experience first, one skills line.
+  premier: { name: 'Executive', header: 'double-rule', headings: 'side-label', skills: 'inline', skillsColumns: 1, sections: ['summary', 'experience', 'certifications', 'education', 'skills', 'additional'], defaults: { font: 'Traditional', accent: 'Charcoal' } },
+  // Blueprint: solid header panel with contact at the right, a credential strip under
+  // it (in place of a certifications section), marker headings, three skill columns.
+  blueprint: { name: 'Blueprint', header: 'solid-panel', headings: 'marker-rule', skills: 'grid', skillsColumns: 3, sections: ['summary', 'skills', 'experience', 'education', 'additional'], defaults: { font: 'Modern', accent: 'Navy' } },
   // Spec-sheet look: solid heading bands, skills as labelled rows, and every job
   // and school date set in a left timeline column instead of at the right margin.
   technical: { name: 'Technical', header: 'heavy-rule', headings: 'solid-band', skills: 'matrix', skillsColumns: 3, sections: ['summary', 'skills', 'certifications', 'experience', 'education', 'additional'], defaults: { font: 'Classic', accent: 'Charcoal' } },
+  // Sidebar: a full-height accent rail holds contact, credentials, education and
+  // skills; the main column holds the name, summary and experience. Skills that do
+  // not fit the rail move to the main column. Cover letters use a top bar instead.
+  sidebar: { name: 'Sidebar', header: 'rail', headings: 'accent-caps', skills: 'rail', skillsColumns: 1, sections: ['summary', 'experience', 'skills', 'additional'], defaults: { font: 'Modern', accent: 'Navy' } },
 } as const;
 export function defaultStyle(theme: TemplateKey, templateVersion: 1 | 2 = 2): ResumeStyle {
   return { ...RESUME_TEMPLATES[theme].defaults, textSize: 'Standard', spacing: 'Standard', templateVersion };
@@ -110,6 +120,32 @@ export const TRACK_HEADINGS = {
   navy: { summary: 'PROFESSIONAL PROFILE', skills: 'AREAS OF EXPERTISE', additional: 'TECHNICAL TOOLS, SYSTEMS & TRAINING' },
   lead: { summary: 'LEADERSHIP PROFILE', skills: 'TECHNICAL & OPERATIONS COMPETENCIES', additional: 'TECHNICAL EXPERTISE & ADDITIONAL QUALIFICATIONS' },
 } as const;
+/**
+ * Labelled skill rows for the row-based looks. Every source skill lands in exactly
+ * one row, in its original order; a skill that matches no rule goes to "Other
+ * skills", so nothing is dropped, renamed, or invented. Rules are checked in this
+ * order, so "Brazing torch" is a tool while "Brazing" is service work, and a skill
+ * that describes work on a system ("Ductwork repair") is service work.
+ */
+export const SKILL_ROW_LABELS = ['Systems', 'Service work', 'Tools & equipment', 'Software', 'Safety', 'Professional', 'Other skills'] as const;
+const SKILL_ROW_RULES: ReadonlyArray<readonly [typeof SKILL_ROW_LABELS[number], RegExp]> = [
+  ['Software', /servicetitan|service titan|maximo|corrigo|building engines|yardi|salesforce|upkeep|fiix|emaint|procore|bluebeam|cmms|work[- ]?orders?|microsoft|\bms office|\bexcel\b|\bsap\b|software|\bapps?\b|tablet/i],
+  ['Safety', /osha|\bloto\b|lockout|tag-?out|confined space|fall protection|arc flash|nfpa|haz(ard|com)|respirator|silica|ladder|scaffold|hot work|fire watch|first aid|\bcpr\b|safety|\bppe\b/i],
+  ['Tools & equipment', /gauge|manifold|vacuum pump|recovery (machine|unit)|meter\b|meters\b|torch|leak detector|regulator|fin comb|anemometer|thermometer|psychrometer|power tools?|hand tools?|threader|press tool|crimp|forklift|scissor lift|aerial lift|boom lift|pallet jack|welder\b|plasma cutter|oscilloscope|megger|tools?$/i],
+  // A name that ends in "system(s)" is a system, even when it names a trade ("Electrical systems").
+  ['Systems', /systems?$/i],
+  ['Professional', /customer|communicat|team|leader|supervis|training|mentor|schedul|time management|bilingual|spanish|problem[- ]solving|documentation|reporting|dispatch|estimat|budget/i],
+  ['Service work', /diagnos|troubleshoot|repair|maint|install|change-?out|start-?up|commission|charg|superheat|subcool|braz|solder|weld|airflow|balanc|load calc|blueprint|schematic|refrigerant|evacuat|leak|wiring|piping|service|inspect|retrofit|fabricat|carpentry|drywall|paint|plumb|electrical|turnover|calibrat|\bpms?\b/i],
+  ['Systems', /\brtus?\b|rooftop|split[- ]system|mini[- ]?split|heat pump|furnace|boiler|chiller|cooling tower|\bvrf\b|\bvrv\b|walk-in|reach-in|ice machine|air handler|\bahus?\b|duct|packaged|package unit|thermostat|controls\b|\bbas\b|\bbms\b|hydronic|geothermal|refrigeration|motors?\b|blowers?\b|\b24v\b|\bvfds?\b|\bplcs?\b|panels?\b|switchgear|generator|conveyor|backflow|water heater|fixtures?|\bsystems?\b|equipment/i],
+];
+export function skillRows(skills: readonly string[]): Array<{ label: typeof SKILL_ROW_LABELS[number]; skills: string[] }> {
+  const rows = new Map<typeof SKILL_ROW_LABELS[number], string[]>();
+  for (const skill of skills) {
+    const label = SKILL_ROW_RULES.find(([, rule]) => rule.test(skill))?.[0] ?? 'Other skills';
+    rows.set(label, [...(rows.get(label) ?? []), skill]);
+  }
+  return SKILL_ROW_LABELS.filter(label => rows.has(label)).map(label => ({ label, skills: rows.get(label)! }));
+}
 /** Group only source skills. Unknown skills trigger a plain grid; never invent categories or skills. */
 export function skillGroups(skills: string[]): { labels: string[]; columns: string[][] } | null {
   const systems: string[] = [], methods: string[] = [];
