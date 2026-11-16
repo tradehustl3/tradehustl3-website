@@ -169,7 +169,7 @@ test('Blueprint draws a header panel with contact at the right, a credential str
   assert.match(xml, /<w:shd [^>]*w:fill="203D60"/, 'DOCX solid panel shading');
   assert.match(xml, /<w:color w:val="FFFFFF"\/>/, 'DOCX white header text');
   assert.equal(xml.match(/<w:bdr w:val="single" w:color="203D60"/g)?.length, sampleResume.certifications.length, 'DOCX: each credential is a boxed run');
-  assert.match(xml, /<w:tab w:val="right" w:leader="underscore"/, 'DOCX heading rule leader');
+  assert.match(xml, /<w:tab w:val="right" w:pos="\d+" w:leader="underscore"\/>/, 'DOCX heading rule leader');
   assert.doesNotMatch(xml, /<w:tbl[ >]|<w:framePr/);
 });
 
