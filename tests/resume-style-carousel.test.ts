@@ -36,15 +36,15 @@ const style = defaultStyle('technical');
 // Template registry: what the carousel offers, and what stays valid in storage.
 // ---------------------------------------------------------------------------
 
-test('the carousel offers four looks; retired looks stay valid stored keys', () => {
-  assert.deepEqual([...PICKER_TEMPLATES], ['plain', 'blueprint', 'premier', 'technical']);
+test('the carousel offers five looks; retired looks stay valid stored keys', () => {
+  assert.deepEqual([...PICKER_TEMPLATES], ['plain', 'blueprint', 'premier', 'sidebar', 'technical']);
   for (const key of PICKER_TEMPLATES) assert.ok((TEMPLATE_KEYS as readonly string[]).includes(key));
   // Existing resumes saved with a retired look must keep loading and re-rendering.
   for (const retired of ['navy', 'lead'] as const) {
     assert.ok((TEMPLATE_KEYS as readonly string[]).includes(retired));
     assert.ok(validStylePatch({ theme: retired }));
     assert.equal((PICKER_TEMPLATES as readonly string[]).includes(retired), false);
-    assert.deepEqual(pickerTemplatesFor(retired), ['plain', 'blueprint', 'premier', 'technical', retired], 'a resume on a retired look still sees its own look');
+    assert.deepEqual(pickerTemplatesFor(retired), ['plain', 'blueprint', 'premier', 'sidebar', 'technical', retired], 'a resume on a retired look still sees its own look');
   }
   for (const key of PICKER_TEMPLATES) assert.deepEqual(pickerTemplatesFor(key), [...PICKER_TEMPLATES]);
   for (const key of TEMPLATE_KEYS) {
@@ -132,14 +132,14 @@ test('Technical sets dates in a left timeline column in the PDF', async () => {
 test('Technical lists skills as labelled rows of source skills only', async () => {
   const { items } = await pdfItems(await createResumePdf(sampleResume, false, 'technical', 'plain', style));
   const text = compact(joined(items));
-  assert.ok(text.includes('Systems&equipment:') && text.includes('Tools&methods:'), 'labelled skill rows');
+  assert.ok(text.includes('Systems:') && text.includes('Servicework:') && text.includes('Software:'), 'labelled skill rows');
   for (const skill of sampleResume.skills) assert.ok(text.includes(compact(skill)), `missing source skill ${skill}`);
   for (const credential of sampleResume.certifications) assert.ok(text.includes(compact(credential.name)));
-  // A skill the grouping rules do not recognise is never forced into a category.
-  const ungrouped: GeneratedResume = { ...sampleResume, skills: [...sampleResume.skills, 'Forklift'] };
-  const plainGrid = compact(joined((await pdfItems(await createResumePdf(ungrouped, false, 'technical', 'plain', style))).items));
-  assert.doesNotMatch(plainGrid, /Systems&equipment:|Tools&methods:/, 'no invented categories');
-  for (const skill of ungrouped.skills) assert.ok(plainGrid.includes(compact(skill)), `missing source skill ${skill}`);
+  // A skill no rule recognises is kept under "Other skills", never dropped or renamed.
+  const extra: GeneratedResume = { ...sampleResume, skills: [...sampleResume.skills, 'Notary public'] };
+  const withOther = compact(joined((await pdfItems(await createResumePdf(extra, false, 'technical', 'plain', style))).items));
+  assert.ok(withOther.includes('Otherskills:Notarypublic'));
+  for (const skill of extra.skills) assert.ok(withOther.includes(compact(skill)), `missing source skill ${skill}`);
 });
 
 test('Technical draws solid heading bands and a heavy header rule', async () => {
@@ -175,7 +175,7 @@ test('Technical DOCX matches the PDF structure without tables', async () => {
   assert.match(xml, /<w:color w:val="FFFFFF"\/>/, 'white heading text');
   const visible = xml.replace(/<w:tab\/>/g, ' ').replace(/<[^>]+>/g, ' ').replace(/&amp;/g, '&').replace(/\s+/g, ' ');
   assert.match(visible, /Mar 2021 – Present\s+Lead HVAC Technician/, 'date reads before its job title');
-  assert.match(visible, /Systems & equipment:\s+Commercial RTU service/);
+  assert.match(visible, /Service work:\s+Commercial RTU service/);
   for (const skill of sampleResume.skills) assert.ok(visible.includes(skill), `missing source skill ${skill}`);
   let previous = -1;
   for (const heading of ['PROFESSIONAL SUMMARY', 'CORE SKILLS', 'CERTIFICATIONS & LICENSES', 'WORK EXPERIENCE', 'EDUCATION & TRAINING']) {
@@ -261,7 +261,7 @@ test('only a clear sideways swipe changes the look', () => {
 });
 
 test('the carousel shows the swiped-to look until it is saved, then the saved look', () => {
-  const looks = ['plain', 'blueprint', 'premier', 'technical'] as const;
+  const looks = ['plain', 'blueprint', 'premier', 'sidebar', 'technical'] as const;
   assert.equal(shownLook(null, 'plain', looks), 'plain');
   assert.equal(shownLook('technical', 'plain', looks), 'technical', 'shown at once, before the save finishes');
   assert.equal(shownLook('technical', 'technical', looks), 'technical');
