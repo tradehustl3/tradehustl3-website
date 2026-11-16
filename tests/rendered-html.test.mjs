@@ -364,7 +364,18 @@ test("book sample reader matches the final 486-page interior", async () => {
   assert.match(text, /PART II — KNOW THE TRADESCAPE/);
   assert.match(text, /About the Author<\/span><b>486<\/b>/);
   assert.match(text, /1\. What a Skilled Trade Really Is<\/span><b>5<\/b>/);
-  assert.match(text, /THE TOOLS ARE NOT THE TRADE/);
+  // Cover plus paperback pages 1–7, in print order, including the copyright page.
+  assert.match(text, /Copyright © 2026 Zachary C\. Ellis\. All rights reserved\./);
+  assert.match(text, /ISBN: 9798193043355/);
+  assert.match(text, /tradehustl3\.com · book@tradehustl3\.com/);
+  assert.match(text, /aria-label="Page 4 of 7 — Part I opener"[\s\S]*?BUILD THE FOUNDATION/);
+  assert.match(text, /HARD WORK MATTERS\. SKILL CHANGES YOUR VALUE\./);
+  // Page 7 ends mid-sentence where the printed page does; page 8 is not part of the sample.
+  assert.match(text, /grabs a tool bag, and immediately starts<\/p><footer>7<\/footer>/);
+  assert.doesNotMatch(text, /THE TOOLS ARE NOT THE TRADE/);
+  const order = ["Front cover", "Page 1 of 7", "Page 2 of 7", "Page 3 of 7", "Page 4 of 7", "Page 5 of 7", "Page 6 of 7", "Page 7 of 7"]
+    .map((label) => text.indexOf(`aria-label="${label}`));
+  assert.ok(order.every((index, i) => index > 0 && (i === 0 || index > order[i - 1])), "sample pages render in print order");
   // Check the book content only: the site-wide <head> author tags still use the
   // public "Da Maintenance Mane" persona by design, and that is not book text.
   const main = text.match(/<main[\s\S]*?<\/main>/)?.[0] ?? "";
