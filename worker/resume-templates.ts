@@ -14,11 +14,37 @@ export type ResumeStyle = {
 export const CAREER_TRACKS = ['plain', 'navy', 'lead'] as const;
 export type CareerTrack = typeof CAREER_TRACKS[number];
 /**
- * Visual templates control presentation only. `premier` and `blueprint` are
- * design-only: choosing one never changes the career track or the wording.
+ * Visual templates control presentation only. `premier`, `blueprint` and
+ * `technical` are design-only: choosing one never changes the career track or
+ * the wording.
  */
-export const TEMPLATE_KEYS = ['plain', 'navy', 'lead', 'premier', 'blueprint'] as const;
+export const TEMPLATE_KEYS = ['plain', 'navy', 'lead', 'premier', 'blueprint', 'technical'] as const;
 export type TemplateKey = typeof TEMPLATE_KEYS[number];
+/**
+ * Looks offered in the review-page style carousel, in display order. `navy` and
+ * `lead` stay valid stored looks so existing resumes keep rendering exactly as
+ * before; they are simply no longer offered to pick. The stored `premier` key is
+ * shown to customers as "Executive".
+ */
+export const PICKER_TEMPLATES = ['plain', 'blueprint', 'premier', 'technical'] as const satisfies readonly TemplateKey[];
+export const TEMPLATE_LABELS: Record<TemplateKey, { label: string; tagline: string }> = {
+  plain: { label: 'Field Pro', tagline: 'Classic single column. Straight to the work.' },
+  blueprint: { label: 'Blueprint', tagline: 'Bold header panel. Credentials up front.' },
+  premier: { label: 'Executive', tagline: 'Quiet and senior. Experience first.' },
+  technical: { label: 'Technical', tagline: 'Spec-sheet layout with a date timeline.' },
+  navy: { label: 'Modern Trade', tagline: 'Your current look. No longer offered for new picks.' },
+  lead: { label: 'Lead / Supervisor', tagline: 'Your current look. No longer offered for new picks.' },
+};
+/** Carousel slides: the offered looks, plus the resume's current look when it is a retired one. */
+export function pickerTemplatesFor(current: TemplateKey): TemplateKey[] {
+  return (PICKER_TEMPLATES as readonly TemplateKey[]).includes(current) ? [...PICKER_TEMPLATES] : [...PICKER_TEMPLATES, current];
+}
+/** The writing focus (career track) offered separately from the look. */
+export const TRACK_LABELS: Record<CareerTrack, { label: string; note: string }> = {
+  plain: { label: 'Hands-on field', note: 'Direct, tools-and-equipment wording for technicians and mechanics.' },
+  navy: { label: 'Technical specialist', note: 'Polished technical positioning for commercial and specialist roles.' },
+  lead: { label: 'Lead / Supervisor', note: 'Leadership-first wording for leads, foremen and supervisors.' },
+};
 export function isCareerTrack(value: unknown): value is CareerTrack {
   return typeof value === 'string' && (CAREER_TRACKS as readonly string[]).includes(value);
 }
@@ -39,6 +65,13 @@ export function normalizeTrack(value: unknown): CareerTrack {
 export function trackForTemplate(template: unknown, storedTrack: unknown): CareerTrack {
   return isCareerTrack(template) ? template : normalizeTrack(storedTrack);
 }
+/**
+ * Writing track for a first build. The customer's explicit writing focus wins;
+ * otherwise the rules above apply unchanged, so older clients behave as before.
+ */
+export function firstBuildTrack(requested: unknown, template: unknown, storedTrack: unknown): CareerTrack {
+  return isCareerTrack(requested) ? requested : trackForTemplate(template, storedTrack);
+}
 export const ACCENT_HEX = { Red: 'D71920', Navy: '203D60', Charcoal: '444444', 'Forest Green': '24543C', Burgundy: '7A243A', Black: '111111' } as const;
 export const FONT_FAMILIES = { Classic: { pdf: 'Arimo', docx: 'Arial' }, Modern: { pdf: 'Carlito', docx: 'Calibri' }, Traditional: { pdf: 'Gelasio', docx: 'Georgia' } } as const;
 export const BODY_SIZES = { Small: 10, Standard: 10.5, Large: 11 } as const;
@@ -51,6 +84,9 @@ export const RESUME_TEMPLATES = {
   // credential-forward layout with a solid header panel and banded headings.
   premier: { name: 'Premier', header: 'double-rule', headings: 'leader-rule', skills: 'inline', skillsColumns: 1, sections: ['summary', 'experience', 'skills', 'certifications', 'education', 'additional'], defaults: { font: 'Traditional', accent: 'Charcoal' } },
   blueprint: { name: 'Blueprint', header: 'solid-panel', headings: 'banded', skills: 'grid', skillsColumns: 2, sections: ['summary', 'certifications', 'skills', 'experience', 'education', 'additional'], defaults: { font: 'Modern', accent: 'Navy' } },
+  // Spec-sheet look: solid heading bands, skills as labelled rows, and every job
+  // and school date set in a left timeline column instead of at the right margin.
+  technical: { name: 'Technical', header: 'heavy-rule', headings: 'solid-band', skills: 'matrix', skillsColumns: 3, sections: ['summary', 'skills', 'certifications', 'experience', 'education', 'additional'], defaults: { font: 'Classic', accent: 'Charcoal' } },
 } as const;
 export function defaultStyle(theme: TemplateKey, templateVersion: 1 | 2 = 2): ResumeStyle {
   return { ...RESUME_TEMPLATES[theme].defaults, textSize: 'Standard', spacing: 'Standard', templateVersion };

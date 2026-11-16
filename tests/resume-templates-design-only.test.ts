@@ -12,9 +12,10 @@ import {
 import { sampleResume } from '../docs/pr186/sample-resume';
 import { sqliteD1, seedSession, TEST_SESSION } from './helpers/sqlite-d1';
 
-// Premier and Blueprint are design-only looks: they change presentation, never the
-// writing track, and they render only through the v2 layout.
-const designOnly = ['premier', 'blueprint'] as const satisfies readonly TemplateKey[];
+// Premier (shown to customers as "Executive"), Blueprint and Technical are
+// design-only looks: they change presentation, never the writing track, and they
+// render only through the v2 layout.
+const designOnly = ['premier', 'blueprint', 'technical'] as const satisfies readonly TemplateKey[];
 
 async function pdfItems(bytes: Uint8Array) {
   const task = getDocument({ data: Uint8Array.from(bytes), isEvalSupported: false });
@@ -32,7 +33,7 @@ const joined = (items: Array<{ str: string }>) => items.map(item => item.str).jo
 const compact = (text: string) => text.replace(/\s/g, '');
 
 test('template keys separate design-only looks from career tracks', () => {
-  assert.deepEqual([...TEMPLATE_KEYS], ['plain', 'navy', 'lead', 'premier', 'blueprint']);
+  assert.deepEqual([...TEMPLATE_KEYS], ['plain', 'navy', 'lead', 'premier', 'blueprint', 'technical']);
   for (const key of designOnly) {
     assert.equal(isCareerTrack(key), false);
     assert.ok(validStylePatch({ theme: key }));
@@ -51,7 +52,7 @@ test('template keys separate design-only looks from career tracks', () => {
   }
 });
 
-test('Premier and Blueprint render every customization as readable, ATS-safe PDF and table-free DOCX', { timeout: 600_000 }, async () => {
+test('Premier, Blueprint and Technical render every customization as readable, ATS-safe PDF and table-free DOCX', { timeout: 600_000 }, async () => {
   let count = 0;
   for (const theme of designOnly) for (const font of FONTS) for (const textSize of TEXT_SIZES) for (const spacing of SPACINGS) for (const accent of ACCENTS) {
     const style = { font, textSize, spacing, accent, templateVersion: 2 as const };
@@ -74,7 +75,7 @@ test('Premier and Blueprint render every customization as readable, ATS-safe PDF
     for (const match of xml.matchAll(/<w:sz w:val="(\d+)"/g)) assert.ok(Number(match[1]) >= 20, `${theme}: DOCX text below 10 pt`);
     count++;
   }
-  assert.equal(count, 324);
+  assert.equal(count, 486);
 });
 
 test('Premier is experience-first with a double-rule header and a single flowing skills line', async () => {
@@ -133,7 +134,7 @@ test('design-only looks keep the writing track: headings follow the track, never
   }
 });
 
-test('matching cover letters render in both design-only looks', async () => {
+test('matching cover letters render in every design-only look', async () => {
   const letter = { basics: sampleResume.basics, date: 'October 3, 2026', companyName: 'Example Mechanical', targetJobTitle: 'HVAC Lead Technician', salutation: 'Dear Hiring Manager,', paragraphs: ['I am applying for the HVAC Lead Technician position.', 'I lead a two-person service crew.'], closing: 'Sincerely,' };
   for (const theme of designOnly) {
     for (const style of [defaultStyle(theme), undefined]) {
