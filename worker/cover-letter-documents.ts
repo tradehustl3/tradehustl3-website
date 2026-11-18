@@ -183,7 +183,9 @@ function writeLines(
 ): void {
   const font = options.font ?? writer.regular;
   const size = options.size ?? 10.8;
-  const lineHeight = options.lineHeight ?? 14.2;
+  // Line advance scales with the font so a large line (the 21.5 pt name) never lets the
+  // next line draw into it; body text (10.8 pt and below) keeps the 14.2 pt rhythm.
+  const lineHeight = options.lineHeight ?? Math.max(14.2, size * 1.3);
   const after = options.after ?? 8;
   const lines = wrapText(text, font, size, PDF_WIDTH - PDF_MARGIN * 2);
   ensureSpace(writer, Math.max(1, lines.length) * lineHeight + after);
