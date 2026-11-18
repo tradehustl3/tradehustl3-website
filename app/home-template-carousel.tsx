@@ -23,7 +23,8 @@ export function HomeTemplateCarousel({ className }: { className?: string }) {
     setIndex((value) => carouselStep(value, delta, SLIDES.length));
   }
 
-  function onKeyDown(event: KeyboardEvent<HTMLElement>) {
+  /** Arrow keys on any carousel control move between slides. */
+  function onKeyDown(event: KeyboardEvent<HTMLButtonElement>) {
     if (event.key === "ArrowLeft") { event.preventDefault(); go(-1); }
     else if (event.key === "ArrowRight") { event.preventDefault(); go(1); }
   }
@@ -43,13 +44,13 @@ export function HomeTemplateCarousel({ className }: { className?: string }) {
   }
 
   return (
-    <figure className={`${styles.carousel} ${className ?? ""}`} role="region" aria-roledescription="carousel" aria-label="Resume style examples" onKeyDown={onKeyDown}>
+    <figure className={`${styles.carousel} ${className ?? ""}`} role="region" aria-roledescription="carousel" aria-label="Resume style examples">
       <figcaption className={styles.caption}>
         <strong>Resume styles</strong><span>Sample resumes · Illustrative candidates</span>
       </figcaption>
 
       <div className={styles.bar}>
-        <button type="button" className={styles.arrow} aria-label="Previous style" disabled={index === 0} onClick={() => go(-1)}>
+        <button type="button" className={styles.arrow} aria-label="Previous style" disabled={index === 0} onClick={() => go(-1)} onKeyDown={onKeyDown}>
           <svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true" focusable="false"><path d="M12.5 4 6.5 10l6 6" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
         </button>
         <div className={styles.title} aria-live="polite">
@@ -57,7 +58,7 @@ export function HomeTemplateCarousel({ className }: { className?: string }) {
           <span>{label.tagline}</span>
           <small>Style {index + 1} of {SLIDES.length}</small>
         </div>
-        <button type="button" className={styles.arrow} aria-label="Next style" disabled={index === SLIDES.length - 1} onClick={() => go(1)}>
+        <button type="button" className={styles.arrow} aria-label="Next style" disabled={index === SLIDES.length - 1} onClick={() => go(1)} onKeyDown={onKeyDown}>
           <svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true" focusable="false"><path d="M7.5 4l6 6-6 6" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
         </button>
       </div>
@@ -80,7 +81,7 @@ export function HomeTemplateCarousel({ className }: { className?: string }) {
         {SLIDES.map((key, slide) => (
           <button type="button" key={key} className={`${styles.dot}${slide === index ? ` ${styles.dotOn}` : ""}`}
             aria-label={`Show the ${TEMPLATE_LABELS[key].label} style`} aria-current={slide === index ? "true" : undefined}
-            onClick={() => setIndex(slide)}><span /></button>
+            onClick={() => setIndex(slide)} onKeyDown={onKeyDown}><span /></button>
         ))}
       </div>
     </figure>
