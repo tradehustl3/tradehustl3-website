@@ -136,7 +136,7 @@ test("the guide accurately describes the asset and the resume shows a labeled sa
   assert.match(resume, /Your Experience Matters\./);
   assert.match(resume, /Make Sure It Shows\./);
   assert.match(resume, /aria-roledescription="carousel"[^>]*aria-label="Resume style examples"/);
-  assert.doesNotMatch(resume, /Example output|sample-hvac-resume\.webp|sample-hvac-cover-letter\.webp/);
+  assert.doesNotMatch(resume, /Example output|sample-hvac-resume\.webp/);
   const headline = resume.indexOf('Your Experience Matters.');
   const logo = resume.indexOf('id="opportunity-title"');
   const audience = resume.indexOf('Your First Job. Your Next Opportunity. Your Move Into Leadership.');
@@ -153,9 +153,12 @@ test("the guide accurately describes the asset and the resume shows a labeled sa
   const carousel = between(resume, '<figure', '</figure>');
   const slides = ["plain", "blueprint", "premier", "sidebar", "technical"];
   slides.forEach((key) => assert.match(carousel, new RegExp(`src="/resume-templates/${key}\\.png"`), `${key} slide`));
-  assert.equal((carousel.match(/aria-roledescription="slide"/g) ?? []).length, slides.length);
-  assert.match(carousel, /aria-label="Previous style"[^>]*disabled/);
-  assert.match(carousel, /Style 1 of 5/);
+  const coverLetter = carousel.indexOf('src="/sample-hvac-cover-letter.webp"');
+  assert.ok(coverLetter > carousel.indexOf('src="/resume-templates/technical.png"'), "matching cover letter is the last slide");
+  assert.match(carousel, /aria-label="6 of 6: Matching Cover Letter"/);
+  assert.equal((carousel.match(/aria-roledescription="slide"/g) ?? []).length, slides.length + 1);
+  assert.match(carousel, /aria-label="Previous example"[^>]*disabled/);
+  assert.match(carousel, /1<!-- --> of <!-- -->6|1 of 6/);
   assert.doesNotMatch(carousel, /\/resume-templates\/(navy|lead)\.png/, "retired looks are not advertised");
   for (const label of ["Illustrative candidates", "$9.99", "PDF and editable DOCX", "Matching cover letter", "three AI-assisted corrections within seven days"]) {
     assert.ok(resume.includes(label), label);
