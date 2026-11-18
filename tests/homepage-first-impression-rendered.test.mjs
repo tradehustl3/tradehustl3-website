@@ -135,7 +135,8 @@ test("the guide accurately describes the asset and the resume shows a labeled sa
   assert.doesNotMatch(resume, /<form\b|Account · stage|SKILLED-TRADES RESUME BUILDER|Your Skills Deserve|Start My Free Resume Preview/);
   assert.match(resume, /Your Experience Matters\./);
   assert.match(resume, /Make Sure It Shows\./);
-  assert.match(resume, /Example output/);
+  assert.match(resume, /aria-roledescription="carousel"[^>]*aria-label="Resume style examples"/);
+  assert.doesNotMatch(resume, /Example output|sample-hvac-resume\.webp|sample-hvac-cover-letter\.webp/);
   const headline = resume.indexOf('Your Experience Matters.');
   const logo = resume.indexOf('id="opportunity-title"');
   const audience = resume.indexOf('Your First Job. Your Next Opportunity. Your Move Into Leadership.');
@@ -149,10 +150,14 @@ test("the guide accurately describes the asset and the resume shows a labeled sa
   const previewEnd = resume.indexOf('</figure>');
   const cta = resume.indexOf('Start Your Free Resume Preview');
   assert.ok(previewEnd > 0 && cta > previewEnd && resume.indexOf('See your preview before you pay') > cta);
-  const documents = between(resume, '<figure', '</figure>');
-  assert.match(documents, /<p>Resume<\/p>[\s\S]*sample-hvac-resume\.webp/);
-  assert.match(documents, /<p>Cover Letter<\/p>[\s\S]*sample-hvac-cover-letter\.webp/);
-  for (const label of ["Illustrative candidate", "$9.99", "PDF and editable DOCX", "Matching cover letter", "three AI-assisted corrections within seven days"]) {
+  const carousel = between(resume, '<figure', '</figure>');
+  const slides = ["plain", "blueprint", "premier", "sidebar", "technical"];
+  slides.forEach((key) => assert.match(carousel, new RegExp(`src="/resume-templates/${key}\\.png"`), `${key} slide`));
+  assert.equal((carousel.match(/aria-roledescription="slide"/g) ?? []).length, slides.length);
+  assert.match(carousel, /aria-label="Previous style"[^>]*disabled/);
+  assert.match(carousel, /Style 1 of 5/);
+  assert.doesNotMatch(carousel, /\/resume-templates\/(navy|lead)\.png/, "retired looks are not advertised");
+  for (const label of ["Illustrative candidates", "$9.99", "PDF and editable DOCX", "Matching cover letter", "three AI-assisted corrections within seven days"]) {
     assert.ok(resume.includes(label), label);
   }
 });

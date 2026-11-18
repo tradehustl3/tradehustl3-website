@@ -2,6 +2,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { VerifiedCustomerReviews } from './customer-reviews';
 import { ResumePreviewCta } from './home-resume-preview-cta';
+import { HomeTemplateCarousel } from './home-template-carousel';
 import styles from './home-storefront.module.css';
 import design from './home-resume-redesign.module.css';
 
@@ -35,25 +36,7 @@ export function TurnSkillsIntoOpportunity() {
           <p>You know how to build it, fix it, maintain it, or operate it. Make your real skills, training, and experience easier for employers to recognize.</p>
         </div>
         <div className={design.productGrid}>
-        <figure className={`${styles.resumeExample} ${design.sampleStage}`}>
-          <figcaption className={`${styles.resumeExampleCaption} ${design.stageCaption}`}>
-            <strong>Example output</strong><span>HVAC application · Illustrative candidate</span>
-          </figcaption>
-          <div className={styles.resumeExampleGrid}>
-            <div>
-              <p>Resume</p>
-              <div className={styles.resumeExamplePaper}>
-                <Image src="/sample-hvac-resume.webp" alt="Jordan Taylor’s sample HVAC resume with a professional summary, credentials and technical skills" width={816} height={1056} sizes="(max-width: 720px) 42vw, 315px" />
-              </div>
-            </div>
-            <div>
-              <p>Cover Letter</p>
-              <div className={styles.resumeExamplePaper}>
-                <Image src="/sample-hvac-cover-letter.webp" alt="Jordan Taylor’s matching sample cover letter for an HVAC maintenance technician opening" width={816} height={1056} sizes="(max-width: 720px) 42vw, 315px" />
-              </div>
-            </div>
-          </div>
-        </figure>
+        <HomeTemplateCarousel className={design.sampleStage} />
           <aside className={design.questionPanel} aria-label="Five questions for a stronger trade resume">
             <p className={design.kicker}>More than a blank template</p>
             <h3>A resume that <span>speaks your trade.</span></h3>
