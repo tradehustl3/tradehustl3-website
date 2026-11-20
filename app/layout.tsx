@@ -7,6 +7,7 @@ import { GoogleAnalytics } from "./google-analytics";
 import { MarketingPixels } from "./marketing-pixels";
 import { MetaCampaignViewTracker } from "./meta-view-content";
 import { FooterEnhancements } from "./footer-enhancements";
+import { SOCIAL_PROFILE_URLS } from "./social-profiles";
 import { BRAND_DESCRIPTION, BRAND_LOGO_512, HOME_DESCRIPTION, HOME_TITLE, SITE_DESCRIPTION, SITE_NAME, SITE_TITLE, SITE_URL } from "./site";
 
 const display = Anton({
@@ -115,13 +116,7 @@ const structuredData = {
         "@id": `${SITE_URL}/#zachary-ellis`,
       },
 
-      sameAs: [
-        "https://www.facebook.com/profile.php?id=61593457675674",
-        "https://www.instagram.com/tradehustl3/",
-        "https://www.youtube.com/@tradehustl3",
-        "https://www.linkedin.com/company/trade-hustl3-llc/",
-        "https://www.tiktok.com/@da.maintenance.ma5",
-      ],
+      sameAs: SOCIAL_PROFILE_URLS,
     },
 
     {
