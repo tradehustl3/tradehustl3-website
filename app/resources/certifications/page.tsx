@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 import { CtaAnalytics } from "../../cta-analytics";
 import { homeBodyFont, homeDisplayFont } from "../../home-fonts";
 import { TRADE_CAREER_FAMILIES } from "../../resume-examples/trade-career-catalog";
@@ -97,9 +98,9 @@ export default function CertificationsPage() {
             { src: "/credentials/cpo.jpg", label: "Certified Pool and Spa Operator certificate reference", position: art.cardFive },
             { src: "/credentials/twic.jpg", label: "Transportation Worker Identification Credential reference", position: art.cardSix },
           ].map(({ src, label, position }) => (
-            <div key={src} className={`${art.credentialCard} ${position}`}>
+            <div key={src} className={`${art.credentialCard} ${position}`} title={label}>
               {/* Decorative reference photography; no invented credential design. */}
-              <img src={src} alt="" loading="eager" decoding="async" />
+              <Image src={src} alt="" width={480} height={300} unoptimized />
             </div>
           ))}
         </div>
