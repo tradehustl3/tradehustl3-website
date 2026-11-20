@@ -1,0 +1,25 @@
+/* /links: button lists inside the shared PolicyPage content shell. Colors and
+   type come from ConversionCta and page-shell.css; this file only lays out.
+   Selectors go through .group so they outrank page-shell's `.policy-content ul`
+   and `.policy-content a` prose rules without !important. */
+.group .links,
+.group .socials {
+  display: grid;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.group .socials { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+
+.group .linkButton,
+.group .socialButton {
+  width: 100%;
+  text-decoration: none;
+}
+.group .linkButton { justify-content: space-between; padding: 16px 22px; color: #081e32; text-align: left; }
+.group .socialButton { color: var(--cream); }
+
+.linkText { display: grid; gap: 4px; }
+.linkText strong { font-size: 1.05rem; line-height: 1.25; }
+.linkText small { font-size: .9rem; font-weight: 600; line-height: 1.4; opacity: .85; }

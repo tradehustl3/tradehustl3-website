@@ -110,13 +110,18 @@ test("brand links point LinkedIn at the TRADE HUSTL3 company page", async () => 
   const { readFile } = await import("node:fs/promises");
   const company = "https://www.linkedin.com/company/trade-hustl3-llc/";
   const personal = "https://www.linkedin.com/in/zachary-ellis-a797193ab";
+  // Every brand surface reads its profile URLs from app/social-profiles.ts.
+  const profiles = await readFile(new URL("../app/social-profiles.ts", import.meta.url), "utf8");
   const social = await readFile(new URL("../app/social-links.tsx", import.meta.url), "utf8");
   const footer = await readFile(new URL("../app/footer-enhancements.tsx", import.meta.url), "utf8");
   const layout = await readFile(new URL("../app/layout.tsx", import.meta.url), "utf8");
-  assert.ok(social.includes(company) && !social.includes(personal));
-  assert.ok(footer.includes(company) && !footer.includes(personal));
+  assert.ok(profiles.includes(company) && !profiles.includes(personal));
+  assert.match(social, /SOCIAL_PROFILES\.linkedin\.href/);
+  assert.ok(!social.includes(personal));
+  assert.match(footer, /SOCIAL_PROFILES\[id\]/);
+  assert.ok(!footer.includes(personal));
   const org = layout.slice(layout.indexOf('"@type": "Organization"'), layout.indexOf('"@type": "Person"'));
   const person = layout.slice(layout.indexOf('"@type": "Person"'), layout.indexOf('"@type": "WebApplication"'));
-  assert.ok(org.includes(company) && !org.includes(personal), "Organization sameAs uses the company page");
+  assert.ok(org.includes("sameAs: SOCIAL_PROFILE_URLS") && !org.includes(personal), "Organization sameAs uses the shared company profiles");
   assert.ok(person.includes(personal), "Person keeps the founder's personal profile");
 });

@@ -1,8 +1,10 @@
-const FACEBOOK_URL = "https://www.facebook.com/profile.php?id=61593457675674";
-const INSTAGRAM_URL = "https://www.instagram.com/tradehustl3/";
-const YOUTUBE_URL = "https://www.youtube.com/@tradehustl3";
-const LINKEDIN_URL = "https://www.linkedin.com/company/trade-hustl3-llc/";
-const TIKTOK_URL = "https://www.tiktok.com/@da.maintenance.ma5";
+import { SOCIAL_PROFILES } from "./social-profiles";
+
+const FACEBOOK_URL = SOCIAL_PROFILES.facebook.href;
+const INSTAGRAM_URL = SOCIAL_PROFILES.instagram.href;
+const YOUTUBE_URL = SOCIAL_PROFILES.youtube.href;
+const LINKEDIN_URL = SOCIAL_PROFILES.linkedin.href;
+const TIKTOK_URL = SOCIAL_PROFILES.tiktok.href;
 
 export function SocialLinks() {
   return (
