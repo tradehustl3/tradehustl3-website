@@ -108,7 +108,8 @@ export default function CertificationsPage() {
           <nav aria-label="Breadcrumb" className={styles.breadcrumb}>
             <Link href="/resources">Resource Center</Link> <span aria-hidden="true">/</span> Certifications &amp; Licenses
           </nav>
-          <p className={styles.kicker}>CREDENTIAL LIBRARY</p>
+          <div className={art.credentialEmblem} aria-hidden="true">▤</div>
+          <p className={`${styles.kicker} ${art.goldKicker}`}>CREDENTIAL LIBRARY</p>
           <h1 id="page-title" className={styles.h1}>Certifications, licenses <span>&amp; training cards</span></h1>
           <p className={styles.lead}>
             {CREDENTIAL_LIBRARY.length} skilled-trades credentials: what each one is, who requires it, how to earn it, and how to list it on a resume.
