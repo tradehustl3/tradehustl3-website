@@ -91,12 +91,12 @@ export default function CertificationsPage() {
       <section className={`${styles.hero} ${art.credentialHero}`} aria-labelledby="page-title">
         <div className={art.watermarks} aria-hidden="true">
           {[
-            { src: "/credentials/aws-membership.jpg", label: "AWS membership card reference", position: art.cardOne },
-            { src: "/credentials/texas-plumbing.jpg", label: "Texas journeyman plumbing license reference", position: art.cardTwo },
-            { src: "/credentials/epa-608.jpg", label: "EPA Section 608 Universal card reference", position: art.cardThree },
-            { src: "/credentials/cdl.jpg", label: "Commercial driver license reference", position: art.cardFour },
-            { src: "/credentials/cpo.jpg", label: "Certified Pool and Spa Operator certificate reference", position: art.cardFive },
-            { src: "/credentials/twic.jpg", label: "Transportation Worker Identification Credential reference", position: art.cardSix },
+            { src: "/credentials/aws-membership.png", label: "AWS membership card reference", position: art.cardOne },
+            { src: "/credentials/texas-plumbing.png", label: "Texas journeyman plumbing license reference", position: art.cardTwo },
+            { src: "/credentials/epa-608.png", label: "EPA Section 608 Universal card reference", position: art.cardThree },
+            { src: "/credentials/cdl.png", label: "Commercial driver license reference", position: art.cardFour },
+            { src: "/credentials/cpo.png", label: "Certified Pool and Spa Operator certificate reference", position: art.cardFive },
+            { src: "/credentials/twic.png", label: "Transportation Worker Identification Credential reference", position: art.cardSix },
           ].map(({ src, label, position }) => (
             <div key={src} className={`${art.credentialCard} ${position}`} title={label}>
               {/* Decorative reference photography; no invented credential design. */}
