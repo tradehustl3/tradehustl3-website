@@ -14,6 +14,7 @@ import {
 } from "../credential-library";
 import { ResourceFooter, ResourceHeader } from "../resource-chrome";
 import styles from "../resources.module.css";
+import art from "./credential-art.module.css";
 
 const PAGE_PATH = "/resources/certifications";
 const PAGE_URL = `${SITE_URL}${PAGE_PATH}`;
@@ -86,8 +87,20 @@ export default function CertificationsPage() {
       <CtaAnalytics />
       <ResourceHeader current="certifications" />
 
-      <section className={styles.hero} aria-labelledby="page-title">
-        <div className={styles.heroInner}>
+      <section className={`${styles.hero} ${art.credentialHero}`} aria-labelledby="page-title">
+        <div className={art.watermarks} aria-hidden="true">
+          {[
+            ["AWS", "CERTIFIED WELDER", art.cardOne],
+            ["ELECTRICAL", "COMPETENCY CERTIFICATE", art.cardTwo],
+            ["EPA 608", "UNIVERSAL TECHNICIAN", art.cardThree],
+            ["CDL", "COMMERCIAL DRIVER LICENSE", art.cardFour],
+            ["CPO", "POOL & SPA OPERATOR", art.cardFive],
+            ["TWIC", "TRANSPORTATION WORKER", art.cardSix],
+          ].map(([label, detail, position]) => (
+            <div key={label} className={`${art.credentialCard} ${position}`}><small>TRADE CREDENTIAL · SAMPLE ART</small><strong>{label}</strong><small>{detail}</small></div>
+          ))}
+        </div>
+        <div className={`${styles.heroInner} ${art.heroContent}`}>
           <nav aria-label="Breadcrumb" className={styles.breadcrumb}>
             <Link href="/resources">Resource Center</Link> <span aria-hidden="true">/</span> Certifications &amp; Licenses
           </nav>
@@ -100,7 +113,8 @@ export default function CertificationsPage() {
         </div>
       </section>
 
-      <div className={styles.layout}>
+      <div className={`${styles.layout} ${art.credentialDirectory}`}>
+        <span className={art.directoryStamp} aria-hidden="true">EPA · AWS · CDL</span>
         <aside className={styles.toc} aria-label="Browse credentials">
           {KIND_ORDER.map((kind) => {
             const records = sorted.filter((record) => record.kind === kind);
