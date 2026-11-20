@@ -96,6 +96,10 @@ export default function CertificationsPage() {
             ["CDL", "COMMERCIAL DRIVER LICENSE", art.cardFour],
             ["CPO", "POOL & SPA OPERATOR", art.cardFive],
             ["TWIC", "TRANSPORTATION WORKER", art.cardSix],
+            ["OSHA 10", "CONSTRUCTION SAFETY · 10-HOUR", art.cardSeven],
+            ["OSHA 30", "CONSTRUCTION SAFETY · 30-HOUR", art.cardEight],
+            ["PLUMBING", "JOURNEYMAN LICENSE", art.cardNine],
+            ["HBI", "CARPENTRY TRAINING", art.cardTen],
           ].map(([label, detail, position]) => (
             <div key={label} className={`${art.credentialCard} ${position}`}><small>TRADE CREDENTIAL · SAMPLE ART</small><strong>{label}</strong><small>{detail}</small></div>
           ))}
