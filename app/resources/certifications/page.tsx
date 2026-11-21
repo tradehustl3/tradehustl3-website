@@ -89,32 +89,31 @@ export default function CertificationsPage() {
       <ResourceHeader current="certifications" />
 
       <section className={`${styles.hero} ${art.credentialHero}`} aria-labelledby="page-title">
-        <div className={art.watermarks} aria-hidden="true">
-          {[
-            { src: "/credentials/aws-membership.webp", label: "AWS membership card reference", position: art.cardOne },
-            { src: "/credentials/georgia-plumbing.webp", label: "Georgia journeyman plumbing license reference", position: art.cardTwo },
-            { src: "/credentials/epa-608.webp", label: "EPA Section 608 Universal card reference", position: art.cardThree },
-            { src: "/credentials/cdl.webp", label: "Commercial driver license reference", position: art.cardFour },
-            { src: "/credentials/cpo.webp", label: "Certified Pool and Spa Operator certificate reference", position: art.cardFive },
-            { src: "/credentials/twic.webp", label: "Transportation Worker Identification Credential reference", position: art.cardSix },
-          ].map(({ src, label, position }) => (
-            <div key={src} className={`${art.credentialCard} ${position}`} title={label}>
-              {/* Decorative reference photography; no invented credential design. */}
-              <Image src={src} alt="" width={480} height={300} unoptimized />
-            </div>
-          ))}
-        </div>
-        <div className={`${styles.heroInner} ${art.heroContent}`}>
+        <div className={art.heroFrame}>
           <nav aria-label="Breadcrumb" className={styles.breadcrumb}>
             <Link href="/resources">Resource Center</Link> <span aria-hidden="true">/</span> Certifications &amp; Licenses
           </nav>
-          <div className={art.credentialEmblem} aria-hidden="true">▤</div>
-          <p className={`${styles.kicker} ${art.goldKicker}`}>CREDENTIAL LIBRARY</p>
-          <h1 id="page-title" className={styles.h1}>Certifications, licenses <span>&amp; training cards</span></h1>
-          <p className={styles.lead}>
-            {CREDENTIAL_LIBRARY.length} skilled-trades credentials: what each one is, who requires it, how to earn it, and how to list it on a resume.
-            Checked against official sources and reviewed by {CREDENTIAL_REVIEW.reviewer}.
-          </p>
+          <div className={art.cardPair}>
+            <Image className={art.credentialCard} src="/credentials/aws-membership.webp" alt="AWS membership card reference" width={1000} height={636} unoptimized />
+            <Image className={art.credentialCard} src="/credentials/georgia-plumbing.webp" alt="Georgia journeyman plumbing license reference" width={1000} height={667} unoptimized />
+          </div>
+          <div className={art.centerRow}>
+            <Image className={`${art.credentialCard} ${art.sideLeft}`} src="/credentials/epa-608.webp" alt="EPA Section 608 Universal card reference" width={1000} height={667} unoptimized />
+            <div className={art.heroContent}>
+              <div className={art.credentialEmblem} aria-hidden="true">▤</div>
+              <p className={`${styles.kicker} ${art.goldKicker}`}>CREDENTIAL LIBRARY</p>
+              <h1 id="page-title" className={styles.h1}>Certifications, licenses <span>&amp; training cards</span></h1>
+              <p className={styles.lead}>
+                {CREDENTIAL_LIBRARY.length} skilled-trades credentials: what each one is, who requires it, how to earn it, and how to list it on a resume.
+                Checked against official sources and reviewed by {CREDENTIAL_REVIEW.reviewer}.
+              </p>
+            </div>
+            <Image className={`${art.credentialCard} ${art.sideRight}`} src="/credentials/cdl.webp" alt="Commercial driver license reference" width={1000} height={667} unoptimized />
+          </div>
+          <div className={art.cardPair}>
+            <Image className={art.credentialCard} src="/credentials/cpo.webp" alt="Certified Pool and Spa Operator certificate reference" width={1000} height={667} unoptimized />
+            <Image className={art.credentialCard} src="/credentials/twic.webp" alt="Transportation Worker Identification Credential reference" width={1000} height={667} unoptimized />
+          </div>
           <p className={art.referenceNote}>These sample cards are for visual reference only. Credential designs vary by issuer and state. The AWS card shows a membership example.</p>
         </div>
       </section>
