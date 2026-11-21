@@ -91,12 +91,12 @@ export default function CertificationsPage() {
       <section className={`${styles.hero} ${art.credentialHero}`} aria-labelledby="page-title">
         <div className={art.watermarks} aria-hidden="true">
           {[
-            { src: "/credentials/aws-membership.jpg", label: "AWS membership card reference", position: art.cardOne },
-            { src: "/credentials/texas-plumbing.jpg", label: "Texas journeyman plumbing license reference", position: art.cardTwo },
-            { src: "/credentials/epa-608.jpg", label: "EPA Section 608 Universal card reference", position: art.cardThree },
-            { src: "/credentials/cdl.jpg", label: "Commercial driver license reference", position: art.cardFour },
-            { src: "/credentials/cpo.jpg", label: "Certified Pool and Spa Operator certificate reference", position: art.cardFive },
-            { src: "/credentials/twic.jpg", label: "Transportation Worker Identification Credential reference", position: art.cardSix },
+            { src: "/credentials/aws-membership.webp", label: "AWS membership card reference", position: art.cardOne },
+            { src: "/credentials/georgia-plumbing.webp", label: "Georgia journeyman plumbing license reference", position: art.cardTwo },
+            { src: "/credentials/epa-608.webp", label: "EPA Section 608 Universal card reference", position: art.cardThree },
+            { src: "/credentials/cdl.webp", label: "Commercial driver license reference", position: art.cardFour },
+            { src: "/credentials/cpo.webp", label: "Certified Pool and Spa Operator certificate reference", position: art.cardFive },
+            { src: "/credentials/twic.webp", label: "Transportation Worker Identification Credential reference", position: art.cardSix },
           ].map(({ src, label, position }) => (
             <div key={src} className={`${art.credentialCard} ${position}`} title={label}>
               {/* Decorative reference photography; no invented credential design. */}
@@ -115,7 +115,7 @@ export default function CertificationsPage() {
             {CREDENTIAL_LIBRARY.length} skilled-trades credentials: what each one is, who requires it, how to earn it, and how to list it on a resume.
             Checked against official sources and reviewed by {CREDENTIAL_REVIEW.reviewer}.
           </p>
-          <p className={art.referenceNote}>Credential imagery is shown for visual reference only; designs vary by issuer and state. AWS image depicts a membership card, not a welding certification.</p>
+          <p className={art.referenceNote}>These sample cards are for visual reference only. Credential designs vary by issuer and state. The AWS card shows a membership example.</p>
         </div>
       </section>
 
