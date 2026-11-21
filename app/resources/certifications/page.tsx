@@ -104,8 +104,7 @@ export default function CertificationsPage() {
               <p className={`${styles.kicker} ${art.goldKicker}`}>CREDENTIAL LIBRARY</p>
               <h1 id="page-title" className={styles.h1}>Certifications, licenses <span>&amp; training cards</span></h1>
               <p className={styles.lead}>
-                {CREDENTIAL_LIBRARY.length} skilled-trades credentials: what each one is, who requires it, how to earn it, and how to list it on a resume.
-                Checked against official sources and reviewed by {CREDENTIAL_REVIEW.reviewer}.
+                Welcome to the TRADE HUSTL3 Credential Library. Curious about the trades or trying to find your lane? We break down what the work looks like, which certifications, licenses, or training cards you might need, and how to get started.
               </p>
             </div>
             <Image className={`${art.credentialCard} ${art.sideRight}`} src="/credentials/cdl.webp" alt="Commercial driver license reference" width={1000} height={667} unoptimized />
