@@ -38,6 +38,20 @@ export const metadata: Metadata = {
   twitter: { card: "summary_large_image", title: PAGE_TITLE, description: PAGE_DESCRIPTION, images: [HUB_OG_IMAGE] },
 };
 
+const CERTIFICATION_GROUPS = [
+  {
+    title: "HVAC & Automotive A/C",
+    slugs: ["epa-608", "epa-609", "nate", "ase"],
+    card: { src: "/credentials/epa-608.webp", label: "EPA Section 608 Universal card example", height: 667 },
+  },
+  {
+    title: "Welding",
+    slugs: ["aws-certified-welder", "aws-cwi"],
+    card: { src: "/credentials/aws-membership.webp", label: "American Welding Society membership card example", height: 636 },
+  },
+];
+const GROUPED_CERTIFICATION_SLUGS = new Set(CERTIFICATION_GROUPS.flatMap((group) => group.slugs));
+
 const KIND_ORDER: readonly CredentialKind[] = ["certification", "license", "training-card", "qualification"];
 const familyName = new Map(TRADE_CAREER_FAMILIES.map((family) => [family.slug, family.name]));
 
@@ -81,6 +95,71 @@ const jsonLd = {
 
 export default function CertificationsPage() {
   const sorted = [...CREDENTIAL_LIBRARY].sort((a, b) => KIND_ORDER.indexOf(a.kind) - KIND_ORDER.indexOf(b.kind));
+  const renderCredential = (record: (typeof sorted)[number]) => (
+    <details className={art.directoryCard} key={record.slug}>
+      <summary className={art.directorySummary}>
+        {record.name}
+        <span className={art.directoryTrade}>
+          {record.slug === "epa-608" ? "Heating & Air (HVAC)" : record.slug === "epa-609" ? "Automotive A/C" : (familyName.get(record.tradeSlugs[0]) ?? record.tradeSlugs[0])}
+        </span>
+      </summary>
+      <article className={styles.guide} id={record.slug} aria-label={record.name}>
+        <span className={styles.badgeRow}>
+          <span className={`${styles.badge} ${styles[`badge-${record.kind}`]}`}>{CREDENTIAL_KIND_LABELS[record.kind]}</span>
+          <span className={`${styles.badge} ${styles.badgeReq}`}>{CREDENTIAL_REQUIREMENT_LABELS[record.requirement]}</span>
+        </span>
+        <p className={styles.guideSummary}>{record.summary}</p>
+
+        <dl className={styles.facts}>
+          <div><dt>Issued by</dt><dd>{record.issuer}</dd></div>
+          <div><dt>Who needs it</dt><dd>{record.whoNeedsIt}</dd></div>
+          <div><dt>Renewal</dt><dd>{record.renewal}</dd></div>
+          {record.cost ? <div><dt>Published cost</dt><dd>{record.cost.text}</dd></div> : null}
+        </dl>
+
+        {record.details?.length ? (
+          <dl className={styles.detailList}>
+            {record.details.map((detail) => (
+              <div key={detail.label}><dt>{detail.label}</dt><dd>{detail.text}</dd></div>
+            ))}
+          </dl>
+        ) : null}
+
+        <div>
+          <h3>How to earn it</h3>
+          <ol className={styles.steps}>{record.howToEarn.map((step) => <li key={step}>{step}</li>)}</ol>
+        </div>
+
+        <div className={styles.advice}>
+          <span className={styles.adviceLabel}>ON YOUR RESUME · TRADE HUSTL3 CAREER ADVICE</span>
+          <div className={styles.adviceRow}><b className={styles.adviceGood}>WRITE</b><code>{record.resumeTip.write}</code></div>
+          <div className={styles.adviceRow}><b className={styles.adviceBad}>AVOID</b><code>{record.resumeTip.avoid}</code></div>
+          <p>{record.resumeTip.why}</p>
+        </div>
+
+        <div>
+          <h3>Trades that use it</h3>
+          <div className={styles.tradeLinks}>
+            {record.tradeSlugs.map((slug) => (
+              <a key={slug} href={`#trade-${slug}`}>{familyName.get(slug) ?? slug}</a>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <h3>Official sources</h3>
+          <ul className={styles.sources}>
+            {record.sources.map((source) => <li key={source.url}><a href={source.url} rel="noopener">{source.label}</a></li>)}
+          </ul>
+        </div>
+
+        <p className={styles.verified}>
+          Last checked {formatDate(record.lastVerified)} against the sources above · Reviewed by {CREDENTIAL_REVIEW.reviewer}.
+          Requirements can change — confirm with the issuer before you test or apply.
+        </p>
+      </article>
+    </details>
+  );
 
   return (
     <main className={`${styles.page} ${homeDisplayFont.variable} ${homeBodyFont.variable}`}>
@@ -130,71 +209,17 @@ export default function CertificationsPage() {
         {KIND_ORDER.map((kind) => (
           <section key={kind} id={`credentials-${kind}`} className={art.directoryGroup} aria-labelledby={`heading-${kind}`}>
             <h2 id={`heading-${kind}`} className={art.directoryHeading}>{CREDENTIAL_KIND_LABELS[kind]}s</h2>
-            {sorted.filter((record) => record.kind === kind).map((record) => (
-              <details className={art.directoryCard} key={record.slug}>
-                <summary className={art.directorySummary}>
-                  {record.name}
-                  <span className={art.directoryTrade}>
-                    {record.slug === "epa-608" ? "Heating & Air (HVAC)" : record.slug === "epa-609" ? "Automotive A/C" : (familyName.get(record.tradeSlugs[0]) ?? record.tradeSlugs[0])}
-                  </span>
-                </summary>
-                <article className={styles.guide} id={record.slug} aria-label={record.name}>
-                  <span className={styles.badgeRow}>
-                    <span className={`${styles.badge} ${styles[`badge-${record.kind}`]}`}>{CREDENTIAL_KIND_LABELS[record.kind]}</span>
-                    <span className={`${styles.badge} ${styles.badgeReq}`}>{CREDENTIAL_REQUIREMENT_LABELS[record.requirement]}</span>
-                  </span>
-                  <p className={styles.guideSummary}>{record.summary}</p>
-    
-                  <dl className={styles.facts}>
-                    <div><dt>Issued by</dt><dd>{record.issuer}</dd></div>
-                    <div><dt>Who needs it</dt><dd>{record.whoNeedsIt}</dd></div>
-                    <div><dt>Renewal</dt><dd>{record.renewal}</dd></div>
-                    {record.cost ? <div><dt>Published cost</dt><dd>{record.cost.text}</dd></div> : null}
-                  </dl>
-    
-                  {record.details?.length ? (
-                    <dl className={styles.detailList}>
-                      {record.details.map((detail) => (
-                        <div key={detail.label}><dt>{detail.label}</dt><dd>{detail.text}</dd></div>
-                      ))}
-                    </dl>
-                  ) : null}
-    
-                  <div>
-                    <h3>How to earn it</h3>
-                    <ol className={styles.steps}>{record.howToEarn.map((step) => <li key={step}>{step}</li>)}</ol>
-                  </div>
-    
-                  <div className={styles.advice}>
-                    <span className={styles.adviceLabel}>ON YOUR RESUME · TRADE HUSTL3 CAREER ADVICE</span>
-                    <div className={styles.adviceRow}><b className={styles.adviceGood}>WRITE</b><code>{record.resumeTip.write}</code></div>
-                    <div className={styles.adviceRow}><b className={styles.adviceBad}>AVOID</b><code>{record.resumeTip.avoid}</code></div>
-                    <p>{record.resumeTip.why}</p>
-                  </div>
-    
-                  <div>
-                    <h3>Trades that use it</h3>
-                    <div className={styles.tradeLinks}>
-                      {record.tradeSlugs.map((slug) => (
-                        <a key={slug} href={`#trade-${slug}`}>{familyName.get(slug) ?? slug}</a>
-                      ))}
-                    </div>
-                  </div>
-    
-                  <div>
-                    <h3>Official sources</h3>
-                    <ul className={styles.sources}>
-                      {record.sources.map((source) => <li key={source.url}><a href={source.url} rel="noopener">{source.label}</a></li>)}
-                    </ul>
-                  </div>
-    
-                  <p className={styles.verified}>
-                    Last checked {formatDate(record.lastVerified)} against the sources above · Reviewed by {CREDENTIAL_REVIEW.reviewer}.
-                    Requirements can change — confirm with the issuer before you test or apply.
-                  </p>
-                </article>
-              </details>
+            {kind === "certification" && CERTIFICATION_GROUPS.map(({ title, slugs, card }) => (
+              <section key={title} className={art.certificationCluster}>
+                <h3 className={art.clusterHeading}>{title}</h3>
+                {sorted.filter((record) => slugs.includes(record.slug)).map(renderCredential)}
+                <figure className={art.clusterCard}>
+                  <Image src={card.src} alt={card.label} width={1000} height={card.height} unoptimized />
+                  <figcaption>{card.label}</figcaption>
+                </figure>
+              </section>
             ))}
+            {sorted.filter((record) => record.kind === kind && !GROUPED_CERTIFICATION_SLUGS.has(record.slug)).map(renderCredential)}
           </section>
         ))}
 
