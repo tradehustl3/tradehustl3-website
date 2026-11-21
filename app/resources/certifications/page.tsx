@@ -271,25 +271,6 @@ export default function CertificationsPage() {
         </section>
       </div>
 
-      <div className={styles.bridge}>
-        <div className={styles.bridgeInner}>
-          <div>
-            <h2 className={styles.h2}>Earned it? Show it right.</h2>
-            <p className={styles.body}>The Resume Builder lists only the credentials you actually hold — never an invented license or certification. Preview free; unlock for $9.99 one time.</p>
-          </div>
-          <Link
-            className={styles.primaryCta}
-            href="/#resume-start"
-            data-analytics-event="cta_click"
-            data-location="certifications_bridge"
-            data-destination="/#resume-start"
-            data-item="resume_builder"
-          >
-            Build my free preview <span aria-hidden="true">→</span>
-          </Link>
-        </div>
-      </div>
-
       <ResourceFooter />
     </main>
   );
