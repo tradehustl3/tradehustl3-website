@@ -121,6 +121,44 @@ export default function CertificationsPage() {
           <dl className={styles.detailList}>
             {record.details.map((detail) => (
               <div key={detail.label}><dt>{detail.label}</dt><dd>{detail.text}</dd></div>
+            ))}
+          </dl>
+        ) : null}
+
+        <div>
+          <h3>How to earn it</h3>
+          <ol className={styles.steps}>{record.howToEarn.map((step) => <li key={step}>{step}</li>)}</ol>
+        </div>
+
+        <div className={styles.advice}>
+          <span className={styles.adviceLabel}>ON YOUR RESUME · TRADE HUSTL3 CAREER ADVICE</span>
+          <div className={styles.adviceRow}><b className={styles.adviceGood}>WRITE</b><code>{record.resumeTip.write}</code></div>
+          <div className={styles.adviceRow}><b className={styles.adviceBad}>AVOID</b><code>{record.resumeTip.avoid}</code></div>
+          <p>{record.resumeTip.why}</p>
+        </div>
+
+        <div>
+          <h3>Trades that use it</h3>
+          <div className={styles.tradeLinks}>
+            {record.tradeSlugs.map((slug) => (
+              <a key={slug} href={`#trade-${slug}`}>{familyName.get(slug) ?? slug}</a>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <h3>Official sources</h3>
+          <ul className={styles.sources}>
+            {record.sources.map((source) => <li key={source.url}><a href={source.url} rel="noopener">{source.label}</a></li>)}
+          </ul>
+        </div>
+
+        <p className={styles.verified}>
+          Last checked {formatDate(record.lastVerified)} against the sources above · Reviewed by {CREDENTIAL_REVIEW.reviewer}.
+          Requirements can change — confirm with the issuer before you test or apply.
+        </p>
+      </article>
+    </details>
   );
 
   return (
@@ -182,44 +220,6 @@ export default function CertificationsPage() {
               </section>
             ))}
             {sorted.filter((record) => record.kind === kind && !GROUPED_CERTIFICATION_SLUGS.has(record.slug)).map(renderCredential)}
-                    </dl>
-                  ) : null}
-    
-                  <div>
-                    <h3>How to earn it</h3>
-                    <ol className={styles.steps}>{record.howToEarn.map((step) => <li key={step}>{step}</li>)}</ol>
-                  </div>
-    
-                  <div className={styles.advice}>
-                    <span className={styles.adviceLabel}>ON YOUR RESUME · TRADE HUSTL3 CAREER ADVICE</span>
-                    <div className={styles.adviceRow}><b className={styles.adviceGood}>WRITE</b><code>{record.resumeTip.write}</code></div>
-                    <div className={styles.adviceRow}><b className={styles.adviceBad}>AVOID</b><code>{record.resumeTip.avoid}</code></div>
-                    <p>{record.resumeTip.why}</p>
-                  </div>
-    
-                  <div>
-                    <h3>Trades that use it</h3>
-                    <div className={styles.tradeLinks}>
-                      {record.tradeSlugs.map((slug) => (
-                        <a key={slug} href={`#trade-${slug}`}>{familyName.get(slug) ?? slug}</a>
-                      ))}
-                    </div>
-                  </div>
-    
-                  <div>
-                    <h3>Official sources</h3>
-                    <ul className={styles.sources}>
-                      {record.sources.map((source) => <li key={source.url}><a href={source.url} rel="noopener">{source.label}</a></li>)}
-                    </ul>
-                  </div>
-    
-                  <p className={styles.verified}>
-                    Last checked {formatDate(record.lastVerified)} against the sources above · Reviewed by {CREDENTIAL_REVIEW.reviewer}.
-                    Requirements can change — confirm with the issuer before you test or apply.
-                  </p>
-                </article>
-              </details>
-            ))}
           </section>
         ))}
 
