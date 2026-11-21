@@ -176,7 +176,7 @@ export default function CertificationsPage() {
                 <h3 className={art.clusterHeading}>{title}</h3>
                 {sorted.filter((record) => slugs.includes(record.slug)).map(renderCredential)}
                 <figure className={art.clusterCard}>
-                  <Image src={card.src} alt={card.label} width={1000} height={card.height} />
+                  <Image src={card.src} alt={card.label} width={1000} height={card.height} unoptimized />
                   <figcaption>{card.label}</figcaption>
                 </figure>
               </section>
