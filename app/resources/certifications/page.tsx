@@ -52,6 +52,22 @@ const CERTIFICATION_GROUPS = [
 ];
 const GROUPED_CERTIFICATION_SLUGS = new Set(CERTIFICATION_GROUPS.flatMap((group) => group.slugs));
 
+const DIRECTORY_CARDS: Readonly<Partial<Record<string, { src: string; label: string; height: number }>>> = {
+  cpo: { src: "/credentials/cpo.webp", label: "Certified Pool & Spa Operator card example", height: 667 },
+  cdl: { src: "/credentials/cdl.webp", label: "Class A commercial driver’s license example", height: 667 },
+  "state-trade-license": { src: "/credentials/georgia-plumbing.webp", label: "Georgia journeyman plumber license example", height: 667 },
+  twic: { src: "/credentials/twic.webp", label: "TWIC card example", height: 667 },
+};
+
+function CredentialExample({ src, label, height }: { src: string; label: string; height: number }) {
+  return (
+    <figure className={art.clusterCard}>
+      <Image src={src} alt="" width={1000} height={height} unoptimized />
+      <figcaption>{label}</figcaption>
+    </figure>
+  );
+}
+
 const KIND_ORDER: readonly CredentialKind[] = ["certification", "license", "training-card", "qualification"];
 const familyName = new Map(TRADE_CAREER_FAMILIES.map((family) => [family.slug, family.name]));
 
@@ -213,13 +229,18 @@ export default function CertificationsPage() {
               <section key={title} className={art.certificationCluster}>
                 <h3 className={art.clusterHeading}>{title}</h3>
                 {sorted.filter((record) => slugs.includes(record.slug)).map(renderCredential)}
-                <figure className={art.clusterCard}>
-                  <Image src={card.src} alt={card.label} width={1000} height={card.height} unoptimized />
-                  <figcaption>{card.label}</figcaption>
-                </figure>
+                <CredentialExample {...card} />
               </section>
             ))}
-            {sorted.filter((record) => record.kind === kind && !GROUPED_CERTIFICATION_SLUGS.has(record.slug)).map(renderCredential)}
+            {sorted.filter((record) => record.kind === kind && !GROUPED_CERTIFICATION_SLUGS.has(record.slug)).map((record) => {
+              const card = DIRECTORY_CARDS[record.slug];
+              return card ? (
+                <div key={record.slug} className={art.certificationCluster}>
+                  {renderCredential(record)}
+                  <CredentialExample {...card} />
+                </div>
+              ) : renderCredential(record);
+            })}
           </section>
         ))}
 
