@@ -103,9 +103,11 @@ export default function CertificationsPage() {
               <div className={art.credentialEmblem} aria-hidden="true">▤</div>
               <p className={`${styles.kicker} ${art.goldKicker}`}>CREDENTIAL LIBRARY</p>
               <h1 id="page-title" className={styles.h1}>Certifications, licenses <span>&amp; training cards</span></h1>
-              <p className={styles.lead}>
-                Welcome to the TRADE HUSTL3 Credential Library. Curious about the trades or trying to find your lane? We break down what the work looks like, which certifications, licenses, or training cards you might need, and how to get started.
-              </p>
+              <div className={art.welcome}>
+                <p className={art.welcomeLabel}>Welcome to the TRADE HUSTL3 Credential Library</p>
+                <p className={art.welcomeQuestion}>Curious about the trades or trying to find your lane?</p>
+                <p className={art.welcomeCopy}>See what the work looks like, which credentials you might need, and how to get started or take the next step.</p>
+              </div>
             </div>
             <Image className={`${art.credentialCard} ${art.sideRight}`} src="/credentials/cdl.webp" alt="Commercial driver license reference" width={1000} height={667} unoptimized />
           </div>
