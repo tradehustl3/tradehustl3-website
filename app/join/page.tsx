@@ -45,7 +45,7 @@ export default function JoinPage() {
   return (
     <main className={styles.page}>
       <header className={styles.topBar}>
-        <Link href="/" className={styles.brand} aria-label="TRADE HUSTL3 home"><BrandLockup size="lg" /></Link>
+        <Link href="/" className={styles.brand} aria-label="TRADE HUSTL3 home"><BrandLockup size="lg" appearance="transparent" /></Link>
         <nav aria-label="Community page navigation">
           <Link href="/resources">Resources</Link>
           <Link href="/resources/certifications">Certifications</Link>
@@ -129,7 +129,7 @@ export default function JoinPage() {
         <Link href="/resources">Explore today&apos;s resources <span aria-hidden="true">→</span></Link>
       </section>
       <footer className={styles.footer}>
-        <Link href="/" className={styles.brand} aria-label="TRADE HUSTL3 home"><BrandLockup priority={false} /></Link>
+        <Link href="/" className={styles.brand} aria-label="TRADE HUSTL3 home"><BrandLockup priority={false} appearance="transparent" /></Link>
         <strong>BUILT BY HUSTL3. BACKED BY TRADE.</strong>
         <SocialLinks />
         <div className={styles.footerLinks}>
