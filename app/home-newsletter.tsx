@@ -1,6 +1,7 @@
 import { SocialLinks } from './footer-enhancements';
 import { ResourceForm } from './resource-form';
 import styles from './home-storefront.module.css';
+import { NEWS_INTEREST } from './news/constants';
 
 export function HomeNewsletter() {
   return (
@@ -13,15 +14,16 @@ export function HomeNewsletter() {
       </div>
       <div className={styles.split}>
         <div>
-          <p className={styles.lead}>We’re building a stronger future for people who work with their hands. Keep your momentum with practical career resources, book updates, and new tools for the skilled trades.</p>
+          <p className={styles.lead}>Join THE HUSTL3 NEWS for a short weekly email built around Enter, Earn, and Elevate: practical trade resources, clearer credential guidance, and ideas for your next move.</p>
           <SocialLinks />
           <p><a href="/join">Explore the free community and benefits →</a></p>
+          <p><a href="/news">Read THE HUSTL3 NEWS</a></p>
         </div>
         <div className={styles.form}>
-          <ResourceForm resourceName="TRADE HUSTL3 updates" buttonLabel="Subscribe" conversion marketingConsent={true}
+          <ResourceForm resourceName="THE HUSTL3 NEWS" buttonLabel="Join the HUSTL3" conversion marketingConsent={true}
             ctaId="newsletter" ctaLocation="homepage_newsletter" metaLeadContentName="newsletter"
-            signupInterest="General TRADE HUSTL3 Updates" />
-          <p className={styles.finePrint}>By subscribing, you agree to receive TRADE HUSTL3 updates. Unsubscribe anytime.</p>
+            signupInterest={NEWS_INTEREST} />
+          <p className={styles.finePrint}>By subscribing, you agree to receive THE HUSTL3 NEWS and TRADE HUSTL3 updates. Unsubscribe anytime.</p>
         </div>
       </div>
     </section>

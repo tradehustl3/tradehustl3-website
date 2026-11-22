@@ -18,6 +18,7 @@ export default function SubscribedPage() {
     <PolicyPage eyebrow="ENTER. EARN. ELEVATE." title="YOU'RE CONFIRMED" summary={PAGE_DESCRIPTION} showUpdated={false}>
       <PolicySection title="What happens next">
         <p>Watch your inbox for practical skilled-trades guidance from TRADE HUSTL3. You can unsubscribe from any email at any time.</p>
+        <p>Joined THE HUSTL3 NEWS? <Link href="/news/001-your-next-move">Read issue #001: Your next move starts here.</Link></p>
       </PolicySection>
       <PolicySection title="Keep moving">
         <ul>

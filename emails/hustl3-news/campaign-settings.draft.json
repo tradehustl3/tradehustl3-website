@@ -1,0 +1,22 @@
+{
+  "status": "draft_requires_account_review",
+  "senderName": "THE HUSTL3 NEWS | TRADE HUSTL3",
+  "senderEmail": "updates@tradehustl3.com",
+  "replyTo": "founder@tradehustl3.com",
+  "welcome": {
+    "subject": "You're in. Welcome to the HUSTL3.",
+    "preheader": "One useful weekly edition. Your next move belongs here.",
+    "trigger": "New confirmed newsletter subscriber; not an unconfirmed form submission"
+  },
+  "issue001": {
+    "subject": "HUSTL3 NEWS #001: Your next move starts here",
+    "preheader": "Pick a direction. Show your real experience. Take one useful step.",
+    "schedule": null
+  },
+  "beforeSending": [
+    "Replace the business mailing-address placeholder using the approved Brevo account footer.",
+    "Deploy and verify the news pages before testing email links.",
+    "Verify confirmation, unsubscribe, sender authentication, audience filter, and test delivery.",
+    "Keep the campaign unscheduled until the owner approves the subscriber send."
+  ]
+}

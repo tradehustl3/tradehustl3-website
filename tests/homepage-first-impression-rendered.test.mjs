@@ -168,10 +168,11 @@ test("the guide accurately describes the asset and the resume shows a labeled sa
 test("the closing mission and subscription preserve community links", async () => {
   const html = await renderHome();
   assert.doesNotMatch(html, /id="founder-title"|author-portrait-v2/);
-  assert.match(html, /We’re building a stronger future/);
+  assert.match(html, /Join THE HUSTL3 NEWS for a short weekly email/);
   const newsletter = between(html, 'id="join-the-movement"', "<footer");
   assert.equal((newsletter.match(/<form\b/g) ?? []).length, 1);
   assert.match(newsletter, /data-cta-location="homepage_newsletter"/);
+  assert.match(newsletter, /href="\/news"/);
   for (const label of ["Facebook", "Instagram", "TikTok", "YouTube", "LinkedIn"]) {
     assert.ok(newsletter.includes(`aria-label="${label}"`), `${label} link`);
   }

@@ -1,0 +1,20 @@
+You're in. Welcome to the HUSTL3.
+
+You belong here. Thanks for joining THE HUSTL3 NEWS.
+
+Expect a short weekly email built around three moves: ENTER a trade or a new opportunity, EARN with skills you can explain, and ELEVATE toward your next goal.
+
+Whether you're finishing school, changing careers, or building on years in the field, we'll bring practical resources and clearer credential guidance. Start with issue #001, then tell us what you want help with.
+
+Read issue #001: https://tradehustl3.com/news/001-your-next-move?utm_source=hustl3_news&utm_medium=email&utm_campaign=welcome
+
+What trade are you pursuing, and what's holding you back from your next move?
+Reply to founder@tradehustl3.com. We'll ask before publishing your name or story.
+
+Explore trade careers: https://tradehustl3.com/resume-examples?utm_source=hustl3_news&utm_medium=email&utm_campaign=welcome
+Understand credentials: https://tradehustl3.com/resources/certifications?utm_source=hustl3_news&utm_medium=email&utm_campaign=welcome
+
+TRADE HUSTL3 LLC
+[ADD THE APPROVED BUSINESS MAILING ADDRESS IN BREVO]
+Unsubscribe: {{ unsubscribe }}
+Privacy: https://tradehustl3.com/privacy
