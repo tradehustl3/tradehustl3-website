@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { BrandLockup } from "../brand-lockup";
 import { ResourceForm } from "../resource-form";
-import { SocialLinks } from "../social-links";
+import { homeBodyFont, homeDisplayFont } from "../home-fonts";
+import { ResourceFooter } from "../resources/resource-chrome";
 import { SITE_URL } from "../site";
 import styles from "./join.module.css";
 
@@ -43,7 +44,7 @@ function BenefitIcon({ number }: { number: string }) {
 
 export default function JoinPage() {
   return (
-    <main className={styles.page}>
+    <main className={`${styles.page} ${homeBodyFont.variable} ${homeDisplayFont.variable}`}>
       <header className={styles.topBar}>
         <Link href="/" className={styles.brand} aria-label="TRADE HUSTL3 home"><BrandLockup size="lg" appearance="transparent" /></Link>
         <nav aria-label="Community page navigation">
@@ -57,8 +58,11 @@ export default function JoinPage() {
           <div className={styles.heroCopy}>
             <div className={styles.eyebrow}>YOUR AMBITION HAS A PLACE HERE</div>
             <h1 id="join-heading">WELCOME TO THE <span>HUSTL3.</span></h1>
-            <p className={styles.welcome}>Just getting started? Making a change? You belong here.</p>
-            <p className={styles.lead}>Your future is worth building. Find practical trade resources, clearer credential guidance, and ideas for your next move — wherever you&apos;re starting from.</p>
+            <p className={styles.welcome}>
+              <span className={styles.welcomePrompt}>Just getting started? Making a change?</span>{" "}
+              <strong className={styles.welcomeEmphasis}>You belong here.</strong>
+            </p>
+            <p className={styles.lead}><strong className={styles.futureEmphasis}>Your future is worth building.</strong>{" "}Find practical trade resources, clearer credential guidance, and ideas for your next move — wherever you&apos;re starting from.</p>
             <div className={styles.heroActions}>
               <a className={styles.heroCta} href="#join-signup">Join the HUSTL3 <span aria-hidden="true">→</span></a>
               <a className={styles.secondaryCta} href="#join-benefits">See what&apos;s inside <span aria-hidden="true">↓</span></a>
@@ -128,15 +132,7 @@ export default function JoinPage() {
         </div>
         <Link href="/resources">Explore today&apos;s resources <span aria-hidden="true">→</span></Link>
       </section>
-      <footer className={styles.footer}>
-        <Link href="/" className={styles.brand} aria-label="TRADE HUSTL3 home"><BrandLockup priority={false} appearance="transparent" /></Link>
-        <strong>BUILT BY HUSTL3. BACKED BY TRADE.</strong>
-        <SocialLinks />
-        <div className={styles.footerLinks}>
-          <Link href="/">Home</Link><Link href="/resources">Resources</Link><Link href="/privacy">Privacy</Link><Link href="/terms">Terms</Link><Link href="/contact">Contact</Link>
-        </div>
-        <small>© {new Date().getFullYear()} TRADE HUSTL3 LLC · Atlanta, Georgia</small>
-      </footer>
+      <ResourceFooter joinHref="#join-signup" ctaLocation="join_footer" />
     </main>
   );
 }
