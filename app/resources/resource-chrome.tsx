@@ -51,7 +51,7 @@ export function ResourceFooter() {
           <Link href="/resume-examples"><span aria-hidden="true">⚒</span>Career Paths</Link>
           <Link href="/#resume-start"><span aria-hidden="true">▦</span>Resume Builder</Link>
         </nav>
-        <div className={styles.footerMovement}>JOIN THE MOVEMENT</div>
+        <Link className={styles.footerMovement} href="/join" data-analytics-event="cta_click" data-location="resources_footer" data-destination="/join" data-item="join_the_hustl3">JOIN THE HUSTL3 <span aria-hidden="true">→</span></Link>
         <p className={styles.footerContact}>Have a question? <a href="mailto:support@tradehustl3.com">Email TRADE HUSTL3</a></p>
         <div className={styles.footerDisclosure}>
           <span aria-hidden="true">✓</span>

@@ -9,12 +9,13 @@ export function HomeNewsletter() {
       <span id="hub-mission" />
       <div className={styles.sectionHeading}>
         <p className={styles.kicker}><span>TRADE HUSTL3 UPDATES</span></p>
-        <h2 id="movement-title">Join the Movement.</h2>
+        <h2 id="movement-title">Join the HUSTL3.</h2>
       </div>
       <div className={styles.split}>
         <div>
           <p className={styles.lead}>We’re building a stronger future for people who work with their hands. Keep your momentum with practical career resources, book updates, and new tools for the skilled trades.</p>
           <SocialLinks />
+          <p><a href="/join">Explore the free community and benefits →</a></p>
         </div>
         <div className={styles.form}>
           <ResourceForm resourceName="TRADE HUSTL3 updates" buttonLabel="Subscribe" conversion marketingConsent={true}

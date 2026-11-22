@@ -1,0 +1,56 @@
+.page{background:#f6f5f1;color:#09243c;min-width:0;overflow-x:clip;font-family:var(--font-body),Arial,sans-serif}
+.topBar{display:flex;justify-content:space-between;align-items:center;gap:20px;padding:15px clamp(16px,4vw,64px);background:#06192d;color:#fff;border-bottom:3px solid #e6ae3e}
+.wordmark{font-family:var(--font-display),Impact,sans-serif;font-size:clamp(23px,3.2vw,38px);color:#fff;letter-spacing:.025em;white-space:nowrap;text-decoration:none}
+.wordmark span{color:#e52e39}
+.topBar nav{display:flex;align-items:center;flex-wrap:wrap;gap:14px}
+.topBar nav a{color:#e8edf4;font-size:14px;font-weight:700;text-decoration:none}
+.topBar nav a:hover,.topBar nav a:focus-visible{text-decoration:underline;text-decoration-color:#f6c45c}
+.hero{position:relative;isolation:isolate;color:white;text-align:center;padding:clamp(65px,10vw,125px) 20px 72px;overflow:hidden;background:radial-gradient(ellipse at 5% 35%,#8d172f80,transparent 42%),radial-gradient(ellipse at 95% 25%,#006aba80,transparent 48%),repeating-linear-gradient(135deg,#071b31 0px,#071b31 7px,#0a223c 7px,#0a223c 13px)}
+.hero:before{content:"";position:absolute;inset:0 0 auto;height:5px;background:linear-gradient(90deg,#df202e,#f6be4c,#1975b6)}
+.heroInner{position:relative;max-width:900px;margin:auto}
+.eyebrow,.kicker{font-size:13px;letter-spacing:.15em;font-weight:900;text-transform:uppercase;color:#bf2f3a}
+.eyebrow{color:#f4c46c}
+.hero h1{font-family:var(--font-display),Impact,sans-serif;font-size:clamp(48px,10vw,115px);line-height:1.04;letter-spacing:.015em;margin:14px 0 19px;color:#fff;text-shadow:0 4px 12px #0007}
+.hero h1 span{color:#f4bc48}
+.motto{max-width:650px;margin:0 auto;padding:12px 16px;background:linear-gradient(180deg,#ffdc7c,#e9a624);color:#0b1e30;font-size:clamp(16px,3vw,27px);font-weight:900;letter-spacing:.08em;transform:skew(-3deg);border:2px solid #ffdf8b;box-shadow:0 5px 20px #0007}
+.motto b{color:#c31b2c}
+.lead{max-width:690px;margin:26px auto 16px;font-size:clamp(17px,2.5vw,22px);line-height:1.55;color:#edf3f9}
+.freePill{font-size:14px;font-weight:700;color:#ffdf8f;margin:0 0 24px}
+.heroCta{display:inline-flex;align-items:center;justify-content:center;gap:12px;background:#db2131;color:white;border-radius:8px;padding:15px 28px;font-size:17px;font-weight:900;text-decoration:none;box-shadow:0 5px 0 #811120}
+.heroCta:focus-visible,.heroCta:hover{background:#b81728;outline:2px solid #ffdd7c;outline-offset:3px}
+.content{max-width:1130px;margin:auto;padding:70px 20px}
+.content h2,.signupBand h2,.news h2{font-family:var(--font-display),Impact,sans-serif;letter-spacing:.015em;font-size:clamp(32px,5vw,55px);line-height:1.12;margin:9px 0 14px}
+.intro{font-size:17px;max-width:720px;color:#344e63;line-height:1.6;margin-bottom:27px}
+.benefits{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+.benefit{padding:28px;border:1px solid #ccd6df;border-left:5px solid #cd2638;border-radius:12px;background:#fff;box-shadow:0 10px 26px #08203912}
+.benefitNumber{font-family:var(--font-display),Impact,sans-serif;color:#1763a0;font-size:31px}
+.benefit h3{font-size:21px;margin:9px 0}
+.benefit p{font-size:15px;color:#344e63;line-height:1.65}
+.benefit a{display:inline-block;margin-top:12px;color:#0a5390;font-weight:800;text-underline-offset:4px}
+.signupBand{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:38px;align-items:center;padding:70px max(20px,calc((100% - 1090px)/2));color:#fff;background:radial-gradient(ellipse at 100% 0%,#1267a077,transparent 55%),#061a2f;border-top:5px solid #d32b36;border-bottom:5px solid #e6af44;scroll-margin-top:20px}
+.signupCopy .kicker{color:#f7c663}
+.signupCopy h2 span{color:#f6bd4b}
+.signupCopy>p:not(.kicker){line-height:1.65;font-size:17px;color:#d9e6f2}
+.signupCopy .small{font-size:14px!important;color:#bed0df!important}
+.formCard{background:white;color:#0b2b47;padding:30px;border-radius:14px;box-shadow:0 16px 44px #0006;border:2px solid #dba638;min-width:0}
+.formCard h3{font-size:24px;margin:0 0 16px}
+.formCard :global(.resource-form){display:flex;flex-direction:column;gap:12px}
+.formCard :global(.field-row){display:flex;flex-direction:column;gap:7px}
+.formCard :global(input[type="email"]){background:#fff;color:#102c44;border:2px solid #63788a;border-radius:8px;min-height:48px;padding:12px;width:100%;box-sizing:border-box;font-size:16px}
+.formCard :global(input[type="email"]:focus-visible){outline:3px solid #2377ae;outline-offset:2px}
+.formCard :global(.form-status){font-size:14px;line-height:1.5}
+.formCard :global(button){width:100%;min-height:50px}
+.consent{font-size:12px;line-height:1.6;color:#455b70;margin:16px 0 0}
+.consent a{color:#0a5b9e}
+.news{max-width:1120px;margin:auto;padding:68px 20px;display:flex;align-items:center;justify-content:space-between;gap:35px}
+.news>div{max-width:740px}
+.news p:not(.kicker){color:#344f67;line-height:1.7}
+.news>a{display:inline-block;flex:none;color:#07538f;font-weight:800}
+.footer{display:grid;justify-items:center;text-align:center;gap:22px;background:#041425;color:#e2ebf3;padding:42px 20px}
+.footer strong{font-family:var(--font-display),Impact,sans-serif;color:#f1bd53;letter-spacing:.08em}
+.footer :global(.social-links){display:flex;flex-wrap:wrap;justify-content:center;gap:12px}
+.footer :global(.social-links a){color:#fff;fill:#fff}
+.footerLinks{display:flex;flex-wrap:wrap;justify-content:center;gap:18px}
+.footerLinks a{color:#d9e7f5;font-size:14px}
+.footer small{color:#adbfce}
+@media(max-width:700px){.topBar{flex-direction:column;gap:10px}.topBar nav{justify-content:center;gap:10px 14px}.hero{padding:66px 16px 55px}.motto{letter-spacing:.035em}.content{padding:50px 16px}.benefits{grid-template-columns:minmax(0,1fr)}.benefit{padding:22px}.signupBand{grid-template-columns:minmax(0,1fr);gap:20px;padding:50px 16px}.formCard{padding:22px 18px}.news{padding:48px 16px;flex-direction:column;align-items:flex-start;gap:16px}}
