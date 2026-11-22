@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { BrandLockup } from "../brand-lockup";
-import { ResourceForm } from "../resource-form";
 import { homeBodyFont, homeDisplayFont } from "../home-fonts";
 import { ResourceFooter } from "../resources/resource-chrome";
 import { SITE_URL } from "../site";
@@ -64,7 +63,7 @@ export default function JoinPage() {
             </p>
             <p className={styles.lead}><strong className={styles.futureEmphasis}>Your future is worth building.</strong>{" "}Find practical trade resources, clearer credential guidance, and ideas for your next move — wherever you&apos;re starting from.</p>
             <div className={styles.heroActions}>
-              <a className={styles.heroCta} href="#join-signup">Join the HUSTL3 <span aria-hidden="true">→</span></a>
+              <Link className={styles.heroCta} href="/#join-the-movement">Join the HUSTL3 <span aria-hidden="true">→</span></Link>
               <a className={styles.secondaryCta} href="#join-benefits">See what&apos;s inside <span aria-hidden="true">↓</span></a>
             </div>
             <p className={styles.freePill}><span aria-hidden="true">✓</span> Free to join · No purchase required</p>
@@ -107,22 +106,6 @@ export default function JoinPage() {
           <p>Sign up for TRADE HUSTL3 email updates about free resources, career guidance, and new tools. We&apos;ll also let you know when THE HUSTL3 NEWS launches.</p>
           <p className={styles.small}>Free to join. Unsubscribe anytime. Your next move is yours.</p>
         </div>
-        <div className={styles.formCard}>
-          <span className={styles.formBadge}>YOU&apos;RE INVITED</span>
-          <h3>Make room for your next move.</h3>
-          <p className={styles.formIntro}>Get free HUSTL3 updates in your inbox.</p>
-          <ResourceForm
-            resourceName="Join the HUSTL3 email updates"
-            buttonLabel="Join the HUSTL3"
-            conversion
-            marketingConsent={true}
-            ctaId="join-the-hustl3"
-            ctaLocation="join_page"
-            metaLeadContentName="newsletter"
-            signupInterest="Join the HUSTL3 Community"
-          />
-          <p className={styles.consent}>By signing up, you agree to receive TRADE HUSTL3 email updates. You can unsubscribe anytime. Depending on the signup process, you may need to confirm your email first. See our <Link href="/privacy">Privacy Policy</Link>.</p>
-        </div>
       </section>
       <section className={styles.news} aria-labelledby="news-heading">
         <div>
@@ -132,7 +115,7 @@ export default function JoinPage() {
         </div>
         <Link href="/resources">Explore today&apos;s resources <span aria-hidden="true">→</span></Link>
       </section>
-      <ResourceFooter joinHref="#join-signup" ctaLocation="join_footer" />
+      <ResourceFooter joinHref="/#join-the-movement" ctaLocation="join_footer" />
     </main>
   );
 }
