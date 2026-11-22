@@ -28,6 +28,9 @@ jobs:
       - if: github.base_ref == 'main'
         run: npm run build
       - run: node tools/visual/render-snapshot.mjs visual-snapshot / /book
+      # Resume style samples rendered with the real bundled fonts, so a change to a
+      # look can be reviewed (and the carousel's sample images refreshed) from the artifact.
+      - run: npx tsx tools/visual/render-template-thumbnails.ts visual-snapshot/resume-template-samples
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: visual-snapshot
@@ -66,7 +69,9 @@ jobs:
           for dir in css _vinext_fonts; do
             [ -d "visual-snapshot/_next/static/$dir" ] && cp -r "visual-snapshot/_next/static/$dir" review/bundle/_next/static/
           done
-          printf 'Visual review for %s\nScreenshots: screenshots/\n' "$SHA" > review/README.md
+          # Resume style samples (real fonts), reviewable and copyable into public/resume-templates.
+          [ -d visual-snapshot/resume-template-samples ] && cp -r visual-snapshot/resume-template-samples review/
+          printf 'Visual review for %s\nScreenshots: screenshots/\nResume style samples: resume-template-samples/\n' "$SHA" > review/README.md
           cd review
           git init -q -b review
           git config user.name "github-actions[bot]"

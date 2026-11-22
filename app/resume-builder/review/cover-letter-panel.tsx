@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { CorrectionWindowNote } from "./correction-window";
+import { isCareerTrack } from "../../../worker/resume-templates";
 
 type CoverLetterState = {
   included: boolean;
@@ -23,14 +24,15 @@ export function CoverLetterPanel({
   resumeId,
   coverLetter,
   paid,
-  theme,
+  track,
   onRefresh,
   onMessage,
 }: {
   resumeId: string;
   coverLetter: CoverLetterState;
   paid: boolean;
-  theme: string;
+  /** The resume's writing focus. Looks no longer carry one. */
+  track: string;
   onRefresh: () => Promise<void>;
   onMessage: (message: string, tone?: "info" | "success" | "error") => void;
 }) {
@@ -38,10 +40,13 @@ export function CoverLetterPanel({
   // The appearance the customer chose to keep their current wording for. The banner
   // stays hidden for that appearance and returns only if they pick another one.
   const [keptWordingFor, setKeptWordingFor] = useState<string | null>(null);
+  // The look never asks for a rewrite. The banner only appears when this letter was
+  // written for a different focus than the resume now has.
   const showTrackBanner = coverLetter.generated
+    && isCareerTrack(track)
     && Boolean(coverLetter.generationTrack)
-    && coverLetter.generationTrack !== theme
-    && keptWordingFor !== theme;
+    && coverLetter.generationTrack !== track
+    && keptWordingFor !== track;
 
   async function rewritePackageForTrack() {
     if (working) return;
@@ -54,7 +59,7 @@ export function CoverLetterPanel({
         method: "POST",
         credentials: "same-origin",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ generationTrack: theme }),
+        body: JSON.stringify({ generationTrack: track }),
       });
       const result = await response.json() as { message?: string };
       if (!response.ok) throw new Error(result.message || "We could not rewrite your package for this style.");
@@ -68,7 +73,7 @@ export function CoverLetterPanel({
   }
 
   function keepCurrentWording() {
-    setKeptWordingFor(theme);
+    setKeptWordingFor(track);
     onMessage("Keeping your current cover-letter wording. Appearance changes are free and no correction was used.");
   }
 
@@ -152,8 +157,8 @@ export function CoverLetterPanel({
 
       {showTrackBanner ? (
         <div role="group" aria-label="Cover letter career track">
-          <p>The selected style differs from how this letter was written.</p>
-          <button type="button" disabled={working || !paid || coverLetter.correctionsRemaining < 1} onClick={() => void rewritePackageForTrack()}>Rewrite for this style</button>
+          <p>Your resume&apos;s writing focus differs from how this letter was written.</p>
+          <button type="button" disabled={working || !paid || coverLetter.correctionsRemaining < 1} onClick={() => void rewritePackageForTrack()}>Rewrite for this focus</button>
           <button type="button" disabled={working} onClick={keepCurrentWording}>Keep my current wording</button>
           <small>{!paid
             ? "Unlock the package to rewrite."

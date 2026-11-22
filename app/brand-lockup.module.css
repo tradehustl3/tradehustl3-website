@@ -9,6 +9,7 @@
   background: #0b1f33;
   line-height: 1;
 }
+.lockup[data-appearance="transparent"] { background: transparent; }
 .lockup .mark {
   display: block;
   width: auto;

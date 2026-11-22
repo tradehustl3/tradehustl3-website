@@ -3,7 +3,7 @@ import test from 'node:test';
 import JSZip from 'jszip';
 import { getDocument } from 'pdfjs-dist/legacy/build/pdf.mjs';
 import { createResumeDocx, createResumePdf } from '../worker/resume-documents';
-import { BODY_SIZES, RESUME_TEMPLATES, TEXT_SIZES, defaultStyle, type TemplateKey } from '../worker/resume-templates';
+import { BODY_SIZES, RESUME_TEMPLATES, TEMPLATE_KEYS, TEXT_SIZES, defaultStyle, trackForTemplate, type TemplateKey } from '../worker/resume-templates';
 import { skillCharsPerColumn, skillColumnsThatFit } from '../worker/resume-layout-v2';
 import { sampleResume } from '../docs/pr186/sample-resume';
 
@@ -23,7 +23,7 @@ const LONG_SKILLS = [
   'Work order systems',
   'Ductwork repair',
 ];
-const themes: TemplateKey[] = ['plain', 'navy', 'lead'];
+const themes: readonly TemplateKey[] = TEMPLATE_KEYS;
 const squash = (value: string) => value.replace(/\s+/g, '');
 
 async function pdfText(bytes: Uint8Array): Promise<string> {
@@ -58,8 +58,8 @@ test('every skill reads as one unbroken phrase in PDF and DOCX text, in every te
   for (const theme of themes) for (const textSize of TEXT_SIZES) {
     const style = { ...defaultStyle(theme), textSize };
     const [pdf, docx] = await Promise.all([
-      createResumePdf(resume, false, theme, theme, style),
-      createResumeDocx(resume, theme, theme, style),
+      createResumePdf(resume, false, theme, trackForTemplate(theme, null), style),
+      createResumeDocx(resume, theme, trackForTemplate(theme, null), style),
     ]);
     for (const [format, text] of [['PDF', await pdfText(pdf)], ['DOCX', await docxText(docx)]] as const) {
       const flat = squash(text);

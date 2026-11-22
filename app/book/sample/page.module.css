@@ -305,8 +305,8 @@
   width: min(100%, 760px);
   min-height: min(1120px, calc(100vw * 1.38));
   padding: clamp(48px, 7vw, 82px) clamp(36px, 7vw, 86px) 64px;
-  background: var(--paper);
-  color: #171717;
+  background: #fff;
+  color: #111;
   box-shadow: 0 18px 52px rgba(7, 26, 43, 0.18);
   border: 1px solid #ded7c9;
   font-family: Georgia, 'Times New Roman', serif;
@@ -328,14 +328,22 @@
   font-size: 1em;
 }
 
+/* Printed page number. Resets the site-wide footer bar (globals.css) so it
+   cannot paint a navy block over the page text. */
 .bookPage footer {
   position: absolute;
   left: 0;
   right: 0;
   bottom: 22px;
+  display: block;
+  min-height: 0;
+  padding: 0;
+  background: none;
   color: #686868;
+  font-family: Georgia, 'Times New Roman', serif;
   font-size: 0.62rem;
   text-align: center;
+  text-transform: none;
   letter-spacing: 0.035em;
 }
 
@@ -381,22 +389,98 @@
 }
 
 .titlePage h3 {
-  margin: 0 0 18px;
-  color: #b72725;
-  font-size: clamp(2rem, 5vw, 3.2rem);
+  margin: 0 0 14px;
+  color: #111;
+  font-family: var(--font-display), 'Arial Narrow', Arial, sans-serif;
+  font-size: clamp(2.2rem, 6vw, 3.6rem);
+  letter-spacing: 0.01em;
 }
 
 .titlePage p {
-  margin: 5px 0;
-  color: #124b78;
+  margin: 6px 0;
+  color: #222;
+}
+
+.titlePage .titleSubtitle {
+  font-style: italic;
+  font-size: 1.05em;
+}
+
+.titlePage .titleMotto {
+  margin-top: 20px;
+  font-family: var(--font-body), Arial, sans-serif;
+  font-size: 0.66rem;
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.42em;
 }
 
 .titlePage small {
   display: block;
-  margin-top: 22px;
-  color: #bd9836;
+  margin-top: clamp(64px, 12vw, 120px);
+  color: #111;
+  font-size: 1em;
+}
+
+/* Copyright page: small, left-aligned block set low on the page, as printed. */
+.copyrightPage {
+  display: flex;
+  align-items: center;
+}
+
+.copyrightPage > div {
+  transform: translateY(10%);
+  font-size: 0.74rem;
+  line-height: 1.4;
+}
+
+.copyrightPage p {
+  margin: 0 0 0.9em;
+}
+
+/* Part opener: small spaced label over a bold title, as printed. */
+.partPage {
+  display: grid;
+  place-items: center;
+  text-align: center;
+}
+
+.partPage > div {
+  transform: translateY(-22%);
+}
+
+.partPage p {
+  margin: 0 0 8px;
+  font-family: var(--font-body), Arial, sans-serif;
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.38em;
+}
+
+.partPage h3 {
+  margin: 0;
+  font-family: var(--font-body), Arial, sans-serif;
+  font-size: clamp(1.25rem, 3vw, 1.6rem);
+  font-weight: 900;
+}
+
+/* Body pages: indented paragraphs, flush after a heading, sans section heads with a rule. */
+.bodyPage > p {
+  text-indent: 1.4em;
+  margin: 0 0 0.2em;
+}
+
+.bodyPage > h4 + p {
+  text-indent: 0;
+}
+
+.bodyPage > h4 {
+  margin: 20px 0 10px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid #111;
+  font-family: var(--font-body), Arial, sans-serif;
+  font-size: 0.82em;
+  font-weight: 900;
+  letter-spacing: 0.01em;
 }
 
 .tocPage h3 {
@@ -424,21 +508,27 @@
 }
 
 .chapterHeading {
+  margin-top: clamp(24px, 6vw, 70px);
   text-align: center;
 }
 
 .chapterHeading p {
-  font-weight: 700;
-  letter-spacing: 0.03em;
+  display: inline-block;
+  margin: 0;
+  padding-top: 8px;
+  min-width: 46%;
+  border-top: 1px solid #111;
+  font-family: var(--font-body), Arial, sans-serif;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.32em;
 }
 
 .chapterHeading h3 {
-  margin: 8px 0 16px;
-  font-size: 1.35rem;
-}
-
-.chapterHeading h4 {
-  text-align: left;
+  margin: 8px 0 22px;
+  font-family: var(--font-body), Arial, sans-serif;
+  font-size: clamp(1.15rem, 2.8vw, 1.45rem);
+  font-weight: 900;
 }
 
 .finish {

@@ -1,5 +1,5 @@
 import { renderPdfV2, renderDocxV2 } from './resume-layout-v2';
-import type { ResumeStyle } from './resume-templates';
+import { defaultStyle, isCareerTrack, type ResumeStyle, type TemplateKey } from './resume-templates';
 import {
   AlignmentType,
   BorderStyle,
@@ -62,10 +62,11 @@ function accentRgb(theme: ResumeTheme): ReturnType<typeof rgb> {
 
 export async function createCoverLetterDocx(
   letter: GeneratedCoverLetter,
-  theme: ResumeTheme = "plain",
+  theme: TemplateKey = "plain",
   style?: ResumeStyle,
 ): Promise<Uint8Array> {
-  if (style?.templateVersion === 2) return renderDocxV2(letter, theme, style, theme, true);
+  // Letters use no track headings; the track argument is unused for them.
+  if (style?.templateVersion === 2 || !isCareerTrack(theme)) return renderDocxV2(letter, theme, style?.templateVersion === 2 ? style : defaultStyle(theme), "plain", true);
   const contactLine = [letter.basics.location, letter.basics.phone, letter.basics.email]
     .map(clean)
     .filter(Boolean)
@@ -236,11 +237,11 @@ function drawPreviewWatermark(document: PDFDocument, font: PDFFont): void {
 
 export async function createCoverLetterPdf(
   letter: GeneratedCoverLetter,
-  theme: ResumeTheme = "plain",
+  theme: TemplateKey = "plain",
   watermarked = false,
   style?: ResumeStyle,
 ): Promise<Uint8Array> {
-  if (style?.templateVersion === 2) return renderPdfV2(letter, theme, style, watermarked, theme, true);
+  if (style?.templateVersion === 2 || !isCareerTrack(theme)) return renderPdfV2(letter, theme, style?.templateVersion === 2 ? style : defaultStyle(theme), watermarked, "plain", true);
   const document = await PDFDocument.create();
   document.registerFontkit(fontkit);
   const writer: PdfWriter = {

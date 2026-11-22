@@ -135,7 +135,8 @@ test("the guide accurately describes the asset and the resume shows a labeled sa
   assert.doesNotMatch(resume, /<form\b|Account · stage|SKILLED-TRADES RESUME BUILDER|Your Skills Deserve|Start My Free Resume Preview/);
   assert.match(resume, /Your Experience Matters\./);
   assert.match(resume, /Make Sure It Shows\./);
-  assert.match(resume, /Example output/);
+  assert.match(resume, /aria-roledescription="carousel"[^>]*aria-label="Resume style examples"/);
+  assert.doesNotMatch(resume, /Example output|sample-hvac-resume\.webp/);
   const headline = resume.indexOf('Your Experience Matters.');
   const logo = resume.indexOf('id="opportunity-title"');
   const audience = resume.indexOf('Your First Job. Your Next Opportunity. Your Move Into Leadership.');
@@ -144,18 +145,22 @@ test("the guide accurately describes the asset and the resume shows a labeled sa
   assert.ok(headline >= 0 && headline < logo && logo < audience && audience < description && description < example,
     'headline, existing logo, audience statement, supporting description, and examples stay in order');
 
-  const credentials = between(resume, 'aria-label="Examples of trade credentials for a resume"', 'Your First Job.');
-  for (const [name, detail] of [["CDL", "Class A / B"], ["EPA 608", "Universal"], ["CPO", "Pool &amp; Spa Operator"], ["AWS", "Certified Welder"], ["ASE", "Auto Service"], ["TWIC", "Card"]]) {
-    assert.ok(credentials.includes(`<strong>${name}</strong><span>${detail}</span>`), `${name} credential`);
-  }
+  assert.doesNotMatch(resume, /aria-label="Examples of trade credentials for a resume"/);
 
   const previewEnd = resume.indexOf('</figure>');
   const cta = resume.indexOf('Start Your Free Resume Preview');
   assert.ok(previewEnd > 0 && cta > previewEnd && resume.indexOf('See your preview before you pay') > cta);
-  const documents = between(resume, '<figure', '</figure>');
-  assert.match(documents, /<p>Resume<\/p>[\s\S]*sample-hvac-resume\.webp/);
-  assert.match(documents, /<p>Cover Letter<\/p>[\s\S]*sample-hvac-cover-letter\.webp/);
-  for (const label of ["Illustrative candidate", "$9.99", "PDF and editable DOCX", "Matching cover letter", "three AI-assisted corrections within seven days"]) {
+  const carousel = between(resume, '<figure', '</figure>');
+  const slides = ["plain", "blueprint", "premier", "sidebar", "technical"];
+  slides.forEach((key) => assert.match(carousel, new RegExp(`src="/resume-templates/${key}\\.png"`), `${key} slide`));
+  const coverLetter = carousel.indexOf('src="/sample-hvac-cover-letter.webp"');
+  assert.ok(coverLetter > carousel.indexOf('src="/resume-templates/technical.png"'), "matching cover letter is the last slide");
+  assert.match(carousel, /aria-label="6 of 6: Matching Cover Letter"/);
+  assert.equal((carousel.match(/aria-roledescription="slide"/g) ?? []).length, slides.length + 1);
+  assert.match(carousel, /aria-label="Previous example"[^>]*disabled/);
+  assert.match(carousel, /1<!-- --> of <!-- -->6|1 of 6/);
+  assert.doesNotMatch(carousel, /\/resume-templates\/(navy|lead)\.png/, "retired looks are not advertised");
+  for (const label of ["Illustrative candidates", "$9.99", "PDF and editable DOCX", "Matching cover letter", "three AI-assisted corrections within seven days"]) {
     assert.ok(resume.includes(label), label);
   }
 });
@@ -167,16 +172,20 @@ test("the closing mission and subscription preserve community links", async () =
   const newsletter = between(html, 'id="join-the-movement"', "<footer");
   assert.equal((newsletter.match(/<form\b/g) ?? []).length, 1);
   assert.match(newsletter, /data-cta-location="homepage_newsletter"/);
-  for (const label of ["Facebook", "Instagram", "TikTok", "YouTube", "LinkedIn", "X", "GitHub"]) {
+  for (const label of ["Facebook", "Instagram", "TikTok", "YouTube", "LinkedIn"]) {
     assert.ok(newsletter.includes(`aria-label="${label}"`), `${label} link`);
+  }
+  for (const label of ["X", "GitHub"]) {
+    assert.ok(!newsletter.includes(`aria-label="${label}"`), `${label} link removed`);
   }
 });
 
 test("trade stage band replaces the old start-here and tools sections with five real paths", async () => {
   const html = await renderHome();
   const band = between(html, 'id="start-here"', 'data-item="group_access"');
-  assert.match(band, /<h2 id="stage-title"[^>]*>Where are you in your trade\?<\/h2>/);
-  const labels = ["Student", "New to Trades", "In the Trade", "Supervisor / Lead", "Career Changer"];
+  assert.match(band, /<h2 id="stage-title"[^>]*>Where are you in your trade journey\?<\/h2>/);
+  assert.match(html, /id="lane-title"[^>]*>Choose Your Path<\/h2>/);
+  const labels = ["In School", "New to the Trades", "Already in the Field", "Ready to Lead", "Changing Careers"];
   const positions = labels.map((label) => band.indexOf(`<strong>${label}</strong>`));
   positions.forEach((index, i) => assert.ok(index > (positions[i - 1] ?? -1), `persona order: ${labels[i]}`));
   assert.equal((band.match(/data-location="hub_stage_picker"/g) ?? []).length, 5);
@@ -304,7 +313,7 @@ test("the book hero features the approved cover, preview and format selection", 
   assert.match(storefront, /optimized\/book-cover-v3\.webp/);
   assert.match(storefront, /THE BOOK/);
   assert.match(storefront, /BY MR\. HUSTL3/);
-  assert.match(storefront, /A Story From the Trades\. A Message for the Next Generation\./);
+  assert.match(storefront.replace(/<[^>]*>/g, ""), /A Story From the Trades\. A Message for the Next Generation\./);
   assert.match(storefront, /Get Your 7 FREE Pages/);
   assert.match(storefront, /id="homepage-book-email"[^>]*hidden/);
   assert.doesNotMatch(storefront, /Read 7 Pages FREE|Explore the Book|More Than a Book/);

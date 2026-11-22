@@ -16,8 +16,7 @@ test("mobile review keeps the protected PDF inside the resume workspace", async 
   assert.doesNotMatch(page, /ResumePreviewFallback/);
   assert.match(review, /className="rb-review-grid"/);
   assert.match(review, /<ProtectedPdfPreview /);
-  assert.match(review, /renderThemePicker\(\)/);
-  assert.match(review, /Field Pro/);
-  assert.match(review, /Modern Trade/);
-  assert.match(review, /Lead \/ Supervisor/);
+  // The look is chosen in the same panel, by swiping the preview itself.
+  assert.match(review, /renderStyleCarousel\(/);
+  assert.match(review, /<StyleCarousel /);
 });

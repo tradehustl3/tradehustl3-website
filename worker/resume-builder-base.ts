@@ -1,6 +1,6 @@
 import { withCustomerScope } from './resume-presentation-content';
 import { agentReportWindow } from './agent-report-window';
-import { storedStyle, defaultStyle } from './resume-templates';
+import { storedStyle, defaultStyle, firstBuildTrack, isCareerTrack, isTemplateKey, normalizeTemplate, normalizeTrack, trackForTemplate, type TemplateKey } from './resume-templates';
 import { errorKind } from "./resume-safe-log";
 import { operationalEvent } from "./operations-monitoring";
 import { notifyResumeRecovery, type RecoveryContext } from "./resume-recovery";
@@ -121,10 +121,13 @@ type ResumeRecord = {
   font?: string; text_size?: string; spacing?: string; accent?: string; template_version?: number;
 };
 
-const RESUME_THEMES: ReadonlySet<string> = new Set(["plain", "navy", "lead"]);
-
-function normalizeTheme(value: unknown): ResumeTheme {
-  return typeof value === "string" && RESUME_THEMES.has(value) ? value as ResumeTheme : "plain";
+/**
+ * The career track a resume is written for. `theme` is the visual template; only
+ * the three track-bearing templates double as a track, so a design-only template
+ * (Premier, Blueprint) never changes or becomes the writing track.
+ */
+function resumeTrack(resume: { theme?: unknown; generation_track?: unknown }): ResumeTheme {
+  return isCareerTrack(resume.generation_track) ? resume.generation_track : trackForTemplate(resume.theme, null);
 }
 
 type EntitlementRecord = {
@@ -882,7 +885,7 @@ type ValidatedResumeInput = {
   title: string;
   targetJobPosting: string | null;
   intakeJson: string;
-  theme: ResumeTheme;
+  theme: TemplateKey;
 };
 
 /** Browser-supplied confidence states are discarded; the server recomputes them. */
@@ -918,7 +921,7 @@ function validateResumeInput(body: Record<string, unknown> | null):
   if (intakeJson.length > MAX_INTAKE_JSON_CHARS) {
     return { ok: false, response: json({ ok: false, message: "The intake is too large." }, 413) };
   }
-  const theme = normalizeTheme(body?.theme);
+  const theme = normalizeTemplate(body?.theme);
   return { ok: true, value: { trade, title, targetJobPosting, intakeJson, theme } };
 }
 
@@ -1400,9 +1403,9 @@ async function getResumeStatus(request: Request, env: ResumeBuilderEnv, resumeId
       intake,
       targetJobPosting: resume.target_job_posting,
       status: resume.status,
-      theme: normalizeTheme(resume.theme),
-      style: storedStyle(resume, normalizeTheme(resume.theme)),
-      generationTrack: normalizeTheme(resume.generation_track ?? resume.theme),
+      theme: normalizeTemplate(resume.theme),
+      style: storedStyle(resume, normalizeTemplate(resume.theme)),
+      generationTrack: resumeTrack(resume),
       paid: Boolean(entitlement),
       runsUsed: entitlement?.credits_used ?? (generated ? INITIAL_PREVIEW_RUNS : 0),
       runsTotal: entitlement?.credits_total ?? RESUME_TOTAL_AI_RUNS,
@@ -1449,10 +1452,10 @@ async function updateResume(request: Request, env: ResumeBuilderEnv, resumeId: s
   // full trade/intake validation — it is not a content edit.
   const themeOnly = body !== null && !("trade" in body) && !("intake" in body) && "theme" in body;
   if (themeOnly) {
-    if (!RESUME_THEMES.has(String(body.theme))) {
+    if (!isTemplateKey(body.theme)) {
       return json({ ok: false, message: "Choose a supported resume style." }, 400);
     }
-    const theme = normalizeTheme(body.theme);
+    const theme = body.theme;
     await env.DB.prepare(
       `UPDATE resumes SET theme = ?, updated_at = CURRENT_TIMESTAMP
        WHERE resume_id = ? AND user_id = ? AND deleted_at IS NULL`,
@@ -1463,7 +1466,7 @@ async function updateResume(request: Request, env: ResumeBuilderEnv, resumeId: s
   const parsed = validateResumeInput(body);
   if (!parsed.ok) return parsed.response;
   const { trade, title, targetJobPosting, intakeJson } = parsed.value;
-  const theme = body !== null && "theme" in body ? parsed.value.theme : normalizeTheme(resume.theme);
+  const theme = body !== null && "theme" in body ? parsed.value.theme : normalizeTemplate(resume.theme);
   await env.DB.prepare(
     `UPDATE resumes SET trade = ?, title = ?, intake_json = ?, target_job_posting = ?, theme = ?,
        updated_at = CURRENT_TIMESTAMP
@@ -2956,7 +2959,7 @@ function resumeUserPrompt(
 ): string {
   const compactIntake = JSON.stringify(compactModelValue(intake));
   const verifiedFacts = JSON.stringify(sourceFactCatalog(canonicalSourceRecord(intake, resume.title, resume.trade), correctionRequest));
-  const systemProfile = resumeSystemProfile(normalizeTheme(resume.generation_track ?? resume.theme));
+  const systemProfile = resumeSystemProfile(resumeTrack(resume));
   if (correctionRequest) {
     return `Revise the current resume using only the requested correction and original intake. Preserve accurate content not affected by the correction.\n\nRESUME SYSTEM:\n${systemProfile}\n\nVERIFIED FACT CATALOG:\n${verifiedFacts}\n\nORIGINAL INTAKE:\n${compactIntake}\n\nTARGET JOB POSTING:\n${resume.target_job_posting ?? ""}\n\nCURRENT RESUME:\n${JSON.stringify(compactModelValue(prior))}\n\nCUSTOMER CORRECTION:\n${correctionRequest}`;
   }
@@ -3638,11 +3641,11 @@ async function updateResumeBullet(
   )).flatMap((row) => row?.object_key ? [row.object_key] : []);
 
   try {
-    const theme = normalizeTheme(resume.theme);
+    const theme = normalizeTemplate(resume.theme);
     const [docx, pdf, preview] = await Promise.all([
-      (dependencies.createDocx ?? createResumeDocx)(withCustomerScope(nextStored, resume.intake_json), theme, normalizeTheme(resume.generation_track ?? resume.theme), storedStyle(resume, theme)),
-      (dependencies.createPdf ?? createResumePdf)(withCustomerScope(nextStored, resume.intake_json), false, theme, normalizeTheme(resume.generation_track ?? resume.theme), storedStyle(resume, theme)),
-      (dependencies.createPdf ?? createResumePdf)(withCustomerScope(nextStored, resume.intake_json), true, theme, normalizeTheme(resume.generation_track ?? resume.theme), storedStyle(resume, theme)),
+      (dependencies.createDocx ?? createResumeDocx)(withCustomerScope(nextStored, resume.intake_json), theme, resumeTrack(resume), storedStyle(resume, theme)),
+      (dependencies.createPdf ?? createResumePdf)(withCustomerScope(nextStored, resume.intake_json), false, theme, resumeTrack(resume), storedStyle(resume, theme)),
+      (dependencies.createPdf ?? createResumePdf)(withCustomerScope(nextStored, resume.intake_json), true, theme, resumeTrack(resume), storedStyle(resume, theme)),
     ]);
     const fileStatements = await Promise.all([
       storeResumeFile(env, user.userId, resumeId, generationId, "docx", docx),
@@ -3690,10 +3693,16 @@ async function generateResume(
 
   const body = await parseJsonBody(request, 8_000);
   const requestedTrack = body?.generationTrack;
-  if (requestedTrack !== undefined && !RESUME_THEMES.has(String(requestedTrack))) {
+  if (requestedTrack !== undefined && !isCareerTrack(requestedTrack)) {
     return json({ ok: false, message: "Choose a valid career track." }, 400);
   }
-  const rewriteTrack = requestedTrack === undefined ? null : normalizeTheme(requestedTrack);
+  const rewriteTrack = requestedTrack === undefined ? null : normalizeTrack(requestedTrack);
+  // The look no longer carries the writing focus, so a first build may name it.
+  // It is ignored once a resume exists: changing the track then is a paid rewrite.
+  const requestedFirstTrack = body?.writingTrack;
+  if (requestedFirstTrack !== undefined && !isCareerTrack(requestedFirstTrack)) {
+    return json({ ok: false, message: "Choose a valid career track." }, 400);
+  }
   const correctionRequest = rewriteTrack
     ? "Rewrite the resume for the selected career track. Reframe only supported experience; preserve all verified facts and never invent leadership responsibilities."
     : cleanText(body?.correctionRequest, 2_000) || null;
@@ -3716,7 +3725,10 @@ async function generateResume(
   }
 
   // Change the in-memory writing profile only; persist it after successful generation.
-  const generationTrack = rewriteTrack ?? normalizeTheme(resume.generated_json ? resume.generation_track ?? resume.theme : resume.theme);
+  // A first generation uses the writing focus the customer chose. Without one it
+  // takes its track from a track-bearing template; with a design-only template it
+  // keeps the stored track (Field Pro when none).
+  const generationTrack = rewriteTrack ?? (resume.generated_json ? resumeTrack(resume) : firstBuildTrack(requestedFirstTrack, resume.theme, resume.generation_track));
   resume.generation_track = generationTrack;
 
   const configuredGlobalLimit = Number.parseInt(env.RESUME_AI_DAILY_ATTEMPT_LIMIT ?? "", 10);
@@ -3807,12 +3819,12 @@ async function generateResume(
     let docx: Uint8Array;
     let pdf: Uint8Array;
     let preview: Uint8Array;
-    const theme = normalizeTheme(resume.theme);
+    const theme = normalizeTemplate(resume.theme);
     try {
       [docx, pdf, preview] = await Promise.all([
-        (dependencies.createDocx ?? createResumeDocx)(withCustomerScope(generated.resume, resume.intake_json), theme, normalizeTheme(resume.generation_track ?? resume.theme), storedStyle(resume, theme)),
-        (dependencies.createPdf ?? createResumePdf)(withCustomerScope(generated.resume, resume.intake_json), false, theme, normalizeTheme(resume.generation_track ?? resume.theme), storedStyle(resume, theme)),
-        (dependencies.createPdf ?? createResumePdf)(withCustomerScope(generated.resume, resume.intake_json), true, theme, normalizeTheme(resume.generation_track ?? resume.theme), storedStyle(resume, theme)),
+        (dependencies.createDocx ?? createResumeDocx)(withCustomerScope(generated.resume, resume.intake_json), theme, resumeTrack(resume), storedStyle(resume, theme)),
+        (dependencies.createPdf ?? createResumePdf)(withCustomerScope(generated.resume, resume.intake_json), false, theme, resumeTrack(resume), storedStyle(resume, theme)),
+        (dependencies.createPdf ?? createResumePdf)(withCustomerScope(generated.resume, resume.intake_json), true, theme, resumeTrack(resume), storedStyle(resume, theme)),
       ]);
     } catch (error) {
       console.error("Resume document render failed", errorKind(error));
@@ -4047,9 +4059,9 @@ async function serveResumeFile(
 async function serveProtectedPreview(resume: ResumeRecord): Promise<Response> {
   if (!resume.generated_json) return json({ ok: false, message: "File not found." }, 404);
   try {
-    const theme = normalizeTheme(resume.theme);
+    const theme = normalizeTemplate(resume.theme);
     const generated = withCustomerScope(JSON.parse(resume.generated_json) as GeneratedResume, resume.intake_json);
-    const preview = await createResumePdf(generated, true, theme, normalizeTheme(resume.generation_track ?? resume.theme), storedStyle(resume, theme));
+    const preview = await createResumePdf(generated, true, theme, resumeTrack(resume), storedStyle(resume, theme));
     const headers = new Headers();
     headers.set("Content-Type", "application/pdf");
     headers.set("Content-Disposition", 'inline; filename="TRADE-HUSTL3-Resume-Preview.pdf"');

@@ -11,6 +11,7 @@ import { HubStages } from './home-hub-stages';
 import { FindYourLane } from './home-find-your-lane';
 import { FirstSteps } from './home-first-steps';
 import { HomeNewsletter } from './home-newsletter';
+import footerPolish from './home-footer-polish.module.css';
 import hubStyles from './home-storefront.module.css';
 import { FreeGuides } from './home-free-guides';
 import { TurnSkillsIntoOpportunity } from './home-opportunity';
@@ -51,9 +52,7 @@ function HubHome() {
       <TurnSkillsIntoOpportunity />
       <section className={`${hubStyles.lane} ${hubStyles.goldDivider}`} aria-labelledby="lane-title">
         <div className={`${hubStyles.laneIntro} ${hubStyles.sectionHeading}`}>
-          <p className={hubStyles.kicker}>CAREER PATHS</p>
-          <h2 id="lane-title">Find Your Lane</h2>
-          <p className={hubStyles.lead}>Where will your skills take you next? In school, switching careers, working in the field, or leading a crew—start where you are.</p>
+          <h2 id="lane-title">Choose Your Path</h2>
         </div>
         <HubStages />
         <details className={hubStyles.discovery} name="trade-discovery">
@@ -61,7 +60,7 @@ function HubHome() {
           <FindYourLane />
           <HubOutlook />
         </details>
-        <details className={hubStyles.discovery} name="trade-discovery">
+        <details id="trade-training" className={hubStyles.discovery} name="trade-discovery">
           <summary>Find training, apprenticeships &amp; credentials</summary>
           <FirstSteps />
           <KnowYourTrade trades={knowYourTradeTrades()} myths={knowYourTradeMyths()} />
@@ -112,7 +111,7 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
 
       {isCampaignVisit ? <ResumeFirstBody /> : null}
 
-      <footer className={styles.footer} data-site-footer data-campaign-footer={isCampaignVisit || undefined}>
+      <footer className={`${styles.footer} ${footerPolish.footerPolish}`} data-site-footer data-campaign-footer={isCampaignVisit || undefined}>
         <div className={styles.footerBrand}><Image className={styles.footerMark} src="/optimized/th3-logo-header.webp" alt="TRADE HUSTL3 logo" width={248} height={160} /><strong>TRADE HUSTL3 LLC</strong></div>
         <p>BUILT BY HUSTL3. BACKED BY TRADES.<br />TRADE HUSTL3 LLC · Atlanta, Georgia · <a href="mailto:support@tradehustl3.com">support@tradehustl3.com</a></p>
         <nav aria-label="Footer links">

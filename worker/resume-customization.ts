@@ -3,7 +3,7 @@ import { acquireCoverLock, releaseCoverLock } from './cover-letter';
 import { authorizeResumePresentation, type ResumeBuilderEnv, type ResumeBuilderDependencies } from './resume-builder-base';
 import { createResumeDocx, createResumePdf, type GeneratedResume, type ResumeTheme } from './resume-documents';
 import { createCoverLetterDocx, createCoverLetterPdf, type GeneratedCoverLetter } from './cover-letter-documents';
-import { defaultStyle, storedStyle, validStylePatch, type ResumeStyle } from './resume-templates';
+import { defaultStyle, isCareerTrack, normalizeTemplate, storedStyle, trackForTemplate, validStylePatch, type ResumeStyle, type TemplateKey } from './resume-templates';
 import { errorKind } from './resume-safe-log';
 
 const json = (value: unknown, status = 200) => new Response(JSON.stringify(value), { status, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' } });
@@ -16,21 +16,24 @@ export async function customizeResume(request: Request, env: ResumeBuilderEnv, d
   const authorized = await authorizeResumePresentation(request, env, resumeId);
   if (authorized instanceof Response) return authorized;
   const record = authorized;
-  const theme = (body.theme ?? record.theme) as ResumeTheme;
-  const previousTheme: ResumeTheme = record.theme === 'navy' || record.theme === 'lead' ? record.theme : 'plain';
+  const theme: TemplateKey = normalizeTemplate(body.theme ?? record.theme);
+  const previousTheme: TemplateKey = normalizeTemplate(record.theme);
+  // The writing track stays separate from the look. Choosing a design-only look
+  // before the first build records the current track so it is not lost.
+  const track: ResumeTheme = isCareerTrack(record.generation_track) ? record.generation_track : trackForTemplate(previousTheme, null);
+  const keepTrack = !isCareerTrack(theme) && !isCareerTrack(record.generation_track) ? track : null;
   const previous = storedStyle(record, previousTheme);
   const style: ResumeStyle = { ...(previous.templateVersion === 1 ? defaultStyle(theme) : previous), ...('theme' in body && previous.templateVersion === 2 ? { ...defaultStyle(theme), textSize: previous.textSize, spacing: previous.spacing } : {}), ...body, templateVersion: 2 };
   if (!await acquireCoverLock(env, record.user_id, resumeId)) return json({ ok: false, message: 'A package update is already in progress.' }, 409);
   const lock = await env.DB.prepare("UPDATE resumes SET status = 'generating', updated_at = CURRENT_TIMESTAMP WHERE resume_id = ? AND user_id = ? AND deleted_at IS NULL AND status <> 'generating'").bind(resumeId, record.user_id).run();
   if ((lock.meta.changes ?? 0) !== 1) { await releaseCoverLock(env, resumeId); return json({ ok: false, message: 'A resume update is already in progress.' }, 409); }
   const unlock = () => env.DB.prepare('UPDATE resumes SET status = ?, updated_at = ? WHERE resume_id = ? AND user_id = ? AND status = \'generating\'').bind(record.status, record.updated_at ?? new Date().toISOString(), resumeId, record.user_id).run();
-  const settings = env.DB.prepare('UPDATE resumes SET theme = ?, font = ?, text_size = ?, spacing = ?, accent = ?, template_version = 2, status = ?, updated_at = CURRENT_TIMESTAMP WHERE resume_id = ? AND user_id = ? AND deleted_at IS NULL').bind(theme, style.font, style.textSize, style.spacing, style.accent, record.status, resumeId, record.user_id);
+  const settings = env.DB.prepare('UPDATE resumes SET theme = ?, font = ?, text_size = ?, spacing = ?, accent = ?, template_version = 2, generation_track = COALESCE(generation_track, ?), status = ?, updated_at = CURRENT_TIMESTAMP WHERE resume_id = ? AND user_id = ? AND deleted_at IS NULL').bind(theme, style.font, style.textSize, style.spacing, style.accent, keepTrack, record.status, resumeId, record.user_id);
   if (!record.generated_json) { try { await settings.run(); return json({ ok: true, runConsumed: false, style, theme }); } finally { await unlock(); await releaseCoverLock(env, resumeId); } }
   if (!env.BOOKS) { await unlock(); await releaseCoverLock(env, resumeId); return json({ ok: false, message: 'File storage is unavailable.' }, 503); }
   const generationId = crypto.randomUUID(), stagedKeys: string[] = [];
   try {
     const generated = withCustomerScope(JSON.parse(record.generated_json) as GeneratedResume, record.intake_json);
-    const track: ResumeTheme = record.generation_track === 'navy' || record.generation_track === 'lead' ? record.generation_track : record.generation_track === 'plain' ? 'plain' : previousTheme;
     const files: Array<{ format: string; bytes: Uint8Array }> = await Promise.all([
       (dependencies.createDocx ?? createResumeDocx)(generated, theme, track, style).then(bytes => ({ format: 'docx', bytes })),
       (dependencies.createPdf ?? createResumePdf)(generated, false, theme, track, style).then(bytes => ({ format: 'pdf', bytes })),

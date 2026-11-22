@@ -3,11 +3,12 @@ import test from 'node:test';
 import JSZip from 'jszip';
 import { getDocument, OPS } from 'pdfjs-dist/legacy/build/pdf.mjs';
 import { createResumeDocx, createResumePdf } from '../worker/resume-documents';
-import { FONTS, TEXT_SIZES, SPACINGS, ACCENTS, BODY_SIZES, FONT_FAMILIES, defaultStyle, validStylePatch, type TemplateKey } from '../worker/resume-templates';
+import { FONTS, TEXT_SIZES, SPACINGS, ACCENTS, BODY_SIZES, FONT_FAMILIES, TEMPLATE_KEYS, defaultStyle, validStylePatch, type CareerTrack } from '../worker/resume-templates';
 import { sampleResume } from '../docs/pr186/sample-resume';
 import { readFileSync } from 'node:fs';
 import { DatabaseSync } from 'node:sqlite';
-const themes: TemplateKey[] = ['plain', 'navy', 'lead'];
+// The three track-bearing templates; Premier and Blueprint: resume-templates-design-only.test.ts.
+const themes: CareerTrack[] = ['plain', 'navy', 'lead'];
 async function parse(bytes: Uint8Array) {
   const task = getDocument({ data: Uint8Array.from(bytes), isEvalSupported: false });
   const pdf = await task.promise;
@@ -76,7 +77,9 @@ test('actual PDF structures distinguish mockups: centered header, solid top bar,
       if (theme === 'plain') assert.deepEqual(pixel(2, 2), [255, 255, 255]);
       const skills = items.filter(item => sampleResume.skills.some(skill => item.str.includes(skill)));
       const xs = new Set(skills.map(item => Math.round(item.transform[4])));
-      assert.equal(xs.size, theme === 'navy' ? 2 : 3, 'actual skill columns');
+      // Field Pro lists skills as labelled lines rather than columns.
+      if (theme === 'plain') assert.ok(items.some(item => item.str.trim() === 'Service work:'), 'Field Pro labelled skill lines');
+      else assert.equal(xs.size, theme === 'navy' ? 2 : 3, 'actual skill columns');
       const text = items.map(item => item.str).join(' ');
       const compact = text.replace(/\s/g, '');
       assert.ok(compact.indexOf(theme === 'lead' ? 'CREDENTIALS' : 'CERTIFICATIONS') < compact.indexOf(theme === 'lead' ? 'PROFESSIONALEXPERIENCE' : 'WORKEXPERIENCE'));
@@ -85,14 +88,16 @@ test('actual PDF structures distinguish mockups: centered header, solid top bar,
 });
 
 test('section headings extract as whole words at every template and text size (ATS)', async () => {
-  for (const theme of themes) for (const textSize of TEXT_SIZES) {
+  for (const theme of TEMPLATE_KEYS) for (const textSize of TEXT_SIZES) {
     const style = { ...defaultStyle(theme), textSize };
     const { pdf, task } = await parse(await createResumePdf(sampleResume, false, theme, 'plain', style));
     try {
       let text = '';
       for (let i = 1; i <= pdf.numPages; i++) text += ' ' + (await (await pdf.getPage(i)).getTextContent()).items.map(item => 'str' in item ? item.str : '').join(' ');
       text = text.replace(/\s+/g, ' ');
-      for (const heading of ['PROFESSIONAL SUMMARY', 'CORE SKILLS', 'WORK EXPERIENCE']) {
+      // Executive labels sections with standard names; Sidebar's skills sit in its rail.
+      const expected = theme === 'premier' ? ['SUMMARY', 'EXPERIENCE', 'SKILLS'] : theme === 'sidebar' ? ['PROFESSIONAL SUMMARY', 'WORK EXPERIENCE', 'SERVICE WORK'] : ['PROFESSIONAL SUMMARY', 'CORE SKILLS', 'WORK EXPERIENCE'];
+      for (const heading of expected) {
         assert.ok(text.includes(heading), `${theme}/${textSize}: "${heading}" not extracted as words`);
       }
       assert.doesNotMatch(text, /P R O F E S S I O N A L/, `${theme}/${textSize}: letter-spaced heading`);

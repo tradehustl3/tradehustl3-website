@@ -127,8 +127,9 @@ test("the review page renders both tabs through the in-workspace renderer and ke
   assert.match(review, /src=\{`\$\{coverLetter\.previewUrl\}&style=\$\{resume\.theme\}&revision=\$\{previewRevision\}`\}/);
   assert.match(review, /role="tablist" aria-label="Package preview"/);
   assert.match(review, /className="rb-review-grid"/);
-  assert.equal(review.match(/\{renderThemePicker\(\)\}/g)?.length, 2, "first-build and sidebar theme pickers");
-  for (const label of ["Field Pro", "Modern Trade", "Lead / Supervisor"]) assert.ok(review.includes(label), label);
+  assert.equal(review.match(/\{renderStyleCarousel\(/g)?.length, 2, "first-build carousel and the carousel around the live preview");
+  assert.match(review, /\{renderStyleCarousel\(\s*<ProtectedPdfPreview /, "the live resume preview is the carousel slide");
+  assert.equal(review.match(/\{renderWritingFocus\(\)\}/g)?.length, 2, "first-build and sidebar writing focus");
   assert.doesNotMatch(page, /ResumePreviewFallback/);
 
   // The renderer never navigates the workspace to the PDF: the only navigation is the

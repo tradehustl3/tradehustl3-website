@@ -89,12 +89,13 @@ test("server-renders the corrected TRADE HUSTL3 brand and metadata", async () =>
   assert.match(html, /favicon\.svg/i);
   assert.match(html, /alt="TRADE HUSTL3 logo"/i);
   assert.match(html, /BUILT BY HUSTL3\. BACKED BY TRADES\./);
+  assert.doesNotMatch(html, /BACKED BY TRADE\./, "no retired slogan anywhere on the page");
   assert.match(html, /Skilled-Trades[\s\S]*Resume Builder/i);
 });
 
 test("campaign homepage server-renders Resume Builder credibility and audience content", async () => {
   const hub = await (await render()).text();
-  assert.match(hub, /sample-hvac-resume\.webp/i, "hub shows a labeled Resume Builder sample");
+  assert.match(hub, /aria-label="Resume style examples"[\s\S]*Illustrative candidates[\s\S]*\/resume-templates\/plain\.png/i, "hub shows labeled Resume Builder samples");
   const html = await (await renderPath("/?trade=hvac")).text();
   assert.match(html, /Built around the way skilled-trades people actually work/i);
   assert.match(html, /Shaped by 10\+ years of HVAC and facilities work\./i);
@@ -363,13 +364,32 @@ test("book sample reader matches the final 486-page interior", async () => {
   assert.match(text, /PART II — KNOW THE TRADESCAPE/);
   assert.match(text, /About the Author<\/span><b>486<\/b>/);
   assert.match(text, /1\. What a Skilled Trade Really Is<\/span><b>5<\/b>/);
-  assert.match(text, /THE TOOLS ARE NOT THE TRADE/);
+  // Cover plus paperback pages 1–7, in print order, including the copyright page.
+  assert.match(text, /Copyright © 2026 Zachary C\. Ellis\. All rights reserved\./);
+  assert.match(text, /ISBN: 9798193043355/);
+  assert.match(text, /tradehustl3\.com · book@tradehustl3\.com/);
+  assert.match(text, /aria-label="Page 4 of 7 — Part I opener"[\s\S]*?BUILD THE FOUNDATION/);
+  assert.match(text, /HARD WORK MATTERS\. SKILL CHANGES YOUR VALUE\./);
+  // Page 7 ends mid-sentence where the printed page does; page 8 is not part of the sample.
+  assert.match(text, /grabs a tool bag, and immediately starts<\/p><footer>7<\/footer>/);
+  assert.doesNotMatch(text, /THE TOOLS ARE NOT THE TRADE/);
+  const order = ["Front cover", "Page 1 of 7", "Page 2 of 7", "Page 3 of 7", "Page 4 of 7", "Page 5 of 7", "Page 6 of 7", "Page 7 of 7"]
+    .map((label) => text.indexOf(`aria-label="${label}`));
+  assert.ok(order.every((index, i) => index > 0 && (i === 0 || index > order[i - 1])), "sample pages render in print order");
   // Check the book content only: the site-wide <head> author tags still use the
   // legal founder identity remains in structured metadata, separate from book text.
   const main = text.match(/<main[\s\S]*?<\/main>/)?.[0] ?? "";
   assert.ok(main.length > 0, "sample reader renders a <main> element");
   assert.doesNotMatch(main, /Maintenance Man\b|Da Maintenance Mane|KNOW THE LANDSCAPE|more than 200 skilled trades/i);
   assert.match(main, /directory of 200 skilled trades/);
+});
+
+test("book sample page numbers reset the site-wide footer bar", async () => {
+  const css = await readFile(new URL("../app/book/sample/page.module.css", import.meta.url), "utf8");
+  const rule = css.match(/\.bookPage footer \{[^}]*\}/)?.[0] ?? "";
+  assert.match(rule, /background: none;/);
+  assert.match(rule, /min-height: 0;/);
+  assert.match(rule, /padding: 0;/);
 });
 
 test("book hero keeps the approved three-tradespeople artwork without extra silhouettes", async () => {

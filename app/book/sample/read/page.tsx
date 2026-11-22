@@ -12,10 +12,13 @@ export const metadata: Metadata = {
 };
 
 /**
- * Pages 1, 3 and 5–8 of the final paperback interior uploaded to KDP on
- * 2026-11-03 (486 pages). Text is verbatim from that file; the downloadable
- * PDF (worker/assets/trade-hustl3-seven-page-book-sample.pdf) is cut from the
- * same file. Update both together if the book is ever re-released.
+ * The cover plus the first seven printed pages (1–7) of the final paperback
+ * interior uploaded to KDP on 2026-11-03 (486 pages, ISBN 9798193043355):
+ * 1 title, 2 copyright, 3 contents, 4 Part I opener, 5–7 Chapter 1.
+ * Text, page breaks and bold lines are verbatim from that file. If the book is
+ * ever re-released, update this page from the new interior. The legacy PDF
+ * (worker/assets/trade-hustl3-seven-page-book-sample.pdf) only serves old
+ * signed links and is not regenerated here.
  */
 const tableOfContents = [
   ['PART I — BUILD THE FOUNDATION', ''],
@@ -49,6 +52,18 @@ const tableOfContents = [
   ['About the Author', '486'],
 ];
 
+/** Copyright page (book page 2), verbatim. */
+const copyrightLines = [
+  'TRADE HUSTL3: Built by Hustle, Backed by Trades',
+  'Copyright © 2026 Zachary C. Ellis. All rights reserved.',
+  'No part of this book may be reproduced, stored, or transmitted in any form or by any means without written permission from the author, except for brief quotations used in reviews and articles.',
+  'ISBN: 9798193043355',
+  'Independently published.',
+  'This book is for general educational and informational purposes. Pay rates, licensing, certification, apprenticeship, and safety requirements vary by state, employer, and trade, and they change over time. Always verify current requirements with the appropriate licensing board, training program, or employer, and always follow applicable codes, manufacturer instructions, OSHA rules, and the direction of qualified supervisors. Nothing in this book is legal, financial, or professional safety advice.',
+  'TRADE HUSTL3 LLC · Atlanta, Georgia',
+  'tradehustl3.com · book@tradehustl3.com',
+];
+
 const learningObjectives = [
   'Explain what makes work a skilled trade, beyond physical effort.',
   'Describe the six rungs of the trade ladder, from helper to owner.',
@@ -56,16 +71,39 @@ const learningObjectives = [
   'Identify early habits that build value, such as finishing the job, protecting your reputation, and staying humble.',
 ];
 
-/** Book pages 6–8, one entry per printed line group. Headings are marked with "## ". */
-const samplePages: Array<{ bookPage: number; lines: string[] }> = [
+/**
+ * Chapter 1 body text for book pages 5–7, one entry per printed paragraph.
+ * "## " marks a section heading and "** " a bold paragraph, as printed.
+ * A paragraph that runs over a page break is split where the book splits it.
+ */
+const chapterPages: Array<{ bookPage: number; lines: string[] }> = [
+  {
+    bookPage: 5,
+    lines: [
+      '## BEFORE I BECAME MR. HUSTL3',
+      'On my first day working in HVAC, I fell through an attic.',
+      'Not once.',
+      'Not twice.',
+      '** Three times.',
+      'Three times in one day.',
+      'That was my introduction to the skilled trades.',
+      'There was no perfect first day. No walking onto the job already knowing what I was doing. No magic moment where somebody handed me a tool bag and suddenly I became Mr. HUSTL3.',
+      'The field humbled me immediately.',
+      'And looking back, I needed that.',
+      'Because before you become skilled, you have to be willing to be unskilled.',
+      'You have to be willing to say, “I don’t know.”',
+      'You have to listen.',
+      'You have to get corrected.',
+    ],
+  },
   {
     bookPage: 6,
     lines: [
       'You have to learn how to move, how to think, how to work safely, how to use the tools, and how to stop making the same mistake twice.',
       'That first day taught Mr. HUSTL3 something that has stayed with me ever since:',
-      'There is a difference between having a job and having a skill.',
-      'A job can give you a paycheck.',
-      'A skill can give you leverage.',
+      '** There is a difference between having a job and having a skill.',
+      '** A job can give you a paycheck.',
+      '** A skill can give you leverage.',
       'And once I understood that, I started looking at work differently.',
       'That is what this book is about.',
       'Not just getting hired.',
@@ -74,9 +112,9 @@ const samplePages: Array<{ bookPage: number; lines: string[] }> = [
       'This is about building something that belongs to you.',
       'Something you can improve.',
       'Something you can carry into another company, another city, another position, another industry, and eventually—if that is your goal—into a business of your own.',
-      'That something is skill.',
-      'And skill changes the game.',
-      '## So WHAT IS A SKILLED TRADE?',
+      '** That something is skill.',
+      '** And skill changes the game.',
+      '** So WHAT IS A SKILLED TRADE?',
       'A skilled trade is hands-on work that requires training, practice, technical knowledge, problem-solving, safety awareness, judgment, and responsibility.',
       'Read that again.',
       'Because skilled trades are not just about being good with your hands.',
@@ -106,7 +144,7 @@ const samplePages: Array<{ bookPage: number; lines: string[] }> = [
       'Industrial maintenance workers troubleshoot systems companies may depend on every minute of the day.',
       'These workers are not “just working with their hands.”',
       'They are solving problems people depend on being solved correctly.',
-      'A skilled trade is a trained ability applied to a real-world problem.',
+      '** A skilled trade is a trained ability applied to a real-world problem.',
       'That is why the word skilled matters.',
       '## HARD WORK MATTERS. SKILL CHANGES YOUR VALUE.',
       'I am not going to lie to you about the trades.',
@@ -123,48 +161,22 @@ const samplePages: Array<{ bookPage: number; lines: string[] }> = [
       'Clean up after the work is finished.',
       'Some days will test you.',
       'That is real.',
-      'I am not going to sell you a fantasy where everybody walks into a trade, puts on a clean uniform, grabs a tool bag, and immediately starts making big money.',
-    ],
-  },
-  {
-    bookPage: 8,
-    lines: [
-      'That is not how this works.',
-      'But physical effort is only one level of the game.',
-      'Anybody may be able to carry a box.',
-      'Fewer people know what is inside the box.',
-      'Fewer know where it goes.',
-      'Fewer know how it connects to the rest of the system.',
-      'Fewer understand what happens if it is installed incorrectly.',
-      'Fewer know how to test the finished work.',
-      'And fewer still can return six months later when the system stops working and figure out why.',
-      'That is skill.',
-      'A beginner may know how to remove a part.',
-      'A skilled technician starts asking different questions.',
-      'Why did that part fail?',
-      'Was the part really the problem?',
-      'What caused the failure?',
-      'Is something else damaged?',
-      'What measurements prove the diagnosis?',
-      'How do I repair this safely?',
-      'What needs to be checked before I leave?',
-      'That is a different level of thinking.',
-      'A person who only changes parts can stay busy.',
-      'A person who understands how to diagnose problems builds value.',
-      'Do not confuse motion with skill.',
-      'You can work hard all day and still not be getting better.',
-      'The goal is to work, learn, understand, and improve.',
-      '## THE TOOLS ARE NOT THE TRADE',
-      'A lot of people notice the tools first.',
-      'The drills.',
-      'Meters.',
-      'Gauges.',
-      'Torches.',
-      'Welders.',
-      'Tool bags.',
+      'I am not going to sell you a fantasy where everybody walks into a trade, puts on a clean uniform, grabs a tool bag, and immediately starts',
     ],
   },
 ];
+
+const SAMPLE_PAGES = 7;
+
+function pageLabel(bookPage: number) {
+  return `${String(bookPage).padStart(2, '0')} / 0${SAMPLE_PAGES}`;
+}
+
+function renderBodyLine(line: string, key: string) {
+  if (line.startsWith('## ')) return <h4 key={key}>{line.slice(3)}</h4>;
+  if (line.startsWith('** ')) return <p key={key}><strong>{line.slice(3)}</strong></p>;
+  return <p key={key}>{line}</p>;
+}
 
 export default function BookSampleReaderPage() {
   return (
@@ -198,7 +210,7 @@ export default function BookSampleReaderPage() {
           <p className={styles.eyebrow}>YOUR FREE 7-PAGE BOOK SAMPLE</p>
           <h1>YOUR SAMPLE<br /><span>IS READY.</span></h1>
           <p className={styles.lede}>
-            Your signup is complete. Read the cover, opening pages, table of contents, and the beginning of Chapter 1 below.
+            Your signup is complete. Read the cover and the first seven pages of the paperback below, from the title page through the opening of Chapter 1.
           </p>
           <a className={styles.readJump} href="#read">Start reading the 7 pages <span aria-hidden="true">↓</span></a>
         </div>
@@ -206,28 +218,35 @@ export default function BookSampleReaderPage() {
 
       <section className={styles.readerIntro} id="read" aria-labelledby="reader-title">
         <p className={styles.eyebrow}>THE SAMPLE</p>
-        <h2 id="reader-title">7 PAGES. COVER INCLUDED.</h2>
-        <p>The cover, title page, table of contents, and the opening of Chapter 1, taken from the final paperback interior.</p>
+        <h2 id="reader-title">THE FIRST 7 PAGES. PLUS THE COVER.</h2>
+        <p>The cover and pages 1–7 of the paperback, exactly as printed: title page, copyright page, table of contents, the Part I opener, and the opening of Chapter 1.</p>
       </section>
 
-      <section className={styles.reader} aria-label="Seven-page TRADE HUSTL3 book sample">
-        <article className={`${styles.bookPage} ${styles.coverPage}`} aria-label="Sample page 1 of 7 — cover">
-          <span className={styles.pageNumber}>01 / 07</span>
+      <section className={styles.reader} aria-label="TRADE HUSTL3 book sample: cover and the first seven pages">
+        <article className={`${styles.bookPage} ${styles.coverPage}`} aria-label="Front cover">
+          <span className={styles.pageNumber}>COVER</span>
           <Image src="/optimized/book-cover-v3.webp" alt="TRADE HUSTL3 book cover" width={1024} height={1536} />
         </article>
 
-        <article className={`${styles.bookPage} ${styles.titlePage}`} aria-label="Sample page 2 of 7 — title page">
-          <span className={styles.pageNumber}>02 / 07</span>
+        <article className={`${styles.bookPage} ${styles.titlePage}`} aria-label="Page 1 of 7 — title page">
+          <span className={styles.pageNumber}>{pageLabel(1)}</span>
           <div>
             <h3>TRADE HUSTL3</h3>
-            <p>Built by Hustle, Backed by Trades</p>
-            <p>ENTER • EARN • ELEVATE</p>
+            <p className={styles.titleSubtitle}>Built by Hustle, Backed by Trades</p>
+            <p className={styles.titleMotto}>ENTER • EARN • ELEVATE</p>
             <small>Zachary C. Ellis</small>
           </div>
         </article>
 
-        <article className={`${styles.bookPage} ${styles.tocPage}`} aria-label="Sample page 3 of 7 — table of contents">
-          <span className={styles.pageNumber}>03 / 07</span>
+        <article className={`${styles.bookPage} ${styles.copyrightPage}`} aria-label="Page 2 of 7 — copyright page">
+          <span className={styles.pageNumber}>{pageLabel(2)}</span>
+          <div>
+            {copyrightLines.map((line) => <p key={line}>{line}</p>)}
+          </div>
+        </article>
+
+        <article className={`${styles.bookPage} ${styles.tocPage}`} aria-label="Page 3 of 7 — table of contents">
+          <span className={styles.pageNumber}>{pageLabel(3)}</span>
           <h3>CONTENTS</h3>
           <div className={styles.tocList}>
             {tableOfContents.map(([title, page]) => (
@@ -238,44 +257,37 @@ export default function BookSampleReaderPage() {
           </div>
         </article>
 
-        <article className={styles.bookPage} aria-label="Sample page 4 of 7 — Chapter 1">
-          <span className={styles.pageNumber}>04 / 07</span>
-          <div className={styles.chapterHeading}>
-            <p>CHAPTER 1</p>
-            <h3>WHAT A SKILLED TRADE REALLY IS</h3>
+        <article className={`${styles.bookPage} ${styles.partPage}`} aria-label="Page 4 of 7 — Part I opener">
+          <span className={styles.pageNumber}>{pageLabel(4)}</span>
+          <div>
+            <p>PART I</p>
+            <h3>BUILD THE FOUNDATION</h3>
           </div>
-          <div className={styles.learnBox}>
-            <h4>WHAT YOU WILL LEARN</h4>
-            <p>By the end of this chapter, you will be able to:</p>
-            <ul>
-              {learningObjectives.map((objective) => <li key={objective}>{objective}</li>)}
-            </ul>
-          </div>
-          <h4>BEFORE I BECAME MR. HUSTL3</h4>
-          <p>On my first day working in HVAC, I fell through an attic.</p>
-          <p>Not once.</p>
-          <p>Not twice.</p>
-          <p><strong>Three times.</strong></p>
-          <p>Three times in one day.</p>
-          <p>That was my introduction to the skilled trades.</p>
-          <p>There was no perfect first day. No walking onto the job already knowing what I was doing. No magic moment where somebody handed me a tool bag and suddenly I became Mr. HUSTL3.</p>
-          <p>The field humbled me immediately.</p>
-          <p>And looking back, I needed that.</p>
-          <p>Because before you become skilled, you have to be willing to be unskilled.</p>
-          <p>You have to be willing to say, “I don’t know.”</p>
-          <p>You have to listen.</p>
-          <p>You have to get corrected.</p>
-          <footer>5</footer>
         </article>
 
-        {samplePages.map(({ bookPage, lines }, index) => (
-          <article key={bookPage} className={styles.bookPage} aria-label={`Sample page ${index + 5} of 7 — Chapter 1 continued`}>
-            <span className={styles.pageNumber}>0{index + 5} / 07</span>
-            {lines.map((line, lineIndex) =>
-              line.startsWith('## ')
-                ? <h4 key={`${bookPage}-${lineIndex}`}>{line.slice(3)}</h4>
-                : <p key={`${bookPage}-${lineIndex}`}>{line}</p>,
+        {chapterPages.map(({ bookPage, lines }) => (
+          <article
+            key={bookPage}
+            className={`${styles.bookPage} ${styles.bodyPage}`}
+            aria-label={`Page ${bookPage} of ${SAMPLE_PAGES} — Chapter 1${bookPage === 5 ? '' : ' continued'}`}
+          >
+            <span className={styles.pageNumber}>{pageLabel(bookPage)}</span>
+            {bookPage === 5 && (
+              <>
+                <div className={styles.chapterHeading}>
+                  <p>CHAPTER 1</p>
+                  <h3>WHAT A SKILLED TRADE REALLY IS</h3>
+                </div>
+                <div className={styles.learnBox}>
+                  <h4>WHAT YOU WILL LEARN</h4>
+                  <p>By the end of this chapter, you will be able to:</p>
+                  <ul>
+                    {learningObjectives.map((objective) => <li key={objective}>{objective}</li>)}
+                  </ul>
+                </div>
+              </>
             )}
+            {lines.map((line, lineIndex) => renderBodyLine(line, `${bookPage}-${lineIndex}`))}
             <footer>{bookPage}</footer>
           </article>
         ))}

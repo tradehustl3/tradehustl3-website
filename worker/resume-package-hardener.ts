@@ -1,6 +1,6 @@
 import type { ResumeBuilderDependencies, ResumeBuilderEnv } from "./resume-builder-base";
 import { createResumeDocx, createResumePdf, type GeneratedResume, type ResumeTheme } from "./resume-documents";
-import { storedStyle } from "./resume-templates";
+import { isCareerTrack, normalizeTemplate, storedStyle, trackForTemplate } from "./resume-templates";
 import { withCustomerScope } from "./resume-presentation-content";
 import { evaluateCriticalResumeGate } from "./resume-quality-hard-gate";
 
@@ -12,10 +12,6 @@ type HardenResult = {
   changed: boolean;
 };
 
-function normalizeTheme(value: unknown): ResumeTheme {
-  if (value === "navy" || value === "lead") return value;
-  return "plain";
-}
 
 async function sha256Hex(bytes: Uint8Array): Promise<string> {
   const digest = await crypto.subtle.digest("SHA-256", Uint8Array.from(bytes).buffer);
@@ -106,8 +102,8 @@ export async function hardenGeneratedResumePackage(
   const generationId = crypto.randomUUID();
   // Appearance decides layout; the writing track decides section headings. Legacy
   // rows without a recorded track fall back to their appearance, as before.
-  const theme = normalizeTheme(record.theme);
-  const generationTrack = normalizeTheme(record.generation_track ?? record.theme);
+  const theme = normalizeTemplate(record.theme);
+  const generationTrack: ResumeTheme = isCareerTrack(record.generation_track) ? record.generation_track : trackForTemplate(record.theme, null);
   const style = storedStyle(record, theme);
   const presentation = withCustomerScope(hardened, record.intake_json);
   const newObjectKeys = (["docx", "pdf", "preview"] as const).map((format) => {

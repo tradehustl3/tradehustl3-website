@@ -18,10 +18,10 @@ const HUB_LINKS = [
   ["Resources", "/resources"],
 ] as const;
 
-/** One red accent follows the hovered or keyboard-focused navigation link. */
+/** One underline follows the hovered or keyboard-focused navigation link. */
 export function HomeNavigation({ campaign = false }: { campaign?: boolean }) {
   const group = useRef<HTMLDivElement>(null);
-  const [accent, setAccent] = useState<{ x: number; y: number; width: number } | null>(null);
+  const [accent, setAccent] = useState<{ x: number; y: number; width: number; color: string } | null>(null);
 
   function follow(target: EventTarget | null) {
     const link = target instanceof Element ? target.closest("a") : null;
@@ -31,11 +31,12 @@ export function HomeNavigation({ campaign = false }: { campaign?: boolean }) {
     }
     const parent = group.current.getBoundingClientRect();
     const bounds = link.getBoundingClientRect();
-    setAccent({ x: bounds.left - parent.left, y: bounds.bottom - parent.top - 4, width: bounds.width });
+    const color = getComputedStyle(link).getPropertyValue("--nav-link-accent").trim();
+    setAccent({ x: bounds.left - parent.left, y: bounds.bottom - parent.top - 4, width: bounds.width, color });
   }
 
   return (
-    <nav className={styles.nav} aria-label="Primary navigation">
+    <nav className={campaign ? styles.nav : `${styles.nav} ${styles.hubNav}`} aria-label="Primary navigation">
       <div
         className={styles.navLinks}
         ref={group}
@@ -53,6 +54,7 @@ export function HomeNavigation({ campaign = false }: { campaign?: boolean }) {
             width: accent?.width ?? 0,
             transform: `translate(${accent?.x ?? 0}px, ${accent?.y ?? 0}px)`,
             opacity: accent ? 1 : 0,
+            backgroundColor: accent?.color || undefined,
           }}
         />
       </div>
@@ -60,7 +62,7 @@ export function HomeNavigation({ campaign = false }: { campaign?: boolean }) {
         <Link href="#resume-start" className={styles.headerCta} data-analytics-event="cta_click"
           data-location="sticky_header" data-item="resume_builder">Build my free preview</Link>
       ) : (
-        <ConversionCta href="#book-preview" variant="secondary" data-analytics-event="cta_click"
+        <ConversionCta href="#book-preview" variant="secondary" className={styles.hubSampleLink} data-analytics-event="cta_click"
           data-location="sticky_header" data-item="book_sample">Free book sample</ConversionCta>
       )}
     </nav>

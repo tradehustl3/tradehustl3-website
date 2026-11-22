@@ -1,0 +1,22 @@
+.carousel { margin: 0; display: grid; gap: 10px; min-width: 0; }
+.caption { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 4px 12px; font-size: .86rem; }
+.caption strong { font-size: .9rem; letter-spacing: .04em; text-transform: uppercase; }
+.bar { display: grid; grid-template-columns: 44px minmax(0, 1fr) 44px; align-items: center; gap: 10px; }
+.arrow { width: 44px; height: 44px; display: grid; place-items: center; padding: 0; border: 1.5px solid #203d60; border-radius: 50%; background: #fff; color: #203d60; cursor: pointer; }
+.arrow:hover:not(:disabled) { background: #203d60; color: #fff; }
+.arrow:disabled { opacity: .35; cursor: default; }
+.arrow:focus-visible, .dot:focus-visible { outline: 3px solid #a52b36; outline-offset: 2px; }
+.title { display: grid; gap: 2px; text-align: center; min-width: 0; }
+.title strong { color: #14324a; font-size: 1.08rem; }
+.title span { color: #294f66; font-size: .86rem; line-height: 1.3; }
+.title small { color: #4e6b7d; font-size: .74rem; }
+.viewport { overflow: hidden; border-radius: 6px; touch-action: pan-y; }
+.track { display: flex; transition: transform .35s ease; }
+.slide { flex: 0 0 100%; min-width: 0; display: grid; place-items: center; padding: 4px 0; }
+.paper { width: min(100%, 371px); background: #fff; border-radius: 4px; box-shadow: 0 10px 26px #15394e33; overflow: hidden; }
+.paper img { display: block; width: 100%; height: auto; }
+.dots { display: flex; justify-content: center; gap: 4px; }
+.dot { width: 32px; height: 32px; display: grid; place-items: center; padding: 0; border: 0; background: none; cursor: pointer; }
+.dot span { width: 10px; height: 10px; border-radius: 50%; background: #9ab5c7; transition: background .2s, transform .2s; }
+.dotOn span { background: #a52b36; transform: scale(1.25); }
+@media (prefers-reduced-motion: reduce) { .track, .dot span { transition: none; } }

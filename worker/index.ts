@@ -589,8 +589,11 @@ async function subscribe(request: Request, env: Env): Promise<Response> {
     const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
     const interest = typeof body.interest === "string" ? body.interest.trim() : "";
 
-    if (!isValidEmail(email) || !allowedInterests.has(interest)) {
-      return jsonResponse({ ok: false, message: "Enter a valid email and select an interest." }, 400);
+    if (!isValidEmail(email)) {
+      return jsonResponse({ ok: false, message: "Enter a valid email address, like name@example.com." }, 400);
+    }
+    if (!allowedInterests.has(interest)) {
+      return jsonResponse({ ok: false, message: "This signup form is out of date. Refresh the page and try again." }, 400);
     }
 
     const [emailAllowed, ipAllowed] = await Promise.all([

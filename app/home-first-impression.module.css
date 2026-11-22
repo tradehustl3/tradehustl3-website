@@ -32,6 +32,17 @@
   box-shadow: inset 0 -1px 0 rgba(243, 203, 121, .21);
 }
 
+.header:has(.hubNav) {
+  background:
+    linear-gradient(90deg, #78bbff4a, #b9dfff2b 42%, transparent 90%) top / 100% 1px no-repeat,
+    repeating-linear-gradient(118deg, #b9dfff05 0 1px, transparent 1px 6px),
+    linear-gradient(118deg, transparent 27%, #9fd2ff08 42%, #9fd2ff14 48%, transparent 64%),
+    radial-gradient(ellipse 23rem 9rem at 13% 0%, #3d8ed350, transparent 80%),
+    linear-gradient(180deg, #142e51, #0c2040);
+}
+
+.header:has(.hubNav) .brand > span { background: transparent; }
+
 .headerInner {
   max-width: 1240px;
   margin: 0 auto;
@@ -72,12 +83,26 @@
 }
 
 .nav {
+  --nav-gold: #F1C357;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 4px 22px;
   font-size: 15px;
   font-weight: 600;
+}
+
+.nav .hubSampleLink {
+  color: var(--nav-gold);
+  background-color: #183558;
+  border-color: #f1c357a6;
+}
+
+.nav .hubSampleLink:hover,
+.nav .hubSampleLink:focus-visible {
+  color: #FFFFFF;
+  background-color: #21456b;
+  border-color: var(--nav-gold);
 }
 
 .navLinks {
@@ -93,9 +118,13 @@
   display: inline-flex;
   align-items: center;
   min-height: 44px;
-  color: #F1C357;
+  color: var(--nav-link-accent, var(--nav-gold));
   transition: color 160ms ease;
 }
+
+.hubNav .navLink[href="/book"] { --nav-link-accent: var(--paperback-accent); }
+.hubNav .navLink[href="#lane-title"] { --nav-link-accent: var(--kindle-accent); }
+.hubNav .navLink[href="/resources"] { --nav-link-accent: var(--direct-pdf-accent); }
 
 .navLink:hover,
 .navLink:focus-visible {
@@ -107,7 +136,7 @@
   position: absolute;
   inset: auto 0 1px;
   height: 3px;
-  background: #EF383C;
+  background: var(--nav-link-accent, #EF383C);
   transform: scaleX(0);
   transform-origin: left;
   transition: transform 180ms ease;
@@ -655,6 +684,31 @@
   .navLinks { width: 100%; justify-content: space-between; gap: 0 10px; }
   .navLink { font-size: 14px; }
   .headerCta { justify-content: center; min-height: 44px; }
+
+  .headerInner:has(.hubNav) {
+    position: relative;
+    justify-content: flex-start;
+    gap: 0;
+    padding: 8px 14px 2px;
+  }
+  .headerInner:has(.hubNav) .brand > span { padding: 4px 8px 5px; }
+  .headerInner:has(.hubNav) .brand img { height: 34px; }
+  .headerInner:has(.hubNav) .brand span span { font-size: .55rem; }
+  .hubNav .navLinks {
+    flex-wrap: nowrap;
+    justify-content: space-evenly;
+    gap: 6px;
+  }
+  .hubNav .navLink { font-size: clamp(.8rem, 3.45vw, .92rem); }
+  .hubNav .hubSampleLink {
+    position: absolute;
+    inset: 11px 14px auto auto;
+    width: auto;
+    min-height: 44px;
+    padding: 8px 11px;
+    font-size: .85rem;
+    white-space: nowrap;
+  }
 
   .heroLead {
     font-size: 17px;

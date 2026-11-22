@@ -41,11 +41,14 @@ test("the worker applies the frame policy and keeps DENY as the default", () => 
   assert.match(source, /withFrameAncestors\(CONTENT_SECURITY_POLICY, frameable\)/);
 });
 
-test("style cards switch the look directly; the rewrite choice is a visible panel only when a paid rewrite is possible", () => {
+test("the carousel switches the look directly; the rewrite choice is a visible panel only when a paid rewrite is possible", () => {
   const review = read("app/resume-builder/review/resume-review.tsx");
-  assert.match(review, /onClick=\{\(\) => void chooseStyle\(option\.value\)\}/);
+  // Swiping to a look saves the look and nothing else.
+  assert.match(review, /<StyleCarousel [^>]*onPick=\{chooseStyle\}/);
   assert.doesNotMatch(review, /onClick=\{\(\) => resume\.status === "ready" && option\.value !== resume\.generationTrack \? setPendingTrack/);
-  assert.match(review, /differsFromWriting && resume\.paid && resume\.correctionsRemaining > 0/);
+  // Wording changes come only from the writing focus, and only when a paid rewrite is possible.
+  assert.match(review, /const canRewrite = generated && resume\.paid && resume\.correctionsRemaining > 0;/);
+  assert.match(review, /\{pendingTrack && canRewrite \? \(/);
   assert.match(review, /className="rb-track-choice"/);
   assert.match(review, /Keep my wording/);
   assert.match(review, /After you unlock the package, you can rewrite it for/);

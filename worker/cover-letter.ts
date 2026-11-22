@@ -1,4 +1,4 @@
-import { storedStyle, type ResumeStyle } from './resume-templates';
+import { isCareerTrack, normalizeTemplate, storedStyle, trackForTemplate, type ResumeStyle, type TemplateKey } from './resume-templates';
 import { errorKind } from "./resume-safe-log";
 import {
   CORRECTION_PERIOD_ENDED_MESSAGE,
@@ -154,10 +154,6 @@ async function checkRateLimit(
   return Boolean(row && row.count <= limit);
 }
 
-function normalizeTheme(value: unknown): ResumeTheme {
-  if (value === "navy" || value === "lead") return value;
-  return "plain";
-}
 
 function generatedResume(value: string | null): GeneratedResume | null {
   if (!value) return null;
@@ -520,7 +516,11 @@ async function generateCoverLetter(
       message: "Career-track rewrites update your resume and matching cover letter together. Use Rewrite for this style on the resume.",
     }, 400);
   }
-  const generationTrack = normalizeTheme(existing?.generationTrack ?? probe.record.generation_track ?? probe.record.theme);
+  // The writing track, never a design-only template.
+  const existingTrack = existing?.generationTrack;
+  const generationTrack: ResumeTheme = isCareerTrack(existingTrack) ? existingTrack
+    : isCareerTrack(probe.record.generation_track) ? probe.record.generation_track
+      : trackForTemplate(probe.record.theme, null);
   const correctionRequest = cleanText(body.correctionRequest, COVER_CORRECTION_MAX_CHARS);
   if (existing && !correctionRequest) {
     return json({ ok: false, message: "Your matching cover letter already exists. Use the correction box to refine it." }, 409);
@@ -593,8 +593,8 @@ async function generateCoverLetter(
       generationTrack,
       correctionRequest,
       context,
-      theme: normalizeTheme(probe.record.theme),
-      style: storedStyle(probe.record, normalizeTheme(probe.record.theme)),
+      theme: normalizeTemplate(probe.record.theme),
+      style: storedStyle(probe.record, normalizeTemplate(probe.record.theme)),
     });
     await releaseCoverLock(env, resumeId);
     return json({
@@ -623,7 +623,7 @@ type CoverLetterWrite = {
   generationTrack: ResumeTheme;
   correctionRequest: string;
   context: StoredCoverLetter["context"];
-  theme: ResumeTheme;
+  theme: TemplateKey;
   style?: ResumeStyle;
 };
 
@@ -671,7 +671,7 @@ async function writeCoverLetter(
     // The probe precedes lock acquisition. Read presentation again under the
     // cover lock so a just-completed free customization cannot be overwritten.
     const presentation = await env.DB.prepare("SELECT theme, font, text_size, spacing, accent, template_version FROM resumes WHERE resume_id = ? AND user_id = ? AND deleted_at IS NULL").bind(resumeId, userId).first<{ theme: string; font?: string; text_size?: string; spacing?: string; accent?: string; template_version?: number }>();
-    const currentTheme = presentation ? normalizeTheme(presentation.theme) : theme;
+    const currentTheme = presentation ? normalizeTemplate(presentation.theme) : theme;
     const currentStyle = presentation ? storedStyle(presentation, currentTheme) : style;
     const [pdf, docx] = await Promise.all([
       createCoverLetterPdf(stored, currentTheme, false, currentStyle),
@@ -756,8 +756,8 @@ export async function rewriteCoverLetterForPackageTrack(
         generationTrack,
         correctionRequest: PACKAGE_TRACK_COVER_REQUEST,
         context,
-        theme: normalizeTheme(record.theme),
-        style: storedStyle(record, normalizeTheme(record.theme)),
+        theme: normalizeTemplate(record.theme),
+        style: storedStyle(record, normalizeTemplate(record.theme)),
       });
     } catch (error) {
       await recordCoverLetterFailure(env, record.user_id, resumeId, error);
@@ -788,7 +788,7 @@ async function serveCoverLetterFile(
     const stored = await loadStoredCoverLetter(env, probe.record.user_id, resumeId);
     if (!stored) return json({ ok: false, message: "File not found." }, 404);
     try {
-      const preview = await createCoverLetterPdf(stored, normalizeTheme(probe.record.theme), true, storedStyle(probe.record, normalizeTheme(probe.record.theme)));
+      const preview = await createCoverLetterPdf(stored, normalizeTemplate(probe.record.theme), true, storedStyle(probe.record, normalizeTemplate(probe.record.theme)));
       const headers = new Headers();
       headers.set("Content-Type", "application/pdf");
       headers.set("Content-Disposition", "inline; filename=\"TRADE-HUSTL3-Cover-Letter-Preview.pdf\"");
@@ -892,7 +892,7 @@ export async function augmentResumeWithCoverLetter(
 export async function rerenderCoverLetterTheme(
   env: ResumeBuilderEnv,
   resumeId: string,
-  theme: ResumeTheme,
+  theme: TemplateKey,
 ): Promise<boolean> {
   const record = await env.DB.prepare(
     "SELECT user_id, font, text_size, spacing, accent, template_version FROM resumes WHERE resume_id = ? AND deleted_at IS NULL LIMIT 1",

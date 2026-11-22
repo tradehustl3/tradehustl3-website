@@ -33,28 +33,40 @@ export function ResourceHeader({ current }: { current: Current }) {
   );
 }
 
-/** Footer shared by the Resource Center pages. */
-export function ResourceFooter() {
+/** Responsive industrial footer shared by resource and community pages. */
+export function ResourceFooter({
+  joinHref = "/join",
+  ctaLocation = "resources_footer",
+}: { joinHref?: string; ctaLocation?: string } = {}) {
   return (
     <footer className={styles.footer}>
       <div className={styles.footerInner}>
-        <p>
-          <span className={styles.footerTag}>BUILT BY HUSTL3. BACKED BY TRADES.</span>
-          <br />
-          Guides cite official sources and show when they were last checked. Partners and sponsors never edit guide content.
-          <br />
-          TRADE HUSTL3 LLC · Atlanta, Georgia · <a href="mailto:support@tradehustl3.com">support@tradehustl3.com</a>
-        </p>
-        <nav aria-label="Footer links">
-          <Link href="/">Home</Link>
+        <div className={styles.footerBrand}>
+          <Link href="/" className={styles.footerLogo}>TRADE HUSTL<span>3</span></Link>
+          <div className={styles.footerMotto}>ENTER <b>•</b> EARN <b>•</b> ELEVATE</div>
+          <p className={styles.footerTag}>BUILT BY HUSTL3. BACKED BY TRADE.</p>
+          <p className={styles.footerIntro}>Real trades. Real credentials. Real opportunities.</p>
+        </div>
+        <div className={styles.footerSectionTitle}>EXPLORE RESOURCES</div>
+        <nav className={styles.footerResources} aria-label="Footer resources">
+          <Link href="/resources/certifications"><span aria-hidden="true">▣</span>Certifications</Link>
+          <Link href="/book"><span aria-hidden="true">▤</span>The Book</Link>
+          <Link href="/resume-examples"><span aria-hidden="true">⚒</span>Career Paths</Link>
+          <Link href="/#resume-start"><span aria-hidden="true">▦</span>Resume Builder</Link>
+        </nav>
+        <Link className={styles.footerMovement} href={joinHref} data-analytics-event="cta_click" data-location={ctaLocation} data-destination={joinHref} data-item="join_the_hustl3">JOIN THE HUSTL3 <span aria-hidden="true">→</span></Link>
+        <p className={styles.footerContact}>Have a question? <a href="mailto:support@tradehustl3.com">Email TRADE HUSTL3</a></p>
+        <div className={styles.footerDisclosure}>
+          <span aria-hidden="true">✓</span>
+          <p>Our guides cite official sources and show when they were last checked. Partners and sponsors never edit guide content.</p>
+        </div>
+        <nav className={styles.footerLegal} aria-label="Footer legal and support">
           <Link href="/resources">Resource Center</Link>
-          <Link href="/resources/certifications">Certifications &amp; Licenses</Link>
-          <Link href="/resume-examples">Trade Career Catalog</Link>
-          <Link href="/#resume-start">Resume Builder</Link>
           <Link href="/privacy">Privacy</Link>
           <Link href="/terms">Terms</Link>
           <Link href="/contact">Support</Link>
         </nav>
+        <p className={styles.footerCopyright}>© {new Date().getFullYear()} TRADE HUSTL3 LLC · Atlanta, Georgia</p>
       </div>
     </footer>
   );
