@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { BrandLockup } from "../brand-lockup";
 import { ResourceForm } from "../resource-form";
 import { SocialLinks } from "../social-links";
 import { SITE_URL } from "../site";
@@ -24,11 +25,27 @@ const benefits = [
   { number: "04", title: "Updates from TRADE HUSTL3", body: "Receive news about new career guides, tools, book updates, and future HUSTL3 News editions by email.", href: "/book", link: "See the book" },
 ];
 
+const steps = [
+  { word: "Enter", title: "Find your starting point.", body: "Explore the trades and see where your interests could take you." },
+  { word: "Earn", title: "Build skills that matter.", body: "Understand the training and credentials behind your next opportunity." },
+  { word: "Elevate", title: "Keep moving forward.", body: "Prepare your resume, grow your knowledge, and plan your next move." },
+];
+
+function BenefitIcon({ number }: { number: string }) {
+  const paths: Record<string, string> = {
+    "01": "M12 7C9 4 5 4 2 5v14c3-1 7-1 10 2m0-14c3-3 7-3 10-2v14c-3-1-7-1-10 2V7Z",
+    "02": "m12 3 8 3v6c0 5-8 9-8 9s-8-4-8-9V6l8-3Zm-4 9 3 3 5-6",
+    "03": "M8 7V4h8v3M3 7h18v14H3V7Zm0 6c6 3 12 3 18 0m-9 0v4",
+    "04": "M3 5h18v14H3V5Zm0 1 9 7 9-7",
+  };
+  return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={paths[number]} /></svg>;
+}
+
 export default function JoinPage() {
   return (
     <main className={styles.page}>
       <header className={styles.topBar}>
-        <Link href="/" className={styles.wordmark} aria-label="TRADE HUSTL3 home">TRADE HUSTL<span>3</span></Link>
+        <Link href="/" className={styles.brand} aria-label="TRADE HUSTL3 home"><BrandLockup size="lg" /></Link>
         <nav aria-label="Community page navigation">
           <Link href="/resources">Resources</Link>
           <Link href="/resources/certifications">Certifications</Link>
@@ -37,22 +54,41 @@ export default function JoinPage() {
       </header>
       <section className={styles.hero} aria-labelledby="join-heading">
         <div className={styles.heroInner}>
-          <div className={styles.eyebrow}>THE TRADE HUSTL3 COMMUNITY</div>
-          <h1 id="join-heading">JOIN THE <span>HUSTL3</span></h1>
-          <div className={styles.motto}>ENTER <b>•</b> EARN <b>•</b> ELEVATE</div>
-          <p className={styles.lead}>Your future is worth building. Get practical information to discover a trade, understand the credentials, and make your next career move.</p>
-          <p className={styles.freePill}>Free to join · No purchase required</p>
-          <a className={styles.heroCta} href="#join-signup">Join free <span aria-hidden="true">↓</span></a>
+          <div className={styles.heroCopy}>
+            <div className={styles.eyebrow}>YOUR AMBITION HAS A PLACE HERE</div>
+            <h1 id="join-heading">WELCOME TO THE <span>HUSTL3.</span></h1>
+            <p className={styles.welcome}>Just getting started? Making a change? You belong here.</p>
+            <p className={styles.lead}>Your future is worth building. Find practical trade resources, clearer credential guidance, and ideas for your next move — wherever you&apos;re starting from.</p>
+            <div className={styles.heroActions}>
+              <a className={styles.heroCta} href="#join-signup">Join the HUSTL3 <span aria-hidden="true">→</span></a>
+              <a className={styles.secondaryCta} href="#join-benefits">See what&apos;s inside <span aria-hidden="true">↓</span></a>
+            </div>
+            <p className={styles.freePill}><span aria-hidden="true">✓</span> Free to join · No purchase required</p>
+          </div>
+          <aside className={styles.pathCard} aria-labelledby="path-heading">
+            <p className={styles.pathEyebrow}>ONE MOVE CAN OPEN A NEW CHAPTER</p>
+            <h2 id="path-heading">Let&apos;s build <span>what&apos;s next.</span></h2>
+            <ol className={styles.steps}>
+              {steps.map((step, index) => (
+                <li key={step.word}>
+                  <span className={styles.stepNumber} aria-hidden="true">0{index + 1}</span>
+                  <div><span className={styles.stepWord}>{step.word}</span><h3>{step.title}</h3><p>{step.body}</p></div>
+                </li>
+              ))}
+            </ol>
+            <p className={styles.pathNote}>Your starting point is just the beginning.</p>
+          </aside>
         </div>
+        <div className={styles.motto}>ENTER <b>•</b> EARN <b>•</b> ELEVATE</div>
       </section>
-      <section className={styles.content} aria-labelledby="benefits-heading">
-        <p className={styles.kicker}>WHAT YOU GET</p>
-        <h2 id="benefits-heading">Build knowledge. Find your lane.</h2>
+      <section id="join-benefits" className={styles.content} aria-labelledby="benefits-heading">
+        <p className={styles.kicker}>A LITTLE DIRECTION FOR YOUR NEXT BIG MOVE</p>
+        <h2 id="benefits-heading">Find your lane. <span>Build your future.</span></h2>
         <p className={styles.intro}>Whether you&apos;re exploring your first trade or preparing for your next opportunity, start with information you can actually use.</p>
         <div className={styles.benefits}>
           {benefits.map((benefit) => (
             <article className={styles.benefit} key={benefit.number}>
-              <span className={styles.benefitNumber}>{benefit.number}</span>
+              <div className={styles.benefitTop}><span className={styles.benefitIcon}><BenefitIcon number={benefit.number} /></span><span className={styles.benefitNumber} aria-hidden="true">{benefit.number}</span></div>
               <h3>{benefit.title}</h3>
               <p>{benefit.body}</p>
               <Link href={benefit.href}>{benefit.link} <span aria-hidden="true">→</span></Link>
@@ -62,13 +98,15 @@ export default function JoinPage() {
       </section>
       <section id="join-signup" className={styles.signupBand} aria-labelledby="signup-heading">
         <div className={styles.signupCopy}>
-          <p className={styles.kicker}>YOUR NEXT MOVE STARTS HERE</p>
-          <h2 id="signup-heading">JOIN THE HUSTL3. <span>STAY IN THE KNOW.</span></h2>
+          <p className={styles.kicker}>COME AS YOU ARE. BUILD FROM HERE.</p>
+          <h2 id="signup-heading">Your next chapter.<br /><span>Let&apos;s get into it.</span></h2>
           <p>Sign up for TRADE HUSTL3 email updates about free resources, career guidance, and new tools. We&apos;ll also let you know when THE HUSTL3 NEWS launches.</p>
-          <p className={styles.small}>No membership fee. No obligation to purchase a book or resume download.</p>
+          <p className={styles.small}>Free to join. Unsubscribe anytime. Your next move is yours.</p>
         </div>
         <div className={styles.formCard}>
-          <h3>Get free updates</h3>
+          <span className={styles.formBadge}>YOU&apos;RE INVITED</span>
+          <h3>Make room for your next move.</h3>
+          <p className={styles.formIntro}>Get free HUSTL3 updates in your inbox.</p>
           <ResourceForm
             resourceName="Join the HUSTL3 email updates"
             buttonLabel="Join the HUSTL3"
@@ -85,12 +123,13 @@ export default function JoinPage() {
       <section className={styles.news} aria-labelledby="news-heading">
         <div>
           <p className={styles.kicker}>COMING TO THE COMMUNITY</p>
-          <h2 id="news-heading">THE HUSTL3 NEWS</h2>
+          <h2 id="news-heading">THE HUSTL3 <span>NEWS</span></h2>
           <p>Our planned weekly trade news roundup will spotlight industry developments, career resources, and useful credential updates. Join the email list to hear when the first edition goes live.</p>
         </div>
         <Link href="/resources">Explore today&apos;s resources <span aria-hidden="true">→</span></Link>
       </section>
       <footer className={styles.footer}>
+        <Link href="/" className={styles.brand} aria-label="TRADE HUSTL3 home"><BrandLockup priority={false} /></Link>
         <strong>BUILT BY HUSTL3. BACKED BY TRADE.</strong>
         <SocialLinks />
         <div className={styles.footerLinks}>
