@@ -38,13 +38,13 @@ export function KnowYourTrade({ trades, myths }: { trades: KnowYourTradeTrade[];
           </div>
           <Link
             className={styles.headLink}
-            href="/resources"
+            href={`/resources/certifications#trade-${trade.slug}`}
             data-analytics-event="cta_click"
             data-location="know_your_trade"
-            data-destination="/resources"
+            data-destination={`/resources/certifications#trade-${trade.slug}`}
             data-item="resource_center"
           >
-            Open the Resource Center →
+            View {trade.label} credentials →
           </Link>
         </div>
 
@@ -151,3 +151,4 @@ export function KnowYourTrade({ trades, myths }: { trades: KnowYourTradeTrade[];
     </section>
   );
 }
+

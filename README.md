@@ -15,9 +15,9 @@ Open the local address printed by the development server.
 
 ## Analytics
 
-GA4 is optional and loads only when `NEXT_PUBLIC_GA_MEASUREMENT_ID` is set. For local development, add the variable to your local environment. For the live site, add `NEXT_PUBLIC_GA_MEASUREMENT_ID` as a Cloudflare build environment variable in the project dashboard, using the real GA4 Measurement ID for the property, then redeploy.
+Google Analytics uses the configured `NEXT_PUBLIC_GA_MEASUREMENT_ID`, falling back to the site's default property when unset. On eligible pages, optional tracking is enabled by default unless the visitor disables it through `/privacy` or sends Global Privacy Control. Meta and Pinterest load on the public marketing-page allowlist; the privacy policy names all three providers. Resume intake, review, and payment-confirmation routes are excluded from these browser tags. Runtime delivery and preference changes still require browser/network verification.
 
-Standard page views include the current URL and its normal UTM parameters (`utm_source`, `utm_medium`, `utm_campaign`, `utm_content`, and `utm_term`). Signup submissions preserve those values during the visit and send source, medium, and campaign attribution to Brevo.
+The GA initialization sends the pathname as `page_path`. Campaign attribution is allowlisted to `utm_source`, `utm_medium`, `utm_campaign`, `utm_content`, and `utm_term` and persisted in browser local storage. Signup submissions preserve attribution during the visit and send source, medium, and campaign to Brevo.
 
 ## Email signup integration
 
@@ -159,3 +159,4 @@ Deploy the bridge with the dedicated `TRADE HUSTL3 Resume Worker` service accoun
 ```bash
 npm run build
 ```
+

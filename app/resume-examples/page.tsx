@@ -76,7 +76,7 @@ const metrics = [
   { value: CATALOG_METRICS.careerFamilies, label: "Career families", detail: "Every family is selectable in the guided builder." },
   { value: CATALOG_METRICS.mappedRoles, label: "Job titles mapped", detail: "Named roles—not color changes counted as new templates." },
   { value: CATALOG_METRICS.guidedTracks, label: "Guided builder tracks", detail: "Trade-specific prompts for field experience and target work." },
-  { value: CATALOG_METRICS.detailedGuides, label: "Detailed trade guides", detail: "Deep, crawlable pages already live for the original core." },
+  { value: CATALOG_METRICS.detailedGuides, label: "Detailed trade guides", detail: "Worked resume examples for the original core trades." },
   { value: CATALOG_METRICS.fieldPrompts, label: "Distinct field prompts", detail: "Tools, systems, skills, duties, and credentials across the builder." },
   { value: CATALOG_METRICS.accomplishmentExamples, label: "Field bullet examples", detail: "Examples that show action, scope, and result without inventing facts." },
 ] as const;
@@ -204,3 +204,4 @@ export default function ResumeExamplesCatalogPage() {
     </main>
   );
 }
+

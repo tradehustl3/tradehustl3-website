@@ -35,7 +35,7 @@ export const HUB_STAGES: readonly HubStage[] = [
     copy: `Compare ${FAMILIES} trade families: what the work is, the job titles inside each one, and the credentials that go with it.`,
     steps: [
       { title: "Explore the trades", sub: `${FAMILIES} families, ${ROLES} job titles`, href: "/resume-examples" },
-      { title: "See what each trade requires", sub: "Credentials by trade", href: "/resources/certifications#trade-hvac-refrigeration" },
+      { title: "See what each trade requires", sub: "Credentials by trade", href: "/resources/certifications#by-trade-title" },
       { title: "Get the Top 10 Trades guide", sub: "Free download", href: "/top-10-trades" },
     ],
   },
@@ -99,3 +99,4 @@ export const HUB_ORGANIZATION_LINK = {
   title: "Talk to us about group access",
   href: "/contact",
 } as const;
+
