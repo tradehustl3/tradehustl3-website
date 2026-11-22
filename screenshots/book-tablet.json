@@ -1,0 +1,14 @@
+{
+  "viewport": {
+    "width": 768,
+    "height": 1024
+  },
+  "documentWidth": 768,
+  "horizontalOverflow": false,
+  "skipReachedContent": null,
+  "footerFont": null,
+  "loadedFonts": [
+    "Anton",
+    "Space Grotesk"
+  ]
+}

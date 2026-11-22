@@ -1,0 +1,14 @@
+{
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "documentWidth": 390,
+  "horizontalOverflow": false,
+  "skipReachedContent": null,
+  "footerFont": null,
+  "loadedFonts": [
+    "Anton",
+    "Space Grotesk"
+  ]
+}

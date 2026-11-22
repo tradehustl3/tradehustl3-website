@@ -1,0 +1,17 @@
+{
+  "viewport": {
+    "width": 1440,
+    "height": 900
+  },
+  "documentWidth": 1440,
+  "horizontalOverflow": false,
+  "skipReachedContent": true,
+  "footerFont": "Barlow, \"Barlow Fallback\", Arial, sans-serif",
+  "loadedFonts": [
+    "Barlow Condensed",
+    "Barlow Condensed",
+    "Barlow",
+    "Barlow",
+    "Barlow"
+  ]
+}
