@@ -48,7 +48,7 @@ export default function JoinPage() {
       <section className={styles.content} aria-labelledby="benefits-heading">
         <p className={styles.kicker}>WHAT YOU GET</p>
         <h2 id="benefits-heading">Build knowledge. Find your lane.</h2>
-        <p className={styles.intro}>Whether you're exploring your first trade or preparing for your next opportunity, start with information you can actually use.</p>
+        <p className={styles.intro}>Whether you&apos;re exploring your first trade or preparing for your next opportunity, start with information you can actually use.</p>
         <div className={styles.benefits}>
           {benefits.map((benefit) => (
             <article className={styles.benefit} key={benefit.number}>
@@ -64,7 +64,7 @@ export default function JoinPage() {
         <div className={styles.signupCopy}>
           <p className={styles.kicker}>YOUR NEXT MOVE STARTS HERE</p>
           <h2 id="signup-heading">JOIN THE HUSTL3. <span>STAY IN THE KNOW.</span></h2>
-          <p>Sign up for TRADE HUSTL3 email updates about free resources, career guidance, and new tools. We'll also let you know when THE HUSTL3 NEWS launches.</p>
+          <p>Sign up for TRADE HUSTL3 email updates about free resources, career guidance, and new tools. We&apos;ll also let you know when THE HUSTL3 NEWS launches.</p>
           <p className={styles.small}>No membership fee. No obligation to purchase a book or resume download.</p>
         </div>
         <div className={styles.formCard}>
@@ -88,7 +88,7 @@ export default function JoinPage() {
           <h2 id="news-heading">THE HUSTL3 NEWS</h2>
           <p>Our planned weekly trade news roundup will spotlight industry developments, career resources, and useful credential updates. Join the email list to hear when the first edition goes live.</p>
         </div>
-        <Link href="/resources">Explore today's resources <span aria-hidden="true">→</span></Link>
+        <Link href="/resources">Explore today&apos;s resources <span aria-hidden="true">→</span></Link>
       </section>
       <footer className={styles.footer}>
         <strong>BUILT BY HUSTL3. BACKED BY TRADE.</strong>
