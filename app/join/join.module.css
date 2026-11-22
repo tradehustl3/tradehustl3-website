@@ -71,7 +71,7 @@
 .steps li:nth-child(2) .stepWord { color: #8a570c; }
 .steps li:nth-child(3) .stepWord { color: var(--blue); }
 .steps h3 { font-size: 16px; margin: 3px 0 6px; line-height: 1.4; }
-.steps p { color: var(--muted); font-size: 13px; line-height: 1.65; margin: 0; }
+.steps p { color: var(--muted); font-size: 14px; line-height: 1.65; margin: 0; }
 .pathNote { color: var(--muted); font-size: 12px; line-height: 1.6; margin: 24px 0 0; padding-top: 17px; border-top: 1px solid #e3eaf0; }
 .motto { display: flex; align-items: center; justify-content: center; gap: clamp(10px, 2vw, 22px); max-width: 1120px; margin: clamp(40px, 6vw, 72px) auto 0; padding: 24px 0; border-top: 1px solid #dce6ed; border-bottom: 1px solid #dce6ed; color: var(--ink); font-family: var(--font-display), Impact, sans-serif; font-size: clamp(19px, 3vw, 30px); letter-spacing: .1em; }
 .motto b { color: var(--red); font-family: Arial, sans-serif; font-size: 14px; }
@@ -107,8 +107,8 @@
 .formCard :global(input[type="email"]) { background: #fff; color: var(--ink); border: 1px solid #8b9eac; border-radius: 9px; min-height: 52px; padding: 12px; width: 100%; font-size: 16px; }
 .formCard :global(input[type="email"]:focus-visible) { outline: 3px solid #2377ae; outline-offset: 2px; }
 .formCard :global(.form-status) { font-size: 14px; line-height: 1.5; margin: 0; overflow-wrap: anywhere; }
-.formCard :global(button) { width: 100%; min-height: 52px; border-radius: 9px; background: var(--red); color: #fff; border: 1px solid var(--red); font-size: 16px; font-weight: 800; }
-.formCard :global(button:hover:not(:disabled)) { background: #a91e2e; }
+.formCard :global(button) { width: 100%; min-height: 52px; border-radius: 9px; background: var(--red); color: #fff; border: 1px solid var(--red); box-shadow: 0 6px 18px #bd253521; font-size: 16px; font-weight: 800; }
+.formCard :global(button:not(:disabled):hover) { background: #a91e2e; color: #fff; box-shadow: 0 8px 20px #bd25352a; }
 .formCard :global(button:focus-visible) { outline: 3px solid var(--blue); outline-offset: 3px; }
 .consent { font-size: 12px; line-height: 1.7; color: #526575; margin: 16px 0 0; }
 .consent a { color: #0b598d; text-underline-offset: 3px; }
