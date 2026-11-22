@@ -53,6 +53,10 @@ export default function JoinPage() {
         </nav>
       </header>
       <section className={styles.hero} aria-labelledby="join-heading">
+        <div className={styles.heroAtmosphere} aria-hidden="true">
+          <span className={styles.plumberSilhouette} />
+          <span className={styles.tradeswomanSilhouette} />
+        </div>
         <div className={styles.heroInner}>
           <div className={styles.heroCopy}>
             <div className={styles.eyebrow}>YOUR AMBITION HAS A PLACE HERE</div>
@@ -85,6 +89,10 @@ export default function JoinPage() {
         <div className={styles.motto}>ENTER <b>•</b> EARN <b>•</b> ELEVATE</div>
       </section>
       <section id="join-benefits" className={styles.content} aria-labelledby="benefits-heading">
+        <div className={styles.credentialAtmosphere} aria-hidden="true">
+          <span className={styles.epaBackdrop} />
+          <span className={styles.plumbingBackdrop} />
+        </div>
         <p className={styles.kicker}>A LITTLE DIRECTION FOR YOUR NEXT BIG MOVE</p>
         <h2 id="benefits-heading">Find your lane. <span>Build your future.</span></h2>
         <p className={styles.intro}>Whether you&apos;re exploring your first trade or preparing for your next opportunity, start with information you can actually use.</p>
