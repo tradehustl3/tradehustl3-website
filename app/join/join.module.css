@@ -96,27 +96,12 @@
 .benefit a { display: inline-block; align-self: flex-start; margin-top: auto; color: #0b598d; font-size: 14px; font-weight: 800; text-decoration: underline; text-underline-offset: 5px; }
 .benefit a span { margin-left: 8px; }
 
-.signupBand { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: clamp(28px, 5vw, 64px); align-items: center; padding: 72px max(24px, calc((100% - 1120px) / 2)); color: var(--ink); background: radial-gradient(ellipse at 100% 20%, #396e9280, transparent 60%), linear-gradient(115deg, #0b243b, #1b4565); border-top: 1px solid #e5edf3; border-bottom: 1px solid #e5edf3; scroll-margin-top: 20px; }
-.signupCopy { color: #fff; }
+.signupBand { padding: 72px 24px; color: var(--ink); background: radial-gradient(ellipse at 100% 20%, #396e9280, transparent 60%), linear-gradient(115deg, #0b243b, #1b4565); border-top: 1px solid #e5edf3; border-bottom: 1px solid #e5edf3; scroll-margin-top: 20px; }
+.signupCopy { max-width: 740px; margin: 0 auto; text-align: center; color: #fff; }
 .signupCopy .kicker { color: #ffc978; }
 .signupCopy h2 span { color: #ffad84; }
 .signupCopy > p:not(.kicker) { line-height: 1.75; font-size: 16px; color: #dae7f2; }
 .signupCopy > .small { font-size: 13px; color: #dae7f2; margin-top: 20px; }
-.formCard { position: relative; background: #fff; color: var(--ink); padding: 32px; border-radius: 20px; box-shadow: 0 18px 45px #20496712; border: 1px solid #d7e3eb; border-top: 4px solid var(--red); min-width: 0; }
-.formBadge { display: inline-block; color: #a3283b; background: #fff0ef; padding: 6px 10px; border-radius: 20px; font-size: 10px; font-weight: 800; letter-spacing: .1em; }
-.formCard h3 { font-size: 24px; line-height: 1.25; margin: 16px 0 8px; }
-.formIntro { color: var(--muted); font-size: 14px; line-height: 1.6; margin: 0 0 22px; }
-.formCard :global(.resource-form) { display: flex; flex-direction: column; gap: 14px; }
-.formCard :global(.field-row) { display: flex; flex-direction: column; gap: 8px; }
-.formCard :global(label) { font-size: 14px; font-weight: 700; color: var(--ink); }
-.formCard :global(input[type="email"]) { background: #fff; color: var(--ink); border: 1px solid #8b9eac; border-radius: 9px; min-height: 52px; padding: 12px; width: 100%; font-size: 16px; }
-.formCard :global(input[type="email"]:focus-visible) { outline: 3px solid #2377ae; outline-offset: 2px; }
-.formCard :global(.form-status) { font-size: 14px; line-height: 1.5; margin: 0; overflow-wrap: anywhere; }
-.formCard :global(button) { width: 100%; min-height: 52px; border-radius: 9px; background: var(--red); color: #fff; border: 1px solid var(--red); box-shadow: 0 6px 18px #bd253521; font-size: 16px; font-weight: 800; }
-.formCard :global(button:not(:disabled):hover) { background: #a91e2e; color: #fff; box-shadow: 0 8px 20px #bd25352a; }
-.formCard :global(button:focus-visible) { outline: 3px solid var(--blue); outline-offset: 3px; }
-.consent { font-size: 12px; line-height: 1.7; color: #526575; margin: 16px 0 0; }
-.consent a { color: #0b598d; text-underline-offset: 3px; }
 
 .news { max-width: 1120px; margin: 64px auto; padding: 36px; border: 1px solid #d8e8f3; border-radius: 20px; background: linear-gradient(110deg, #f2f8fd, #fff 80%); display: flex; align-items: center; justify-content: space-between; gap: 32px; }
 .news > div { max-width: 700px; }
@@ -135,7 +120,6 @@
   .welcome, .lead { margin-left: auto; margin-right: auto; }
   .heroActions { justify-content: center; }
   .pathCard { padding: 28px; }
-  .signupBand { gap: 28px; }
   .news { margin-left: 24px; margin-right: 24px; flex-direction: column; align-items: flex-start; gap: 20px; }
 }
 @media (max-width: 700px) {
@@ -154,8 +138,7 @@
   .benefits { grid-template-columns: minmax(0, 1fr); gap: 16px; }
   .benefit { padding: 24px; }
   .benefit h3 { font-size: 20px; }
-  .signupBand { grid-template-columns: minmax(0, 1fr); padding: 48px 20px; }
-  .formCard { padding: 26px 20px; }
+  .signupBand { padding: 48px 20px; }
   .news { margin: 40px 20px; padding: 26px 22px; }
 }
 @media (prefers-reduced-motion: reduce) {
