@@ -1,6 +1,8 @@
 import type { MetadataRoute } from "next";
 import { TRADE_LANDING_PAGES, tradeLandingPath } from "./resume-builder/trade-landing-content";
 import { SITE_URL } from "./site";
+import { FIRST_ISSUE_PATH } from "./news/constants";
+import { FIRST_ISSUE } from "./news/content";
 
 const CONTENT_REFRESHED_AT = new Date("2026-09-28T00:00:00.000Z");
 const RESOURCE_CENTER_REFRESHED_AT = new Date("2026-10-21T00:00:00.000Z");
@@ -14,6 +16,12 @@ const BOOK_REFRESHED_AT = new Date("2026-11-03T00:00:00.000Z");
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const publicPages: MetadataRoute.Sitemap = [
+    ...["/news", FIRST_ISSUE_PATH].map(path => ({
+      url: `${SITE_URL}${path}`,
+      lastModified: new Date(`${FIRST_ISSUE.date}T00:00:00.000Z`),
+      changeFrequency: "weekly" as const,
+      priority: 0.7,
+    })),
     {
       url: SITE_URL,
       lastModified: HOMEPAGE_REFRESHED_AT,

@@ -22,7 +22,7 @@ const benefits = [
   { number: "01", title: "Free trade career resources", body: "Explore practical guides and paths into skilled trades, including options for students and career changers.", href: "/resources", link: "Explore resources" },
   { number: "02", title: "Credentials made clearer", body: "Find sourced certification and licensing information, with links to the agencies and organizations that set requirements.", href: "/resources/certifications", link: "Browse certifications" },
   { number: "03", title: "Career-building guidance", body: "Get helpful resume, interview, and career preparation tips. The Resume Builder is optional and its paid download is separate.", href: "/#resume-start", link: "Explore Resume Builder" },
-  { number: "04", title: "Updates from TRADE HUSTL3", body: "Receive news about new career guides, tools, book updates, and future HUSTL3 News editions by email.", href: "/book", link: "See the book" },
+  { number: "04", title: "THE HUSTL3 NEWS", body: "Read practical trade guidance, credential explainers, and ideas for your next move. Join the email list for the next weekly edition.", href: "/news", link: "Read THE HUSTL3 NEWS" },
 ];
 
 const steps = [
@@ -111,17 +111,17 @@ export default function JoinPage() {
         <div className={styles.signupCopy}>
           <p className={styles.kicker}>COME AS YOU ARE. BUILD FROM HERE.</p>
           <h2 id="signup-heading">Your next chapter.<br /><span>Let&apos;s get into it.</span></h2>
-          <p>Sign up for TRADE HUSTL3 email updates about free resources, career guidance, and new tools. We&apos;ll also let you know when THE HUSTL3 NEWS launches.</p>
+          <p>Get THE HUSTL3 NEWS by email: practical resources, career guidance, and new ideas built around Enter, Earn, and Elevate. Read the first edition and share the question you want answered next.</p>
           <p className={styles.small}>Free to join. Unsubscribe anytime. Your next move is yours.</p>
         </div>
       </section>
       <section className={styles.news} aria-labelledby="news-heading">
         <div>
-          <p className={styles.kicker}>COMING TO THE COMMUNITY</p>
+          <p className={styles.kicker}>READ THE LAUNCH EDITION</p>
           <h2 id="news-heading">THE HUSTL3 <span>NEWS</span></h2>
-          <p>Our planned weekly trade news roundup will spotlight industry developments, career resources, and useful credential updates. Join the email list to hear when the first edition goes live.</p>
+          <p>Issue #001 is about your next move: choosing a direction, making your experience visible, and taking one practical step forward. Each edition brings Enter, Earn, and Elevate into the conversation.</p>
         </div>
-        <Link href="/resources">Explore today&apos;s resources <span aria-hidden="true">→</span></Link>
+        <Link href="/news">Read THE HUSTL3 NEWS <span aria-hidden="true">→</span></Link>
       </section>
       <ResourceFooter joinHref="/#join-the-movement" ctaLocation="join_footer" />
     </main>

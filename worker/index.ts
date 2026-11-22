@@ -14,6 +14,7 @@ import { handleProgramInquiry } from "./book-program-inquiry";
 import { PROGRAM_INQUIRY_ROUTE } from "../app/book/program-inquiry-options";
 import { BOOK_SAMPLE_OPEN_LABEL, BOOK_SAMPLE_READER_PATH } from "../app/book/sample-links";
 import { bookSenderEmail } from "./sender-addresses";
+import { NEWS_INTEREST } from "../app/news/constants";
 
 interface Env extends ResumeBuilderEnv, EbookStripeEnv {
   ASSETS: Fetcher;
@@ -55,12 +56,14 @@ const allowedInterests = new Set([
   "Jobsite Gear",
   "School / Workforce Partnership",
   "General TRADE HUSTL3 Updates",
+  NEWS_INTEREST,
 ]);
 
 /** Per-funnel value persisted to D1 `subscribers.source` and sent to Brevo as
  * SIGNUP_SOURCE. Only the two dedicated free-resource funnels get a specific
- * source; everything else keeps the historical "website". */
+ * source; the newsletter has its own source. Other interests keep "website". */
 function signupSourceForInterest(interest: string): string {
+  if (interest === NEWS_INTEREST) return "newsletter";
   if (interest === "Book 7-Page Sample") return "book_sample";
   if (interest === "Top 10 Trades" || interest === "The TRADE HUSTL3 Book") return "top_10_trades";
   return "website";
@@ -595,6 +598,9 @@ async function subscribe(request: Request, env: Env): Promise<Response> {
     if (!allowedInterests.has(interest)) {
       return jsonResponse({ ok: false, message: "This signup form is out of date. Refresh the page and try again." }, 400);
     }
+    if (interest === NEWS_INTEREST && body.marketingConsent !== true) {
+      return jsonResponse({ ok: false, message: "Please agree to receive THE HUSTL3 NEWS before joining." }, 400);
+    }
 
     const [emailAllowed, ipAllowed] = await Promise.all([
       checkRateLimit(env, `subscribe-email:${await sha256Hex(email)}`, 3, 60 * 60),
@@ -621,6 +627,9 @@ async function subscribe(request: Request, env: Env): Promise<Response> {
       ? " To join TRADE HUSTL3 updates, use the separate confirmation email."
       : "";
 
+    let marketingSynced = false;
+    let marketingQueued = false;
+
     if (marketingRequested) {
       try {
         await syncBrevoContact(env, {
@@ -632,11 +641,12 @@ async function subscribe(request: Request, env: Env): Promise<Response> {
           utmCampaign: trackingValue(body.utm_campaign),
           doubleOptIn: true,
         });
+        marketingSynced = true;
       } catch (error) {
         console.error(operationalEvent("auth_email", "subscriber_brevo_sync_deferred", "warning", {
           error: deliveryError(error),
         }));
-        await queueLeadDelivery(env, email, "brevo_contact", {
+        marketingQueued = await queueLeadDelivery(env, email, "brevo_contact", {
           interest,
           source,
           utmSource: trackingValue(body.utm_source),
@@ -645,6 +655,25 @@ async function subscribe(request: Request, env: Env): Promise<Response> {
           doubleOptIn: true,
         }, error);
       }
+    }
+
+    if (interest === NEWS_INTEREST) {
+      if (!marketingSynced) {
+        return jsonResponse({
+          ok: true,
+          subscriptionState: marketingQueued ? "queued" : "saved",
+          message: marketingQueued
+            ? "We saved your HUSTL3 NEWS signup request. Email processing is delayed; we'll retry it. Your subscription is not confirmed yet."
+            : "We saved your HUSTL3 NEWS signup request, but email processing is unavailable. Your subscription is not confirmed yet. Please contact support@tradehustl3.com.",
+        });
+      }
+      return jsonResponse({
+        ok: true,
+        subscriptionState: confirmationRequired ? "confirmation_required" : "subscribed",
+        message: confirmationRequired
+          ? "Almost there. Check your inbox and tap Confirm to join THE HUSTL3 NEWS."
+          : "You're on THE HUSTL3 NEWS list. Read the first edition while you wait for the next update.",
+      });
     }
 
     if (interest === "Top 10 Trades" || interest === "The TRADE HUSTL3 Book") {
