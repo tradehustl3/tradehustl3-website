@@ -23,6 +23,9 @@
 .topBar nav { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 24px; }
 .topBar nav a { color: var(--ink); font-size: 14px; font-weight: 700; text-decoration: none; padding: 10px 0; }
 .topBar nav a:hover { color: var(--red); text-decoration: underline; text-underline-offset: 5px; }
+.topBar nav a[href="/resources"] { color: #07558c; }
+.topBar nav a[href="/resources/certifications"] { color: #80520a; }
+.topBar nav a[href="/book"] { color: #b51f35; }
 
 .hero {
   position: relative;
