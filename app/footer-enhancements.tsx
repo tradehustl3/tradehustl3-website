@@ -5,16 +5,11 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import styles from "./footer-enhancements.module.css";
+import { SOCIAL_PROFILE_ORDER, SOCIAL_PROFILES, type SocialProfileId } from "./social-profiles";
 
-const socials = [
-  { label: "Facebook", href: "https://www.facebook.com/profile.php?id=61593457675674", icon: "facebook" },
-  { label: "Instagram", href: "https://www.instagram.com/tradehustl3/", icon: "instagram" },
-  { label: "TikTok", href: "https://www.tiktok.com/@da.maintenance.ma5", icon: "tiktok" },
-  { label: "YouTube", href: "https://www.youtube.com/@tradehustl3", icon: "youtube" },
-  { label: "LinkedIn", href: "https://www.linkedin.com/company/trade-hustl3-llc/", icon: "linkedin" },
-] as const;
+const socials = SOCIAL_PROFILE_ORDER.map((id) => ({ ...SOCIAL_PROFILES[id], icon: id }));
 
-function SocialIcon({ type }: { type: (typeof socials)[number]["icon"] }) {
+function SocialIcon({ type }: { type: SocialProfileId }) {
   if (type === "instagram") {
     return (
       <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="5" /><circle cx="12" cy="12" r="3.5" /><circle cx="17.2" cy="6.8" r="1" className={styles.fillDot} /></svg>
