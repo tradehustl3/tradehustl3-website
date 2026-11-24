@@ -247,7 +247,7 @@ test("server-renders the official book page, cover, portrait, and current editio
 
   assert.match(html, /<title>TRADE HUSTL3 Book by Zachary Ellis \(Mr\. HUSTL3\)<\/title>/i);
   assert.match(html, /<link rel="canonical" href="https:\/\/tradehustl3\.com\/book"/i);
-  assert.match(html, /optimized\/book-cover-v3\.webp/i);
+  assert.match(html, /optimized\/book-cover-v4\.webp/i);
   assert.match(html, /optimized\/author-portrait-v2\.webp/i);
   assert.match(html.replace(/<[^>]+>/g, ""), /By Zachary Ellis · Mr\. HUSTL3/);
   assert.match(html, /ZACHARY[\s\S]*ELLIS\./);
@@ -473,7 +473,7 @@ test("homepage routes to the verified account entry and keeps free guide signups
 test("homepage features the approved book cover and edition links without duplicating the full book page", async () => {
   const html = await (await render()).text();
   assert.match(html, /href="\/book"[^>]*>The Book<\/a>/i);
-  assert.match(html, /optimized\/book-cover-v3\.webp/i);
+  assert.match(html, /optimized\/book-cover-v4\.webp/i);
   // Every edition is buyable straight from the hub; the full comparison stays on /book.
   assert.match(html, /href="https:\/\/www\.amazon\.com\/dp\/B0HFQ2ZNJN"[^>]*data-cta="amazon-paperback"/i);
   assert.match(html, /href="https:\/\/www\.amazon\.com\/dp\/B0HPZ2KQ1R"[^>]*data-cta="amazon-kindle"/i);

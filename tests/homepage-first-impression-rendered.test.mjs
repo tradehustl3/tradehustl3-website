@@ -310,7 +310,7 @@ test("campaign visits for trades without a quick-pick card keep the resume-first
 test("the book hero features the approved cover, preview and format selection", async () => {
   const html = await renderHome();
   const storefront = between(html, 'id="top"', 'id="opportunity"');
-  assert.match(storefront, /optimized\/book-cover-v3\.webp/);
+  assert.match(storefront, /optimized\/book-cover-v4\.webp/);
   assert.match(storefront, /THE BOOK/);
   assert.match(storefront, /BY MR\. HUSTL3/);
   assert.match(storefront.replace(/<[^>]*>/g, ""), /A Story From the Trades\. A Message for the Next Generation\./);

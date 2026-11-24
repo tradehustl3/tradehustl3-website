@@ -27,7 +27,7 @@ export function HomeStorefront() {
           <HomeBookPreview />
         </div>
         <div className={styles.coverFrame}>
-          <Image className={styles.cover} src="/optimized/book-cover-v3.webp" width={1024} height={1536}
+          <Image className={styles.cover} src="/optimized/book-cover-v4.webp" width={1000} height={1600}
             sizes="(max-width: 720px) 46vw, (max-width: 1100px) 25vw, 21vw"
             alt="Official cover of TRADE HUSTL3: Built by Hustle, Backed by Trades" priority />
         </div>
