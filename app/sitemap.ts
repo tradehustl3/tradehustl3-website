@@ -68,6 +68,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "weekly",
       priority: 0.7,
     },
+    {
+      url: `${SITE_URL}/join`,
+    },
     ...TRADE_LANDING_PAGES.map((page) => ({
       url: `${SITE_URL}${tradeLandingPath(page)}`,
       lastModified: page.slug === "heavy-equipment-operator"
