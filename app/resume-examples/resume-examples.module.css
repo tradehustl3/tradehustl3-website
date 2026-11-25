@@ -176,3 +176,58 @@
   .footer{grid-template-columns:1fr;padding:32px 18px}.footer nav{grid-column:auto}
 }
 @media(prefers-reduced-motion:reduce){.headerCta,.primaryCta{transition:none}}
+
+
+/* Mobile catalog browsing: keep the full role map available without making
+   every family card a long scroll before a reader reaches the next trade. */
+.moreRoles {
+  margin-top: 10px;
+  border-top: 1px solid #d9e2e8;
+}
+.moreRoles summary {
+  display: flex;
+  min-height: 46px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 10px 2px;
+  color: #174f7e;
+  font-size: 12px;
+  font-weight: 950;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  cursor: pointer;
+  list-style: none;
+}
+.moreRoles summary::-webkit-details-marker { display: none; }
+.moreRoles summary span { color: #d71920; font-size: 18px; }
+.moreRoles[open] summary span { transform: rotate(45deg); }
+.moreRoles .roleList { padding-bottom: 8px; }
+.moreRoles:focus-within summary { outline: 3px solid rgba(38,113,167,.22); outline-offset: 2px; border-radius: 4px; }
+
+@media(max-width:720px) {
+  .catalogSection { scroll-margin-top: 82px; }
+  .catalogControls { padding: 14px; border-radius: 12px; }
+  .searchField input { min-height: 54px; font-size: 16px; }
+  .filterGroup {
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    gap: 8px;
+    margin: 0 -2px;
+    padding: 2px 2px 6px;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    scrollbar-width: thin;
+  }
+  .filterGroup button {
+    width: auto;
+    min-height: 44px;
+    flex: 0 0 auto;
+    padding-inline: 14px;
+    white-space: nowrap;
+  }
+  .familyCard { padding: 22px 18px; }
+  .roleList li { min-height: 42px; font-size: 12px; }
+  .moreRoles summary { min-height: 48px; }
+}
