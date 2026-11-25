@@ -64,8 +64,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid #d6a52a55;
-  background: linear-gradient(#071a2be8, transparent);
+  border-bottom: 1px solid var(--site-header-border, rgba(241,195,87,.42));
+  background: var(--site-header-gradient, linear-gradient(112deg, #061827 0%, #0b2c49 62%, #174f7e 100%));
 }
 .book-page nav {
   position: static;
@@ -388,7 +388,7 @@
 
 /* ---- customer-protection / policy pages ---- */
 .policy-page { background: linear-gradient(150deg, #04121e, #071a2b 55%, #0b253b); }
-.policy-header { min-height: 82px; padding: 0 clamp(22px, 6vw, 90px); display: flex; align-items: center; justify-content: space-between; gap: 28px; border-bottom: 1px solid #d6a52a44; }
+.policy-header { min-height: 82px; padding: 0 clamp(22px, 6vw, 90px); display: flex; align-items: center; justify-content: space-between; gap: 28px; border-bottom: 1px solid var(--site-header-border, rgba(241,195,87,.42)); background: var(--site-header-gradient, linear-gradient(112deg, #061827 0%, #0b2c49 62%, #174f7e 100%)); color: #fff; }
 .policy-brand { font-family: var(--font-display), Impact, sans-serif; font-size: 27px; letter-spacing: 0.05em; }
 .policy-brand span { color: var(--red); }
 .policy-header nav { position: static; display: flex; gap: 26px; text-transform: uppercase; font-size: 11px; font-weight: 700; letter-spacing: 0.1em; }
@@ -516,8 +516,8 @@
 .book-hero-band:before,
 .book-hero-band:after { content: ""; flex: 1; max-width: 420px; height: 2px; background: linear-gradient(90deg, transparent, var(--gold)); }
 .book-hero-band:after { background: linear-gradient(90deg, var(--gold), transparent); }
-.book-page .nav-cta-buy { padding: 12px 22px; border-color: var(--red); border-radius: 6px; background: var(--red); color: var(--white); font-size: 12px; }
-.book-page .nav-cta-buy:hover { border-color: #ef4a30; background: #ef4a30; color: var(--white); }
+.book-page .nav-cta-buy { padding: 12px 22px; border-color: var(--site-header-cta, #f1c357); border-radius: 6px; background: var(--site-header-cta, #f1c357); color: var(--site-header-cta-ink, #071a2b); font-size: 12px; }
+.book-page .nav-cta-buy:hover { border-color: #ffd979; background: #ffd979; color: var(--site-header-cta-ink, #071a2b); }
 @media (max-width: 1000px) {
   .book-hero { grid-template-columns: 0.75fr 1.25fr; gap: 45px; }
 }
