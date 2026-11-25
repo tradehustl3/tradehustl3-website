@@ -31,3 +31,38 @@
 @media (max-width: 980px) {
   .credentialGrid { grid-template-columns: minmax(0, 1fr); }
 }
+
+
+/* Turn the four fixes into quick, thumb-sized jump links on phones. */
+@media (max-width: 600px) {
+  .fixList {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 9px;
+  }
+  .fixList li {
+    min-width: 0;
+    min-height: 82px;
+    grid-template-columns: 28px minmax(0, 1fr);
+    gap: 8px;
+    align-content: center;
+    padding: 10px;
+    border: 1px solid var(--rb-border);
+    border-radius: 11px;
+    background: var(--rb-surface);
+  }
+  .fixList li > span {
+    width: 28px;
+    height: 28px;
+    font-size: 11px;
+  }
+  .fixList a {
+    font-size: 13px;
+    line-height: 1.35;
+  }
+  .systemGrid li, .credentialGrid li { padding: 18px; }
+  .rewriteList { gap: 8px; }
+}
+@media (max-width: 360px) {
+  .fixList { grid-template-columns: 1fr; }
+  .fixList li { min-height: 60px; }
+}
