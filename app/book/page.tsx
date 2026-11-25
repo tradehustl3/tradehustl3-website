@@ -15,7 +15,6 @@ import {
   AMAZON_KINDLE,
   AMAZON_PAPERBACK,
   BOOK_PAPERBACK_ISBN,
-  BOOK_PAPERBACK_PAGES,
   BOOK_PARTNERSHIPS_EMAIL,
   DIRECT_EBOOK,
 } from "./editions";
@@ -23,7 +22,7 @@ import {
 const BOOK_TITLE = "TRADE HUSTL3: Built by Hustle, Backed by Trades";
 const BOOK_PAGE_TITLE = "TRADE HUSTL3 Book by Zachary Ellis (Mr. HUSTL3)";
 const BOOK_DESCRIPTION =
-  "A 200-trade career guide by Zachary Ellis (Mr. HUSTL3): certifications, career paths, and a 90-Day Action Plan. Paperback, Kindle, and eBook.";
+  "Explore skilled trades, training, and career paths with Zachary Ellis. Read the opening of TRADE HUSTL3 and find your next step.";
 
 const SCHOOLS_MAILTO = `mailto:${BOOK_PARTNERSHIPS_EMAIL}?subject=${encodeURIComponent("TRADE HUSTL3 book order for our program")}`;
 
@@ -55,7 +54,6 @@ export const metadata: Metadata = {
   },
 };
 
-const IN_STOCK = "https://schema.org/InStock";
 const amazonSeller = { "@type": "Organization", name: "Amazon.com" };
 
 const bookStructuredData = {
@@ -85,14 +83,12 @@ const bookStructuredData = {
       name: BOOK_TITLE,
       bookFormat: "https://schema.org/Paperback",
       isbn: BOOK_PAPERBACK_ISBN,
-      numberOfPages: BOOK_PAPERBACK_PAGES,
       url: AMAZON_PAPERBACK.url,
       offers: {
         "@type": "Offer",
         url: AMAZON_PAPERBACK.url,
         price: AMAZON_PAPERBACK.price,
         priceCurrency: "USD",
-        availability: IN_STOCK,
         seller: amazonSeller,
       },
     },
@@ -108,7 +104,6 @@ const bookStructuredData = {
         url: AMAZON_KINDLE.url,
         price: AMAZON_KINDLE.price,
         priceCurrency: "USD",
-        availability: IN_STOCK,
         seller: amazonSeller,
       },
     },
@@ -123,7 +118,6 @@ const bookStructuredData = {
         url: `${SITE_URL}/book#availability`,
         price: DIRECT_EBOOK.price,
         priceCurrency: "USD",
-        availability: IN_STOCK,
         seller: { "@id": `${SITE_URL}/#organization` },
       },
     },
@@ -131,7 +125,6 @@ const bookStructuredData = {
 };
 
 const discoveries = [
-  "A directory of 200 skilled trades, plus a chapter on each major trade family",
   "How to enter the trades with no experience and start building value",
   "Training, certifications, apprenticeships, and real-world career paths",
   "How skill can create income, leverage, leadership, and ownership",
@@ -212,14 +205,6 @@ const CHAPTER_COUNT = chapterParts.reduce((total, part) => total + part.chapters
  */
 const faqs: Array<{ question: string; answer: ReactNode }> = [
   {
-    question: "What formats can I buy?",
-    answer: (
-      <>
-        Three: the paperback (${AMAZON_PAPERBACK.price}, {BOOK_PAPERBACK_PAGES} pages) and the Kindle eBook (${AMAZON_KINDLE.price}) are sold on Amazon. The direct eBook (${DIRECT_EBOOK.price}) is a PDF sold by TRADE HUSTL3 through secure Stripe checkout.
-      </>
-    ),
-  },
-  {
     question: "Who ships the paperback?",
     answer: <>Amazon sells, prints, and ships the paperback and delivers the Kindle edition. Orders, shipping, and returns for those formats are handled by Amazon under Amazon&apos;s terms.</>,
   },
@@ -240,10 +225,6 @@ const faqs: Array<{ question: string; answer: ReactNode }> = [
     answer: <>Yes. The <a href="#book-sample">free 7-page sample</a> includes the cover, the full table of contents, and the opening of Chapter 1. No purchase required.</>,
   },
   {
-    question: "Do I need trade experience to use this book?",
-    answer: <>No. Part I is written for people starting from zero, including a full chapter on the no-experience path into the trades.</>,
-  },
-  {
     question: "Can I share the PDF with my class or team?",
     answer: (
       <>
@@ -257,8 +238,6 @@ const programHighlights = [
   "21 chapters in four parts, from the no-experience path to a 90-Day Action Plan",
   "Every chapter opens with “What You Will Learn” objectives, so it can anchor a lesson plan",
   "Part II walks through construction, mechanical, electrical, industrial, fabrication, service, maintenance, and facilities careers",
-  "Appendix A lists 200 skilled trades; Appendix B is a training, certification, and supply-house resource directory; Appendix C holds the official source notes",
-  "Written for people starting from zero, so no trade experience is required",
 ];
 
 function StarRating({ rating }: { rating: NonNullable<ReaderReview["rating"]> }) {
@@ -350,12 +329,10 @@ export default function BookPage() {
         {/* Layout follows the approved Nov 2026 book hero mockup. Every figure
             here reads from the verified sources above (editions.ts, chapterParts). */}
         <div className="book-hero-copy">
-          <p className="book-hero-eyebrow">The Official Book</p>
           <h1>TRADE<br />HUSTL<span>3</span></h1>
           <p className="book-subtitle">Built by Hustle, Backed by Trades.</p>
           <p className="book-byline">By Zachary Ellis <span aria-hidden="true">·</span> Mr. HUSTL3</p>
           <div className="book-hero-proof" aria-label="Book highlights">
-            <span><strong>200</strong><small>Trades</small></span>
             <span><strong>{CHAPTER_COUNT}</strong><small>Chapters</small></span>
             <span><strong>90-Day</strong><small>Action Plan</small></span>
           </div>
@@ -377,7 +354,7 @@ export default function BookPage() {
           <div className="book-hero-links">
             <p className="book-hero-formats">
               <a href="#availability" data-cta="book-formats" data-cta-location="book-hero">
-                Paperback <span aria-hidden="true">·</span> Kindle <span aria-hidden="true">·</span> eBook
+                View purchase options
               </a>
             </p>
             <a className="book-hero-program" href="#schools" data-cta="schools-inquiry" data-cta-location="book-hero">
@@ -388,13 +365,6 @@ export default function BookPage() {
       </section>
 
       <p className="book-hero-band">Enter. Earn. Elevate.</p>
-
-      <section className="book-facts" aria-label="Book details">
-        <div><span>Paperback</span><strong>{BOOK_PAPERBACK_PAGES} pages</strong></div>
-        <div><span>Formats</span><strong>Paperback · Kindle · eBook</strong></div>
-        <div><span>Starting point</span><strong>No experience required</strong></div>
-        <div><span>Also inside</span><strong>200-trade list + resource directory</strong></div>
-      </section>
 
       <section className="book-sample" id="sample" aria-labelledby="book-sample-heading">
         <div className="book-section-heading">
@@ -570,15 +540,15 @@ export default function BookPage() {
 
       <section className="book-availability" id="availability" aria-labelledby="final-cta-title">
         <p className="section-label">/ AVAILABILITY</p>
-        <h2 id="final-cta-title">PICK YOUR FORMAT.<br /><span>AVAILABLE NOW.</span></h2>
+        <h2 id="final-cta-title">CHOOSE YOUR<br /><span>EDITION.</span></h2>
         <p>
-          The paperback and Kindle editions are sold and delivered by Amazon. The direct eBook is a PDF from TRADE HUSTL3, delivered by email after secure checkout.
+          Check the Amazon listing for current availability. Direct PDF orders are delivered by email.
         </p>
         <div className="availability-grid">
           <article className="availability-featured">
             <span>AMAZON PAPERBACK</span>
             <strong>${AMAZON_PAPERBACK.price}</strong>
-            <small>{BOOK_PAPERBACK_PAGES} pages · Ships from Amazon</small>
+            <small>View listing on Amazon</small>
             <a
               className="button button-primary"
               href={AMAZON_PAPERBACK.url}
