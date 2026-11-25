@@ -540,3 +540,50 @@
   .book-hero-band:before, .book-hero-band:after { max-width: 36px; }
   .book-page .nav-cta-buy { padding: 10px 14px; }
 }
+
+
+/* Mobile-first book-page refinements: keep the title, purchase path, and
+   program-copy link compact and easy to reach on a phone. */
+.book-hero-links { display: grid; justify-items: center; gap: 12px; }
+.book-hero-program {
+  display: inline-flex;
+  min-height: 44px;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 4px 8px;
+  color: #dfe6ee;
+  font-size: 13px;
+  line-height: 1.4;
+  text-align: center;
+  text-decoration: none;
+}
+.book-hero-program strong {
+  color: var(--gold);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.book-hero-program:focus-visible { outline: 3px solid var(--gold); outline-offset: 4px; }
+@media (max-width: 760px) {
+  .book-hero { padding: 108px 18px 52px; gap: 32px; }
+  .book-cover-stage { width: min(64vw, 250px); }
+  .book-hero-copy h1 { font-size: clamp(66px, 20vw, 94px); }
+  .book-hero-eyebrow { gap: 9px; margin-bottom: 15px; letter-spacing: .18em; }
+  .book-subtitle { margin-top: 18px; font-size: clamp(19px, 5.8vw, 22px); }
+  .book-byline { margin-bottom: 20px; }
+  .book-hero-proof { margin-bottom: 18px; }
+  .book-hero-tagline { margin-bottom: 22px; }
+  .book-hero-program { width: 100%; padding: 6px 4px; }
+  .book-hero-band { white-space: normal; text-align: center; line-height: 1.15; }
+  .book-sample, .book-discover, .book-structure, .book-toc, .book-audience, .book-author, .book-faq, .book-availability, .book-schools {
+    padding: 64px 18px;
+    scroll-margin-top: 78px;
+  }
+  .book-schools { gap: 28px; }
+  .book-schools-form { padding: 20px 16px; }
+  .book-page .book-sticky-buy { padding-inline: 12px; gap: 8px; }
+  .book-sticky-formats { padding-inline: 4px; font-size: 10px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .book-page *, .book-page *::before, .book-page *::after { scroll-behavior: auto !important; }
+}
