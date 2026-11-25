@@ -18,7 +18,7 @@ import styles from "./maintenance-resume-tips.module.css";
 const PAGE_PATH = "/resume-examples/maintenance-resume-tips";
 const PAGE_URL = `${SITE_URL}${PAGE_PATH}`;
 const PAGE_TITLE = "How to Write a Maintenance Resume: 4 Fixes | TRADE HUSTL3";
-const PAGE_HEADLINE = "Show them the whole building you keep running."; 
+const PAGE_HEADLINE = "Show them the whole building you keep running.";
 const PAGE_DESCRIPTION =
   "How to write a maintenance resume: list skills by system, turn duties into proof, put EPA 608 and OSHA cards up top, and keep it ATS-friendly.";
 const PUBLISHED_AT = "2026-10-14";
