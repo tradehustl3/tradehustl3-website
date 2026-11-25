@@ -101,8 +101,16 @@ export function CatalogBrowser() {
                   {normalizedQuery && visibleRoles.length !== family.roles.length ? <span>{family.roles.length} mapped in family</span> : null}
                 </div>
                 <ul className={styles.roleList}>
-                  {visibleRoles.map((role) => <li key={role}>{role}</li>)}
+                  {visibleRoles.slice(0, normalizedQuery ? visibleRoles.length : 6).map((role) => <li key={role}>{role}</li>)}
                 </ul>
+                {!normalizedQuery && visibleRoles.length > 6 ? (
+                  <details className={styles.moreRoles}>
+                    <summary>Show all {visibleRoles.length} job titles <span aria-hidden="true">＋</span></summary>
+                    <ul className={styles.roleList}>
+                      {visibleRoles.slice(6).map((role) => <li key={role}>{role}</li>)}
+                    </ul>
+                  </details>
+                ) : null}
                 <div className={styles.familyActions}>
                   <Link
                     className={styles.builderLink}
