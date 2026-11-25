@@ -71,7 +71,7 @@
 .maintenanceHero {
   background: linear-gradient(112deg, #fff 0%, #fff 58%, #f0f5f8 58%, #e9f0f4 100%);
 }
-.maintenanceHeroCopy h1 {
+.rb-page .maintenanceHeroCopy h1 {
   max-width: 14ch;
   color: var(--rb-navy);
   font-family: var(--rb-font);
@@ -93,6 +93,6 @@
     padding-block: 42px 52px;
     background: linear-gradient(180deg, #fff 0%, #fff 74%, #f0f5f8 100%);
   }
-  .maintenanceHeroCopy h1 { max-width: 12ch; font-size: clamp(38px, 11vw, 54px); }
+  .rb-page .maintenanceHeroCopy h1 { max-width: 12ch; font-size: clamp(38px, 11vw, 54px); }
   .maintenanceHeroCopy .heroLead { margin-top: 18px; font-size: 17px; line-height: 1.65; }
 }
