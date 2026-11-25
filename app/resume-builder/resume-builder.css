@@ -17,7 +17,7 @@
 /* ============================================================
    App shell: header + progress
    ============================================================ */
-.rb-header { position: relative; z-index: 10; background: var(--rb-navy); color: #fff; }
+.rb-header { position: relative; z-index: 10; border-bottom: 1px solid var(--site-header-border, rgba(241,195,87,.42)); background: var(--site-header-gradient, linear-gradient(112deg, #061827 0%, #0b2c49 62%, #174f7e 100%)); color: #fff; }
 .rb-header-inner {
   width: min(var(--rb-container), 100% - 2 * var(--rb-gutter));
   min-height: 68px;
@@ -52,7 +52,8 @@
 }
 .rb-exit:hover { border-color: rgb(255 255 255 / .5); background: rgb(255 255 255 / .08); }
 .rb-header .rb-exit:focus-visible, .rb-header .rb-brand:focus-visible, .rb-header .rb-button:focus-visible { outline-color: #fff; }
-.rb-button.rb-header-cta { min-height: 40px; padding: 0 16px; font-size: 14px; }
+.rb-button.rb-header-cta { min-height: 40px; padding: 0 16px; border-color: var(--site-header-cta, #f1c357); background: var(--site-header-cta, #f1c357); color: var(--site-header-cta-ink, #071a2b); font-size: 14px; box-shadow: 0 8px 20px rgb(241 195 87 / .22); }
+.rb-button.rb-header-cta:hover { border-color: #ffd979; background: #ffd979; color: var(--site-header-cta-ink, #071a2b); }
 
 .rb-steps-bar { border-bottom: 1px solid var(--rb-border); background: var(--rb-surface); }
 .rb-steps {

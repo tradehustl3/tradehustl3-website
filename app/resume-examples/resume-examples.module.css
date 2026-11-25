@@ -14,8 +14,8 @@
   justify-content:space-between;
   gap:28px;
   padding:8px clamp(20px,5vw,76px);
-  border-bottom:1px solid rgba(241,195,87,.35);
-  background:rgba(6,24,39,.96);
+  border-bottom:1px solid var(--site-header-border, rgba(241,195,87,.42));
+  background:var(--site-header-gradient, linear-gradient(112deg, #061827 0%, #0b2c49 62%, #174f7e 100%));
   color:#fff;
   box-shadow:0 12px 30px rgba(4,19,32,.16);
   backdrop-filter:blur(14px);
@@ -32,18 +32,19 @@
   justify-content:center;
   gap:18px;
   padding:0 22px;
-  border:1px solid #ee4a50;
+  border:1px solid var(--site-header-cta, #f1c357);
   border-radius:5px;
-  background:#d71920;
-  color:#fff;
+  background:var(--site-header-cta, #f1c357);
+  color:var(--site-header-cta-ink, #071a2b);
   font-size:12px;
   font-weight:950;
   letter-spacing:.05em;
   text-transform:uppercase;
-  box-shadow:0 12px 28px rgba(215,25,32,.22);
+  box-shadow:0 10px 24px rgba(241,195,87,.2);
   transition:transform .2s ease,background .2s ease;
 }
-.headerCta:hover,.primaryCta:hover{transform:translateY(-2px);background:#ef2830}
+.headerCta:hover{transform:translateY(-2px);background:#ffd979;border-color:#ffd979}
+.primaryCta:hover{transform:translateY(-2px);background:#ef2830}
 .hero{
   position:relative;
   display:grid;

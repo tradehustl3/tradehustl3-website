@@ -66,3 +66,33 @@
   .fixList { grid-template-columns: 1fr; }
   .fixList li { min-height: 60px; }
 }
+
+
+.maintenanceHero {
+  background: linear-gradient(112deg, #fff 0%, #fff 58%, #f0f5f8 58%, #e9f0f4 100%);
+}
+.rb-page .maintenanceHeroCopy h1 {
+  max-width: 14ch;
+  color: var(--rb-navy);
+  font-family: var(--rb-font);
+  font-size: clamp(40px, 5vw, 68px);
+  font-weight: 850;
+  letter-spacing: -.055em;
+  line-height: .98;
+  text-transform: none;
+}
+.maintenanceHeroCopy .heroLead {
+  max-width: 680px;
+  margin-top: 22px;
+  font-size: clamp(17px, 1.35vw, 20px);
+  line-height: 1.72;
+}
+@media (max-width: 720px) {
+  .maintenanceHero {
+    gap: 28px;
+    padding-block: 42px 52px;
+    background: linear-gradient(180deg, #fff 0%, #fff 74%, #f0f5f8 100%);
+  }
+  .rb-page .maintenanceHeroCopy h1 { max-width: 12ch; font-size: clamp(38px, 11vw, 54px); }
+  .maintenanceHeroCopy .heroLead { margin-top: 18px; font-size: 17px; line-height: 1.65; }
+}

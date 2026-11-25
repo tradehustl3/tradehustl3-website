@@ -18,7 +18,7 @@ import styles from "./maintenance-resume-tips.module.css";
 const PAGE_PATH = "/resume-examples/maintenance-resume-tips";
 const PAGE_URL = `${SITE_URL}${PAGE_PATH}`;
 const PAGE_TITLE = "How to Write a Maintenance Resume: 4 Fixes | TRADE HUSTL3";
-const PAGE_HEADLINE = "How to write a maintenance resume that shows the whole job";
+const PAGE_HEADLINE = "Show them the whole building you keep running.";
 const PAGE_DESCRIPTION =
   "How to write a maintenance resume: list skills by system, turn duties into proof, put EPA 608 and OSHA cards up top, and keep it ATS-friendly.";
 const PUBLISHED_AT = "2026-10-14";
@@ -204,15 +204,14 @@ export default function MaintenanceResumeTipsPage() {
         <BuilderCta location="maintenance_tips_header" label="Build my resume" className="rb-header-cta" />
       } />
 
-      <section className={shared.hero} aria-labelledby="page-title">
-        <div className={shared.heroCopy}>
+      <section className={`${shared.hero} ${styles.maintenanceHero}`} aria-labelledby="page-title">
+        <div className={`${shared.heroCopy} ${styles.maintenanceHeroCopy}`}>
           <p className="rb-kicker">MAINTENANCE RESUME GUIDE</p>
           <h1 id="page-title">{PAGE_HEADLINE}</h1>
           <p className={shared.heroLead}>
-            You can fix a leaking flush valve, reset a tripped rooftop unit and patch drywall before lunch. A resume
-            that says “general maintenance” tells a hiring manager none of that. Facilities maintenance is one of the
-            few trades where being good at a lot of things <em>is</em> the job, so your resume has to prove you can
-            cover the whole building. These four fixes show how.
+            From a leaking flush valve to a tripped rooftop unit to fresh drywall, maintenance work keeps a whole
+            building moving. A resume that says “general maintenance” hides that range. Name the systems you handle,
+            show the work you’ve done, and make your real credentials easy to find. Start with these four fixes.
           </p>
           <div className={shared.heroActions}>
             <BuilderCta location="maintenance_tips_hero" label="Build free · unlock for $9.99" />

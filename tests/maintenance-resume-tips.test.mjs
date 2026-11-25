@@ -23,7 +23,7 @@ test("maintenance resume guide renders one how-to H1 and complete metadata", asy
   const html = await response.text();
 
   assert.equal((html.match(/<h1\b/g) ?? []).length, 1, "expected exactly one H1");
-  assert.match(html, /<h1[^>]*>How to write a maintenance resume that shows the whole job<\/h1>/);
+  assert.match(html, /<h1[^>]*>Show them the whole building you keep running\.<\/h1>/);
   assert.match(html, /<title>How to Write a Maintenance Resume: 4 Fixes \| TRADE HUSTL3<\/title>/);
   assert.match(html, /<link rel="canonical" href="https:\/\/tradehustl3\.com\/resume-examples\/maintenance-resume-tips"/);
   assert.match(html, /<meta name="description" content="How to write a maintenance resume:/);
