@@ -374,11 +374,16 @@ export default function BookPage() {
               Read 7 Pages Free
             </a>
           </div>
-          <p className="book-hero-formats">
-            <a href="#availability" data-cta="book-formats" data-cta-location="book-hero">
-              Paperback <span aria-hidden="true">·</span> Kindle <span aria-hidden="true">·</span> eBook
+          <div className="book-hero-links">
+            <p className="book-hero-formats">
+              <a href="#availability" data-cta="book-formats" data-cta-location="book-hero">
+                Paperback <span aria-hidden="true">·</span> Kindle <span aria-hidden="true">·</span> eBook
+              </a>
+            </p>
+            <a className="book-hero-program" href="#schools" data-cta="schools-inquiry" data-cta-location="book-hero">
+              School, workforce, or apprenticeship program? <strong>Explore group copies <span aria-hidden="true">→</span></strong>
             </a>
-          </p>
+          </div>
         </div>
       </section>
 
